@@ -46,6 +46,19 @@ SLICE = [
 
 _SKIP_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache"}
 
+# Everything in SLICE is text; normalize to LF at copy time so the manifest
+# hashes are identical between a Windows dev checkout (CRLF working tree) and
+# the Linux runner. .gitattributes pins `* -text` so git never converts back.
+_TEXT_SUFFIXES = {".py", ".txt", ".toml", ".lock", ".html", ".md", ""}
+
+
+def _copy_normalized(src: Path, dst: Path) -> None:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    data = src.read_bytes()
+    if src.suffix.lower() in _TEXT_SUFFIXES or src.name in ("VERSION", "LICENSE", "NOTICE"):
+        data = data.replace(b"\r\n", b"\n")
+    dst.write_bytes(data)
+
 
 def _die(msg: str) -> "NoReturn":  # noqa: F821 - py3.11+ typing note only
     print(f"sync: {msg}", file=sys.stderr)
@@ -97,15 +110,10 @@ def do_sync(upstream: Path) -> None:
         src = upstream / entry
         dst = CORE / entry
         if src.is_dir():
-            shutil.copytree(
-                src,
-                dst,
-                ignore=shutil.ignore_patterns(*_SKIP_DIRS, "*.pyc"),
-                dirs_exist_ok=True,
-            )
+            for f in _iter_files(src):
+                _copy_normalized(f, dst / f.relative_to(src))
         else:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
+            _copy_normalized(src, dst)
 
     for p in _iter_files(CORE):
         rel = p.relative_to(CORE).as_posix()
