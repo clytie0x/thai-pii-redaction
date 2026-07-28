@@ -156,8 +156,18 @@ def check_i_ocr():
 
 
 def soak():
-    """ซ: 8 concurrent roundtrips for 10 minutes, then restart-recovery."""
-    stop_at = time.monotonic() + 600
+    """ซ: N concurrent roundtrips for M seconds, then restart-recovery.
+
+    Env knobs (defaults preserve the 8-worker / 10-minute / always-restart
+    behavior): SOAK_WORKERS, SOAK_SECONDS, SOAK_PROVIDER, and SOAK_SKIP_RESTART=1
+    to skip the restart leg — used by the light real-provider pass, since the
+    main fake pass already exercises restart recovery and re-running it against
+    the organizer gateway wastes real LLM calls.
+    """
+    workers = int(os.environ.get("SOAK_WORKERS", "8"))
+    seconds = int(os.environ.get("SOAK_SECONDS", "600"))
+    provider = os.environ.get("SOAK_PROVIDER", "tokenmind")
+    stop_at = time.monotonic() + seconds
     counts = {"ok": 0, "s429": 0, "s5xx": 0, "s503": 0, "err": 0}
 
     def worker():
@@ -165,7 +175,7 @@ def soak():
             try:
                 r = httpx.post(f"{API}/v1/roundtrip",
                                json={"text": SYN_TEXT, "mode": "token",
-                                     "provider": os.environ.get("SOAK_PROVIDER", "tokenmind")},
+                                     "provider": provider},
                                timeout=120)
                 if r.status_code == 200:
                     counts["ok"] += 1
@@ -178,10 +188,14 @@ def soak():
             except Exception:
                 counts["err"] += 1
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-        list(ex.map(lambda _: worker(), range(8)))
-    record("ซ.soak", counts["s5xx"] == 0 and counts["ok"] > 0, counts)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+        list(ex.map(lambda _: worker(), range(workers)))
+    detail = {**counts, "provider": provider, "workers": workers, "seconds": seconds}
+    record(f"ซ.soak[{provider},{workers}w,{seconds}s]",
+           counts["s5xx"] == 0 and counts["ok"] > 0, detail)
 
+    if os.environ.get("SOAK_SKIP_RESTART") == "1":
+        return
     subprocess.run(["docker", "compose", "-p", "team08", "restart"], capture_output=True)
     deadline = time.monotonic() + 180
     healthy = False

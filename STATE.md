@@ -1,4 +1,4 @@
-# สถานะงาน ณ จุด compact (29 ก.ค. 2569 ~00:30)
+# สถานะงาน (29 ก.ค. 2569 — soak เฟส local เสร็จ)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 (อนุมัติแล้ว รวมข้อแก้จาก Codex) — เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
@@ -24,26 +24,25 @@
   ช.2 (ถอด key → 503 "TOKENMIND_API_KEY is not set") ✓
 - core image: `team08-core` 2.94GB, build 213s (อุ่นบางส่วนจาก spike layers)
 
-## สถานะรันไทม์ตอนนี้ (สำคัญ — ต้องคืนก่อนเทสต่อ)
+## สถานะรันไทม์ตอนนี้
 
-- stack `-p team08` รันอยู่ แต่ **core ถูก recreate แบบไม่มี tokenmind key** (สภาพเทส ช.2)
-  คืนด้วย: `cd C:\Users\teera\dev\aiguard-aift; $env:APP_AIGUARD_API_KEY='local-dev-key';
-  $env:APP_TOKENMIND_API_KEY=$env:TOKENMIND_API_KEY; docker compose -p team08 up -d core`
+- stack `-p team08` อยู่ config deployment ครบ: core `AIGUARD_PROVIDERS=tokenmind` + key จริง,
+  ทั้งสาม service healthy — พร้อมเป็น service (ไม่มี override ค้าง)
+- ถ้าต้องรัน soak fake อีก: `docker compose -p team08 -f docker-compose.yml -f tests/docker-compose.soak-override.yml up -d core`
+  แล้วคืนด้วย `docker compose -p team08 up -d core` (ไม่มี -f) — ต้อง set `$env:APP_AIGUARD_API_KEY`
+  + `$env:APP_TOKENMIND_API_KEY=$env:TOKENMIND_API_KEY` ก่อนทุกครั้ง
 
 ## เหลือ (ตามลำดับ)
 
-1. **ซ soak**: (ก) recreate core ด้วย `-f docker-compose.yml -f tests/docker-compose.soak-override.yml`
-   (เพิ่ม fake เฉพาะเทส) → `SOAK_PROVIDER=fake python tests/smoke.py --soak` (10 นาที 8 สาย
-   ต้องไม่มี 5xx, มี 429 ตาม limit, log ไม่มี PII) (ข) soak เบากับ tokenmind จริง
-   (~2 สาย 2 นาที — มารยาทต่อ gateway ผู้จัด) (ค) restart recovery อยู่ใน --soak แล้ว
-   (ง) เสร็จแล้ว recreate core กลับ config deployment (ไม่มี override)
-2. commit ค้าง: tests/smoke.py (SOAK_PROVIDER), tests/docker-compose.soak-override.yml,
-   docs/evidence/, STATE.md
-3. **ปิดเฟส (task 16)**: อัปเดต evidence สรุป, ฝั่ง upstream — ADR เลข tokenmind detector
-   (F2 0.951, report `benchmark/reports/llm-tokenmind-thaillm8b-gold-v4.json`) +
-   อัปเดต `docs/platform/ai-for-thai.md` / `docs/project-status.md` / ROADMAP ชี้ port repo
-   (ทำบน branch ใหม่หลัง #101 merge), อัปเดต handoff memory
-4. รายงานเจ้าของ: ผลเฟส + คำตอบแบบสำรวจ (รอเจ้าของกรอก/ส่งเอง) + ให้ merge PR #101
+1. ~~ซ soak~~ **เสร็จ 29 ก.ค.** — ผลอยู่ `docs/evidence/checklist-results.md`: soak หลัก fake 8 สาย
+   10 นาที (5465 ok, 0 5xx/err) + restart recovery + limit verification 24 สาย (124×429, 0 5xx)
+   + soak เบา tokenmind 2 สาย 120s (222 ok, 0 5xx) + log 0 PII. checklist ก-ฌ + ช + ซ ผ่านครบ
+2. ~~commit port repo~~ (smoke.py knob + `docs/evidence/checklist-results.md` + STATE) — commit รอบนี้
+3. **ปิดเฟส (task 16) — ติด PR #101 ยังไม่ merge**: ADR เลข tokenmind detector — verify แล้ว
+   report `benchmark/reports/llm-tokenmind-thaillm8b-gold-v4.json` มีจริง R0.960/P0.917/F2 0.951
+   gold v4 252 docs / 648 entities, failed 0 + อัปเดต `docs/platform/ai-for-thai.md` /
+   `docs/project-status.md` / ROADMAP ชี้ port repo — ทำบน branch ใหม่ **หลัง #101 merge เท่านั้น**
+4. รายงานเจ้าของ: ให้ merge PR #101 (unblock task 16) + คำตอบแบบสำรวจ (รอกรอก/ส่งเอง)
    + การตัดสินใจช่อง ASR
 
 ## กติกาที่ห้ามลืม
