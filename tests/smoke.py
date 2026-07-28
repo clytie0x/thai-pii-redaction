@@ -165,7 +165,8 @@ def soak():
             try:
                 r = httpx.post(f"{API}/v1/roundtrip",
                                json={"text": SYN_TEXT, "mode": "token",
-                                     "provider": "tokenmind"}, timeout=120)
+                                     "provider": os.environ.get("SOAK_PROVIDER", "tokenmind")},
+                               timeout=120)
                 if r.status_code == 200:
                     counts["ok"] += 1
                 elif r.status_code == 429:
