@@ -1,0 +1,97 @@
+# AI Guard — AIFT team08 deployment (ports 20070 web / 20071 api).
+# Shape constrained by the organizer's check stage: 127.0.0.1 binds within
+# the team range, resources.limits + healthcheck + logging max-size on every
+# service, no bind mounts (audit goes to stdout -> Docker rotation + Dozzle).
+#
+# Secrets arrive as GitLab CI variables prefixed APP_; the deploy job writes
+# them to .env, which compose auto-loads for interpolation.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  web:
+    build: ./web
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "127.0.0.1:20070:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "127.0.0.1:20071:8000"
+    environment:
+      # fail-loud: a deploy without the service key must not boot half-open
+      AIGUARD_API_KEY: ${APP_AIGUARD_API_KEY:?APP_AIGUARD_API_KEY is required}
+      # without this filter envsubst blanks every nginx $variable in the template
+      NGINX_ENVSUBST_FILTER: "^AIGUARD_API_KEY$"
+    depends_on:
+      core:
+        condition: service_healthy
+    healthcheck:
+      # probes THROUGH nginx into core — a green api means the whole chain answers
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  core:
+    build: ./core
+    restart: unless-stopped
+    logging: *logging
+    # not published — only reachable from api/web on the compose network
+    environment:
+      PYTHONUTF8: "1"
+      AIGUARD_API_KEY: ${APP_AIGUARD_API_KEY:?APP_AIGUARD_API_KEY is required}
+      TOKENMIND_BASE_URL: "https://tokenmind.pathumma.in.th/v1"
+      # key absent = /roundtrip answers an explicit 503; never a simulated fallback
+      TOKENMIND_API_KEY: ${APP_TOKENMIND_API_KEY:-}
+      AIGUARD_ALLOWED_HOSTS: "team08.aiforthai.in.th,localhost,127.0.0.1"
+      AIGUARD_PROVIDERS: "tokenmind"
+      AIGUARD_AUDIT_STDOUT: "1"
+      AIGUARD_PDF_MAX_PAGES: "20"
+      AIGUARD_MAX_TEXT_CHARS: "20000"
+      UVICORN_WORKERS: "1"
+    healthcheck:
+      # python+httpx: this image has no curl (httpx is a core dependency)
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import httpx; httpx.get('http://127.0.0.1:8000/api/health', timeout=2).raise_for_status()",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+          cpus: "2.0"

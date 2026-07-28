@@ -1,0 +1,119 @@
+# AI Guard AIFT — `api` proxy. Three jobs:
+#   1. re-add the /api prefix the platform proxy strips, via an EXACT-match
+#      allowlist (a broad prefix location would re-expose every internal
+#      /api/* route, including the stateful ones this deployment excludes)
+#   2. hold the service key and inject X-AIGuard-Key (rule 12: no key in the
+#      frontend) — envsubst fills it from AIGUARD_API_KEY, and
+#      NGINX_ENVSUBST_FILTER must stay ^AIGUARD_API_KEY$ or every nginx
+#      $variable below is blanked
+#   3. keep PII out of Dozzle: the noquery log format records $uri, never the
+#      query string or body
+#
+# External surface (after the platform strips /api):
+#   /health /detect /guard /roundtrip /redact-pdf /analyze-report
+#   /v1/<same>  — versioned aliases, the documented public contract
+
+limit_req_zone  $server_name zone=cap:1m rate=10r/s;
+limit_conn_zone $server_name zone=conc:1m;
+limit_conn_zone $server_name zone=conc_pdf:1m;
+limit_req_status 429;
+limit_conn_status 429;
+
+log_format noquery '$remote_addr $status $body_bytes_sent "$request_method $uri"';
+
+server {
+  listen 8000;
+  # Non-empty rate-limit key: with no server_name, $server_name is "" and the
+  # limit zones silently stop counting.
+  server_name team08.aiforthai.in.th;
+
+  access_log /var/log/nginx/access.log noquery;
+
+  # Text endpoints get a small body; only /redact-pdf raises it below.
+  client_max_body_size 1m;
+  client_body_timeout 60s;
+  client_header_timeout 15s;
+
+  # Responses can carry restored PII — never cache anywhere.
+  add_header Cache-Control "no-store" always;
+
+  proxy_set_header Host              $http_host;
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+  proxy_set_header X-AIGuard-Key     "${AIGUARD_API_KEY}";
+  proxy_connect_timeout 5s;
+  proxy_read_timeout  120s;
+  proxy_send_timeout   60s;
+
+  # ── unversioned (platform CI healthcheck + same-origin web page) ──────
+  location = /health {
+    limit_req zone=cap burst=10;
+    proxy_pass http://core:8000/api/health;
+  }
+  location = /detect {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/detect;
+  }
+  location = /guard {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/guard;
+  }
+  location = /roundtrip {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/roundtrip;
+  }
+  location = /analyze-report {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/analyze-report;
+  }
+  location = /redact-pdf {
+    limit_req zone=cap burst=10;
+    limit_conn conc_pdf 2;          # OCR is the heavy path — its own small pool
+    client_max_body_size 60m;       # above the app's 50 MB cap so the app decides
+    proxy_read_timeout 300s;        # scanned multi-page OCR (measured E0: ~10s+/page)
+    proxy_pass http://core:8000/api/redact-pdf;
+  }
+
+  # ── /v1 versioned aliases (documented public API) ─────────────────────
+  location = /v1/health {
+    limit_req zone=cap burst=10;
+    proxy_pass http://core:8000/api/health;
+  }
+  location = /v1/detect {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/detect;
+  }
+  location = /v1/guard {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/guard;
+  }
+  location = /v1/roundtrip {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/roundtrip;
+  }
+  location = /v1/analyze-report {
+    limit_req zone=cap burst=10;
+    limit_conn conc 8;
+    proxy_pass http://core:8000/api/analyze-report;
+  }
+  location = /v1/redact-pdf {
+    limit_req zone=cap burst=10;
+    limit_conn conc_pdf 2;
+    client_max_body_size 60m;
+    proxy_read_timeout 300s;
+    proxy_pass http://core:8000/api/redact-pdf;
+  }
+
+  # Everything else — including /sanitize, /reidentify, /docs, /openapi.json —
+  # does not exist on this deployment.
+  location / {
+    return 404;
+  }
+}

@@ -1,0 +1,143 @@
+# AI Guard — AIFT team08. Based on the organizer's template (participant
+# guide §4.1); changes: team variables, migrate/reset-db dropped (no
+# database), a post-deploy acceptance stage added, and a vendored-slice
+# integrity check in the check stage.
+
+variables:
+  TEAM: "team08"
+  BASE: "20070"
+  BASE_1: "20071"
+
+stages: [check, deploy, acceptance, ops]
+
+default:
+  # runner ผูกกับ subgroup ของทีม ปกติไม่ต้องใส่ tags — ถ้า job ค้าง pending
+  # ดู tag ที่ Group > Settings > CI/CD > Runners แล้วปลดคอมเมนต์
+  # tags: [<tag>]
+  image: docker:27.3.1
+  before_script:
+    - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
+    - apk add --no-cache curl bash jq python3 >/dev/null
+    - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
+
+check:
+  stage: check
+  script:
+    # vendored slice must match the recorded upstream commit exactly
+    - python3 sync/sync_from_upstream.py --check
+    - |
+      LO=$BASE; HI=$((BASE+9)); FAIL=0
+
+      echo "== port binding =="
+      while read -r line; do
+        case "$line" in
+          *'${BASE'*|*'$BASE'*) echo "  ok (variable) $line" ;;
+          *127.0.0.1:*)
+            p=$(echo "$line" | sed -n 's/.*127\.0\.0\.1:\([0-9]\+\):.*/\1/p')
+            if [ -n "$p" ] && { [ "$p" -lt "$LO" ] || [ "$p" -gt "$HI" ]; }; then
+              echo "  FAIL port $p outside $TEAM range ($LO-$HI)"; FAIL=1
+            else echo "  ok $line"; fi ;;
+          *) echo "  FAIL not bound to 127.0.0.1 -> $line"; FAIL=1 ;;
+        esac
+      done < <(grep -E '^\s*-\s*"?[0-9.$][^:]*:[0-9$]' docker-compose.yml || true)
+
+      echo "== bind mounts =="
+      for m in $(grep -oE '^\s*-\s*[./][^:]*:' docker-compose.yml | sed 's/^\s*-\s*//; s/:$//' || true); do
+        case "$m" in
+          */var/run/docker.sock*) echo "  FAIL docker.sock mount"; FAIL=1 ;;
+          ./*|../*) echo "  FAIL relative bind mount: $m"; FAIL=1 ;;
+          /data/hack/*) echo "  ok $m" ;;
+          /*) echo "  FAIL bind mount outside /data/hack: $m"; FAIL=1 ;;
+        esac
+      done
+
+      echo "== required keys =="
+      grep -q 'memory:' docker-compose.yml || { echo "  FAIL no memory limit"; FAIL=1; }
+      grep -q 'healthcheck:' docker-compose.yml || { echo "  FAIL no healthcheck"; FAIL=1; }
+      grep -q 'max-size' docker-compose.yml || { echo "  FAIL no logging max-size"; FAIL=1; }
+
+      [ $FAIL -eq 0 ] && echo "check passed" || exit 1
+
+deploy:
+  stage: deploy
+  timeout: 20m
+  interruptible: true
+  environment:
+    name: $TEAM
+    url: https://$TEAM.aiforthai.in.th
+  script:
+    # secrets come from APP_-prefixed CI variables (Masked). No set -x here.
+    - printenv | grep '^APP_' > .env || true
+    - docker compose -p "$TEAM" up -d --build --remove-orphans
+    - |
+      echo "waiting for healthcheck..."
+      for i in $(seq 1 40); do
+        st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-api-1" 2>/dev/null || echo none)
+        [ "$st" = "healthy" ] && { echo "api healthy"; break; }
+        sleep 5
+      done
+      docker compose -p "$TEAM" ps
+    - curl -fsS "http://127.0.0.1:${BASE_1}/health" && echo " <- /health OK"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# Post-deploy proof with synthetic Thai PII against the REAL provider chain.
+# This is the only job that catches "key never reached the container": the
+# healthchecks stay green in that failure mode because /health is ungated.
+acceptance:
+  stage: acceptance
+  needs: [deploy]
+  script:
+    - |
+      set -e
+      BODY='{"text":"ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678","mode":"token","provider":"tokenmind"}'
+      R=$(curl -fsS -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
+            -H 'Content-Type: application/json' -d "$BODY")
+      echo "$R" | jq -e '.provider_used == "tokenmind"' >/dev/null
+      SAN=$(echo "$R" | jq -r '.sanitized_text')
+      case "$SAN" in
+        *0812345678*|*081-234-5678*) echo "RAW PHONE LEAKED IN OUTBOUND TEXT"; exit 1 ;;
+      esac
+      case "$SAN" in
+        *สมชาย*) echo "RAW NAME LEAKED IN OUTBOUND TEXT"; exit 1 ;;
+      esac
+      echo "$R" | jq -r '.restored_text' | grep -q "081-234-5678"
+      echo "acceptance ok: masked outbound, restored inbound, real provider"
+      # allowlist: excluded paths must not exist
+      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/sanitize -X POST -H 'Content-Type: application/json' -d '{"text":"x"}')" = "404" ]
+      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/docs)" = "404" ]
+      echo "allowlist ok"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ── manual ops (the no-SSH toolbox) ──────────────────────────────────────
+.ops: &ops
+  stage: ops
+  when: manual
+  allow_failure: true
+  interruptible: false
+
+logs:
+  <<: *ops
+  script:
+    - docker compose -p "$TEAM" logs --tail=400 --timestamps --no-color
+
+ps:
+  <<: *ops
+  script:
+    - docker compose -p "$TEAM" ps
+    - docker stats --no-stream $(docker compose -p "$TEAM" ps -q) || true
+
+restart:
+  <<: *ops
+  script:
+    - docker compose -p "$TEAM" restart
+    - docker compose -p "$TEAM" ps
+
+shell-cmd:
+  <<: *ops
+  variables:
+    SERVICE: core
+    CMD: "python -c 'import sys; print(sys.version)'"
+  script:
+    - docker compose -p "$TEAM" exec -T "$SERVICE" sh -lc "$CMD"
