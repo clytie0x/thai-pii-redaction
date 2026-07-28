@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Guard ปกป้องข้อมูลส่วนบุคคลก่อนส่งเข้า AI</title>
+<meta name="description" content="AI Guard ตรวจจับและปกปิดข้อมูลส่วนบุคคลก่อนส่งเข้าโมเดลภาษา แล้วกู้คืนกลับมาเฉพาะฝั่งของคุณ ทดลองใช้งานจริงได้ทันที">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M32 10 50 18v14c0 14-8 22-18 26-10-4-18-12-18-26V18z' fill='%232563eb'/%3E%3Cpath d='M24 32l6 6 12-14' stroke='%23e2e8f0' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0f172a; --bg-soft:#0b1222; --panel:#1e293b; --panel-2:#172033;
+    --line:#334155; --line-soft:#25324a; --text:#e2e8f0; --dim:#94a3b8; --dim-2:#64748b;
+    --blue:#2563eb; --blue-light:#60a5fa; --green:#34d399; --red:#f87171; --amber:#fbbf24;
+    --c-name:#f9a8d4; --c-id:#fca5a5; --c-phone:#fdba74; --c-email:#fde047;
+    --c-addr:#86efac; --c-date:#93c5fd; --c-org:#c4b5fd; --c-other:#a5b4fc;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Sarabun','Leelawadee UI',system-ui,sans-serif;line-height:1.65;font-size:16px}
+  h1,h2,h3,p,ul,ol,figure{margin:0}
+  a{color:var(--blue-light)}
+  img{max-width:100%;display:block}
+  .container{max-width:1120px;margin:0 auto;padding:0 24px}
+  @media(max-width:640px){.container{padding:0 18px}}
+
+  /* ── nav ── */
+  header.topnav{position:sticky;top:0;z-index:50;background:rgba(15,23,42,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topnav-inner{max-width:1120px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  @media(max-width:640px){.topnav-inner{padding:12px 18px}}
+  .brand{font-weight:700;font-size:18px;color:var(--text);text-decoration:none;flex:0 0 auto}
+  .brand span{color:var(--blue-light)}
+  nav.navlinks{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+  nav.navlinks::-webkit-scrollbar{display:none}
+  nav.navlinks a{color:var(--dim);text-decoration:none;font-size:14px;padding:8px 12px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+  nav.navlinks a:hover{color:var(--text);background:var(--panel)}
+
+  /* ── sections ── */
+  section{scroll-margin-top:66px;padding:72px 0;border-bottom:1px solid var(--line-soft)}
+  section:last-of-type{border-bottom:none}
+  .eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--blue-light);font-weight:700;margin-bottom:12px}
+  h1.hero-title{font-size:clamp(28px,4.6vw,44px);line-height:1.3;margin-bottom:18px;font-weight:700}
+  .hero-lede{font-size:18px;color:var(--dim);max-width:720px;line-height:1.85;margin-bottom:44px}
+  h2.section-title{font-size:clamp(22px,3vw,30px);margin-bottom:10px;font-weight:700}
+  .section-sub{color:var(--dim);font-size:15px;margin-bottom:36px;max-width:700px;line-height:1.8}
+
+  /* ── hero flow diagram ── */
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:8px}
+  .flow-box{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--dim-2);border-radius:var(--radius);padding:18px 20px;min-width:158px;max-width:190px;text-align:center;flex:1 1 158px}
+  .flow-box .flow-label{font-weight:700;font-size:15px;margin-bottom:6px}
+  .flow-box .flow-sub{font-size:12.5px;color:var(--dim);line-height:1.6}
+  .flow-box.risk{border-top-color:var(--red)}
+  .flow-box.guard{border-top-color:var(--green);background:#122a24}
+  .flow-box.llm{border-top-color:var(--blue-light)}
+  .flow-box.restore{border-top-color:var(--green);background:#122a24}
+  .flow-arrow{color:var(--dim-2);font-size:22px;padding:0 12px;flex:0 0 auto}
+  @media(max-width:820px){
+    .flow{flex-direction:column;align-items:stretch}
+    .flow-box{max-width:none}
+    .flow-arrow{transform:rotate(90deg);text-align:center;padding:6px 0}
+  }
+  .flow-caption{margin-top:20px;font-size:13.5px;color:var(--dim-2);max-width:640px}
+
+  /* ── generic components ── */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.grid-2{grid-template-columns:1fr}}
+  select,button,input[type=file]::file-selector-button{
+    background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;
+    padding:9px 15px;font-family:inherit;font-size:14px;cursor:pointer;
+  }
+  button.primary{background:var(--blue);border-color:var(--blue);font-weight:600;color:#fff}
+  button.primary:hover:not(:disabled){background:#1d4ed8}
+  button:disabled{opacity:.5;cursor:wait}
+  label.field{font-size:14px;color:var(--dim);display:inline-flex;flex-direction:column;gap:6px}
+
+  /* ── demo section ── */
+  .samples{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+  .samples .samples-label{color:var(--dim);font-size:13px}
+  .samples button{font-size:13px;padding:7px 12px}
+  .controls{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px}
+  .dest-badge{font-size:13px;color:var(--dim);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px 14px;display:inline-flex;align-items:center;gap:8px}
+  .dest-badge b{color:var(--text)}
+  .panes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;min-height:320px;margin-top:6px}
+  @media(max-width:900px){.panes{grid-template-columns:1fr}}
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+  .pane h3{font-size:13.5px;padding:11px 14px;border-bottom:1px solid var(--line);color:var(--dim);font-weight:600;margin:0}
+  .pane .body{padding:12px 14px;flex:1;position:relative;font-size:14.5px;line-height:1.85;white-space:pre-wrap;word-break:break-word;overflow:auto;max-height:340px}
+  #editorWrap{position:relative;flex:1;min-height:280px}
+  #highlight,#editor{position:absolute;inset:0;padding:12px 14px;font:inherit;font-size:14.5px;line-height:1.85;white-space:pre-wrap;word-break:break-word;overflow:auto}
+  #highlight{pointer-events:none;color:var(--text)}
+  #editor{background:transparent;color:transparent;caret-color:var(--text);border:0;outline:0;resize:none;width:100%;height:100%}
+  mark{border-radius:4px;padding:0 1px;color:#0f172a;font-weight:600}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--dim)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .meta{margin-top:12px;font-size:13.5px;color:var(--dim);min-height:20px}
+  .warn{color:var(--amber)}
+  .provider-tag{font-size:12px;background:var(--line);border-radius:6px;padding:2px 8px;margin-left:8px;font-weight:500}
+  #guardBar{margin-top:10px;font-size:13px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{border-radius:6px;padding:3px 9px;font-size:12.5px;display:inline-block}
+  .guard-chip{background:#7f1d1d;color:#fecaca}
+  .warn-chip{background:#7c2d12;color:#fed7aa}
+  .ok-chip{background:var(--panel-2);color:var(--dim);border:1px solid var(--line)}
+  .guard-ok{color:var(--dim)}
+
+  /* ── evidence section ── */
+  .evidence-block{margin-bottom:26px}
+  .evidence-block h3{font-size:14.5px;color:var(--dim);font-weight:600;margin-bottom:10px}
+  .evidence-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:14.5px;line-height:1.85;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+  .evidence-empty{color:var(--dim-2)}
+  .disclosure{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:18px 20px;font-size:14.5px;color:var(--dim);line-height:1.9}
+  .disclosure b{color:var(--text)}
+
+  /* ── docs section ── */
+  .pdfmeta{margin-top:10px;font-size:14px;color:var(--dim)}
+  #cmpWrap{position:relative;margin-top:16px;overflow:hidden;border-radius:12px;border:1px solid var(--line)}
+  #cmpWrap img{display:block;width:100%;user-select:none;pointer-events:none}
+  #imgAfter{position:absolute;inset:0;clip-path:inset(0 0 0 50%)}
+  #cmpSlider{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+  #cmpBar{position:absolute;top:0;bottom:0;left:50%;width:3px;background:var(--blue);pointer-events:none}
+  .card h3{font-size:17px;margin-bottom:8px;font-weight:700}
+  .card .card-desc{font-size:14px;color:var(--dim);margin-bottom:16px;line-height:1.75}
+
+  /* ── api section ── */
+  table.endpoints{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  table.endpoints th,table.endpoints td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  table.endpoints th{color:var(--dim);font-weight:600;font-size:13px}
+  table.endpoints td code{font-size:13px;color:var(--blue-light);background:var(--panel-2);padding:2px 6px;border-radius:5px;white-space:nowrap}
+  .table-wrap{overflow-x:auto}
+  .footnote{font-size:13px;color:var(--dim-2);margin-top:10px}
+  pre.curl{background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:13px;line-height:1.7;margin-top:12px;color:#e2e8f0}
+  code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+  .stat-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;min-width:180px;flex:1}
+  .stat .num{font-size:26px;font-weight:700;color:var(--blue-light)}
+  .stat .lbl{font-size:13px;color:var(--dim);margin-top:4px;line-height:1.6}
+  .limits-note{margin-top:26px;font-size:14.5px;color:var(--dim);line-height:1.85}
+  .policy{margin-top:26px;font-size:14.5px;color:var(--dim);line-height:1.9;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+
+  footer{padding:36px 0 60px;text-align:center;color:var(--dim-2);font-size:13.5px}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="#top">AI <span>Guard</span></a>
+    <nav class="navlinks">
+      <a href="#problem">ปัญหา</a>
+      <a href="#demo">ลองของจริง</a>
+      <a href="#evidence">หลักฐาน</a>
+      <a href="#docs">เอกสาร</a>
+      <a href="#api">API</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════ 1. ปัญหา ═══════════════ -->
+<section id="problem">
+  <div class="container" id="top">
+    <p class="eyebrow">AI Guard</p>
+    <h1 class="hero-title">หยุดข้อมูลส่วนบุคคลรั่วไหลก่อนถึงมือ AI</h1>
+    <p class="hero-lede">
+      เวลาเราวางข้อความลงแชท AI เพื่อขอให้ช่วยร่าง สรุป หรือแปล ข้อความนั้นมักมีเลขบัตรประชาชน ชื่อ เบอร์โทร หรือที่อยู่ติดไปด้วยโดยไม่ทันสังเกต
+      และข้อความที่ส่งออกไปแล้วเรียกคืนไม่ได้ AI Guard คั่นอยู่ตรงกลาง
+      ตรวจจับและปกปิดข้อมูลส่วนบุคคลก่อนที่ข้อความจะออกจากเครื่อง แล้วกู้คืนกลับมาให้เฉพาะฝั่งของคุณเมื่อคำตอบส่งกลับมา
+    </p>
+
+    <div class="flow">
+      <div class="flow-box risk">
+        <div class="flow-label">ข้อความจริง</div>
+        <div class="flow-sub">มีชื่อ เลขบัตร เบอร์โทร ที่อยู่</div>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box guard">
+        <div class="flow-label">AI Guard ปกปิด</div>
+        <div class="flow-sub">ตรวจจับแล้วแทนที่ด้วยโทเคนหรือข้อมูลสมมุติ</div>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box llm">
+        <div class="flow-label">โมเดลภาษา (LLM)</div>
+        <div class="flow-sub">เห็นเฉพาะข้อความที่ปกปิดแล้ว</div>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box restore">
+        <div class="flow-label">กู้คืน</div>
+        <div class="flow-sub">แทนที่กลับเฉพาะฝั่งของคุณ</div>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">
+        <div class="flow-label">คำตอบ</div>
+        <div class="flow-sub">ครบถ้วน ไม่มีข้อมูลจริงหลุดออกไป</div>
+      </div>
+    </div>
+    <p class="flow-caption">
+      ข้อมูลจริงไม่เคยเดินทางจากขั้นตอน "AI Guard ปกปิด" ไปถึงขั้นตอน "โมเดลภาษา" โมเดลปลายทางเห็นแต่โทเคนหรือข้อมูลสมมุติเท่านั้น
+      ลองด้วยตัวเองได้ในส่วนถัดไป
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════ 2. ลองของจริง ═══════════════ -->
+<section id="demo">
+  <div class="container">
+    <p class="eyebrow">ทดลองใช้งาน</p>
+    <h2 class="section-title">ลองของจริง</h2>
+    <p class="section-sub">
+      พิมพ์ข้อความของคุณเอง หรือกดเลือกตัวอย่างด้านล่าง ระบบตรวจจับข้อมูลส่วนบุคคลสดขณะพิมพ์
+      แล้วกดส่งเพื่อดูวงจรเต็มรูปแบบ ปกปิด ส่งเข้า AI แล้วกู้คืนกลับมา
+    </p>
+
+    <div class="samples">
+      <span class="samples-label">ตัวอย่าง</span>
+      <button type="button" data-sample="เรียนหัวหน้างาน ผมชื่อ นายสมชาย ใจดี ขอลาป่วยวันนี้ ติดต่อกลับได้ที่ 081-234-5678 หรือ somchai.j@example.com ครับ">อีเมลลาป่วย</button>
+      <button type="button" data-sample="ผู้ป่วยชื่อ นางสาวมนัสนันท์ วงศ์สว่าง เลขบัตรประชาชน 1-1017-00230-70-8 เกิดวันที่ 12 มีนาคม 2534 มีอาการแพ้ยาปฏิชีวนะ นัดติดตามอาการที่โรงพยาบาลสงขลานครินทร์">เวชระเบียน</button>
+      <button type="button" data-sample="ขอเชิญ นายวีรภัทร ตั้งตระกูล บ้านเลขที่ 99/12 ถนนกาญจนวณิชย์ ตำบลหาดใหญ่ อำเภอหาดใหญ่ จังหวัดสงขลา 90110 เข้าร่วมประชุมประชาคม โทร 074-123-456">หนังสือราชการ</button>
+    </div>
+
+    <div class="controls">
+      <label class="field">รูปแบบการปกปิด
+        <select id="mode">
+          <option value="token">โทเคน เช่น [ชื่อ_1]</option>
+          <option value="surrogate">ข้อมูลสมมุติ (อ่านเป็นธรรมชาติ)</option>
+        </select>
+      </label>
+      <span class="dest-badge">โมเดลปลายทาง <b>Tokenmind thaillm-8b</b></span>
+      <button id="send" class="primary" type="button">ส่งเข้า AI อย่างปลอดภัย</button>
+    </div>
+
+    <div class="panes">
+      <section class="pane">
+        <h3>1. ข้อความของคุณ (ตรวจจับสดขณะพิมพ์)</h3>
+        <div id="editorWrap">
+          <div id="highlight" aria-hidden="true"></div>
+          <textarea id="editor" spellcheck="false" placeholder="พิมพ์ที่นี่..."></textarea>
+        </div>
+      </section>
+      <section class="pane">
+        <h3>2. สิ่งที่ AI เห็นจริง ๆ</h3>
+        <div class="body" id="masked"><span style="color:var(--dim)">ยังไม่ได้ส่ง</span></div>
+      </section>
+      <section class="pane">
+        <h3>3. คำตอบที่กู้คืนแล้ว <span id="providerTag" class="provider-tag" hidden></span></h3>
+        <div class="body" id="restored"><span style="color:var(--dim)">ยังไม่ได้ส่ง</span></div>
+      </section>
+    </div>
+
+    <div class="legend" id="legend"></div>
+    <div class="meta" id="meta"></div>
+    <div id="guardBar"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 3. หลักฐานว่าข้อมูลไม่หลุด ═══════════════ -->
+<section id="evidence">
+  <div class="container">
+    <p class="eyebrow">ตรวจสอบได้</p>
+    <h2 class="section-title">หลักฐานว่าข้อมูลไม่หลุด</h2>
+    <p class="section-sub">
+      หลังกดส่งในส่วน "ลองของจริง" ด้านบน ส่วนนี้จะแสดงสิ่งที่ออกจากเครื่องจริง ๆ แบบตัวต่อตัวอักษร ไม่ใช่คำสัญญาลอย ๆ
+    </p>
+
+    <div class="evidence-block">
+      <h3>ข้อความที่ออกจากเครื่องจริง ๆ (ส่งเข้าโมเดลปลายทาง)</h3>
+      <div class="evidence-box" id="evidenceSanitized">
+        <span class="evidence-empty" id="evidenceEmpty">ยังไม่มีข้อมูล กดปุ่ม "ส่งเข้า AI อย่างปลอดภัย" ในส่วนลองของจริงก่อน</span>
+      </div>
+    </div>
+
+    <div class="evidence-block">
+      <h3>คำเตือนจากระบบ</h3>
+      <div id="evidenceWarnings"><span class="chip ok-chip">ยังไม่มีข้อมูล</span></div>
+    </div>
+
+    <div class="disclosure">
+      เส้นทางนี้เป็น <b>stateless</b> เซิร์ฟเวอร์ไม่เก็บข้อความหรือการจับคู่ระหว่างของจริงกับข้อมูลปกปิดไว้เลย ทุกอย่างจบภายในคำขอเดียวแล้วหายไป
+      อย่างไรก็ตาม ข้อความที่ถูกปกปิดแล้ว (โดยเฉพาะโหมดข้อมูลสมมุติที่อ่านเป็นธรรมชาติ) ยังถือเป็นข้อมูลส่วนบุคคลตามกฎหมาย PDPA อยู่ดี
+      เพราะเป็นการทำให้เป็นนามแฝง (<b>pseudonymization</b>) ไม่ใช่การทำให้ไม่สามารถระบุตัวตนได้อย่างถาวร (<b>anonymization</b>)
+      เราไม่กล่าวอ้างเกินกว่าสิ่งที่ระบบทำได้จริง
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 4. เอกสาร ═══════════════ -->
+<section id="docs">
+  <div class="container">
+    <p class="eyebrow">เครื่องมือเอกสาร</p>
+    <h2 class="section-title">เอกสาร</h2>
+    <p class="section-sub">ใช้งานตรงจากเบราว์เซอร์ ไม่ต้องติดตั้งอะไรเพิ่ม</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>ทาดำ PDF</h3>
+        <p class="card-desc">
+          อัปโหลดไฟล์ PDF ระบบตรวจจับข้อมูลส่วนบุคคลแล้ววาดกล่องทึบทับตำแหน่งจริงในเอกสาร
+          รองรับทั้งไฟล์ที่มีชั้นข้อความและเอกสารสแกน (มี OCR ในตัว)
+        </p>
+        <input type="file" id="pdfFile" accept="application/pdf" hidden>
+        <button id="pdfPick" class="primary" type="button">เลือกไฟล์ PDF</button>
+        <span id="pdfStatus" class="pdfmeta"></span>
+        <div id="cmpWrap" hidden>
+          <img id="imgBefore" alt="ก่อนทาดำ">
+          <img id="imgAfter" alt="หลังทาดำ">
+          <div id="cmpBar"></div>
+          <input id="cmpSlider" type="range" min="0" max="100" value="50">
+        </div>
+        <div class="pdfmeta" id="pdfInfo"></div>
+        <div style="margin-top:12px">
+          <button id="pdfDownload" hidden type="button">ดาวน์โหลด PDF ที่ทาดำแล้ว</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>รายงาน PDPA</h3>
+        <p class="card-desc">
+          ออกรายงานความเสี่ยงตาม PDPA เป็นไฟล์ PDF ภาษาไทย จากข้อความในช่อง "ลองของจริง" ด้านบน
+          รายงานมีเฉพาะคะแนน เกรด และจำนวนที่พบตามหมวด ไม่มีข้อความจริงหรือค่าข้อมูลอยู่ในไฟล์
+        </p>
+        <button id="reportBtn" class="primary" type="button">ออกรายงาน PDPA (PDF)</button>
+        <div class="pdfmeta" id="reportMeta"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 5. API + ความโปร่งใส ═══════════════ -->
+<section id="api">
+  <div class="container">
+    <p class="eyebrow">สำหรับนักพัฒนา</p>
+    <h2 class="section-title">ใช้เป็น API และความโปร่งใส</h2>
+    <p class="section-sub">เชื่อมต่อ AI Guard เข้ากับระบบของคุณเองผ่าน REST API ชุดเดียวกับที่หน้านี้ใช้งาน</p>
+
+    <div class="table-wrap">
+      <table class="endpoints">
+        <thead>
+          <tr><th>Endpoint</th><th>คำอธิบาย</th><th>ขีดจำกัด</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>POST /api/v1/detect</code></td><td>ตรวจจับข้อมูลส่วนบุคคลอย่างเดียว ไม่มี session ไม่มี vault</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
+          <tr><td><code>POST /api/v1/guard</code></td><td>ตรวจสัญญาณ prompt injection ภาษาไทย/อังกฤษ แจ้งเตือนอย่างเดียว ไม่บล็อก</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
+          <tr><td><code>POST /api/v1/roundtrip</code></td><td>ปกปิด ส่งเข้าโมเดลภาษา แล้วกู้คืน จบในคำขอเดียว แบบ stateless</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
+          <tr><td><code>POST /api/v1/redact-pdf</code></td><td>ทาดำข้อมูลส่วนบุคคลระดับตำแหน่งจริงในไฟล์ PDF รองรับทั้งไฟล์ข้อความและเอกสารสแกน</td><td>PDF ≤ 50MB และ ≤ 20 หน้า</td></tr>
+          <tr><td><code>POST /api/v1/analyze-report</code></td><td>ออกรายงานความเสี่ยง PDPA เป็นไฟล์ PDF</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
+          <tr><td><code>GET /api/v1/health</code></td><td>ตรวจสถานะบริการ</td><td>ไม่มี</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">อัตราเรียกใช้รวม 10 คำขอต่อวินาที นับรวมทุก endpoint ด้านบน</p>
+
+    <pre class="curl"><code>curl -X POST https://team08.aiforthai.in.th/api/v1/roundtrip \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "เรียนหัวหน้างาน ผมชื่อ นายสมชาย ใจดี ติดต่อกลับได้ที่ 081-234-5678 ครับ",
+    "mode": "token",
+    "provider": "tokenmind"
+  }'</code></pre>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num">F2 0.918</div>
+        <div class="lbl">บน gold set v4 (252 เอกสารสร้างขึ้น 648 entities 11 ชนิด)</div>
+      </div>
+      <div class="stat">
+        <div class="num">F2 0.914</div>
+        <div class="lbl">บน blind set ที่ไม่เคยเปิดอ่านระหว่างพัฒนา</div>
+      </div>
+    </div>
+
+    <p class="limits-note">
+      ข้อจำกัดที่พูดตรง ๆ recall ไม่ใช่ 100% เอกสารที่ไม่มีข้อมูลส่วนบุคคลอาจโดนธงผิดพลาดบ้าง เพราะระบบเลือกแนวทางเน้น recall มากกว่า precision
+      ส่วนเนื้อหาอ่อนไหวตามมาตรา 26 (สุขภาพ ศาสนา และอื่น ๆ) ระบบทำได้แค่แจ้งเตือน ไม่ปิดให้อัตโนมัติ
+    </p>
+
+    <div class="policy">
+      <p><b>นโยบายข้อมูล</b></p>
+      <p style="margin-top:8px">
+        ข้อความของคุณวิ่งผ่านเซิร์ฟเวอร์ของทีมที่วางอยู่บนโครงสร้าง NECTEC เท่านั้น และไม่ถูกเก็บไว้หลังคำขอจบ
+        เส้นทางนี้เป็น stateless การจับคู่ระหว่างของจริงกับข้อมูลปกปิดถูกส่งกลับมาพร้อมคำตอบในคำขอเดียวแล้วก็หายไป
+        log ฝั่งเราไม่มีเนื้อหาข้อความและไม่มี query string ปลายทางโมเดลภาษาคือ thaillm-8b ของ Pathumma
+      </p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    AI Guard เป็นซอฟต์แวร์โอเพนซอร์ส สัญญาอนุญาต Apache-2.0
+    <br>
+    <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction" target="_blank" rel="noopener">github.com/Teerapat-Vatpitak/thai-pii-redaction</a>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ── shared: colors, labels, escaping ── */
+const COLORS = {
+  NAME: "var(--c-name)", THAI_ID: "var(--c-id)", PHONE: "var(--c-phone)",
+  EMAIL: "var(--c-email)", ADDRESS: "var(--c-addr)", LOCATION: "var(--c-addr)",
+  DATE: "var(--c-date)", DATE_OF_BIRTH: "var(--c-date)", ORGANIZATION: "var(--c-org)",
+};
+const THAI_LABELS = {
+  NAME: "ชื่อบุคคล", THAI_ID: "เลขบัตรประชาชน", PHONE: "เบอร์โทรศัพท์",
+  EMAIL: "อีเมล", ADDRESS: "ที่อยู่", LOCATION: "สถานที่", DATE: "วันที่",
+  DATE_OF_BIRTH: "วันเกิด", ORGANIZATION: "องค์กร", BANK_ACCOUNT: "เลขบัญชี",
+  CREDIT_CARD: "บัตรเครดิต", PASSPORT: "หนังสือเดินทาง", ID_NUMBER: "เลขอ้างอิง",
+  STUDENT_ID: "รหัสนักศึกษา", VEHICLE_PLATE: "ทะเบียนรถ", IBAN: "IBAN",
+};
+const colorFor = t => COLORS[t] || "var(--c-other)";
+const labelFor = t => THAI_LABELS[t] || t;
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function errorMessage(status, detail, kind) {
+  if (status === 503) return "บริการ LLM ยังไม่พร้อม (คีย์ไม่ถูกตั้งค่า)";
+  if (status === 429) return "คำขอถี่เกินไป ลองใหม่";
+  if (status === 413) return kind === "pdf" ? "ไฟล์/จำนวนหน้าเกินเพดาน" : "ข้อความยาวเกินเพดาน";
+  return detail || ("เกิดข้อผิดพลาด (" + status + ")");
+}
+
+async function safeJson(r) {
+  try { return await r.json(); } catch { return {}; }
+}
+function detailText(body) {
+  if (typeof body.detail === "string") return body.detail;
+  if (body.detail) return JSON.stringify(body.detail);
+  return "";
+}
+
+function downloadB64(b64, name, mime) {
+  const bytes = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], {type: mime}));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── demo: editor + live detect ── */
+const editor = document.getElementById("editor");
+const highlight = document.getElementById("highlight");
+const meta = document.getElementById("meta");
+let debounceTimer = null;
+
+function renderHighlight(text, entities) {
+  const sorted = [...entities].sort((a, b) => b.start - a.start);
+  const parts = [];
+  let cursor = text.length;
+  for (const e of sorted) {
+    if (e.end > cursor) continue; // กัน span ซ้อน (server dedupe แล้ว แต่กันไว้)
+    parts.unshift({text: text.slice(e.end, cursor)});
+    parts.unshift({text: text.slice(e.start, e.end), type: e.data_type});
+    cursor = e.start;
+  }
+  parts.unshift({text: text.slice(0, cursor)});
+  const html = parts.map(p => p.type
+    ? `<mark style="background:${colorFor(p.type)}" title="${esc(labelFor(p.type))}">${esc(p.text)}</mark>`
+    : esc(p.text)).join("");
+  highlight.innerHTML = html + "\n";
+}
+
+function renderLegend(counts) {
+  const legend = document.getElementById("legend");
+  legend.innerHTML = Object.entries(counts).map(([t, n]) =>
+    `<span><i class="dot" style="background:${colorFor(t)}"></i>${esc(labelFor(t))} (${n})</span>`
+  ).join("");
+}
+
+async function detectNow() {
+  const text = editor.value;
+  if (!text.trim()) {
+    highlight.textContent = "";
+    renderLegend({});
+    meta.textContent = "";
+    document.getElementById("guardBar").innerHTML = "";
+    return;
+  }
+  try {
+    const r = await fetch("/api/detect", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text}),
+    });
+    if (!r.ok) return;
+    const body = await r.json();
+    renderHighlight(text, body.entities);
+    renderLegend(body.entity_type_counts);
+    meta.textContent = `พบข้อมูลส่วนบุคคล ${body.entities.length} รายการ`;
+    try {
+      const gr = await fetch("/api/guard", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text}),
+      });
+      if (gr.ok) {
+        const gb = await gr.json();
+        const bar = document.getElementById("guardBar");
+        bar.innerHTML = gb.flagged
+          ? '<span class="guard-ok">ตรวจ prompt injection</span> '
+            + gb.guard.map(g => `<span class="chip guard-chip" title="${esc(g.rationale)}">${esc(g.category)}</span>`).join("")
+          : '<span class="guard-ok">ตรวจ prompt injection ไม่พบสัญญาณ</span>';
+      }
+    } catch { /* เครือข่ายล้ม ปล่อย */ }
+  } catch { /* เครือข่ายล้ม ปล่อยรอบถัดไป */ }
+}
+
+editor.addEventListener("input", () => {
+  highlight.textContent = editor.value;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(detectNow, 400);
+});
+editor.addEventListener("scroll", () => {
+  highlight.scrollTop = editor.scrollTop;
+  highlight.scrollLeft = editor.scrollLeft;
+});
+
+document.querySelectorAll(".samples button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    editor.value = btn.dataset.sample;
+    editor.dispatchEvent(new Event("input"));
+  });
+});
+
+/* ── demo: send roundtrip (provider hard-coded to tokenmind) ── */
+function warningLabel(w) {
+  const m = /^foreign_tokens:(\d+)$/.exec(w);
+  if (m) return `โทเคนแปลกปลอม ${m[1]} จุด`;
+  return w;
+}
+
+function fillEvidence(body) {
+  document.getElementById("evidenceSanitized").textContent = body.sanitized_text;
+  const wrap = document.getElementById("evidenceWarnings");
+  wrap.innerHTML = (body.warnings && body.warnings.length)
+    ? body.warnings.map(w => `<span class="chip warn-chip">${esc(warningLabel(w))}</span>`).join("")
+    : '<span class="chip ok-chip">ไม่พบคำเตือน</span>';
+}
+
+document.getElementById("send").addEventListener("click", async () => {
+  const text = editor.value;
+  if (!text.trim()) return;
+  const btn = document.getElementById("send");
+  const masked = document.getElementById("masked");
+  const restored = document.getElementById("restored");
+  const tag = document.getElementById("providerTag");
+  btn.disabled = true;
+  tag.hidden = true;
+  tag.textContent = "";
+  masked.textContent = "กำลังปกปิด...";
+  restored.textContent = "กำลังรอคำตอบ...";
+  try {
+    const r = await fetch("/api/roundtrip", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text, mode: document.getElementById("mode").value, provider: "tokenmind"}),
+    });
+    const body = await safeJson(r);
+    if (!r.ok) {
+      masked.innerHTML = `<span class="warn">ส่งไม่สำเร็จ ${esc(errorMessage(r.status, detailText(body), "text"))}</span>`;
+      restored.innerHTML = '<span class="warn">ยังไม่มีคำตอบให้กู้คืน</span>';
+      return;
+    }
+    masked.textContent = body.sanitized_text;
+    restored.textContent = body.restored_text;
+    tag.textContent = body.provider_used || "tokenmind";
+    tag.hidden = false;
+    meta.innerHTML = (body.warnings && body.warnings.length)
+      ? `<span class="warn">คำเตือน ${esc(body.warnings.join(" | "))}</span>`
+      : `ประมวลผล ${body.entities.length} รายการ ข้อมูลจริงไม่ถูกส่งต่อไปยังโมเดลปลายทาง`;
+    fillEvidence(body);
+  } catch (err) {
+    masked.innerHTML = `<span class="warn">เชื่อมต่อ backend ไม่ได้ ${esc(String(err))}</span>`;
+    restored.innerHTML = '<span class="warn">ยังไม่มีคำตอบให้กู้คืน</span>';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ── docs: PDF redact tool ── */
+const pdfFile = document.getElementById("pdfFile");
+let redactedB64 = null;
+let redactedName = "redacted.pdf";
+document.getElementById("pdfPick").addEventListener("click", () => pdfFile.click());
+pdfFile.addEventListener("change", async () => {
+  const f = pdfFile.files[0];
+  if (!f) return;
+  const status = document.getElementById("pdfStatus");
+  status.textContent = "กำลังประมวลผล...";
+  document.getElementById("pdfDownload").hidden = true;
+  document.getElementById("cmpWrap").hidden = true;
+  document.getElementById("pdfInfo").textContent = "";
+  const fd = new FormData();
+  fd.append("pdf_file", f);
+  try {
+    const r = await fetch("/api/redact-pdf", {method: "POST", body: fd});
+    const body = await safeJson(r);
+    if (!r.ok) {
+      status.textContent = errorMessage(r.status, detailText(body), "pdf");
+      return;
+    }
+    document.getElementById("imgBefore").src = "data:image/png;base64," + body.before_png_b64;
+    document.getElementById("imgAfter").src = "data:image/png;base64," + body.after_png_b64;
+    document.getElementById("cmpWrap").hidden = false;
+    redactedB64 = body.redacted_pdf_b64;
+    redactedName = "redacted_" + (body.filename || "document.pdf");
+    const s26 = (body.section26 && body.section26.length)
+      ? " ธงมาตรา 26 " + body.section26.map(s => s.category).join(" ")
+      : "";
+    const reviewNote = body.human_review ? " ต้องตรวจสอบเพิ่มเติม (ความมั่นใจ OCR ต่ำ)" : "";
+    document.getElementById("pdfInfo").textContent =
+      `ปกปิด ${body.entity_count} รายการ (แสดงหน้าแรกเป็นภาพเปรียบเทียบ ลากเส้นเพื่อดูก่อนหลัง)` + s26 + reviewNote;
+    document.getElementById("pdfDownload").hidden = false;
+    status.textContent = "";
+  } catch (err) {
+    status.textContent = "เชื่อมต่อ backend ไม่ได้ " + String(err);
+  }
+});
+document.getElementById("cmpSlider").addEventListener("input", e => {
+  const v = e.target.value;
+  document.getElementById("imgAfter").style.clipPath = `inset(0 0 0 ${v}%)`;
+  document.getElementById("cmpBar").style.left = v + "%";
+});
+document.getElementById("pdfDownload").addEventListener("click", () => {
+  if (redactedB64) downloadB64(redactedB64, redactedName, "application/pdf");
+});
+
+/* ── docs: PDPA report ── */
+document.getElementById("reportBtn").addEventListener("click", async () => {
+  const text = editor.value;
+  const reportMeta = document.getElementById("reportMeta");
+  if (!text.trim()) {
+    reportMeta.textContent = "กรุณาใส่ข้อความในส่วนลองของจริงด้านบนก่อน";
+    return;
+  }
+  const btn = document.getElementById("reportBtn");
+  btn.disabled = true;
+  reportMeta.textContent = "กำลังออกรายงาน...";
+  try {
+    const r = await fetch("/api/analyze-report", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text}),
+    });
+    const body = await safeJson(r);
+    if (!r.ok) {
+      reportMeta.innerHTML = `<span class="warn">ออกรายงานไม่สำเร็จ ${esc(errorMessage(r.status, detailText(body), "text"))}</span>`;
+      return;
+    }
+    downloadB64(body.report_pdf_b64, "pdpa_report.pdf", "application/pdf");
+    reportMeta.textContent = `ออกรายงานแล้ว คะแนนรวม ${body.overall_score} เกรด ${body.overall_grade}`;
+  } catch (err) {
+    reportMeta.textContent = "เชื่อมต่อ backend ไม่ได้ " + String(err);
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
