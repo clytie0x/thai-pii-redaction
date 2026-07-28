@@ -38,12 +38,13 @@
    10 นาที (5465 ok, 0 5xx/err) + restart recovery + limit verification 24 สาย (124×429, 0 5xx)
    + soak เบา tokenmind 2 สาย 120s (222 ok, 0 5xx) + log 0 PII. checklist ก-ฌ + ช + ซ ผ่านครบ
 2. ~~commit port repo~~ (smoke.py knob + `docs/evidence/checklist-results.md` + STATE) — commit รอบนี้
-3. **ปิดเฟส (task 16) — ติด PR #101 ยังไม่ merge**: ADR เลข tokenmind detector — verify แล้ว
-   report `benchmark/reports/llm-tokenmind-thaillm8b-gold-v4.json` มีจริง R0.960/P0.917/F2 0.951
-   gold v4 252 docs / 648 entities, failed 0 + อัปเดต `docs/platform/ai-for-thai.md` /
-   `docs/project-status.md` / ROADMAP ชี้ port repo — ทำบน branch ใหม่ **หลัง #101 merge เท่านั้น**
-4. รายงานเจ้าของ: ให้ merge PR #101 (unblock task 16) + คำตอบแบบสำรวจ (รอกรอก/ส่งเอง)
-   + การตัดสินใจช่อง ASR
+3. ~~ปิดเฟส (task 16)~~ **เสร็จ 29 ก.ค.** — #101 merge แล้ว (`71b7120`) จึงทำต่อบน branch
+   `docs/aift-port-and-tokenmind-adr` ของ upstream เปิดเป็น **PR #102 (CI เขียวครบ 11 checks
+   รอเจ้าของ merge)** เนื้อ: ADR `docs/decisions/2026-07-28-tokenmind-detector-and-aift-port.md`
+   (เลข tokenmind detector gold v4 R0.960/P0.917/F2 0.951 **บวก negative slice FP 42 สะอาด
+   0.333 เทียบ rule+CRF 33 / 0.400** ซึ่งร่างแรกไม่ได้รายงาน + กฎห้ามยก F2 เดี่ยว ๆ) และการ
+   ตัดสินใจแยก repo พอร์ต + sync ROADMAP / project-status / ai-for-thai
+4. รายงานเจ้าของ: merge PR #102 + คำตอบแบบสำรวจ (รอกรอก/ส่งเอง) + การตัดสินใจช่อง ASR
 
 ## กติกาที่ห้ามลืม
 
