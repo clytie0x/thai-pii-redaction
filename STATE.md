@@ -1,7 +1,8 @@
-# สถานะงาน (29 ก.ค. 2569 — soak เฟส local เสร็จ)
+# สถานะงาน (29 ก.ค. 2569 — พร้อม push ครั้งแรก รอเจ้าของสั่ง)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-(อนุมัติแล้ว รวมข้อแก้จาก Codex) — เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
+เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
+ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
 
 ## เสร็จแล้ว (มีหลักฐาน)
 
@@ -9,48 +10,51 @@
   offline inference ได้, build เย็น 270s / spike image 2.74GB / RSS 910MB
 - **E1-E5 จบ**: สรุป + คำตอบแบบสำรวจอยู่ `docs/evidence/e0-e5-results.md`
   (Text ✓, Vision ✗, GPU ไม่มี, ASR = เจ้าของเลือก — เลขถอดเป็นคำอ่านไทย e4_report.json)
-- **Upstream PR #101** (branch `feat/hosted-readiness`, 2 commits ถึง 46c1f9a):
-  6 จุด (ALLOWED_HOSTS / PROVIDERS / header fix / audit boot check / AUDIT_STDOUT /
-  PDF+text caps + sanitize error) + tests/test_hosted_readiness.py 18 เทส —
-  **CI เขียวครบ 11 checks รอเจ้าของ merge**
-- **Port repo นี้** ประกอบครบ: sync (SHA-256 manifest + LF normalize + --check ผ่าน,
-  vendor จาก upstream commit `46c1f9a`), core/Dockerfile (OCR baked, UVICORN_WORKERS),
-  api/ (nginx exact allowlist + /v1 + noquery + key inject, digest จริงตรวจแล้ว),
-  web/index.html (ห้าฉาก tokenmind-only), docker-compose.yml, .gitlab-ci.yml
-  (check+deploy+acceptance+ops), README, docs/DEPLOY-DESIGN.md (v2), tests/smoke.py
-- **Checklist ผ่านแล้ว**: ก ข(roundtrip tokenmind จริงผ่าน nginx) ค ง จ ฉ ฌ(OCR
-  ใน container: pdf_hybrid, 2 entities, conf 0.993, 95.4s) — evidence
-  `tests/out/smoke-20260728T170908Z.json` — ช.1 (compose fail-loud) ✓,
-  ช.2 (ถอด key → 503 "TOKENMIND_API_KEY is not set") ✓
-- core image: `team08-core` 2.94GB, build 213s (อุ่นบางส่วนจาก spike layers)
+- **Upstream PR #101 merge แล้ว** (`71b7120`) และ PR #102 (ADR tokenmind + port) ตามมา
+- **Port repo นี้** ประกอบครบ: sync (SHA-256 manifest + LF normalize), core/Dockerfile
+  (OCR baked, UVICORN_WORKERS), api/ (nginx exact allowlist + /v1 + noquery + key inject),
+  web/index.html (ห้าฉาก tokenmind-only), docker-compose.yml, .gitlab-ci.yml, README,
+  docs/DEPLOY-DESIGN.md (v2), tests/smoke.py
+- **Checklist ก-ฌ + ช + ซ ผ่านครบ** — evidence `docs/evidence/checklist-results.md`
+  (soak fake 8 สาย 10 นาที 5465 ok 0 5xx, restart recovery, limit 124×429,
+  soak tokenmind 2 สาย 222 ok, log 0 PII)
 
-## สถานะรันไทม์ตอนนี้
+## เสร็จรอบ 29 ก.ค. เย็น — ปิดช่องว่าง "CI ไม่เคยรันจริง"
 
-- stack `-p team08` อยู่ config deployment ครบ: core `AIGUARD_PROVIDERS=tokenmind` + key จริง,
-  ทั้งสาม service healthy — พร้อมเป็น service (ไม่มี override ค้าง)
-- ถ้าต้องรัน soak fake อีก: `docker compose -p team08 -f docker-compose.yml -f tests/docker-compose.soak-override.yml up -d core`
-  แล้วคืนด้วย `docker compose -p team08 up -d core` (ไม่มี -f) — ต้อง set `$env:APP_AIGUARD_API_KEY`
-  + `$env:APP_TOKENMIND_API_KEY=$env:TOKENMIND_API_KEY` ก่อนทุกครั้ง
+หลักฐานเก่าทั้งหมดมาจาก `tests/smoke.py` ที่รันบน Windows ด้วย venv ซึ่งยิงคำสั่ง
+**เทียบเท่า** ที่ CI ทำ ไม่ใช่ตัวที่ CI จะรัน ช่องนี้ปิดแล้ว
 
-## เหลือ (ตามลำดับ)
+- **S0 spike** (`tests/out/s0-runner-simulation.json`) socket mount ถึง daemon ของ host ได้
+  `--network host` บน Docker Desktop เข้าถึงพอร์ตที่ publish บน 127.0.0.1 ได้
+  และ shell ของ job คือ `/bin/busybox` ไม่มี bash
+  **ข้อสันนิษฐานในสเปกสองข้อผิด** BusyBox build นี้รองรับ process substitution และ
+  `grep -E` รับ `\s` ได้ check stage จึงไม่ต้องเขียนใหม่ (บันทึกไว้แทนที่จะเงียบ)
+- **S1 re-sync** หมุดขยับ `46c1f9a` → `00b3ffe` (62 ไฟล์) หมุดเก่าเก่ากว่างานแก้ shaping
+  แปลว่า `core/requirements.lock` ไม่มี uharfbuzz และ `/analyze-report` อยู่ใน allowlist
+  ถ้า deploy ด้วยหมุดเก่า รายงาน PDPA ที่ผู้ใช้โหลดจะวรรณยุกต์เพี้ยนทั้งฉบับ
+- **S2 `tests/nginx_contract.py`** อยู่ใน check stage จริง (ไม่ใช่เครื่องมือ local)
+  ยืนยันห้าข้อบน `api/Dockerfile` ตัวจริงกับ stub core ที่สะท้อน path + key กลับมา
+  พิสูจน์แล้วว่าจับพังได้ เปลี่ยน `location =` เป็น prefix match แล้ว `/detectx` ทะลุถึง core
+  และเทสแดงทั้งสองข้อ
+- **S3 `tests/run_ci_local.py`** รัน job จริงในอิมเมจจริง **ผ่านครบสาม job**
+  check 12.9s / deploy 167.2s / acceptance 4.7s (ยิง thaillm-8b จริง ด้วย PII สังเคราะห์)
+  deploy รอบนี้ยังพิสูจน์ว่า lock ใหม่ build ได้ uharfbuzz ลงในอิมเมจเรียบร้อย
 
-1. ~~ซ soak~~ **เสร็จ 29 ก.ค.** — ผลอยู่ `docs/evidence/checklist-results.md`: soak หลัก fake 8 สาย
-   10 นาที (5465 ok, 0 5xx/err) + restart recovery + limit verification 24 สาย (124×429, 0 5xx)
-   + soak เบา tokenmind 2 สาย 120s (222 ok, 0 5xx) + log 0 PII. checklist ก-ฌ + ช + ซ ผ่านครบ
-2. ~~commit port repo~~ (smoke.py knob + `docs/evidence/checklist-results.md` + STATE) — commit รอบนี้
-3. ~~ปิดเฟส (task 16)~~ **เสร็จ 29 ก.ค.** — #101 merge แล้ว (`71b7120`) จึงทำต่อบน branch
-   `docs/aift-port-and-tokenmind-adr` ของ upstream เปิดเป็น **PR #102 (CI เขียวครบ 11 checks
-   รอเจ้าของ merge)** เนื้อ: ADR `docs/decisions/2026-07-28-tokenmind-detector-and-aift-port.md`
-   (เลข tokenmind detector gold v4 R0.960/P0.917/F2 0.951 **บวก negative slice FP 42 สะอาด
-   0.333 เทียบ rule+CRF 33 / 0.400** ซึ่งร่างแรกไม่ได้รายงาน + กฎห้ามยก F2 เดี่ยว ๆ) และการ
-   ตัดสินใจแยก repo พอร์ต + sync ROADMAP / project-status / ai-for-thai
-4. รายงานเจ้าของ: merge PR #102 + คำตอบแบบสำรวจ (รอกรอก/ส่งเอง) + การตัดสินใจช่อง ASR
+## เหลือ — ทั้งหมดเป็นงานที่ออกนอกเครื่อง เจ้าของทำเอง
+
+1. สร้าง project บน `gitlab.nectec.or.th` ใน group ของทีม
+2. ตั้ง CI/CD Variables **ก่อน** push ครั้งแรก `APP_AIGUARD_API_KEY` +
+   `APP_TOKENMIND_API_KEY` ติ๊ก Masked ทั้งคู่
+3. `git remote add origin ...` แล้ว push `main` (repo นี้ยังไม่มี remote เลย)
+4. ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
+5. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
+
+ลำดับเต็มพร้อมกับดักอยู่ที่ `docs/DEPLOY-DAY.md`
 
 ## กติกาที่ห้ามลืม
 
-- Codex ถามเฉพาะเมื่อเจ้าของสั่ง (memory: codex-only-on-command)
 - ไม่มี provider จำลองบน deployment / ไม่มีเดโมสำรอง — service จริงเท่านั้น
 - pseudonymized-มี-vault ยังเป็นข้อมูลส่วนบุคคล — ห้ามเคลมเกิน
 - ห้ามเคลมสาธารณะ "benchmark เดียวของไทย"
-- deploy ขึ้น GitLab = รอคำสั่งเจ้าของเท่านั้น (สร้าง project ใน group team-08 ได้เอง
-  เมื่อสั่ง — สิทธิ์ Maintainer มีแล้ว)
+- deploy ขึ้น GitLab = รอคำสั่งเจ้าของเท่านั้น (สิทธิ์ Maintainer มีแล้ว)
+- ตัวเลขเวลาจากเครื่องนี้บอกลำดับความใหญ่ ไม่ใช่คำรับประกันบน runner ของผู้จัด
