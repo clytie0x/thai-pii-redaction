@@ -25,6 +25,13 @@ check:
   script:
     # vendored slice must match the recorded upstream commit exactly
     - python3 sync/sync_from_upstream.py --check
+    # the api proxy IS the security boundary here — prefix re-add, the exact
+    # allowlist that withholds the vault-bearing routes, key injection, and a
+    # query-string-free log. Checked before deploy, against the real
+    # api/Dockerfile, with a stub standing in for core. Publishes a port and
+    # curls 127.0.0.1, the same assumption the organizer's deploy job below
+    # already makes.
+    - python3 tests/nginx_contract.py
     - |
       LO=$BASE; HI=$((BASE+9)); FAIL=0
 
