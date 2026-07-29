@@ -71,9 +71,31 @@ python sync/sync_from_upstream.py --from ../thai-pii-redaction
 python sync/sync_from_upstream.py --check
 ```
 
+## ซ้อม pipeline ก่อน push จริง
+
+`.gitlab-ci.yml` รันบน `docker:27.3.1` ซึ่ง shell คือ BusyBox ash ไม่ใช่ bash
+(`apk add bash` ใน `before_script` เปลี่ยนไม่ได้ เพราะ runner เลือก shell ตอน
+เริ่ม container) ของที่พิสูจน์บน Windows ด้วย venv จึงไม่ได้พิสูจน์สิ่งที่ CI
+จะเจอ `tests/run_ci_local.py` ปิดช่องนั้นด้วยการรัน job จริงในอิมเมจจริง
+
+```bash
+python tests/run_ci_local.py --job check      # เร็ว ไม่ต้องมี secret
+python tests/run_ci_local.py --all            # check + deploy + acceptance
+python tests/run_ci_local.py --job deploy --cold   # จับเวลา build เย็น (ทำเป็นอย่างสุดท้าย)
+```
+
+`deploy` กับ `acceptance` ต้องมี `APP_AIGUARD_API_KEY` และ
+`APP_TOKENMIND_API_KEY` ใน environment ของเครื่อง (ชื่อเดียวกับ CI/CD Variables
+ของ GitLab) ค่าไม่ถูกพิมพ์ออกและถูกแทนที่ก่อนเขียนไฟล์ผลลัพธ์เสมอ
+
+ตัวจำลองเป็นการประมาณ ไม่ใช่ runner จริง ความต่างที่รู้ตัวอยู่ใน docstring
+ของสคริปต์ ส่วน `tests/nginx_contract.py` ไม่ใช่ตัวจำลอง มันอยู่ใน check stage
+จริงและรันบน runner ด้วย
+
 ## Deploy
 
-push ขึ้น `main` → pipeline `check` (กติกา compose + vendored integrity) →
+push ขึ้น `main` → pipeline `check` (กติกา compose + vendored integrity +
+สัญญาของ nginx proxy) →
 `deploy` (build + up + รอ healthcheck) → `acceptance` (ยิง PII สังเคราะห์ผ่าน
 ทั้งสาย พิสูจน์ mask ขาออก/restore ขาเข้า/allowlist) → manual ops
 (logs/ps/restart/shell-cmd) ใช้แทน SSH
