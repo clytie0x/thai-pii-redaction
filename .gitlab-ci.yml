@@ -98,21 +98,50 @@ acceptance:
     - |
       set -e
       BODY='{"text":"ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678","mode":"token","provider":"tokenmind"}'
-      R=$(curl -fsS -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
-            -H 'Content-Type: application/json' -d "$BODY")
-      echo "$R" | jq -e '.provider_used == "tokenmind"' >/dev/null
+      # 3 attempts, transport/5xx only: the gateway's latency swings are a
+      # measured fact (p95 2.0s..9.2s, same config). A real misconfiguration
+      # (key never reached the container -> 503) fails all three and stays red.
+      R=""
+      for i in 1 2 3; do
+        R=$(curl -fsS -m 90 -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
+              -H 'Content-Type: application/json' -d "$BODY") && break
+        echo "roundtrip attempt $i failed (transport or 5xx)"
+        [ "$i" = 3 ] && { echo "roundtrip failed after 3 attempts"; exit 1; }
+        sleep 10
+      done
+      echo "$R" | jq -e '.provider_used == "tokenmind"' >/dev/null || { echo "provider_used != tokenmind"; exit 1; }
       SAN=$(echo "$R" | jq -r '.sanitized_text')
+      MASKED=$(echo "$R" | jq -r '.ai_response_masked')
+      RESTORED=$(echo "$R" | jq -r '.restored_text')
       case "$SAN" in
         *0812345678*|*081-234-5678*) echo "RAW PHONE LEAKED IN OUTBOUND TEXT"; exit 1 ;;
       esac
       case "$SAN" in
         *สมชาย*) echo "RAW NAME LEAKED IN OUTBOUND TEXT"; exit 1 ;;
       esac
-      echo "$R" | jq -r '.restored_text' | grep -q "081-234-5678"
-      echo "acceptance ok: masked outbound, restored inbound, real provider"
+      # deterministic duties of THIS service: both fixture values detected,
+      # and no token survives restoration.
+      NAME_TOKEN=$(echo "$R" | jq -r '[.entities[] | select(.data_type=="NAME") | .token][0] // empty')
+      PHONE_TOKEN=$(echo "$R" | jq -r '[.entities[] | select(.data_type=="PHONE") | .token][0] // empty')
+      [ -n "$NAME_TOKEN" ] || { echo "NO NAME ENTITY DETECTED"; exit 1; }
+      [ -n "$PHONE_TOKEN" ] || { echo "NO PHONE ENTITY DETECTED"; exit 1; }
+      for t in $(echo "$R" | jq -r '.entities[].token'); do
+        case "$RESTORED" in *"$t"*) echo "TOKEN RESIDUE IN RESTORED TEXT: $t"; exit 1 ;; esac
+      done
+      # what the LLM controls is asserted conditionally: thaillm-8b repeats a
+      # token only when its answer has a reason to (echo measured 19/25 at
+      # temp 0.0; the 2026-08-03 local run caught a live miss). A token must
+      # round-trip to its original only IF the model actually said it back.
+      case "$MASKED" in *"$NAME_TOKEN"*)
+        case "$RESTORED" in *สมชาย*) : ;; *) echo "NAME TOKEN ECHOED BUT NOT RESTORED"; exit 1 ;; esac ;;
+      esac
+      case "$MASKED" in *"$PHONE_TOKEN"*)
+        case "$RESTORED" in *081-234-5678*) : ;; *) echo "PHONE TOKEN ECHOED BUT NOT RESTORED"; exit 1 ;; esac ;;
+      esac
+      echo "acceptance ok: masked outbound, no residue, echoed tokens restored, real provider"
       # allowlist: excluded paths must not exist
-      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/sanitize -X POST -H 'Content-Type: application/json' -d '{"text":"x"}')" = "404" ]
-      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/docs)" = "404" ]
+      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/sanitize -X POST -H 'Content-Type: application/json' -d '{"text":"x"}')" = "404" ] || { echo "/sanitize escaped the allowlist"; exit 1; }
+      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/docs)" = "404" ] || { echo "/docs escaped the allowlist"; exit 1; }
       echo "allowlist ok"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
