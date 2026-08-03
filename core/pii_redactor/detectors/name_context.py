@@ -16,9 +16,16 @@ from __future__ import annotations
 
 import re
 import uuid
+from difflib import SequenceMatcher
 
 from pythainlp.tokenize import word_tokenize
 
+# The document/form-compound list `_name_hygiene` rejects a CRF NAME span on.
+# Imported, not copied, so the two rules cannot drift apart -- a form header
+# this module admitted as a glued name would be rejected one layer later
+# anyway. Safe at module scope: tb_detector imports name_context only inside
+# function bodies, so this direction closes no cycle (verified both ways).
+from pii_redactor.detectors.tb_detector import _NAME_DOC_COMPOUND_RE
 from pii_redactor.models import Entity
 
 # Titles that, as standalone tokens, almost always precede a person name.
@@ -100,6 +107,16 @@ _NOT_NAME = {
 
 _NOT_NAME |= {"เลขที่", "หนังสือเดินทาง", "ลายมือชื่อ", "รายการ", "เงื่อนไข"}
 
+# Form-label nouns and the standard letter closing that `_name_hygiene`'s
+# tail-segment gate leaked as NAME entities (measured: 12 gold false positives
+# and the HR-letter/A-B repros in the branch's final review). Each entry is the
+# LEADING newmm token of a measured false-positive segment --
+# "เลขประจำตัว"(ประชาชน) x4, "ตำแหน่ง", "อาชีพ" -- except the last, which newmm
+# keeps whole: "ขอแสดงความนับถือ" is the exact string the direct-cue space veto
+# further down was written to stop, and segmentation let it back in through a
+# different door. Compounds/whole tokens only, never prefixes.
+_NOT_NAME |= {"เลขประจำตัว", "ตำแหน่ง", "อาชีพ", "ขอแสดงความนับถือ"}
+
 # Verbs/functional tokens that begin prose, never a Thai given name. Exact
 # whole-token matches only — a prefix rule would kill real names (การุณ).
 _LEAD_STOP = {
@@ -127,6 +144,10 @@ _LEAD_STOP = {
     "ประสงค์",
     "ทุก",
     "ราย",
+    # Second-person honorific opening a sentence to the reader
+    # ("ท่านมียอดค้างชำระ" -- a measured gold NAME false positive through
+    # `_name_hygiene` segmentation). Never a Thai given name.
+    "ท่าน",
 }
 _ACCOUNT_TYPES = {"ออมทรัพย์", "กระแสรายวัน", "ฝากประจำ"}
 
@@ -165,7 +186,37 @@ _ROLE_LINKERS = {"คือ", "ชื่อ", "ได้แก่"}
 
 # Bare "ชื่อ" as a field label: only at line start, only with a delimiter, so
 # it cannot fire inside ชื่อบัญชี/ชื่อบริษัท or mid-sentence prose.
-_LINE_NAME_LABEL_RE = re.compile(r"(?m)^[ \t]*ชื่อ(?:-นามสกุล)?[ \t:：]+")
+#
+# The delimiter also admits a LINE BREAK. OCR of a government form puts the
+# field label on its own physical line and its value on the next one
+# ("…\nชื่อ\nพิมพ์ใจ แสนดี\n…", reproduced from ภ.ง.ด.91), so a horizontal-only
+# delimiter class made the label vouch for nothing. The delimiter itself stays
+# mandatory -- that is what keeps ชื่อบัญชี / ชื่อบริษัท / ชื่อไฟล์ out, since a
+# Thai letter is neither a space nor a newline.
+_LINE_NAME_LABEL_RE = re.compile(r"(?m)^[ \t]*ชื่อ(?:-นามสกุล)?(?:[ \t:：]+|[ \t:：]*\r?\n)")
+# OCR can join nearby form fields on one line, so the label is allowed away
+# from the line start here — but it still has to be the WORD ชื่อ. Without the
+# lookbehind, any prose carrying one of these field words ahead of a compound
+# ending in ชื่อ ("ดูรายชื่อ สาขา ทั่วประเทศ") tags the next two words as a
+# person, which is the same trap the line-anchored pattern above avoids.
+_INLINE_NAME_LABEL_RE = re.compile(
+    r"(?m)(?:สัญชาติ|คำนำหน้า|เพศ)[^\r\n]{0,30}?(?<![ก-๛])ชื่อ(?:-นามสกุล)?[ \t:：]+"
+)
+_NON_PERSON_LEADS = {
+    "บริษัท",
+    "ห้าง",
+    "ธนาคาร",
+    "โรงพยาบาล",
+    "มหาวิทยาลัย",
+    "โรงเรียน",
+    "สำนักงาน",
+    "โรงงาน",
+    "มูลนิธิ",
+    "โครงการ",
+    "สมาคม",
+    "สหกรณ์",
+    "หน่วยงาน",
+}
 
 # "<kinship>ชื่อ <first> <last>" — คุณแม่ชื่อ สมหญิง รักไทย. The kinship word
 # is what makes bare ชื่อ a person label here; กรอกชื่อ/ระบุชื่อ stay form
@@ -241,6 +292,111 @@ def _is_name_token(tok: str) -> bool:
         and tok not in _NOT_NAME
         and tok not in _TITLES
         and tok not in _NEVER_NAME_CHARS
+    )
+
+
+# --- glued (space-deleted) Thai name runs -----------------------------------
+# OCR deletes the space inside a Thai name ("สมชาย ใจดี" -> "สมชายใจดี"), and
+# every name shape in this module and in the isolated-line retry required a
+# space or two token groups, so a glued name qualified for nothing.
+#
+# The discriminator is the TOKENIZER, not the shape: Thai given names and
+# surnames are not dictionary words, so newmm always splits a real glued name
+# into two or more pieces ("สมชายใจดี" -> สม|ชาย|ใจดี, "มาลีรักดี" -> มาลี|รัก|ดี),
+# while the prose and form nouns that sit in exactly these positions are single
+# dictionary tokens ("ขอแสดงความนับถือ" -- the standard closing of a Thai
+# official letter and the verified false positive the space veto was added for
+# -- plus ความเห็น, นายทะเบียน, จดทะเบียนสมรส, สำนักงานเขต, หมายเหตุ). The
+# stop set below covers the multi-token form/document compounds the token
+# count alone lets through.
+_GLUED_NAME_MIN_CHARS = 4
+_GLUED_NAME_MAX_CHARS = 25
+_GLUED_NAME_MAX_TOKENS = 4
+_GLUED_RUN_RE = re.compile(r"[ก-ฮเ-ไ][ก-ฮะ-์]*")
+_NON_PERSON_LEAD_PREFIXES = tuple(sorted(_NON_PERSON_LEADS))
+# Form/document nouns and grammatical particles that are never part of a person
+# name. Checked per TOKEN (not as a prefix) so a real name sharing a prefix is
+# unaffected. Each entry was observed leaking a gov-form header or a prose
+# fragment through the token-count rule above -- and each is only here because
+# it leaked: `ใบ` and `แบบ` would have covered nothing measured and would have
+# rejected the real given names `ใบเฟิร์น` / `แบบบุญมี` that tb_detector's own
+# compound rule is documented to preserve (recall > precision).
+_GLUED_RUN_STOP = {
+    "การ",
+    "ความ",
+    "ผู้",
+    "ร้องขอ",
+    "วัน",
+    "เดือน",
+    "ปี",
+    "ปีเกิด",
+    "ที่อยู่",
+    "ข้อมูล",
+    "รายละเอียด",
+    "ส่วนบุคคล",
+    "บุคคล",
+    "เงินได้",
+    "ภาษี",
+    "ภาษีเงินได้",
+    "จดทะเบียน",
+    "ทะเบียน",
+    "สาขา",
+    "ฝ่าย",
+    "แผนก",
+    "หนังสือ",
+    "คำร้อง",
+    "สำเนา",
+    "ยินยอม",
+    "ยอมให้",
+    "รับรอง",
+    "เพิ่มเติม",
+    "ชำระเงิน",
+    "ค่าธรรมเนียม",
+    "หมายเหตุ",
+}
+
+
+def is_glued_name_run(run: str) -> bool:
+    """True when a spaceless Thai run may be a name whose space OCR deleted."""
+    if not (_GLUED_NAME_MIN_CHARS <= len(run) <= _GLUED_NAME_MAX_CHARS):
+        return False
+    if _GLUED_RUN_RE.fullmatch(run) is None:
+        return False
+    if run in _NOT_NAME or run in _TITLES:
+        return False
+    if run.startswith(_NON_PERSON_LEAD_PREFIXES):
+        return False
+    if _NAME_DOC_COMPOUND_RE.match(run):
+        return False
+    tokens = [t for t in word_tokenize(run, keep_whitespace=False) if t.strip()]
+    if not (2 <= len(tokens) <= _GLUED_NAME_MAX_TOKENS):
+        return False
+    return all(
+        _is_name_token(t) and t not in _LEAD_STOP and t not in _GLUED_RUN_STOP for t in tokens
+    )
+
+
+def is_non_person_segment(seg: str) -> bool:
+    """True when a space-separated Thai run is a form label or prose fragment.
+
+    Shared with `tb_detector._name_hygiene`'s tail-segment gate, so the two
+    rules that reject a non-person Thai run agree instead of each carrying its
+    own list. The decision is the LEADING newmm token only -- the same idiom
+    `_collect_two_groups` uses ("a leading _LEAD_STOP token aborts it") and for
+    the same reason: checking EVERY token would reject real surnames the
+    tokenizer splits onto a stop word ("ทองอยู่" -> ทอง|อยู่, "ชลธิชา ทองอยู่"
+    is a person). Every measured form-label false positive leads with its label
+    noun, so the leading token is where the evidence actually is.
+    """
+    tokens = [t for t in word_tokenize(seg, keep_whitespace=False) if t.strip()]
+    if not tokens:
+        return True
+    lead = tokens[0]
+    return (
+        lead in _NOT_NAME
+        or lead in _LEAD_STOP
+        or lead in _GLUED_RUN_STOP
+        or lead in _NON_PERSON_LEADS
     )
 
 
@@ -362,9 +518,29 @@ def _line_label_names(text: str, spans: list[tuple[str, int, int]]) -> list[Enti
         idx = _index_after(spans, m.end())
         if idx is None:
             continue
+        while idx < len(spans) and spans[idx][0].strip() == "":
+            idx += 1
+        if idx >= len(spans) or spans[idx][0] in _NON_PERSON_LEADS:
+            continue
         got = _collect_two_groups(spans, idx)
         if got:
             ents.append(_make_name(text, got[0], got[1], 0.88))
+    return ents
+
+
+def _inline_label_names(text: str, spans: list[tuple[str, int, int]]) -> list[Entity]:
+    ents = []
+    for m in _INLINE_NAME_LABEL_RE.finditer(text):
+        idx = _index_after(spans, m.end())
+        if idx is None:
+            continue
+        while idx < len(spans) and spans[idx][0].strip() == "":
+            idx += 1
+        if idx >= len(spans) or spans[idx][0] in _NON_PERSON_LEADS:
+            continue
+        got = _collect_two_groups(spans, idx)
+        if got:
+            ents.append(_make_name(text, got[0], got[1], 0.87))
     return ents
 
 
@@ -443,6 +619,7 @@ def detect_name_context_passes(text: str) -> list[tuple[str, Entity]]:
     tagged: list[tuple[str, Entity]] = []
     tagged.extend(("extended", e) for e in _role_cue_names(text, spans))
     tagged.extend(("strong", e) for e in _line_label_names(text, spans))
+    tagged.extend(("extended", e) for e in _inline_label_names(text, spans))
     tagged.extend(("extended", e) for e in _kinship_label_names(text, spans))
     tagged.extend(("extended", e) for e in _roster_names(text, spans))
     tagged.extend(("extended", e) for e in _passport_roster_names(text))
@@ -454,6 +631,98 @@ def detect_name_context_passes(text: str) -> list[tuple[str, Entity]]:
 def detect_name_context(text: str) -> list[Entity]:
     """Detect names introduced by a title, label, role word, or roster cue."""
     return [e for _pass, e in detect_name_context_passes(text)]
+
+
+_PARALLEL_NAME_LINE_RE = re.compile(r"^[ \t]*([ก-๛]{2,25})[ \t]+([ก-๛]{2,25})[ \t]*$")
+_PARALLEL_NAME_STOP = _NOT_NAME | _LEAD_STOP | _NON_PERSON_LEADS
+# The second Thai token is optional so the single-token shape keeps matching
+# byte-for-byte, but a co-applicant written the normal way — given name, space,
+# surname — is the common case on a real form and matched nothing before: the
+# run between และ and the name may only hold non-Thai characters, so the space
+# inside "สมหญิง รักดี" ended the name group early and the line failed. Missing
+# a whole class of the names this rule exists to recover is the recall-negative
+# direction, which recall > precision does not allow.
+_OCR_CO_APPLICANT_RE = re.compile(
+    r"(?m)^[ \t]*(?:และ|แถะ)[^ก-๛\r\n]{2,}"
+    r"(?P<name>[ก-๛]{4,25}(?:[ \t]+[ก-๛]{2,25})?)[ \t]*$"
+)
+_OCR_CO_APPLICANT_STOP = (
+    "กรอก",
+    "ขอ",
+    "คำ",
+    "บริษัท",
+    "ผู้",
+    "มูลนิธิ",
+    "เอกสาร",
+    "โรงงาน",
+    "โครงการ",
+)
+
+
+def _repeated_ocr_co_applicant_names(text: str, entities: list[Entity]) -> list[Entity]:
+    """Find a name after an OCR form mark, repeated or alone on a 2-id record."""
+    if sum(entity.data_type == "THAI_ID" for entity in entities) < 2:
+        return []
+    if not any(entity.data_type == "NAME" for entity in entities):
+        return []
+
+    matches = list(_OCR_CO_APPLICANT_RE.finditer(text))
+    # A form carrying two checksum-valid national ids describes two people, so
+    # the SINGLE co-applicant line on it is the second person -- requiring the
+    # name to be REPEATED was a proxy for that evidence and rejected the real
+    # คร.1 shape, which holds exactly one such line. The proxy stays in force
+    # whenever the record structure is absent (the >=2 THAI_ID and >=1 NAME
+    # gates above are unchanged).
+    solitary = len(matches) == 1
+    recovered = []
+    for match in matches:
+        value = match.group("name")
+        if value.startswith(_OCR_CO_APPLICANT_STOP):
+            continue
+        repeated = any(
+            other is not match and SequenceMatcher(None, value, other.group("name")).ratio() >= 0.8
+            for other in matches
+        )
+        if repeated or solitary:
+            recovered.append(_make_name(text, *match.span("name"), 0.87))
+    return recovered
+
+
+def detect_parallel_record_names(text: str, entities: list[Entity]) -> list[Entity]:
+    """Recover a missed name in repeated NAME/THAI_ID rows."""
+    recovered = _repeated_ocr_co_applicant_names(text, entities)
+    rows: list[tuple[str, int, int]] = []
+    offset = 0
+    for raw_line in text.splitlines(keepends=True):
+        line = raw_line.rstrip("\r\n")
+        stripped = line.strip()
+        if stripped:
+            start = offset + line.index(stripped)
+            rows.append((stripped, start, start + len(stripped)))
+        offset += len(raw_line)
+
+    def _covered(row: tuple[str, int, int], data_type: str) -> bool:
+        return any(
+            entity.data_type == data_type and entity.span[0] <= row[1] and entity.span[1] >= row[2]
+            for entity in entities
+        )
+
+    pairs: list[tuple[tuple[str, int, int], re.Match[str]]] = []
+    for index, row in enumerate(rows[:-1]):
+        match = _PARALLEL_NAME_LINE_RE.fullmatch(row[0])
+        if match and _covered(rows[index + 1], "THAI_ID"):
+            pairs.append((row, match))
+
+    if not any(_covered(row, "NAME") for row, _match in pairs):
+        return recovered
+
+    for row, match in pairs:
+        if _covered(row, "NAME"):
+            continue
+        if match.group(1) in _PARALLEL_NAME_STOP or match.group(2) in _PARALLEL_NAME_STOP:
+            continue
+        recovered.append(_make_name(text, row[1], row[2], 0.87))
+    return recovered
 
 
 def _token_pass_names(text: str, spans: list[tuple[str, int, int]]) -> list[Entity]:
@@ -471,8 +740,16 @@ def _token_pass_names(text: str, spans: list[tuple[str, int, int]]) -> list[Enti
             # happily took "ขอแสดงความนับถือ" as a person's name and vaulted it.
             # Every verified false positive lacks the space; every real name
             # ("ข้าพเจ้า วิชัย ประสงค์ดี") has it.
+            # ... except when the run glued to the cue is name-SHAPED under
+            # `is_glued_name_run` (OCR deletes the space inside the name too:
+            # "ข้าพเจ้า สมชาย ใจดี" came back as "ข้าพเจ้าสมชายใจดี"). The
+            # single-dictionary-token rule there is what still rejects
+            # "ข้าพเจ้าขอแสดงความนับถือ".
             nxt = spans[idx + 1][0] if idx + 1 < n else ""
             if nxt.strip() != "":
+                glued = _GLUED_RUN_RE.match(text, spans[idx][2])
+                if glued is not None and is_glued_name_run(glued.group(0)):
+                    ents.append(_make_name(text, glued.start(), glued.end(), 0.88))
                 continue
         is_cue = is_title or tok in _INTRO_COMPOUND or is_direct
         if not is_cue and tok == "ชื่อ":

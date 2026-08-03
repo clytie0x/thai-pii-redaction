@@ -3,8 +3,8 @@
 import re
 from dataclasses import dataclass
 
-from pii_redactor.detectors.fp_detector import detect_fp
-from pii_redactor.detectors.tb_detector import detect_tb
+from pii_redactor.detectors.aggregate import detect_all
+from pii_redactor.models import Entity
 from pii_redactor.reid_risk import ReidRiskResult, assess_reid_risk
 
 
@@ -55,15 +55,10 @@ def scan_section26(text: str) -> list[dict]:
     return hits
 
 
-def generate_report(text: str) -> PDPAReport:
-    """
-    Generate a PDPA risk assessment report for the given text.
-    Does NOT redact. Returns structured analysis.
-    """
-    fp_entities = detect_fp(text)
-    tb_entities = detect_tb(text)
-
-    direct_pii_count = len(fp_entities) + len(tb_entities)
+def _generate_report(text: str, entities: list[Entity]) -> PDPAReport:
+    """Build the report from the canonical detector output."""
+    fp_count = sum(entity.redact_type == "FP" for entity in entities)
+    direct_pii_count = len(entities)
 
     # Section 26 scan
     section26_flags = []
@@ -110,11 +105,129 @@ def generate_report(text: str) -> PDPAReport:
 
     return PDPAReport(
         direct_pii_count=direct_pii_count,
-        fp_count=len(fp_entities),
-        tb_count=len(tb_entities),
+        fp_count=fp_count,
+        tb_count=direct_pii_count - fp_count,
         section26_flags=section26_flags,
         reid_risk=reid,
         overall_score=overall,
         overall_grade=grade,
         recommendations=recommendations,
     )
+
+
+def generate_report(text: str) -> PDPAReport:
+    """Generate a PDPA risk report without changing the text."""
+    return _generate_report(text, detect_all(text))
+
+
+def _risk_label(score: float) -> str:
+    return (
+        "Very Low Risk"
+        if score <= 20
+        else "Low Risk"
+        if score <= 40
+        else "Medium Risk"
+        if score <= 60
+        else "High Risk"
+        if score <= 80
+        else "Very High Risk"
+    )
+
+
+def analyze_text(text: str) -> dict:
+    """Build the shared PDPA response for clean text.
+
+    The API, PDF report, and worker use this same result.
+    """
+    entities = detect_all(text)
+    report = _generate_report(text, entities)
+    reid = report.reid_risk
+
+    # entity breakdown per data_type
+    breakdown_map: dict[tuple[str, str], dict] = {}
+    for e in entities:
+        key = (e.data_type, e.redact_type)
+        if key not in breakdown_map:
+            breakdown_map[key] = {
+                "data_type": e.data_type,
+                "redact_type": e.redact_type,
+                "count": 0,
+            }
+        breakdown_map[key]["count"] += 1
+    breakdown = sorted(breakdown_map.values(), key=lambda x: -x["count"])
+
+    section26 = scan_section26(text)
+    # Semantic pass: flag free-form sensitive content the keywords miss.
+    # No-op (empty) when sentence-transformers is not installed.
+    try:
+        from pii_redactor.sensitive_detector import detect_sensitive
+
+        have = {s["category"] for s in section26}
+        for hit in detect_sensitive(text):
+            if hit["category"] not in have:
+                section26 = section26 + [{**hit, "source": "semantic"}]
+                have.add(hit["category"])
+    except Exception:  # pragma: no cover - defensive; model issues never block analyze
+        pass
+
+    # structured recommendations with severity levels
+    recs = []
+    if report.direct_pii_count > 0:
+        recs.append(
+            {
+                "level": "high",
+                "title": f"Remove or pseudonymize {report.direct_pii_count} direct PII entities",
+                "desc": "ใช้ AI Guard เพื่อปกปิดข้อมูลทั้งหมดก่อนส่งให้ AI ภายนอก",
+            }
+        )
+    if section26:
+        cats = ", ".join(s["category"] for s in section26)
+        recs.append(
+            {
+                "level": "high",
+                "title": f"Section 26 sensitive data found ({cats})",
+                "desc": "ต้องได้รับความยินยอมโดยชัดแจ้งจากเจ้าของข้อมูลก่อนประมวลผล ตาม PDPA มาตรา 26",
+            }
+        )
+    if reid.high_risk_combo:
+        recs.append(
+            {
+                "level": "medium",
+                "title": "Remove quasi-identifier combinations to reduce re-identification risk",
+                "desc": "การรวม gender + district + age สามารถระบุตัวบุคคลได้แม้ไม่มี PII โดยตรง",
+            }
+        )
+    if report.overall_score >= 60:
+        recs.append(
+            {
+                "level": "info",
+                "title": "Consider data minimization",
+                "desc": "เก็บเฉพาะข้อมูลที่จำเป็นตามวัตถุประสงค์ที่กำหนด ตาม PDPA มาตรา 22",
+            }
+        )
+    if not recs:
+        recs.append(
+            {
+                "level": "info",
+                "title": "No significant PDPA risk detected",
+                "desc": "ไม่พบข้อมูลส่วนบุคคลที่มีความเสี่ยงสูงในข้อความนี้",
+            }
+        )
+
+    return {
+        "overall_score": report.overall_score,
+        "overall_grade": report.overall_grade,
+        "risk_label": _risk_label(report.overall_score),
+        "direct_pii_count": report.direct_pii_count,
+        "fp_count": report.fp_count,
+        "tb_count": report.tb_count,
+        "section26": section26,
+        "reid": {
+            "score": reid.score,
+            "grade": reid.grade,
+            "qi_found": reid.qi_found,
+            "high_risk_combo": reid.high_risk_combo,
+        },
+        "breakdown": breakdown,
+        "recommendations": recs,
+    }

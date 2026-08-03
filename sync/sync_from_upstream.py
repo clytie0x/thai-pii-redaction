@@ -42,6 +42,9 @@ SLICE = [
     "pyproject.toml",
     "LICENSE",
     "NOTICE",
+    # NOTICE points at this file for the bundled Thai TTF; OFL-1.1 requires
+    # the license text to travel with the font, so it must ride the slice.
+    "licenses/OFL-1.1.txt",
 ]
 
 _SKIP_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache"}

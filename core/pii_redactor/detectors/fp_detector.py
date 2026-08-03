@@ -213,32 +213,11 @@ def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Enti
 
 
 def _student_evidence(text: str, start: int, end: int) -> int | None:
-    """Distance (chars) to the winning student cue for the digit run, or None.
+    """Return the distance to a student cue, or ``None``.
 
-    Three evidence tiers, adversarially reviewed 2026-07-28 (the blockers and
-    the tier shapes came out of that review; gold v4 measured the old
-    30-chars-before-only rule at 0.509 STUDENT_ID recall with every miss
-    mislabeled rather than unmasked):
-
-    - A compound code word directly before the digits (รหัสวิชา, รหัสพนักงาน,
-      รหัสชำระ, ...) names a DIFFERENT kind of code and blocks all tiers —
-      education words around a course code do not make it a student id.
-    - Tier 1: a person-word cue (นักศึกษา/นิสิต/... ) before the digits,
-      nearest-wins against commerce cues, window widened to 60 chars because
-      a name or heading routinely sits between the cue and the digits.
-    - Tier 2: a person-word cue up to 45 chars AFTER the digits
-      ("รหัสประจำตัว 65021178 เป็นนักศึกษา..."), only when no commerce cue
-      precedes it on that side and no bank/phone cue owns the digits from the
-      front (a following "นักศึกษา" must not outbid "เลขบัญชี").
-    - Tier 3: a bare id-introducer (รหัส/เลขประจำตัว/ID) ending within 20
-      chars before the digits on the SAME line, plus an education-context
-      token within ±100 chars, with no commerce cue earlier on that line —
-      the veto is line-bounded because a commerce word on a previous line is
-      about different digits ("ใบแจ้งหนี้ 77881122\\nรหัส 65014477 ...").
-
-    The pinned boundary survives: "นักเรียนสั่งซื้อสินค้ารหัส 88910423" fails
-    tier 1 (สินค้า nearer), tier 2 (no person word after), and tier 3
-    (commerce cue on the same line), so it stays the honest ID_NUMBER.
+    A compound code word blocks a match. Tier 1 uses a person cue before the
+    number. Tier 2 uses one after it. Tier 3 needs an ID cue on the same line
+    and an education cue nearby. A closer bank, phone, or sales cue wins.
     """
     line_start = text.rfind("\n", 0, start) + 1
 
@@ -365,6 +344,11 @@ _STUDENT_LABEL_RE = re.compile(r"(?:รหัส|เลขประจำตั�
 # full-width colon (``ที่อยู่: 99`` / ``ที่อยู่：99``); keeping it outside
 # group 1 preserves the exact value-only span used by text replacement.
 _RE_HOUSE_NO = re.compile(r"(?:บ้านเลขที่|เลขที่|ที่อยู่)\s*[:：]?\s*(\d{1,4}(?:\s*[/-]\s*\d{1,4})?)(?!\d)")
+# Some form rows start with the house number and put the street cue after it.
+_RE_HOUSE_BEFORE_STREET = re.compile(
+    r"(?<!\d)(\d{1,4}(?:\s*[/-]\s*\d{1,4})?)\s+(?=(?:ถนน|ถ\.|ซอย|ซ\.|ตรอก))"
+)
+_RE_YEAR_PREFIX = re.compile(r"(?:ปี(?:งบประมาณ|ภาษี)?|พ\.?\s*ศ\.?)\s*$")
 # Captures the soi/road NAME plus its number ("ลาดพร้าว 71"): the name alone
 # identifies a neighbourhood and the number narrows it to one lane, so masking
 # only the digits would leave the person locatable.
@@ -674,6 +658,12 @@ def detect_fp(text: str) -> list[Entity]:
         # house number — leave the digits to the numeric detectors.
         nxt = text[m.end(1) : m.end(1) + 2]
         if len(nxt) == 2 and nxt[0] in "-/" and nxt[1].isdigit():
+            continue
+        candidates.append(_make_entity("ADDRESS", m, text, score=0.85))
+    for m in _RE_HOUSE_BEFORE_STREET.finditer(text):
+        raw = re.sub(r"\s", "", m.group(1))
+        prefix = text[max(0, m.start() - 20) : m.start()]
+        if raw.isdigit() and 2400 <= int(raw) <= 2699 and _RE_YEAR_PREFIX.search(prefix):
             continue
         candidates.append(_make_entity("ADDRESS", m, text, score=0.85))
     for pattern in (_RE_SOI_ROAD, _RE_MOO, _RE_ADMIN_AREA):
