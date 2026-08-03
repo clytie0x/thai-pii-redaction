@@ -64,3 +64,4 @@ stage `ops` มี `logs` `ps` `restart` `shell-cmd` กดจากหน้า
 - **runner tag** ถ้า job ค้าง pending ให้ปลดคอมเมนต์ `tags:` ใน
   `.gitlab-ci.yml` ตาม tag ที่เห็นใน Group → Settings → CI/CD → Runners
 - **โควตาของ gateway** `acceptance` ยิงของจริงทุกครั้งที่ push `main`
+  (และ retry ได้สูงสุด 3 ครั้งเมื่อเจอ transport/5xx)
