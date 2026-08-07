@@ -3,8 +3,8 @@
 # the team range, resources.limits + healthcheck + logging max-size on every
 # service, no bind mounts (audit goes to stdout -> Docker rotation + Dozzle).
 #
-# Secrets arrive as GitLab CI variables prefixed APP_; the deploy job writes
-# them to .env, which compose auto-loads for interpolation.
+# Secrets arrive as protected, environment-scoped GitLab variables prefixed
+# APP_; deploy passes a mode-600 temporary env file and removes it on exit.
 
 x-logging: &logging
   driver: json-file
@@ -14,7 +14,10 @@ x-logging: &logging
 
 services:
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped
     logging: *logging
     ports:
@@ -34,9 +37,14 @@ services:
           cpus: "0.5"
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped
     logging: *logging
+    tmpfs:
+      - /var/cache/nginx:size=64m
     ports:
       - "127.0.0.1:20071:8000"
     environment:
@@ -61,13 +69,25 @@ services:
           cpus: "0.5"
 
   core:
-    build: ./core
+    build:
+      context: ./core
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped
     logging: *logging
+    # UploadFile spooling, the handler copy, and raster output stay volatile.
+    # 1 GiB leaves headroom for two allowed near-cap requests and is discarded
+    # with the container, including after a crash/restart.
+    tmpfs:
+      - /tmp:size=1g,mode=1777
     # not published — only reachable from api/web on the compose network
     environment:
       PYTHONUTF8: "1"
       AIGUARD_API_KEY: ${APP_AIGUARD_API_KEY:?APP_AIGUARD_API_KEY is required}
+      AIFT_ACCESS_CODE: ${APP_AIFT_ACCESS_CODE:?APP_AIFT_ACCESS_CODE is required}
+      AIFT_COOKIE_SIGNING_KEY: ${APP_AIFT_COOKIE_SIGNING_KEY:?APP_AIFT_COOKIE_SIGNING_KEY is required}
+      AIFT_ALLOWED_ORIGINS: "https://team08.aiforthai.in.th"
+      AIFT_SESSION_TTL_SECONDS: "1800"
       TOKENMIND_BASE_URL: "https://tokenmind.pathumma.in.th/v1"
       # key absent = /roundtrip answers an explicit 503; never a simulated fallback
       TOKENMIND_API_KEY: ${APP_TOKENMIND_API_KEY:-}

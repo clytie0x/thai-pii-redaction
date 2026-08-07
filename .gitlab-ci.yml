@@ -8,6 +8,10 @@ variables:
   BASE: "20070"
   BASE_1: "20071"
 
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+
 stages: [check, deploy, acceptance, ops]
 
 default:
@@ -17,74 +21,67 @@ default:
   image: docker:27.3.1
   before_script:
     - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
-    - apk add --no-cache curl bash jq python3 >/dev/null
+    - apk add --no-cache curl bash git jq nodejs python3 >/dev/null
     - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
 
 check:
   stage: check
   script:
     # vendored slice must match the recorded upstream commit exactly
-    - python3 sync/sync_from_upstream.py --check
+    - python3 sync/sync_from_upstream.py --check --verify-upstream
     # the api proxy IS the security boundary here — prefix re-add, the exact
     # allowlist that withholds the vault-bearing routes, key injection, and a
     # query-string-free log. Checked before deploy, against the real
     # api/Dockerfile, with a stub standing in for core. Publishes a port and
     # curls 127.0.0.1, the same assumption the organizer's deploy job below
     # already makes.
+    - python3 tests/auth_contract.py
+    - node tests/frontend_session_contract.mjs
     - python3 tests/nginx_contract.py
-    - |
-      LO=$BASE; HI=$((BASE+9)); FAIL=0
-
-      echo "== port binding =="
-      while read -r line; do
-        case "$line" in
-          *'${BASE'*|*'$BASE'*) echo "  ok (variable) $line" ;;
-          *127.0.0.1:*)
-            p=$(echo "$line" | sed -n 's/.*127\.0\.0\.1:\([0-9]\+\):.*/\1/p')
-            if [ -n "$p" ] && { [ "$p" -lt "$LO" ] || [ "$p" -gt "$HI" ]; }; then
-              echo "  FAIL port $p outside $TEAM range ($LO-$HI)"; FAIL=1
-            else echo "  ok $line"; fi ;;
-          *) echo "  FAIL not bound to 127.0.0.1 -> $line"; FAIL=1 ;;
-        esac
-      done < <(grep -E '^\s*-\s*"?[0-9.$][^:]*:[0-9$]' docker-compose.yml || true)
-
-      echo "== bind mounts =="
-      for m in $(grep -oE '^\s*-\s*[./][^:]*:' docker-compose.yml | sed 's/^\s*-\s*//; s/:$//' || true); do
-        case "$m" in
-          */var/run/docker.sock*) echo "  FAIL docker.sock mount"; FAIL=1 ;;
-          ./*|../*) echo "  FAIL relative bind mount: $m"; FAIL=1 ;;
-          /data/hack/*) echo "  ok $m" ;;
-          /*) echo "  FAIL bind mount outside /data/hack: $m"; FAIL=1 ;;
-        esac
-      done
-
-      echo "== required keys =="
-      grep -q 'memory:' docker-compose.yml || { echo "  FAIL no memory limit"; FAIL=1; }
-      grep -q 'healthcheck:' docker-compose.yml || { echo "  FAIL no healthcheck"; FAIL=1; }
-      grep -q 'max-size' docker-compose.yml || { echo "  FAIL no logging max-size"; FAIL=1; }
-
-      [ $FAIL -eq 0 ] && echo "check passed" || exit 1
+    - python3 tests/compose_contract.py
+  # The organizer runner controls the persistent production Docker daemon.
+  # Until staff confirms isolated branch daemons, do not give branch code that
+  # socket. Branch checks belong on a separate runner.
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
 deploy:
   stage: deploy
   timeout: 20m
   interruptible: true
+  resource_group: team08-production
   environment:
     name: $TEAM
     url: https://$TEAM.aiforthai.in.th
   script:
-    # secrets come from APP_-prefixed CI variables (Masked). No set -x here.
-    - printenv | grep '^APP_' > .env || true
-    - docker compose -p "$TEAM" up -d --build --remove-orphans
+    # Keep the guide's APP_* -> env-file handoff off the repository mount and
+    # delete it even when the build fails. No set -x here.
+    - |
+      set -e
+      if [ -n "${CI_SERVER_HOST:-}" ]; then
+        LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+        [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing an outdated main deployment"; exit 1; }
+      fi
+      umask 077
+      ENV_FILE=$(mktemp)
+      trap 'rm -f "$ENV_FILE"' EXIT
+      printenv | grep '^APP_' > "$ENV_FILE"
+      docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --build --remove-orphans
     - |
       echo "waiting for healthcheck..."
       for i in $(seq 1 40); do
         st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-api-1" 2>/dev/null || echo none)
-        [ "$st" = "healthy" ] && { echo "api healthy"; break; }
+        web_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-web-1" 2>/dev/null || echo none)
+        [ "$st" = "healthy" ] && [ "$web_st" = "healthy" ] \
+          && { echo "api and web healthy"; break; }
         sleep 5
       done
+      [ "$st" = "healthy" ] && [ "$web_st" = "healthy" ] \
+        || { echo "deployment healthcheck timed out"; exit 1; }
       docker compose -p "$TEAM" ps
     - curl -fsS "http://127.0.0.1:${BASE_1}/health" && echo " <- /health OK"
+    - curl -fsS -o /dev/null "http://127.0.0.1:${BASE}/" && echo "web root OK"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -94,9 +91,55 @@ deploy:
 acceptance:
   stage: acceptance
   needs: [deploy]
+  interruptible: true
+  resource_group: team08-production
+  environment:
+    name: $TEAM
+    action: verify
   script:
     - |
       set -e
+      if [ -n "${CI_SERVER_HOST:-}" ]; then
+        LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+        [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing outdated acceptance"; exit 1; }
+      fi
+      EXPECTED_REVISION=${CI_COMMIT_SHA:-local-working-tree}
+      for service in web api core; do
+        ACTUAL_REVISION=$(docker inspect -f \
+          '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
+          "${TEAM}-${service}-1")
+        [ "$ACTUAL_REVISION" = "$EXPECTED_REVISION" ] \
+          || { echo "running $service image belongs to another commit"; exit 1; }
+      done
+      AUTH_HEADERS=$(mktemp)
+      LOG_DIR=$(mktemp -d)
+      cleanup_acceptance() {
+        docker exec "${TEAM}-core-1" rm -f /app/runner_route_probe.py \
+          >/dev/null 2>&1 || true
+        rm -f "$AUTH_HEADERS"
+        rm -rf "$LOG_DIR"
+      }
+      trap cleanup_acceptance EXIT
+      LOGIN=$(jq -cn --arg code "$APP_AIFT_ACCESS_CODE" '{access_code:$code}')
+      curl -fsS -D "$AUTH_HEADERS" -o /dev/null \
+        -X POST "http://127.0.0.1:${BASE_1}/auth/login" \
+        -H 'Content-Type: application/json' -d "$LOGIN"
+      LOGIN=""
+      COOKIE=$(sed -n 's/^[Ss]et-[Cc]ookie: \([^;]*\).*/\1/p' "$AUTH_HEADERS" \
+        | tr -d '\r' | head -n 1)
+      [ -n "$COOKIE" ] || { echo "caller auth did not return a cookie"; exit 1; }
+
+      [ "$(curl -s -o /dev/null -w '%{http_code}' \
+        -X POST "http://127.0.0.1:${BASE_1}/detect" \
+        -H 'Content-Type: application/json' -d '{"text":"synthetic"}')" = "401" ] \
+        || { echo "unauthenticated business request was not rejected"; exit 1; }
+      [ "$(curl -s -o /dev/null -w '%{http_code}' \
+        -X POST "http://127.0.0.1:${BASE_1}/detect" \
+        -H 'Cookie: __Host-aift_session=tampered' \
+        -H 'Content-Type: application/json' -d '{"text":"synthetic"}')" = "401" ] \
+        || { echo "tampered caller cookie was not rejected"; exit 1; }
+
       BODY='{"text":"ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678","mode":"token","provider":"tokenmind"}'
       # 3 attempts, transport/5xx only: the gateway's latency swings are a
       # measured fact (p95 2.0s..9.2s, same config). A real misconfiguration
@@ -104,6 +147,7 @@ acceptance:
       R=""
       for i in 1 2 3; do
         R=$(curl -fsS -m 90 -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
+              -H "Cookie: $COOKIE" \
               -H 'Content-Type: application/json' -d "$BODY") && break
         echo "roundtrip attempt $i failed (transport or 5xx)"
         [ "$i" = 3 ] && { echo "roundtrip failed after 3 attempts"; exit 1; }
@@ -111,38 +155,77 @@ acceptance:
       done
       echo "$R" | jq -e '.provider_used == "tokenmind"' >/dev/null || { echo "provider_used != tokenmind"; exit 1; }
       SAN=$(echo "$R" | jq -r '.sanitized_text')
-      MASKED=$(echo "$R" | jq -r '.ai_response_masked')
-      RESTORED=$(echo "$R" | jq -r '.restored_text')
       case "$SAN" in
         *0812345678*|*081-234-5678*) echo "RAW PHONE LEAKED IN OUTBOUND TEXT"; exit 1 ;;
       esac
       case "$SAN" in
         *สมชาย*) echo "RAW NAME LEAKED IN OUTBOUND TEXT"; exit 1 ;;
       esac
-      # deterministic duties of THIS service: both fixture values detected,
-      # and no token survives restoration.
-      NAME_TOKEN=$(echo "$R" | jq -r '[.entities[] | select(.data_type=="NAME") | .token][0] // empty')
-      PHONE_TOKEN=$(echo "$R" | jq -r '[.entities[] | select(.data_type=="PHONE") | .token][0] // empty')
-      [ -n "$NAME_TOKEN" ] || { echo "NO NAME ENTITY DETECTED"; exit 1; }
-      [ -n "$PHONE_TOKEN" ] || { echo "NO PHONE ENTITY DETECTED"; exit 1; }
-      for t in $(echo "$R" | jq -r '.entities[].token'); do
-        case "$RESTORED" in *"$t"*) echo "TOKEN RESIDUE IN RESTORED TEXT: $t"; exit 1 ;; esac
-      done
-      # what the LLM controls is asserted conditionally: thaillm-8b repeats a
-      # token only when its answer has a reason to (echo measured 19/25 at
-      # temp 0.0; the 2026-08-03 local run caught a live miss). A token must
-      # round-trip to its original only IF the model actually said it back.
-      case "$MASKED" in *"$NAME_TOKEN"*)
-        case "$RESTORED" in *สมชาย*) : ;; *) echo "NAME TOKEN ECHOED BUT NOT RESTORED"; exit 1 ;; esac ;;
-      esac
-      case "$MASKED" in *"$PHONE_TOKEN"*)
-        case "$RESTORED" in *081-234-5678*) : ;; *) echo "PHONE TOKEN ECHOED BUT NOT RESTORED"; exit 1 ;; esac ;;
-      esac
-      echo "acceptance ok: masked outbound, no residue, echoed tokens restored, real provider"
+      echo "$R" | jq -e '
+        .detected_entity_count >= 2
+        and .safety == {"status":"pass","residual_count":0}
+        and .restoration.status == "complete"
+        and .restoration.leftover_count == 0
+        and (
+          .restoration.replaced_count == 0
+          or (
+            .restored_text != .ai_response_masked
+            and (
+              (.restored_text | contains("นายสมชาย ใจดี"))
+              or (.restored_text | contains("081-234-5678"))
+            )
+          )
+        )
+        and (.restored_text
+          | test("\\[[^]\\r\\n]+_[a-f]{25}_[a-z]{20}_[1-9][0-9]*\\]")
+          | not)
+        and (has("mapping") | not)
+        and (has("entities") | not)
+        and (has("highlights") | not)
+      ' >/dev/null || { echo "minimized/safe roundtrip projection failed"; exit 1; }
+      echo "acceptance ok: caller authenticated, outbound masked, response minimized, real provider"
+
+      [ "$(curl -s -o /dev/null -w '%{http_code}' \
+        -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
+        -H "Cookie: $COOKIE" \
+        -H 'Origin: https://example.invalid' \
+        -H 'Content-Type: application/json' -d "$BODY")" = "403" ] \
+        || { echo "cross-site request was not rejected"; exit 1; }
       # allowlist: excluded paths must not exist
       [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/sanitize -X POST -H 'Content-Type: application/json' -d '{"text":"x"}')" = "404" ] || { echo "/sanitize escaped the allowlist"; exit 1; }
       [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/docs)" = "404" ] || { echo "/docs escaped the allowlist"; exit 1; }
       echo "allowlist ok"
+
+      docker cp tests/runner_route_probe.py "${TEAM}-core-1:/app/runner_route_probe.py"
+      docker exec -e AIFT_PROBE_API=http://api:8000 "${TEAM}-core-1" \
+        python /app/runner_route_probe.py
+      docker exec "${TEAM}-core-1" rm -f /app/runner_route_probe.py
+
+      # Scan every retained line from the exact running containers. Do not use
+      # a tail window: startup/OCR/provider leaks can otherwise scroll out.
+      for service in web api core; do
+        LOG_FILE="$LOG_DIR/$service.log"
+        docker logs "${TEAM}-${service}-1" > "$LOG_FILE" 2>&1
+        grep -Fq -e "$COOKIE" "$LOG_FILE" \
+          && { echo "CALLER COOKIE REACHED RUNTIME LOG"; exit 1; }
+        { grep -Fq -e "สมชาย" "$LOG_FILE" \
+          || grep -Fq -e "081-234-5678" "$LOG_FILE"; } \
+          && { echo "SYNTHETIC PII REACHED RUNTIME LOG"; exit 1; }
+        grep -Fq -e "$APP_AIGUARD_API_KEY" "$LOG_FILE" \
+          && { echo "CORE KEY REACHED RUNTIME LOG"; exit 1; }
+        grep -Fq -e "$APP_AIFT_ACCESS_CODE" "$LOG_FILE" \
+          && { echo "ACCESS CODE REACHED RUNTIME LOG"; exit 1; }
+        grep -Fq -e "$APP_AIFT_COOKIE_SIGNING_KEY" "$LOG_FILE" \
+          && { echo "COOKIE KEY REACHED RUNTIME LOG"; exit 1; }
+        if [ -n "$APP_TOKENMIND_API_KEY" ]; then
+          grep -Fq -e "$APP_TOKENMIND_API_KEY" "$LOG_FILE" \
+            && { echo "PROVIDER KEY REACHED RUNTIME LOG"; exit 1; }
+        fi
+      done
+      curl -fsS -o /dev/null -X POST "http://127.0.0.1:${BASE_1}/auth/logout" \
+        -H "Cookie: $COOKIE"
+      COOKIE=""
+      echo "runtime log and logout checks ok"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -152,6 +235,12 @@ acceptance:
   when: manual
   allow_failure: true
   interruptible: false
+  resource_group: team08-production
+  environment:
+    name: $TEAM
+    action: access
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
 logs:
   <<: *ops
@@ -169,11 +258,3 @@ restart:
   script:
     - docker compose -p "$TEAM" restart
     - docker compose -p "$TEAM" ps
-
-shell-cmd:
-  <<: *ops
-  variables:
-    SERVICE: core
-    CMD: "python -c 'import sys; print(sys.version)'"
-  script:
-    - docker compose -p "$TEAM" exec -T "$SERVICE" sh -lc "$CMD"

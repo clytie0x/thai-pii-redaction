@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Guard ปกป้องข้อมูลส่วนบุคคลก่อนส่งเข้า AI</title>
-<meta name="description" content="AI Guard ตรวจจับและปกปิดข้อมูลส่วนบุคคลก่อนส่งเข้าโมเดลภาษา แล้วกู้คืนกลับมาเฉพาะฝั่งของคุณ ทดลองใช้งานจริงได้ทันที">
+<meta name="description" content="AI Guard รับข้อความบนเซิร์ฟเวอร์ของทีม ตรวจจับและปกปิดก่อนส่งเข้าโมเดลภาษา แล้วกู้คืนคำตอบภายในคำขอเดียว">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M32 10 50 18v14c0 14-8 22-18 26-10-4-18-12-18-26V18z' fill='%232563eb'/%3E%3Cpath d='M24 32l6 6 12-14' stroke='%23e2e8f0' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
   :root{
@@ -65,10 +65,11 @@
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   @media(max-width:820px){.grid-2{grid-template-columns:1fr}}
-  select,button,input[type=file]::file-selector-button{
+  select,button,input[type=password],input[type=file]::file-selector-button{
     background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;
     padding:9px 15px;font-family:inherit;font-size:14px;cursor:pointer;
   }
+  input[type=password]{cursor:text;min-width:240px}
   button.primary{background:var(--blue);border-color:var(--blue);font-weight:600;color:#fff}
   button.primary:hover:not(:disabled){background:#1d4ed8}
   button:disabled{opacity:.5;cursor:wait}
@@ -103,6 +104,11 @@
   .warn-chip{background:#7c2d12;color:#fed7aa}
   .ok-chip{background:var(--panel-2);color:var(--dim);border:1px solid var(--line)}
   .guard-ok{color:var(--dim)}
+  .auth-card{display:flex;justify-content:space-between;gap:18px;align-items:center;background:#122a24;border:1px solid #256b58;border-radius:12px;padding:16px 18px;margin-bottom:22px}
+  .auth-card p{font-size:13px;color:var(--dim);margin-top:4px}
+  .auth-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  #authStatus{font-size:13px;color:var(--dim)}
+  @media(max-width:820px){.auth-card{align-items:flex-start;flex-direction:column}.auth-controls{width:100%}input[type=password]{min-width:0;flex:1}}
 
   /* ── evidence section ── */
   .evidence-block{margin-bottom:26px}
@@ -166,8 +172,9 @@
     <h1 class="hero-title">หยุดข้อมูลส่วนบุคคลรั่วไหลก่อนถึงมือ AI</h1>
     <p class="hero-lede">
       เวลาเราวางข้อความลงแชท AI เพื่อขอให้ช่วยร่าง สรุป หรือแปล ข้อความนั้นมักมีเลขบัตรประชาชน ชื่อ เบอร์โทร หรือที่อยู่ติดไปด้วยโดยไม่ทันสังเกต
-      และข้อความที่ส่งออกไปแล้วเรียกคืนไม่ได้ AI Guard คั่นอยู่ตรงกลาง
-      ตรวจจับและปกปิดข้อมูลส่วนบุคคลก่อนที่ข้อความจะออกจากเครื่อง แล้วกู้คืนกลับมาให้เฉพาะฝั่งของคุณเมื่อคำตอบส่งกลับมา
+      และข้อความที่ส่งออกไปแล้วเรียกคืนไม่ได้ AI Guard ทำงานบนเซิร์ฟเวอร์ของทีม
+      รับข้อความต้นฉบับเพื่อตรวจจับและปกปิดก่อนส่งต่อไปยังโมเดลภาษา
+      แล้วกู้คืนคำตอบภายในคำขอเดียว
     </p>
 
     <div class="flow">
@@ -188,16 +195,17 @@
       <span class="flow-arrow">→</span>
       <div class="flow-box restore">
         <div class="flow-label">กู้คืน</div>
-        <div class="flow-sub">แทนที่กลับเฉพาะฝั่งของคุณ</div>
+        <div class="flow-sub">แทนที่กลับบนเซิร์ฟเวอร์ของทีม</div>
       </div>
       <span class="flow-arrow">→</span>
       <div class="flow-box">
         <div class="flow-label">คำตอบ</div>
-        <div class="flow-sub">ครบถ้วน ไม่มีข้อมูลจริงหลุดออกไป</div>
+        <div class="flow-sub">ส่งผลที่กู้คืนแล้วกลับให้ผู้ใช้</div>
       </div>
     </div>
     <p class="flow-caption">
-      ข้อมูลจริงไม่เคยเดินทางจากขั้นตอน "AI Guard ปกปิด" ไปถึงขั้นตอน "โมเดลภาษา" โมเดลปลายทางเห็นแต่โทเคนหรือข้อมูลสมมุติเท่านั้น
+      ข้อความต้นฉบับเดินทางถึงแพลตฟอร์มและเซิร์ฟเวอร์ AI Guard ก่อน
+      แต่ข้อความที่ AI Guard ส่งต่อไปยังโมเดลปลายทางต้องผ่านการปกปิดและการตรวจซ้ำ
       ลองด้วยตัวเองได้ในส่วนถัดไป
     </p>
   </div>
@@ -212,6 +220,19 @@
       พิมพ์ข้อความของคุณเอง หรือกดเลือกตัวอย่างด้านล่าง ระบบตรวจจับข้อมูลส่วนบุคคลสดขณะพิมพ์
       แล้วกดส่งเพื่อดูวงจรเต็มรูปแบบ ปกปิด ส่งเข้า AI แล้วกู้คืนกลับมา
     </p>
+
+    <div class="auth-card" id="authCard">
+      <div>
+        <strong>ยืนยันสิทธิ์ก่อนประมวลผล</strong>
+        <p>หน้าเว็บและ health เป็น public แต่ business API ทุกเส้นต้อง login ระบบแลก access code เป็น cookie อายุ 30 นาทีแบบ Secure/HttpOnly โดยโค้ดของหน้านี้ไม่บันทึก access code ลง browser storage</p>
+      </div>
+      <div class="auth-controls">
+        <input id="accessCode" type="password" maxlength="128" autocomplete="off" aria-label="Access code" placeholder="Access code">
+        <button id="loginBtn" class="primary" type="button">เข้าสู่ระบบ</button>
+        <button id="logoutBtn" type="button" hidden>ออกจากระบบ</button>
+        <span id="authStatus" role="status">กำลังตรวจสอบสิทธิ์...</span>
+      </div>
+    </div>
 
     <div class="samples">
       <span class="samples-label">ตัวอย่าง</span>
@@ -228,7 +249,7 @@
         </select>
       </label>
       <span class="dest-badge">โมเดลปลายทาง <b>Tokenmind thaillm-8b</b></span>
-      <button id="send" class="primary" type="button">ส่งเข้า AI อย่างปลอดภัย</button>
+      <button id="send" class="primary" type="button">ปกปิดแล้วส่งเข้า AI</button>
     </div>
 
     <div class="panes">
@@ -255,19 +276,20 @@
   </div>
 </section>
 
-<!-- ═══════════════ 3. หลักฐานว่าข้อมูลไม่หลุด ═══════════════ -->
+<!-- ═══════════════ 3. ข้อความที่ส่งต่อ ═══════════════ -->
 <section id="evidence">
   <div class="container">
     <p class="eyebrow">ตรวจสอบได้</p>
-    <h2 class="section-title">หลักฐานว่าข้อมูลไม่หลุด</h2>
+    <h2 class="section-title">ตรวจสอบข้อความที่ส่งต่อ</h2>
     <p class="section-sub">
-      หลังกดส่งในส่วน "ลองของจริง" ด้านบน ส่วนนี้จะแสดงสิ่งที่ออกจากเครื่องจริง ๆ แบบตัวต่อตัวอักษร ไม่ใช่คำสัญญาลอย ๆ
+      หลังกดส่งในส่วน "ลองของจริง" ด้านบน ส่วนนี้จะแสดงข้อความที่ AI Guard
+      ส่งต่อจากเซิร์ฟเวอร์ไปยังโมเดลภาษาแบบตัวต่อตัวอักษร
     </p>
 
     <div class="evidence-block">
-      <h3>ข้อความที่ออกจากเครื่องจริง ๆ (ส่งเข้าโมเดลปลายทาง)</h3>
+      <h3>ข้อความที่เซิร์ฟเวอร์ AI Guard ส่งเข้าโมเดลปลายทาง</h3>
       <div class="evidence-box" id="evidenceSanitized">
-        <span class="evidence-empty" id="evidenceEmpty">ยังไม่มีข้อมูล กดปุ่ม "ส่งเข้า AI อย่างปลอดภัย" ในส่วนลองของจริงก่อน</span>
+        <span class="evidence-empty" id="evidenceEmpty">ยังไม่มีข้อมูล กดปุ่ม "ปกปิดแล้วส่งเข้า AI" ในส่วนลองของจริงก่อน</span>
       </div>
     </div>
 
@@ -277,7 +299,12 @@
     </div>
 
     <div class="disclosure">
-      เส้นทางนี้เป็น <b>stateless</b> เซิร์ฟเวอร์ไม่เก็บข้อความหรือการจับคู่ระหว่างของจริงกับข้อมูลปกปิดไว้เลย ทุกอย่างจบภายในคำขอเดียวแล้วหายไป
+      เส้นทางนี้เป็น <b>stateless</b> ข้อความต้นฉบับ การจับคู่ และไฟล์ PDF
+      ถูกใช้ระหว่างคำขอเดียวเท่านั้น โดยงาน PDF/การพักข้อมูลของ proxy ใช้พื้นที่ชั่วคราว
+      แบบหน่วยความจำ (tmpfs) ไม่ใช่ดิสก์ถาวร และถูกทิ้งเมื่อ container หยุดหรือสร้างใหม่
+      เมื่อคำขอจบ reference ชั่วคราวจะถูกลบแบบ best effort
+      response คืนเฉพาะข้อความผลลัพธ์ จำนวน/ชนิด และสถานะความปลอดภัย
+      ไม่คืน mapping หรือ token-bearing entity projection
       อย่างไรก็ตาม ข้อความที่ถูกปกปิดแล้ว (โดยเฉพาะโหมดข้อมูลสมมุติที่อ่านเป็นธรรมชาติ) ยังถือเป็นข้อมูลส่วนบุคคลตามกฎหมาย PDPA อยู่ดี
       เพราะเป็นการทำให้เป็นนามแฝง (<b>pseudonymization</b>) ไม่ใช่การทำให้ไม่สามารถระบุตัวตนได้อย่างถาวร (<b>anonymization</b>)
       เราไม่กล่าวอ้างเกินกว่าสิ่งที่ระบบทำได้จริง
@@ -296,17 +323,15 @@
       <div class="card">
         <h3>ทาดำ PDF</h3>
         <p class="card-desc">
-          อัปโหลดไฟล์ PDF ระบบตรวจจับข้อมูลส่วนบุคคลแล้ววาดกล่องทึบทับตำแหน่งจริงในเอกสาร
+          อัปโหลดไฟล์ PDF ระบบตรวจจับข้อมูลส่วนบุคคลและสร้างตัวอย่างที่วาดกล่องทึบ
           รองรับทั้งไฟล์ที่มีชั้นข้อความและเอกสารสแกน (มี OCR ในตัว)
+          ตำแหน่งกล่องยังใช้การจับคู่เชิงประมาณ จึงต้องตรวจทุกหน้าก่อนนำไฟล์ไปใช้
         </p>
         <input type="file" id="pdfFile" accept="application/pdf" hidden>
         <button id="pdfPick" class="primary" type="button">เลือกไฟล์ PDF</button>
         <span id="pdfStatus" class="pdfmeta"></span>
         <div id="cmpWrap" hidden>
-          <img id="imgBefore" alt="ก่อนทาดำ">
-          <img id="imgAfter" alt="หลังทาดำ">
-          <div id="cmpBar"></div>
-          <input id="cmpSlider" type="range" min="0" max="100" value="50">
+          <img id="imgAfter" alt="ตัวอย่างหน้าแรกหลังทาดำ">
         </div>
         <div class="pdfmeta" id="pdfInfo"></div>
         <div style="margin-top:12px">
@@ -343,21 +368,28 @@
           <tr><td><code>POST /api/v1/detect</code></td><td>ตรวจจับข้อมูลส่วนบุคคลอย่างเดียว ไม่มี session ไม่มี vault</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
           <tr><td><code>POST /api/v1/guard</code></td><td>ตรวจสัญญาณ prompt injection ภาษาไทย/อังกฤษ แจ้งเตือนอย่างเดียว ไม่บล็อก</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
           <tr><td><code>POST /api/v1/roundtrip</code></td><td>ปกปิด ส่งเข้าโมเดลภาษา แล้วกู้คืน จบในคำขอเดียว แบบ stateless</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
-          <tr><td><code>POST /api/v1/redact-pdf</code></td><td>ทาดำข้อมูลส่วนบุคคลระดับตำแหน่งจริงในไฟล์ PDF รองรับทั้งไฟล์ข้อความและเอกสารสแกน</td><td>PDF ≤ 50MB และ ≤ 20 หน้า</td></tr>
+          <tr><td><code>POST /api/v1/redact-pdf</code></td><td>สร้าง PDF ตัวอย่างพร้อมกล่องทึบแบบประมาณ ต้องตรวจทุกหน้าก่อนใช้</td><td>PDF ≤ 50MB; หลักฐานปัจจุบันครอบคลุมเอกสารสแกน 1 หน้า</td></tr>
           <tr><td><code>POST /api/v1/analyze-report</code></td><td>ออกรายงานความเสี่ยง PDPA เป็นไฟล์ PDF</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
           <tr><td><code>GET /api/v1/health</code></td><td>ตรวจสถานะบริการ</td><td>ไม่มี</td></tr>
+          <tr><td><code>POST /api/v1/auth/login</code></td><td>แลก access code เป็น signed HttpOnly cookie อายุ 30 นาที</td><td>มี rate limit แยก</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="footnote">อัตราเรียกใช้รวม 10 คำขอต่อวินาที นับรวมทุก endpoint ด้านบน</p>
+    <p class="footnote">หน้าเว็บและ health เปิดอ่านได้ ส่วน business API ต้องมี cookie ที่ได้จาก login อัตราเรียกใช้รวม 10 คำขอต่อวินาที</p>
 
-    <pre class="curl"><code>curl -X POST https://team08.aiforthai.in.th/api/v1/roundtrip \
+    <pre class="curl"><code># ตั้ง AIFT_ACCESS_CODE ใน environment โดยไม่ใส่ค่าจริงใน script
+curl -sS -c aift-cookie.txt -X POST https://team08.aiforthai.in.th/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"access_code\":\"${AIFT_ACCESS_CODE}\"}"
+
+curl -b aift-cookie.txt -X POST https://team08.aiforthai.in.th/api/v1/roundtrip \
   -H "Content-Type: application/json" \
   -d '{
     "text": "เรียนหัวหน้างาน ผมชื่อ นายสมชาย ใจดี ติดต่อกลับได้ที่ 081-234-5678 ครับ",
     "mode": "token",
     "provider": "tokenmind"
-  }'</code></pre>
+  }'
+rm -f aift-cookie.txt</code></pre>
 
     <div class="stat-row">
       <div class="stat">
@@ -378,9 +410,11 @@
     <div class="policy">
       <p><b>นโยบายข้อมูล</b></p>
       <p style="margin-top:8px">
-        ข้อความของคุณวิ่งผ่านเซิร์ฟเวอร์ของทีมที่วางอยู่บนโครงสร้าง NECTEC เท่านั้น และไม่ถูกเก็บไว้หลังคำขอจบ
-        เส้นทางนี้เป็น stateless การจับคู่ระหว่างของจริงกับข้อมูลปกปิดถูกส่งกลับมาพร้อมคำตอบในคำขอเดียวแล้วก็หายไป
-        log ฝั่งเราไม่มีเนื้อหาข้อความและไม่มี query string ปลายทางโมเดลภาษาคือ thaillm-8b ของ Pathumma
+        ข้อความต้นฉบับวิ่งผ่าน reverse proxy และเซิร์ฟเวอร์ของทีมบนโครงสร้าง
+        NECTEC ก่อนถูกปกปิด ข้อความที่ผ่านการปกปิดแล้วจึงถูกส่งต่อไปยัง
+        thaillm-8b ของ Pathumma การจับคู่ตัวจริงถูกใช้ชั่วคราวภายในคำขอเดียว
+        ไม่ถูกส่งออกเป็น mapping และไม่ได้ตั้งใจเขียนลงดิสก์
+        log ฝั่งแอปไม่มีเนื้อหาข้อความหรือ query string
       </p>
     </div>
   </div>
@@ -417,9 +451,24 @@ const labelFor = t => THAI_LABELS[t] || t;
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 function errorMessage(status, detail, kind) {
-  if (status === 503) return "บริการ LLM ยังไม่พร้อม (คีย์ไม่ถูกตั้งค่า)";
+  if (status === 401) return "สิทธิ์หมดอายุหรือ access code ไม่ถูกต้อง";
+  if (status === 403) return "browser context นี้ไม่ได้รับอนุญาต";
   if (status === 429) return "คำขอถี่เกินไป ลองใหม่";
   if (status === 413) return kind === "pdf" ? "ไฟล์/จำนวนหน้าเกินเพดาน" : "ข้อความยาวเกินเพดาน";
+  const codes = {
+    residual_pii: "ยังพบสัญญาณข้อมูลส่วนบุคคลหลังปกปิด ระบบจึงหยุดก่อนเรียกโมเดล",
+    provider_configuration: "บริการ LLM ยังไม่พร้อม (คีย์ไม่ถูกตั้งค่า)",
+    provider_unavailable: "โมเดลปลายทางยังไม่พร้อม",
+    provider_rejected: "โมเดลปลายทางปฏิเสธคำขอ",
+    provider_response_invalid: "คำตอบจากโมเดลไม่อยู่ในรูปแบบที่ปลอดภัย",
+    ocr_unavailable: "ระบบ OCR ยังไม่พร้อม",
+    ner_unavailable: "ระบบตรวจชื่อยังไม่พร้อม",
+    dependency_unavailable: "ส่วนประกอบประมวลผลยังไม่พร้อม",
+    service_unavailable: "บริการยังไม่พร้อม ลองใหม่ภายหลัง",
+    request_schema_invalid: "รูปแบบคำขอไม่ถูกต้อง",
+  };
+  if (codes[detail]) return codes[detail];
+  if (status === 503) return "ส่วนประกอบของบริการยังไม่พร้อม";
   return detail || ("เกิดข้อผิดพลาด (" + status + ")");
 }
 
@@ -427,10 +476,208 @@ async function safeJson(r) {
   try { return await r.json(); } catch { return {}; }
 }
 function detailText(body) {
+  if (body && body.error && typeof body.error.code === "string") return body.error.code;
   if (typeof body.detail === "string") return body.detail;
   if (body.detail) return JSON.stringify(body.detail);
   return "";
 }
+
+/* ── same-origin caller authentication ── */
+let authenticated = false;
+let authGeneration = 0;
+let detectGeneration = 0;
+let pdfGeneration = 0;
+let authCheckGeneration = 0;
+let authCheckController = null;
+let authMutationInFlight = false;
+const businessControllers = new Set();
+const accessCodeInput = document.getElementById("accessCode");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const authStatus = document.getElementById("authStatus");
+
+class StaleBusinessRequest extends Error {}
+
+function isStaleBusinessError(error) {
+  return error instanceof StaleBusinessRequest || (error && error.name === "AbortError");
+}
+
+function invalidateBusinessRequests() {
+  authGeneration += 1;
+  for (const controller of businessControllers) controller.abort();
+  businessControllers.clear();
+}
+
+function invalidateAuthCheck() {
+  authCheckGeneration += 1;
+  if (authCheckController) authCheckController.abort();
+  authCheckController = null;
+}
+
+function setAuthMutationState(value) {
+  authMutationInFlight = value;
+  accessCodeInput.disabled = value;
+  loginBtn.disabled = value;
+  logoutBtn.disabled = value;
+}
+
+function clearSensitiveState() {
+  clearTimeout(debounceTimer);
+  detectGeneration += 1;
+  pdfGeneration += 1;
+  accessCodeInput.value = "";
+  editor.value = "";
+  highlight.textContent = "";
+  renderLegend({});
+  meta.textContent = "เข้าสู่ระบบก่อนส่งข้อความไปประมวลผล";
+  document.getElementById("guardBar").textContent = "";
+
+  document.getElementById("masked").textContent = "ยังไม่ได้ส่ง";
+  document.getElementById("restored").textContent = "ยังไม่ได้ส่ง";
+  const tag = document.getElementById("providerTag");
+  tag.hidden = true;
+  tag.textContent = "";
+  document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูล";
+  document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูล";
+
+  pdfFile.value = "";
+  redactedB64 = null;
+  redactedName = "redacted.pdf";
+  document.getElementById("pdfDownload").hidden = true;
+  document.getElementById("cmpWrap").hidden = true;
+  document.getElementById("imgAfter").removeAttribute("src");
+  document.getElementById("pdfStatus").textContent = "";
+  document.getElementById("pdfInfo").textContent = "";
+  document.getElementById("reportMeta").textContent = "";
+}
+
+function setAuthState(value, message) {
+  authenticated = value;
+  accessCodeInput.hidden = value;
+  loginBtn.hidden = value;
+  logoutBtn.hidden = !value;
+  if (value) logoutBtn.textContent = "ออกจากระบบ";
+  authStatus.textContent = message;
+  for (const id of ["send", "pdfPick", "reportBtn"]) {
+    document.getElementById(id).disabled = !value;
+  }
+  if (!value) {
+    invalidateAuthCheck();
+    invalidateBusinessRequests();
+    clearSensitiveState();
+  }
+}
+
+async function checkAuthSession() {
+  const generation = authCheckGeneration + 1;
+  authCheckGeneration = generation;
+  if (authCheckController) authCheckController.abort();
+  const controller = new AbortController();
+  authCheckController = controller;
+  try {
+    const r = await fetch("/api/auth/session", {
+      credentials: "same-origin",
+      signal: controller.signal,
+    });
+    const body = await safeJson(r);
+    if (generation !== authCheckGeneration) return;
+    const valid = r.ok
+      && body.authenticated === true
+      && Number.isInteger(body.expires_in)
+      && body.expires_in >= 0
+      && body.expires_in <= 1800;
+    setAuthState(valid, valid ? "เข้าสู่ระบบแล้ว — session อายุไม่เกิน 30 นาที" : "กรุณาใส่ access code");
+  } catch (err) {
+    if (generation !== authCheckGeneration || (err && err.name === "AbortError")) return;
+    setAuthState(false, "ตรวจสอบสิทธิ์ไม่ได้");
+  } finally {
+    if (authCheckController === controller) authCheckController = null;
+  }
+}
+
+async function apiJson(url, options = {}) {
+  if (!authenticated) throw new StaleBusinessRequest();
+  const generation = authGeneration;
+  const controller = new AbortController();
+  businessControllers.add(controller);
+  try {
+    const r = await fetch(url, {
+      ...options,
+      credentials: "same-origin",
+      signal: controller.signal,
+    });
+    if (r.status === 401) {
+      setAuthState(false, "session หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
+      throw new StaleBusinessRequest();
+    }
+    const body = await safeJson(r);
+    if (!authenticated || generation !== authGeneration) {
+      throw new StaleBusinessRequest();
+    }
+    return {r, body};
+  } finally {
+    businessControllers.delete(controller);
+  }
+}
+
+loginBtn.addEventListener("click", async () => {
+  if (authMutationInFlight) return;
+  let code = accessCodeInput.value;
+  if (!code) return;
+  setAuthMutationState(true);
+  logoutBtn.hidden = true;
+  invalidateAuthCheck();
+  authStatus.textContent = "กำลังยืนยัน...";
+  try {
+    const r = await fetch("/api/auth/login", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({access_code: code}),
+    });
+    if (r.status === 204) {
+      await checkAuthSession();
+    } else {
+      const body = await safeJson(r);
+      setAuthState(false, errorMessage(r.status, detailText(body), "auth"));
+    }
+  } catch {
+    setAuthState(false, "เชื่อมต่อระบบยืนยันสิทธิ์ไม่ได้");
+  } finally {
+    code = "";
+    accessCodeInput.value = "";
+    setAuthMutationState(false);
+  }
+});
+
+accessCodeInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") loginBtn.click();
+});
+
+logoutBtn.addEventListener("click", async () => {
+  if (authMutationInFlight) return;
+  setAuthMutationState(true);
+  setAuthState(false, "กำลังออกจากระบบ...");
+  let complete = false;
+  try {
+    const r = await fetch("/api/auth/logout", {method: "POST", credentials: "same-origin"});
+    complete = r.status === 204;
+  } catch {
+    /* local state is already invalidated */
+  }
+  accessCodeInput.value = "";
+  setAuthMutationState(false);
+  if (complete) {
+    logoutBtn.hidden = true;
+    logoutBtn.textContent = "ออกจากระบบ";
+    authStatus.textContent = "ออกจากระบบแล้ว";
+  } else {
+    logoutBtn.hidden = false;
+    logoutBtn.textContent = "ลองออกจากระบบอีกครั้ง";
+    authStatus.textContent =
+      "ล้างข้อมูลในหน้านี้แล้ว แต่ session บนเซิร์ฟเวอร์อาจยังอยู่ กรุณาลองออกจากระบบอีกครั้ง";
+  }
+});
 
 function downloadB64(b64, name, mime) {
   const bytes = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
@@ -448,15 +695,28 @@ const highlight = document.getElementById("highlight");
 const meta = document.getElementById("meta");
 let debounceTimer = null;
 
+function codePointRangeToUtf16(text, start, end) {
+  const points = Array.from(text);
+  if (
+    !Number.isInteger(start) || !Number.isInteger(end)
+    || start < 0 || end < start || end > points.length
+  ) throw new Error("invalid code-point range");
+  return [
+    points.slice(0, start).join("").length,
+    points.slice(0, end).join("").length,
+  ];
+}
+
 function renderHighlight(text, entities) {
   const sorted = [...entities].sort((a, b) => b.start - a.start);
   const parts = [];
   let cursor = text.length;
   for (const e of sorted) {
-    if (e.end > cursor) continue; // กัน span ซ้อน (server dedupe แล้ว แต่กันไว้)
-    parts.unshift({text: text.slice(e.end, cursor)});
-    parts.unshift({text: text.slice(e.start, e.end), type: e.data_type});
-    cursor = e.start;
+    const [start, end] = codePointRangeToUtf16(text, e.start, e.end);
+    if (end > cursor) continue; // กัน span ซ้อน (server dedupe แล้ว แต่กันไว้)
+    parts.unshift({text: text.slice(end, cursor)});
+    parts.unshift({text: text.slice(start, end), type: e.data_type});
+    cursor = start;
   }
   parts.unshift({text: text.slice(0, cursor)});
   const html = parts.map(p => p.type
@@ -474,6 +734,7 @@ function renderLegend(counts) {
 
 async function detectNow() {
   const text = editor.value;
+  const generation = detectGeneration;
   if (!text.trim()) {
     highlight.textContent = "";
     renderLegend({});
@@ -481,34 +742,42 @@ async function detectNow() {
     document.getElementById("guardBar").innerHTML = "";
     return;
   }
+  if (!authenticated) return;
   try {
-    const r = await fetch("/api/detect", {
+    const {r, body} = await apiJson("/api/detect", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({text}),
     });
     if (!r.ok) return;
-    const body = await r.json();
-    renderHighlight(text, body.entities);
+    if (generation !== detectGeneration || text !== editor.value) return;
+    renderHighlight(text, body.highlights);
     renderLegend(body.entity_type_counts);
-    meta.textContent = `พบข้อมูลส่วนบุคคล ${body.entities.length} รายการ`;
+    meta.textContent = `พบข้อมูลส่วนบุคคล ${body.detected_entity_count} รายการ`;
     try {
-      const gr = await fetch("/api/guard", {
+      const {r: gr, body: gb} = await apiJson("/api/guard", {
         method: "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify({text}),
       });
       if (gr.ok) {
-        const gb = await gr.json();
+        if (generation !== detectGeneration || text !== editor.value) return;
         const bar = document.getElementById("guardBar");
         bar.innerHTML = gb.flagged
           ? '<span class="guard-ok">ตรวจ prompt injection</span> '
-            + gb.guard.map(g => `<span class="chip guard-chip" title="${esc(g.rationale)}">${esc(g.category)}</span>`).join("")
+            + gb.guard_findings.map(g => `<span class="chip guard-chip" title="${esc(g.severity)}">${esc(g.category)}</span>`).join("")
           : '<span class="guard-ok">ตรวจ prompt injection ไม่พบสัญญาณ</span>';
       }
-    } catch { /* เครือข่ายล้ม ปล่อย */ }
-  } catch { /* เครือข่ายล้ม ปล่อยรอบถัดไป */ }
+    } catch (err) {
+      if (isStaleBusinessError(err)) return;
+      /* เครือข่ายล้ม ปล่อย */
+    }
+  } catch (err) {
+    if (isStaleBusinessError(err)) return;
+    /* เครือข่ายล้ม ปล่อยรอบถัดไป */
+  }
 }
 
 editor.addEventListener("input", () => {
+  detectGeneration += 1;
   highlight.textContent = editor.value;
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(detectNow, 400);
@@ -527,6 +796,7 @@ document.querySelectorAll(".samples button").forEach(btn => {
 
 /* ── demo: send roundtrip (provider hard-coded to tokenmind) ── */
 function warningLabel(w) {
+  if (w && typeof w === "object") return `${w.code} (${w.count})`;
   const m = /^foreign_tokens:(\d+)$/.exec(w);
   if (m) return `โทเคนแปลกปลอม ${m[1]} จุด`;
   return w;
@@ -538,6 +808,19 @@ function fillEvidence(body) {
   wrap.innerHTML = (body.warnings && body.warnings.length)
     ? body.warnings.map(w => `<span class="chip warn-chip">${esc(warningLabel(w))}</span>`).join("")
     : '<span class="chip ok-chip">ไม่พบคำเตือน</span>';
+}
+
+function roundtripIsSafe(body) {
+  return Boolean(
+    body
+    && body.safety
+    && body.safety.status === "pass"
+    && body.restoration
+    && body.restoration.status === "complete"
+    && body.restoration.leftover_count === 0
+    && Array.isArray(body.warnings)
+    && body.warnings.length === 0
+  );
 }
 
 document.getElementById("send").addEventListener("click", async () => {
@@ -553,29 +836,35 @@ document.getElementById("send").addEventListener("click", async () => {
   masked.textContent = "กำลังปกปิด...";
   restored.textContent = "กำลังรอคำตอบ...";
   try {
-    const r = await fetch("/api/roundtrip", {
+    const {r, body} = await apiJson("/api/roundtrip", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({text, mode: document.getElementById("mode").value, provider: "tokenmind"}),
     });
-    const body = await safeJson(r);
     if (!r.ok) {
       masked.innerHTML = `<span class="warn">ส่งไม่สำเร็จ ${esc(errorMessage(r.status, detailText(body), "text"))}</span>`;
       restored.innerHTML = '<span class="warn">ยังไม่มีคำตอบให้กู้คืน</span>';
       return;
     }
     masked.textContent = body.sanitized_text;
-    restored.textContent = body.restored_text;
     tag.textContent = body.provider_used || "tokenmind";
     tag.hidden = false;
+    if (!roundtripIsSafe(body)) {
+      restored.innerHTML = '<span class="warn">ระบบระงับคำตอบที่กู้คืนไม่สมบูรณ์หรือมีคำเตือน</span>';
+      meta.innerHTML = '<span class="warn">ไม่แสดงคำตอบจนกว่าสถานะความปลอดภัยและการกู้คืนจะผ่านครบ</span>';
+      fillEvidence(body);
+      return;
+    }
+    restored.textContent = body.restored_text;
     meta.innerHTML = (body.warnings && body.warnings.length)
-      ? `<span class="warn">คำเตือน ${esc(body.warnings.join(" | "))}</span>`
-      : `ประมวลผล ${body.entities.length} รายการ ข้อมูลจริงไม่ถูกส่งต่อไปยังโมเดลปลายทาง`;
+      ? `<span class="warn">คำเตือน ${esc(body.warnings.map(warningLabel).join(" | "))}</span>`
+      : `ประมวลผล ${body.detected_entity_count} รายการ และตรวจข้อความที่ปกปิดซ้ำก่อนเรียกโมเดล`;
     fillEvidence(body);
   } catch (err) {
+    if (isStaleBusinessError(err)) return;
     masked.innerHTML = `<span class="warn">เชื่อมต่อ backend ไม่ได้ ${esc(String(err))}</span>`;
     restored.innerHTML = '<span class="warn">ยังไม่มีคำตอบให้กู้คืน</span>';
   } finally {
-    btn.disabled = false;
+    btn.disabled = !authenticated;
   }
 });
 
@@ -587,41 +876,43 @@ document.getElementById("pdfPick").addEventListener("click", () => pdfFile.click
 pdfFile.addEventListener("change", async () => {
   const f = pdfFile.files[0];
   if (!f) return;
+  const generation = ++pdfGeneration;
   const status = document.getElementById("pdfStatus");
   status.textContent = "กำลังประมวลผล...";
+  redactedB64 = null;
+  redactedName = "redacted.pdf";
   document.getElementById("pdfDownload").hidden = true;
   document.getElementById("cmpWrap").hidden = true;
+  document.getElementById("imgAfter").removeAttribute("src");
   document.getElementById("pdfInfo").textContent = "";
   const fd = new FormData();
   fd.append("pdf_file", f);
   try {
-    const r = await fetch("/api/redact-pdf", {method: "POST", body: fd});
-    const body = await safeJson(r);
+    const {r, body} = await apiJson("/api/redact-pdf", {method: "POST", body: fd});
+    if (generation !== pdfGeneration || pdfFile.files[0] !== f) return;
     if (!r.ok) {
       status.textContent = errorMessage(r.status, detailText(body), "pdf");
       return;
     }
-    document.getElementById("imgBefore").src = "data:image/png;base64," + body.before_png_b64;
     document.getElementById("imgAfter").src = "data:image/png;base64," + body.after_png_b64;
     document.getElementById("cmpWrap").hidden = false;
     redactedB64 = body.redacted_pdf_b64;
-    redactedName = "redacted_" + (body.filename || "document.pdf");
-    const s26 = (body.section26 && body.section26.length)
-      ? " ธงมาตรา 26 " + body.section26.map(s => s.category).join(" ")
+    redactedName = "redacted_document.pdf";
+    const s26 = (body.section26_categories && body.section26_categories.length)
+      ? " ธงมาตรา 26 " + body.section26_categories.join(" ")
       : "";
-    const reviewNote = body.human_review ? " ต้องตรวจสอบเพิ่มเติม (ความมั่นใจ OCR ต่ำ)" : "";
+    const reviewNote = body.human_review
+      ? " OCR ระบุว่าต้องตรวจสอบเพิ่มเติม"
+      : "";
     document.getElementById("pdfInfo").textContent =
-      `ปกปิด ${body.entity_count} รายการ (แสดงหน้าแรกเป็นภาพเปรียบเทียบ ลากเส้นเพื่อดูก่อนหลัง)` + s26 + reviewNote;
+      `ตรวจพบ ${body.detected_entity_count} รายการ (ตัวอย่างหน้าแรก; ต้องตรวจทุกกล่องและทุกหน้าก่อนใช้)` + s26 + reviewNote;
     document.getElementById("pdfDownload").hidden = false;
     status.textContent = "";
   } catch (err) {
+    if (isStaleBusinessError(err)) return;
+    if (generation !== pdfGeneration || pdfFile.files[0] !== f) return;
     status.textContent = "เชื่อมต่อ backend ไม่ได้ " + String(err);
   }
-});
-document.getElementById("cmpSlider").addEventListener("input", e => {
-  const v = e.target.value;
-  document.getElementById("imgAfter").style.clipPath = `inset(0 0 0 ${v}%)`;
-  document.getElementById("cmpBar").style.left = v + "%";
 });
 document.getElementById("pdfDownload").addEventListener("click", () => {
   if (redactedB64) downloadB64(redactedB64, redactedName, "application/pdf");
@@ -639,11 +930,10 @@ document.getElementById("reportBtn").addEventListener("click", async () => {
   btn.disabled = true;
   reportMeta.textContent = "กำลังออกรายงาน...";
   try {
-    const r = await fetch("/api/analyze-report", {
+    const {r, body} = await apiJson("/api/analyze-report", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({text}),
     });
-    const body = await safeJson(r);
     if (!r.ok) {
       reportMeta.innerHTML = `<span class="warn">ออกรายงานไม่สำเร็จ ${esc(errorMessage(r.status, detailText(body), "text"))}</span>`;
       return;
@@ -651,11 +941,15 @@ document.getElementById("reportBtn").addEventListener("click", async () => {
     downloadB64(body.report_pdf_b64, "pdpa_report.pdf", "application/pdf");
     reportMeta.textContent = `ออกรายงานแล้ว คะแนนรวม ${body.overall_score} เกรด ${body.overall_grade}`;
   } catch (err) {
+    if (isStaleBusinessError(err)) return;
     reportMeta.textContent = "เชื่อมต่อ backend ไม่ได้ " + String(err);
   } finally {
-    btn.disabled = false;
+    btn.disabled = !authenticated;
   }
 });
+
+setAuthState(false, "กำลังตรวจสอบสิทธิ์...");
+checkAuthSession();
 </script>
 </body>
 </html>

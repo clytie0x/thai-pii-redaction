@@ -6,20 +6,21 @@
 #      frontend) — envsubst fills it from AIGUARD_API_KEY, and
 #      NGINX_ENVSUBST_FILTER must stay ^AIGUARD_API_KEY$ or every nginx
 #      $variable below is blanked
-#   3. keep PII out of Dozzle: the noquery log format records $uri, never the
-#      query string or body
+#   3. keep PII out of Dozzle: request targets, headers, and bodies are never
+#      part of the access log
 #
 # External surface (after the platform strips /api):
 #   /health /detect /guard /roundtrip /redact-pdf /analyze-report
 #   /v1/<same>  — versioned aliases, the documented public contract
 
 limit_req_zone  $server_name zone=cap:1m rate=10r/s;
+limit_req_zone  $binary_remote_addr zone=auth_ip:1m rate=5r/m;
 limit_conn_zone $server_name zone=conc:1m;
 limit_conn_zone $server_name zone=conc_pdf:1m;
 limit_req_status 429;
 limit_conn_status 429;
 
-log_format noquery '$remote_addr $status $body_bytes_sent "$request_method $uri"';
+log_format private '$remote_addr $status $body_bytes_sent "$request_method"';
 
 server {
   listen 8000;
@@ -27,7 +28,11 @@ server {
   # limit zones silently stop counting.
   server_name team08.aiforthai.in.th;
 
-  access_log /var/log/nginx/access.log noquery;
+  # Nginx request warnings (not only access_log) include the complete request
+  # line, including query values. Keep startup/fatal diagnostics, but never
+  # emit request-level notice/warn/error rows into Docker/Dozzle.
+  error_log /dev/stderr crit;
+  access_log /var/log/nginx/access.log private;
 
   # Text endpoints get a small body; only /redact-pdf raises it below.
   client_max_body_size 1m;
@@ -41,14 +46,35 @@ server {
   proxy_set_header X-Forwarded-Proto https;
   proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
   proxy_set_header X-AIGuard-Key     "${AIGUARD_API_KEY}";
+  # The port keeps its /v1 aliases while the shared core is strict HTTP v2.
+  # The browser never supplies either internal header.
+  proxy_set_header X-AIGuard-Contract-Version "2";
   proxy_connect_timeout 5s;
   proxy_read_timeout  120s;
   proxy_send_timeout   60s;
+  # Never spill request or restored-response content into the container layer.
+  proxy_request_buffering off;
+  proxy_buffering off;
 
   # ── unversioned (platform CI healthcheck + same-origin web page) ──────
   location = /health {
-    limit_req zone=cap burst=10;
     proxy_pass http://core:8000/api/health;
+  }
+  location = /auth/login {
+    limit_req zone=auth_ip burst=3 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/login;
+  }
+  location = /auth/logout {
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/logout;
+  }
+  location = /auth/session {
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/session;
   }
   location = /detect {
     limit_req zone=cap burst=10;
@@ -80,8 +106,23 @@ server {
 
   # ── /v1 versioned aliases (documented public API) ─────────────────────
   location = /v1/health {
-    limit_req zone=cap burst=10;
     proxy_pass http://core:8000/api/health;
+  }
+  location = /v1/auth/login {
+    limit_req zone=auth_ip burst=3 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/login;
+  }
+  location = /v1/auth/logout {
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/logout;
+  }
+  location = /v1/auth/session {
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/session;
   }
   location = /v1/detect {
     limit_req zone=cap burst=10;

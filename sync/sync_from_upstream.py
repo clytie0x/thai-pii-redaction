@@ -22,12 +22,14 @@ import json
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 PORT_ROOT = Path(__file__).resolve().parent.parent
 CORE = PORT_ROOT / "core"
 MANIFEST = Path(__file__).resolve().parent / "PORT_MANIFEST.json"
+UPSTREAM_URL = "https://github.com/Teerapat-Vatpitak/thai-pii-redaction"
 
 # Directories are copied recursively minus caches; files are copied as-is.
 SLICE = [
@@ -55,11 +57,20 @@ _SKIP_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache"}
 _TEXT_SUFFIXES = {".py", ".txt", ".toml", ".lock", ".html", ".md", ""}
 
 
+def _normalized_bytes(src: Path) -> bytes:
+    data = src.read_bytes()
+    if src.suffix.lower() in _TEXT_SUFFIXES or src.name in (
+        "VERSION",
+        "LICENSE",
+        "NOTICE",
+    ):
+        data = data.replace(b"\r\n", b"\n")
+    return data
+
+
 def _copy_normalized(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
-    data = src.read_bytes()
-    if src.suffix.lower() in _TEXT_SUFFIXES or src.name in ("VERSION", "LICENSE", "NOTICE"):
-        data = data.replace(b"\r\n", b"\n")
+    data = _normalized_bytes(src)
     dst.write_bytes(data)
 
 
@@ -83,6 +94,10 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: f.read(1 << 16), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
 
 
 def _iter_files(base: Path):
@@ -125,30 +140,93 @@ def do_sync(upstream: Path) -> None:
             continue
         files[rel] = _sha256(p)
 
-    MANIFEST.write_text(
-        json.dumps(
-            {
-                "upstream": "https://github.com/Teerapat-Vatpitak/thai-pii-redaction",
-                "commit": commit,
-                "synced_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "files": files,
-            },
-            ensure_ascii=False,
-            indent=1,
-        ),
-        encoding="utf-8",
+    manifest_text = json.dumps(
+        {
+            "upstream": UPSTREAM_URL,
+            "commit": commit,
+            "synced_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "files": files,
+        },
+        ensure_ascii=False,
+        indent=1,
     )
+    with MANIFEST.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(manifest_text + "\n")
     print(f"synced {len(files)} files from {commit[:12]}")
 
 
 # Files living under core/ that belong to the PORT, not upstream.
-PORT_OWNED = {"Dockerfile", "prewarm_ocr.py"}
+PORT_OWNED = {
+    "Dockerfile",
+    "prewarm_ocr.py",
+    "aift_auth.py",
+    "aift_gateway.py",
+    "requirements-aift-ocr.in",
+    "requirements-aift.lock",
+}
 
 
-def do_check() -> None:
+def _slice_hashes(upstream: Path) -> dict[str, str]:
+    files: dict[str, str] = {}
+    for entry in SLICE:
+        source = upstream / entry
+        if not source.exists():
+            _die(f"SLICE entry missing at recorded upstream commit: {entry}")
+        if source.is_dir():
+            for item in _iter_files(source):
+                relative = (Path(entry) / item.relative_to(source)).as_posix()
+                files[relative] = _sha256_bytes(_normalized_bytes(item))
+        else:
+            files[Path(entry).as_posix()] = _sha256_bytes(_normalized_bytes(source))
+    return files
+
+
+def _verify_recorded_upstream(manifest: dict, want: dict[str, str]) -> None:
+    commit = manifest.get("commit")
+    if (
+        manifest.get("upstream") != UPSTREAM_URL
+        or not isinstance(commit, str)
+        or len(commit) != 40
+        or any(char not in "0123456789abcdef" for char in commit)
+    ):
+        _die("manifest upstream identity is invalid")
+    with tempfile.TemporaryDirectory(prefix="aiguard_upstream_") as temp:
+        checkout = Path(temp) / "upstream"
+        result = subprocess.run(
+            ["git", "init", "--quiet", str(checkout)],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            _die(f"git init failed: {result.stderr.strip()}")
+        _git(checkout, "remote", "add", "origin", UPSTREAM_URL)
+        _git(checkout, "fetch", "--quiet", "--depth", "1", "origin", commit)
+        fetched = _git(checkout, "rev-parse", "FETCH_HEAD")
+        if fetched != commit:
+            _die("fetched upstream commit does not match the manifest")
+        _git(checkout, "checkout", "--quiet", "--detach", "FETCH_HEAD")
+        actual = _slice_hashes(checkout)
+    if actual != want:
+        missing = sorted(set(want) - set(actual))
+        extra = sorted(set(actual) - set(want))
+        changed = sorted(
+            key for key in set(want) & set(actual) if want[key] != actual[key]
+        )
+        for key in missing:
+            print(f"UPSTREAM_MISSING  {key}", file=sys.stderr)
+        for key in extra:
+            print(f"UPSTREAM_EXTRA    {key}", file=sys.stderr)
+        for key in changed:
+            print(f"UPSTREAM_CHANGED  {key}", file=sys.stderr)
+        _die("manifest hashes do not match the recorded upstream Git object")
+
+
+def do_check(*, verify_upstream: bool = False) -> None:
     if not MANIFEST.exists():
         _die("no PORT_MANIFEST.json — run a sync first")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    if manifest.get("upstream") != UPSTREAM_URL:
+        _die("manifest points at an unexpected upstream repository")
     want: dict[str, str] = manifest["files"]
     have = {
         p.relative_to(CORE).as_posix(): _sha256(p)
@@ -166,16 +244,25 @@ def do_check() -> None:
         for k in changed:
             print(f"CHANGED  {k}", file=sys.stderr)
         _die("core/ does not match PORT_MANIFEST.json")
+    if verify_upstream:
+        _verify_recorded_upstream(manifest, want)
     print(f"check ok: {len(want)} files match commit {manifest['commit'][:12]}")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="upstream", help="path to upstream checkout")
-    ap.add_argument("--check", action="store_true", help="verify core/ against manifest")
+    ap.add_argument(
+        "--check", action="store_true", help="verify core/ against manifest"
+    )
+    ap.add_argument(
+        "--verify-upstream",
+        action="store_true",
+        help="fetch the recorded Git object and verify every manifest hash",
+    )
     args = ap.parse_args()
     if args.check:
-        do_check()
+        do_check(verify_upstream=args.verify_upstream)
     elif args.upstream:
         do_sync(Path(args.upstream).resolve())
     else:

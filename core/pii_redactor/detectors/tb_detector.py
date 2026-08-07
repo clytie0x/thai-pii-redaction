@@ -12,7 +12,9 @@ from dataclasses import dataclass
 from pythainlp import sent_tokenize
 from pythainlp.tag import NER
 
+from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
 from pii_redactor.models import Entity
+from pii_redactor.safe_errors import discard_exception_graph
 
 _LOG = logging.getLogger(__name__)
 
@@ -58,8 +60,10 @@ LABEL_MAP: dict[str, str | None] = {
 # _disambiguate_bank_phone; regexes copied rather than imported to avoid a
 # circular import, same precedent as _deduplicate below).
 # The ADDRESS check includes the span ITSELF because address cues (เขต/ตำบล/
-# ซอย/ถนน) usually sit inside the address text; the DOB check looks only at
-# the preceding context.
+# ซอย/ถนน) usually sit inside the address text; the DOB check looks at the
+# preceding context plus the span's own non-digit HEAD — the CRF can absorb a
+# glued cue into the DATE span ("ปีเกิด 24 มีนาคม 2550"), where a
+# preceding-window-only search ends at "...วันเดือน" and misses it.
 # `เลขที่` is a real address cue on its own ("เลขที่ 26 ซอย...") but it also
 # opens compounds meaning "the number of <a thing>" -- เลขที่บัญชี, เลขที่สัญญา,
 # เลขที่ใบกำกับภาษี -- which are not addresses. Without the lookahead the
@@ -70,10 +74,13 @@ LABEL_MAP: dict[str, str | None] = {
 # still matters: บ้านเลขที่ must be tried before เลขที่.
 _ADDR_CUE_RE = re.compile(
     r"ที่อยู่|บ้านเลขที่|อาศัยอยู่|พักอยู่"
-    r"|เลขที่(?!บัญชี|ใบ|สัญญา|เอกสาร|คำสั่ง|กรมธรรม์|พัสดุ|คดี|หนังสือ)"
+    r"|เลขที่(?!บัญชี|ใบ|สัญญา|เอกสาร|คำสั่ง|กรมธรรม์|พัสดุ|คดี|หนังสือ|บัตร)"
     r"|ซอย|ถนน|ตำบล|แขวง|อำเภอ|เขต|จังหวัด"
 )
-_TB_BIRTH_CUE_RE = re.compile(r"เกิด")
+# Same cue as fp_detector._BIRTH_CUE_RE (copies by design): เกิดเหตุ/เหตุเกิด
+# are incident phrasings that never introduce a birth date, and the English
+# labels are a real register on Thai visa/passport paperwork.
+_TB_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
 _TB_CUE_WINDOW = 30
 
 # thainer CRF has no reliable signal on out-of-distribution (non-Thai) input --
@@ -110,6 +117,14 @@ _NAME_DOC_COMPOUND_RE = re.compile(
     r"ตารางสอบ|ตารางเรียน|ตารางนัด|รายงานการ|สถานีตำรวจ|ประวัติการ|นิคมอุตสาหกรรม"
     r"|เลขครุภัณฑ์|เลขที่|เลขเอกสาร|ใบสมัคร|ใบคำร้อง|ใบเสร็จ|ใบกำกับ|ใบแจ้ง"
     r"|บันทึกข้อความ|ประกาศรายชื่อ|ประกาศผล|กำหนดการ|ระเบียบวาระ"
+    # Document-title heads that leaked through the lenient head rule (each a
+    # measured gold false positive). Compounds, never noun prefixes: bare
+    # รายชื่อ leads no real name; แบบประเมิน and สัญญาเช่า/สัญญาจ้าง are the
+    # title forms only — bare แบบ and bare สัญญา are real given names
+    # (แบบบุญมี, สัญญา ธรรมศักดิ์) and must stay out. ขอบคุณ/ขอขอบคุณ is the
+    # letter-closing class whose precedent (ขอแสดงความนับถือ) already sits in
+    # name_context's _NOT_NAME.
+    r"|รายชื่อ|แบบประเมิน|สัญญาเช่า|สัญญาจ้าง|ขอขอบคุณ|ขอบคุณ"
     # Form field labels seen gluing to real names in label-first OCR order
     # (M6-P0 mechanism 2, ภ.ง.ด.91 spouse-name exposure): "เดือนปีเกิด" is
     # "month/year of birth", not a person. The regex is used with .match()
@@ -125,15 +140,95 @@ _NAME_DOC_COMPOUND_RE = re.compile(
 # the strict shape gate below would otherwise discard the name because of a
 # comma. Deliberately narrow: only characters that end a clause.
 _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
+# A digit run (with its separators) inside a NAME span is the same class of
+# invariant as the line break: a person's name never contains one. The CRF
+# glues a trailing account number into the PERSON span ("บัญชี ศักดิ์ชัย
+# รุ่งอรุณ เลขบัญชี8807123456"), and aggregate.dedupe_spans then dropped the
+# WHOLE dirty span for overlapping the FP BANK_ACCOUNT at its tail — deleting
+# the name at the head because of digits at the end (fn10, the one fully
+# unmasked name in the 2026-08-04 weakness inventory). The HEAD segment is
+# truncated at its first digit run; what follows is glued junk the FP
+# patterns claim independently, and Thai names never contain digits, so no
+# name text can be lost. Tail segments keep their existing wholesale shape
+# rejection instead — see the loop below.
+_NAME_DIGIT_RUN_RE = re.compile(r"[0-9][0-9\s./-]*")
 
 
-def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str:
-    if data_type == "LOCATION":
+# A CRF "location" that is really หนังสือราชการ numbering, in two shapes seen
+# on the gold negative slice: the span IS a เลขที่<document> field label
+# (เลขที่คำสั่ง / เลขที่ใบเสนอราคา ... — same compound list the ADDRESS cue
+# already refuses to upgrade on), or the span carries digits with no Thai
+# letter RUN and a Buddhist-year component ("จ.44/2569" — a contract number
+# whose only Thai is the abbreviation letter). The year requirement is what
+# separates it from a bare house number ("214/9"), which the adversarial
+# review showed the finetuned engine emits as its own LOCATION span — no
+# Thai, digits and a slash, and absolutely PII. A real place with a digit
+# ("เชียงใหม่ 50200", "อาคาร 7") keeps its Thai run and survives either way.
+# บัตร joined both lists 2026-08-04 (FP-gf08/FP-lf11): เลขที่บัตรประชาชน /
+# เลขที่บัตรเครดิต... are card-number field labels the CRF misreads as places
+# — บัตร always means "card" in Thai, so no real address takes this shape,
+# and the card digits themselves keep their own checksum detectors.
+_DOC_NUMBER_LABEL_RE = re.compile(r"เลขที่(?:บัญชี|ใบ|สัญญา|เอกสาร|คำสั่ง|กรมธรรม์|พัสดุ|คดี|หนังสือ|บัตร)")
+_THAI_RUN_RE = re.compile(r"[ก-๛]{2,}")
+_BUDDHIST_YEAR_RE = re.compile(r"(?<!\d)2[456]\d{2}(?!\d)")
+# A "date" right after the Thai industrial-standard designation is the
+# standard's number ("มอก. 2540-2555"), not a calendar date. The left
+# boundary keeps common words ending in the same letters (ทะเลหมอก) from
+# swallowing a real date after them.
+_STANDARD_CUE_RE = re.compile(r"(?<![ก-๛])มอก\.?\s*$")
+_STANDARD_CUE_LOOKBACK = 10
+# No calendar date component has five digits in a row — a run that long
+# inside a "date" means the CRF swallowed a serial/reference number into the
+# span ("ที่ 27 ISSN 08571724 เผยแพร่เดือนกันยายน 2568", surfaced on the gold
+# negative slice once the FP ID_NUMBER stopped out-competing it in dedupe).
+_DATE_SERIAL_RE = re.compile(r"\d{5,}")
+# An "organization" whose span text opens with the fee-compound head ค่า+noun
+# (ค่าธรรมเนียม/ค่าหอพัก/ค่าบริการ — ng42) is a price-list category label,
+# never the name of anything; in surrogate mode it became a fake org name in
+# the middle of a fee schedule. The ย lookahead protects camp/label orgs
+# (ค่ายอาสาพัฒนาชนบท, ค่ายสุรนารี) — the one real-org shape sharing the
+# prefix. Used with .match(), anchored at span start.
+_FEE_COMPOUND_RE = re.compile(r"ค่า(?!ย)")
+# Organization leads that make a ค่า-prefixed span a real organization name
+# rather than a fee label. Same closed vocabulary as name_context's
+# _NON_PERSON_LEADS, kept literal here to avoid a circular import.
+_ORG_LEAD_IN_SPAN_RE = re.compile(
+    r"บริษัท|ห้าง|ธนาคาร|โรงพยาบาล|มหาวิทยาลัย|โรงเรียน|สำนักงาน|โรงงาน|มูลนิธิ|สมาคม|สหกรณ์"
+)
+
+
+def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str | None:
+    """Cue-driven label upgrade, or ``None`` when the span is no PII at all."""
+    if data_type == "ORGANIZATION":
+        entity_text = text[start:end]
+        if _FEE_COMPOUND_RE.match(entity_text) and not _ORG_LEAD_IN_SPAN_RE.search(entity_text):
+            # A fee word glued in front of a real organization
+            # ("ค่าจ้างบริษัท เอบีซี จำกัด") is still an organization span, and
+            # ORGANIZATION is masked on purpose as a quasi-identifier — only
+            # the bare price-list label is dropped.
+            return None
+    elif data_type == "LOCATION":
+        entity_text = text[start:end]
+        if _DOC_NUMBER_LABEL_RE.match(entity_text):
+            return None
+        if _BUDDHIST_YEAR_RE.search(entity_text) and not _THAI_RUN_RE.search(entity_text):
+            return None
         ctx = text[max(0, start - _TB_CUE_WINDOW) : end]
         if _ADDR_CUE_RE.search(ctx):
             return "ADDRESS"
     elif data_type == "DATE":
-        ctx = text[max(0, start - _TB_CUE_WINDOW) : start]
+        if _STANDARD_CUE_RE.search(text[max(0, start - _STANDARD_CUE_LOOKBACK) : start]):
+            return None
+        if _DATE_SERIAL_RE.search(text[start:end]):
+            return None
+        # Preceding window PLUS the span's non-digit head: the CRF absorbs a
+        # glued cue into the span, and the head is contiguous original text,
+        # so the เกิดเหตุ lookarounds still see across the join. A clean date
+        # span has an empty head and is unaffected.
+        span_text = text[start:end]
+        first_digit = re.search(r"\d", span_text)
+        head = span_text[: first_digit.start()] if first_digit else span_text
+        ctx = text[max(0, start - _TB_CUE_WINDOW) : start] + head
         if _TB_BIRTH_CUE_RE.search(ctx):
             return "DATE_OF_BIRTH"
     return data_type
@@ -142,7 +237,10 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str:
 def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     """Shared NAME span hygiene for every neural engine (CRF and fine-tuned).
 
-    A person's name never spans a line break. On label-first OCR field order
+    A person's name never spans a line break — and never contains a digit
+    run, so the head segment is SPLIT at its first one and both sides are
+    judged (see `_NAME_DIGIT_RUN_RE`; digit-bearing tail lines were already
+    rejected wholesale by the shape gate). On label-first OCR field order
     the CRF can glue a form label to the real name(s) that follow it into one
     span (e.g. "เดือนปีเกิด\n\nกิตติ พรดี\nพิมพ์ใจ แสนดี" -- a
     month/year-of-birth label followed by two real names): unconditionally
@@ -170,18 +268,65 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     name cue (นาย/นาง/ชื่อ/...), the cue pass owns the person outright, and
     even the head would be junk glued to it -- so the WHOLE span is dropped
     instead of segmented.
+
+    Same-line spans (and the head segment) additionally get the B1/B2/B3
+    role/label edge trim (`name_context.trim_same_line_name_edges`): a
+    leading role word (ผู้จัดการฝ่ายขาย, ผู้ค้ำประกัน) is trimmed and the
+    span is truncated at the first trailing field-label group
+    (เลขประจำตัวประชาชน, วันเกิด) — whole-token closed-lexicon evidence only,
+    and only while two name groups remain, because trimming unmasks.
     """
-    from pii_redactor.detectors.name_context import is_non_person_segment
+    from pii_redactor.detectors.name_context import (
+        is_non_person_segment,
+        trim_same_line_name_edges,
+    )
+
+    def _tail_segment(line: str, line_start: int) -> tuple[int, int] | None:
+        lstripped = line.lstrip()
+        pad = len(line) - len(lstripped)
+        seg = lstripped.rstrip().rstrip(_NAME_SEGMENT_TRIM_CHARS).rstrip()
+        if len(seg) < 2:
+            return None
+        if _NAME_DOC_COMPOUND_RE.match(seg):
+            return None
+        if not _NAME_SEGMENT_SHAPE_RE.match(seg):
+            return None
+        if is_non_person_segment(seg):
+            return None
+        seg_start = line_start + pad
+        return (seg_start, seg_start + len(seg))
 
     entity_text = text[start:end]
-    if "\n" not in entity_text:
-        if _NAME_DOC_COMPOUND_RE.match(entity_text):
+    if "\n" not in entity_text and not _NAME_DIGIT_RUN_RE.search(entity_text):
+        compound = _NAME_DOC_COMPOUND_RE.match(entity_text)
+        if compound:
+            # A document compound at the head does NOT mean the whole span is
+            # a header: the CRF routinely glues one onto a real name that
+            # follows it ("รายชื่อ สมชาย ใจดี"), and dropping the span left
+            # that name completely unmasked (measured, 2026-08-04 review).
+            # The compound must END the word for that reading: a label is
+            # written apart from the name it introduces ("รายชื่อ สมชาย"),
+            # while a compound glued to what follows is one longer header
+            # phrase ("ตารางสอบปลายภาค", "รายชื่อนักศึกษาฝึกงาน") and the
+            # whole span stays dropped. What follows is then judged by the
+            # strict tail gate plus a two-group floor, so a header with no
+            # name material behind it is dropped too.
+            rest = entity_text[compound.end() :]
+            if not rest[:1].isspace():
+                return []
+            seg = _tail_segment(rest, start + compound.end())
+            if seg is None or " " not in text[seg[0] : seg[1]]:
+                return []
+            return [seg]
+        t_lo, t_hi = trim_same_line_name_edges(entity_text)
+        if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(entity_text[t_lo:t_hi]):
             return []
-        return [(start, end)]
+        return [(start + t_lo, start + t_hi)]
 
-    _head, tail = entity_text.split("\n", 1)
-    if _NAME_CUE_AFTER_BREAK_RE.match(tail.lstrip()):
-        return []
+    if "\n" in entity_text:
+        _head, tail = entity_text.split("\n", 1)
+        if _NAME_CUE_AFTER_BREAK_RE.match(tail.lstrip()):
+            return []
 
     spans: list[tuple[int, int]] = []
     offset = 0
@@ -189,25 +334,40 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         line_start = start + offset
         offset += len(line) + 1
         if index == 0:
-            seg = line.rstrip()
+            # HEAD only: split at the first digit run. Tail lines keep the
+            # stricter rule they always had — the shape gate rejects a
+            # digit-bearing line wholesale, and truncating one instead would
+            # mint its leading word ("วันที่ 1 สิงหาคม" -> "วันที่") as a
+            # segment the gate was built to reject.
+            #
+            # BOTH sides of the cut are evaluated. Keeping only the PREFIX
+            # dropped every roster line that numbers the person before naming
+            # them ("1. สมชาย ใจดี" -> nothing at all, 2026-08-04 review). The
+            # part AFTER the digits carries no start-of-span evidence — it is
+            # exactly the "whatever the CRF ran on into" case — so it is
+            # judged by the strict TAIL gate, which is what keeps the fn10
+            # trailing account number and its label out.
+            digits = _NAME_DIGIT_RUN_RE.search(line)
+            head = line[: digits.start()] if digits else line
+            if digits:
+                got = _tail_segment(line[digits.end() :], line_start + digits.end())
+                if got:
+                    spans.append(got)
+            seg = head.rstrip()
             if len(seg) < 2 or _NAME_DOC_COMPOUND_RE.match(seg):
                 continue
-            spans.append((line_start, line_start + len(seg)))
+            # Same-line role/label edge trim (B1/B2/B3), re-checking the
+            # compound gate on the result: a trim can expose a document
+            # compound the role word was glued in front of.
+            t_lo, t_hi = trim_same_line_name_edges(seg)
+            if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(seg[t_lo:t_hi]):
+                continue
+            spans.append((line_start + t_lo, line_start + t_hi))
             continue
-        lstripped = line.lstrip()
-        pad = len(line) - len(lstripped)
-        seg = lstripped.rstrip().rstrip(_NAME_SEGMENT_TRIM_CHARS).rstrip()
-        if len(seg) < 2:
-            continue
-        if _NAME_DOC_COMPOUND_RE.match(seg):
-            continue
-        if not _NAME_SEGMENT_SHAPE_RE.match(seg):
-            continue
-        if is_non_person_segment(seg):
-            continue
-        seg_start = line_start + pad
-        spans.append((seg_start, seg_start + len(seg)))
-    return spans
+        got = _tail_segment(line, line_start)
+        if got:
+            spans.append(got)
+    return sorted(spans)
 
 
 _FINETUNED_LABEL_MAP = {
@@ -258,6 +418,8 @@ def _detect_tb_finetuned(text: str) -> list[Entity]:
             for seg_start, seg_end in segments:
                 model_name_spans.append((seg_start, seg_end))
                 seg_data_type = _apply_cue_upgrades(text, seg_start, seg_end, data_type)
+                if seg_data_type is None:
+                    continue
                 candidates.append(
                     Entity(
                         entity_id=str(uuid.uuid4()),
@@ -270,6 +432,8 @@ def _detect_tb_finetuned(text: str) -> list[Entity]:
                 )
             continue
         data_type = _apply_cue_upgrades(text, start, end, data_type)
+        if data_type is None:
+            continue
         candidates.append(
             Entity(
                 entity_id=str(uuid.uuid4()),
@@ -304,6 +468,24 @@ def _detect_tb_finetuned(text: str) -> list[Entity]:
 
 class NEREngineUnavailableError(RuntimeError):
     """AIGUARD_NER_ENGINE is set to an engine whose dependency isn't installed."""
+
+
+def _raise_explicit_ner_failure(
+    error: Exception,
+    *,
+    default_category: str,
+    default_count: int,
+) -> None:
+    """Drop an explicit-engine failure graph and raise fixed metadata only."""
+
+    if isinstance(error, NERFailureError):
+        code, category, count = ner_failure_metadata(error)
+    else:
+        code = "ner_unavailable"
+        category = default_category
+        count = default_count
+    discard_exception_graph(error)
+    raise NERFailureError(code, category=category, count=count) from None
 
 
 # Curated allow-list: only engines verified to emit the same (word, "B-"/"I-"/
@@ -398,43 +580,67 @@ def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, i
     spans: list[tuple[str, int, int, str]] = []
     current_label: str | None = None
     current_start: int | None = None
-    current_chars: list[str] = []
+    current_end: int | None = None
     pos = 0
 
     for word, tag in tokens:
         idx = text.find(word, pos)
         if idx == -1:
             continue
+        token_end = idx + len(word)
+
+        # Live TNER represents separators as whitespace tokens with a blank
+        # tag. Keep them transparent so a following I-tag extends the same
+        # source span without losing the gap.
+        if not word.strip() and not tag.strip():
+            pos = token_end
+            continue
 
         if tag.startswith("B-"):
             # Save previous entity
-            if current_label and current_chars:
-                ent_text = "".join(current_chars)
+            if current_label and current_start is not None and current_end is not None:
                 spans.append(
-                    (ent_text, current_start, current_start + len(ent_text), current_label)
+                    (
+                        text[current_start:current_end],
+                        current_start,
+                        current_end,
+                        current_label,
+                    )
                 )
             current_label = tag[2:]
             current_start = idx
-            current_chars = [word]
+            current_end = token_end
         elif tag.startswith("I-") and current_label == tag[2:]:
-            current_chars.append(word)
+            # Source positions, unlike concatenated token lengths, preserve an
+            # internal separator omitted by the tokenizer.
+            current_end = token_end
         else:
             # O tag or label mismatch — close current entity
-            if current_label and current_chars:
-                ent_text = "".join(current_chars)
+            if current_label and current_start is not None and current_end is not None:
                 spans.append(
-                    (ent_text, current_start, current_start + len(ent_text), current_label)
+                    (
+                        text[current_start:current_end],
+                        current_start,
+                        current_end,
+                        current_label,
+                    )
                 )
             current_label = None
             current_start = None
-            current_chars = []
+            current_end = None
 
-        pos = idx + len(word)
+        pos = token_end
 
     # Flush last entity
-    if current_label and current_chars:
-        ent_text = "".join(current_chars)
-        spans.append((ent_text, current_start, current_start + len(ent_text), current_label))
+    if current_label and current_start is not None and current_end is not None:
+        spans.append(
+            (
+                text[current_start:current_end],
+                current_start,
+                current_end,
+                current_label,
+            )
+        )
 
     return spans
 
@@ -444,15 +650,40 @@ def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, i
 # ---------------------------------------------------------------------------
 
 
+def _covered_by_kept(span: tuple[int, int], kept: list[Entity]) -> bool:
+    """True when every character of ``span`` lies inside kept spans."""
+    lo, hi = span
+    cur = lo
+    for s, e in sorted(k.span for k in kept if k.span[0] < hi and k.span[1] > lo):
+        if s > cur:
+            return False
+        cur = max(cur, e)
+    return cur >= hi
+
+
 def _deduplicate(entities: list[Entity]) -> list[Entity]:
-    """Remove overlapping spans; prefer higher score, then first occurrence."""
-    sorted_ents = sorted(entities, key=lambda e: (e.span[0], -e.score))
+    """Remove redundant spans: higher score wins, then earlier start.
+
+    Score-first is fp_detector's DET-2 key and the contract name_context.py
+    documents ("slightly higher score than the CRF, so ... the complete name
+    wins de-duplication"): a cue span with the exact boundary beats the CRF
+    span that glued a role word on. The earlier start-first key protected a
+    real class — the CRF emits ONE wide span covering TWO people while a cue
+    span covers only the first at higher score (LATENT-1; reproduced through
+    the real path in tests/test_name_boundary_hygiene.py), and plain
+    score-first eviction unmasked the second person. So eviction requires
+    coverage: an overlapping candidate is dropped only when its characters
+    are FULLY covered by the spans already kept, else it is kept too —
+    eviction never reduces coverage (recall > precision). In that guarded
+    case the output carries an overlap; `aggregate.dedupe_spans` resolves it
+    start-first-then-longer, so the wide span wins downstream and nothing is
+    unmasked."""
+    sorted_ents = sorted(entities, key=lambda e: (-e.score, e.span[0]))
     kept: list[Entity] = []
     for ent in sorted_ents:
         if (ent.span[1] - ent.span[0]) < 2:
             continue
-        overlaps = any(not (ent.span[1] <= k.span[0] or ent.span[0] >= k.span[1]) for k in kept)
-        if not overlaps:
+        if not _covered_by_kept(ent.span, kept):
             kept.append(ent)
     return sorted(kept, key=lambda e: e.span[0])
 
@@ -510,6 +741,8 @@ def _finalize_tb_candidate(text: str, orig_start: int, orig_end: int, label: str
     entities: list[Entity] = []
     for seg_start, seg_end in segments:
         seg_data_type = _apply_cue_upgrades(text, seg_start, seg_end, data_type)
+        if seg_data_type is None:
+            continue
         entities.append(
             Entity(
                 entity_id=str(uuid.uuid4()),
@@ -523,7 +756,14 @@ def _finalize_tb_candidate(text: str, orig_start: int, orig_end: int, label: str
     return entities
 
 
-def _retag_degenerate_chunk(text: str, ner: NER, core_begin: int, core_end: int) -> list[Entity]:
+def _retag_degenerate_chunk(
+    text: str,
+    ner: NER,
+    core_begin: int,
+    core_end: int,
+    *,
+    fail_closed: bool = False,
+) -> list[Entity]:
     """Re-tag a degenerate chunk's core one physical line at a time.
 
     The whole-chunk tagging call that produced the degenerate span is not
@@ -543,7 +783,13 @@ def _retag_degenerate_chunk(text: str, ner: NER, core_begin: int, core_end: int)
             line_start = core_begin + offset
             try:
                 tagged_line = ner.tag(line)
-            except Exception as exc:  # pragma: no cover - defensive, see chunk-level guard above
+            except Exception as exc:
+                if fail_closed:
+                    _raise_explicit_ner_failure(
+                        exc,
+                        default_category="dependency",
+                        default_count=1,
+                    )
                 _LOG.warning(
                     "NER tagging failed on degenerate-chunk line at char %d (%d chars; %s); "
                     "skipping — PII on this line may be missed",
@@ -560,12 +806,55 @@ def _retag_degenerate_chunk(text: str, ner: NER, core_begin: int, core_end: int)
     return candidates
 
 
+def _retag_unknown_label_span(
+    text: str,
+    ner: NER,
+    start: int,
+    end: int,
+    *,
+    fail_closed: bool = False,
+) -> list[Entity]:
+    """Re-tag an unknown-label multi-line span's physical lines individually.
+
+    A label absent from LABEL_MAP entirely (the CRF's LAW-class confusion —
+    distinct from MONEY/TIME, which map to None deliberately) that crosses a
+    newline has swallowed unrelated form lines the model tags fine in
+    isolation ("เลขบัตรประชาชน ... วันเกิด 30 ตุลาคม 2549" — the DOB was
+    silently dropped with the bogus span). The degenerate-chunk guard cannot
+    catch it: that guard needs a single near-chunk-wide span, and these sit
+    among other decoded spans. Lines are expanded to full physical lines so a
+    span starting mid-name still re-tags the whole line. Retagged NAME
+    candidates are additionally gated through `is_non_person_segment` — the
+    retag context is exactly where the CRF hallucinates PERSON on field
+    labels (measured: retagging mints PERSON "เลขบัตรประชาชน").
+    """
+    from pii_redactor.detectors.name_context import is_non_person_segment
+
+    line_begin = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    if line_end == -1:
+        line_end = len(text)
+    return [
+        e
+        for e in _retag_degenerate_chunk(
+            text,
+            ner,
+            line_begin,
+            line_end,
+            fail_closed=fail_closed,
+        )
+        if e.data_type != "NAME" or not is_non_person_segment(text[e.span[0] : e.span[1]])
+    ]
+
+
 def _ner_candidates(
     text: str,
     ner: NER,
     sentence_offsets: list[tuple[str, int]],
     margin_sentences: int,
     diagnostics: NERChunkDiagnostics | None = None,
+    *,
+    fail_closed: bool = False,
 ) -> list[Entity]:
     """Run one NER engine over stride chunks and return TB Entity candidates
     mapped to original-text offsets (pre-dedup).
@@ -617,6 +906,12 @@ def _ner_candidates(
             # traceback are NOT logged because they can embed the input text.
             if diagnostics is not None:
                 diagnostics.skipped += 1
+            if fail_closed:
+                _raise_explicit_ner_failure(
+                    exc,
+                    default_category="dependency",
+                    default_count=1,
+                )
             _LOG.warning(
                 "NER tagging failed on chunk chars %d-%d (%d chars; %s); "
                 "skipping — PII in this chunk may be missed",
@@ -654,10 +949,18 @@ def _ner_candidates(
                     _LOG.warning(
                         "Degenerate whole-chunk NER span (label=%s, chunk_chars=%d); "
                         "re-tagging chunk line-by-line",
-                        sp_label,
+                        "remote" if fail_closed else sp_label,
                         core_len,
                     )
-                    candidates.extend(_retag_degenerate_chunk(text, ner, core_begin, core_end))
+                    candidates.extend(
+                        _retag_degenerate_chunk(
+                            text,
+                            ner,
+                            core_begin,
+                            core_end,
+                            fail_closed=fail_closed,
+                        )
+                    )
                     chunk_first = chunk_last + 1
                     continue
 
@@ -665,6 +968,17 @@ def _ner_candidates(
                 orig_start = ctx_begin + ctx_start
                 orig_end = ctx_begin + ctx_end_pos
                 if not (core_begin <= orig_start < core_end):
+                    continue
+                if label not in LABEL_MAP and "\n" in text[orig_start:orig_end]:
+                    candidates.extend(
+                        _retag_unknown_label_span(
+                            text,
+                            ner,
+                            orig_start,
+                            orig_end,
+                            fail_closed=fail_closed,
+                        )
+                    )
                     continue
                 candidates.extend(_finalize_tb_candidate(text, orig_start, orig_end, label))
 
@@ -677,17 +991,28 @@ def _trim_unoccupied_isolated_name_prefix(
     text: str,
     candidate: Entity,
 ) -> Entity | None:
-    """Remove a field or role before an isolated NAME."""
-    candidate_text = text[candidate.span[0] : candidate.span[1]]
-    prefix = _ISOLATED_NAME_PREFIX_RE.match(candidate_text)
+    """Remove a field or role before an isolated NAME.
+
+    The prefix is matched on the physical LINE, not the candidate: the
+    same-line hygiene trim can strip the role word (ผู้เช่า, ชื่อ) off the
+    candidate before this gate runs, and the unvalidated remainder
+    ("ต้องชำระ ค่าเช่า") must still be probed — the whole point of this gate
+    is that a prefix-led isolated line only mints a NAME when its value
+    passes the normal name rules.
+    """
+    line_begin = text.rfind("\n", 0, candidate.span[0]) + 1
+    prefix = _ISOLATED_NAME_PREFIX_RE.match(text, line_begin)
     if prefix is None:
         return candidate
+    value_start = max(candidate.span[0], prefix.end())
+    if value_start >= candidate.span[1]:
+        return None
 
     # Check the value with the normal name rules, then map it to the source.
     from pii_redactor.detectors.name_context import detect_name_context
 
     label = "ชื่อ "
-    value = candidate_text[prefix.end() :]
+    value = text[value_start : candidate.span[1]]
     probe = label + value
     validated = [
         entity
@@ -698,8 +1023,8 @@ def _trim_unoccupied_isolated_name_prefix(
         return None
 
     best = max(validated, key=lambda entity: entity.span[1] - entity.span[0])
-    start = candidate.span[0] + prefix.end() + best.span[0] - len(label)
-    end = candidate.span[0] + prefix.end() + best.span[1] - len(label)
+    start = value_start + best.span[0] - len(label)
+    end = value_start + best.span[1] - len(label)
     if not (candidate.span[0] <= start < end <= candidate.span[1]):
         return None
     return Entity(
@@ -797,7 +1122,7 @@ def _isolated_line_name_candidates(
 # ---------------------------------------------------------------------------
 
 
-def detect_tb(
+def _detect_tb_impl(
     text: str,
     *,
     window_size: int = 1,
@@ -813,7 +1138,9 @@ def detect_tb(
 
     Returns list of Entity objects (redact_type="TB").
     Sorted by span start (ascending).
-    No overlapping spans.
+    No redundant spans (an overlap survives only in `_deduplicate`'s
+    coverage-guard case — a lower-score span whose characters a higher-score
+    winner does not fully cover is kept too rather than unmasked).
     Span chokepoint: reject span < 2 chars.
     """
     if not text or not text.strip():
@@ -837,12 +1164,26 @@ def detect_tb(
     name = _resolve_engine_name()
     if name == "finetuned":
         return _detect_tb_finetuned(text)
-    if name == "union":
-        ners = [_load_ner("thainer"), _load_ner("wangchanberta")]
-    else:
-        ners = [_get_ner()]
+    try:
+        if name == "union":
+            ners = [_load_ner("thainer"), _load_ner("wangchanberta")]
+        else:
+            ners = [_load_ner(name)]
+    except Exception as error:
+        if name == "tner":
+            _raise_explicit_ner_failure(
+                error,
+                default_category=(
+                    "configuration"
+                    if isinstance(error, NEREngineUnavailableError)
+                    else "dependency"
+                ),
+                default_count=0,
+            )
+        raise
 
     candidates: list[Entity] = []
+    fail_closed = name == "tner"
     for ner in ners:
         candidates.extend(
             _ner_candidates(
@@ -851,14 +1192,18 @@ def detect_tb(
                 sentence_offsets,
                 window_size,
                 diagnostics=diagnostics,
+                fail_closed=fail_closed,
             )
         )
 
     # Recall booster: title/label-cued names the NER missed or clipped
     # (engine-independent, added once).
-    from pii_redactor.detectors.name_context import detect_name_context
+    from pii_redactor.detectors.name_context import detect_conjunction_names, detect_name_context
 
     candidates.extend(detect_name_context(text))
+    # A conjunction right after an accepted NAME introduces the NEXT person
+    # in the same list; the CRF stops at และ and that name shipped unmasked.
+    candidates.extend(detect_conjunction_names(text, candidates))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
             text,
@@ -871,3 +1216,29 @@ def detect_tb(
 
     # Deduplication
     return _deduplicate(candidates)
+
+
+def detect_tb(
+    text: str,
+    *,
+    window_size: int = 1,
+    diagnostics: NERChunkDiagnostics | None = None,
+) -> list[Entity]:
+    """Run TB detection while containing explicit remote-engine failures."""
+
+    failure = None
+    try:
+        return _detect_tb_impl(
+            text,
+            window_size=window_size,
+            diagnostics=diagnostics,
+        )
+    except NERFailureError as error:
+        failure = ner_failure_metadata(error)
+        discard_exception_graph(error)
+
+    text = ""
+    diagnostics = None
+    code, category, count = failure
+    failure = None
+    raise NERFailureError(code, category=category, count=count) from None

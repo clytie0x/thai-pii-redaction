@@ -95,7 +95,7 @@ def build_script(pipeline: dict, job: str) -> str:
     # The first line answers "which shell am I actually in" on every run, so a
     # future image change that swaps the shell shows up in the log rather than
     # as a mystery failure.
-    lines = ["echo \"[sim] shell=$(readlink /proc/$$/exe)\""]
+    lines = ['echo "[sim] shell=$(readlink /proc/$$/exe)"']
     lines += [str(item) for item in (*before, *script)]
     return "\n".join(lines) + "\n"
 
@@ -104,6 +104,27 @@ def docker_env_args(pipeline: dict) -> list[str]:
     args = []
     for name, value in (pipeline.get("variables") or {}).items():
         args += ["-e", f"{name}={value}"]
+    revision = os.environ.get("CI_COMMIT_SHA")
+    if not revision:
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        revision = (
+            subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            if not status.strip()
+            else "local-working-tree"
+        )
+    args += ["-e", f"CI_COMMIT_SHA={revision}"]
     for name, value in os.environ.items():
         if name.startswith("APP_"):
             args += ["-e", f"{name}={value}"]
@@ -113,15 +134,36 @@ def docker_env_args(pipeline: dict) -> list[str]:
 def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
     image = pipeline.get("default", {}).get("image", "docker:27.3.1")
     script = build_script(pipeline, job)
+    network_args = ["--network", "host"]
+    contract_env = []
+    if sys.platform == "win32":
+        # Docker Desktop's host-network bridge reaches fixed published ports,
+        # but not Docker-assigned ephemeral ports. The nginx contract uses
+        # ephemeral ports so concurrent checks cannot collide; host-gateway is
+        # the stable path back to those ports in this local simulator.
+        network_args += ["--add-host", "host.docker.internal:host-gateway"]
+        contract_env = [
+            "-e",
+            "AIFT_CONTRACT_CONNECT_HOST=host.docker.internal",
+        ]
     command = [
-        "docker", "run", "--rm", "-i",
-        "--network", "host",
-        "-v", "/var/run/docker.sock:/var/run/docker.sock",
-        "-v", f"{REPO}:/w",
-        "-w", "/w",
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        *network_args,
+        "-v",
+        "/var/run/docker.sock:/var/run/docker.sock",
+        "-v",
+        f"{REPO}:/w",
+        "-w",
+        "/w",
+        *contract_env,
         *docker_env_args(pipeline),
         image,
-        "sh", "-e", "-s",
+        "sh",
+        "-e",
+        "-s",
     ]
     print(f"[sim] === {job} ===", flush=True)
     started = time.monotonic()
@@ -135,12 +177,16 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
     elapsed = time.monotonic() - started
 
     output = redact(
-        result.stdout.decode("utf-8", "replace") + result.stderr.decode("utf-8", "replace"),
+        result.stdout.decode("utf-8", "replace")
+        + result.stderr.decode("utf-8", "replace"),
         secrets,
     )
     print(output, flush=True)
     status = "pass" if result.returncode == 0 else "FAIL"
-    print(f"[sim] {job}: {status} in {elapsed:.1f}s (exit {result.returncode})", flush=True)
+    print(
+        f"[sim] {job}: {status} in {elapsed:.1f}s (exit {result.returncode})",
+        flush=True,
+    )
 
     return {
         "job": job,
@@ -152,13 +198,17 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
 
 def prune_build_cache() -> None:
     print("[sim] docker builder prune -af (cold build measurement)", flush=True)
-    subprocess.run(["docker", "builder", "prune", "-af"], capture_output=True, text=True)
+    subprocess.run(
+        ["docker", "builder", "prune", "-af"], capture_output=True, text=True
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job", help="run one job by name")
-    parser.add_argument("--all", action="store_true", help=f"run {', '.join(ALL_JOBS)} in order")
+    parser.add_argument(
+        "--all", action="store_true", help=f"run {', '.join(ALL_JOBS)} in order"
+    )
     parser.add_argument(
         "--cold",
         action="store_true",
@@ -181,7 +231,10 @@ def main() -> int:
         parser.error("--cold works with a single --job only; run --all warm first")
 
     if not subprocess.run(["docker", "info"], capture_output=True).returncode == 0:
-        print("run_ci_local: the docker daemon is not reachable — start Docker Desktop", file=sys.stderr)
+        print(
+            "run_ci_local: the docker daemon is not reachable — start Docker Desktop",
+            file=sys.stderr,
+        )
         return 2
 
     pipeline = load_pipeline()

@@ -20,12 +20,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Dependency layers before code so rebuilds hit cache (20-min runner budget).
-# OCR extras are deliberately unlocked upstream; pip check guards against the
-# loose install disturbing the hash-locked core environment.
-COPY requirements.lock requirements-ocr.txt ./
+# The upstream graph and the AIFT OCR additions are independently exact and
+# hash-locked. OCR installs with --no-deps so it cannot upgrade the core graph.
+COPY requirements.lock requirements-aift.lock ./
 RUN python -m pip install --no-cache-dir pip==26.1.2 \
     && python -m pip install --no-cache-dir --require-hashes -r requirements.lock \
-    && python -m pip install --no-cache-dir -r requirements-ocr.txt \
+    && python -m pip install --no-cache-dir --no-deps --require-hashes -r requirements-aift.lock \
     && python -m pip check
 
 # Bake the Thai NER model, then the Thai OCR models. Both BEFORE offline mode:
@@ -42,6 +42,12 @@ COPY . .
 
 RUN useradd --no-create-home --shell /bin/false appuser \
     && chown -R appuser /app "$PYTHAINLP_DATA" "$HOME"
+
+# Commit identity is metadata-only and intentionally comes after every costly
+# dependency/model layer so a new SHA does not invalidate the build cache.
+ARG AIFT_BUILD_COMMIT=local-working-tree
+LABEL org.opencontainers.image.revision="${AIFT_BUILD_COMMIT}"
+
 USER appuser
 
 EXPOSE 8000
@@ -49,4 +55,4 @@ EXPOSE 8000
 # exec so SIGTERM reaches uvicorn (clean container stops); workers default 1 —
 # NER/OCR models are cached per process, so extra workers multiply RAM and
 # cold starts. Raise only after measuring.
-CMD ["sh", "-c", "exec python -m uvicorn app.server:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-1}"]
+CMD ["sh", "-c", "exec python -m uvicorn aift_gateway:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-1}"]

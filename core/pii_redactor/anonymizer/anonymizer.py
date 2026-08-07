@@ -2,11 +2,11 @@
 
 Two modes: mode="surrogate" (default) draws realistic fake values from
 fp_generator/tb_generator with collision-safe re-rolls; mode="token" emits
-bracket tokens like [ชื่อ_1] via token_generator (web AI-Guard default).
+session-namespaced bracket tokens via token_generator (web AI-Guard default).
 
 Algorithm:
 1. Sort entities by span[0] DESCENDING (tail-first) to preserve offsets during replacement.
-2. For each entity: vault cache hit -> reuse pseudonym; miss -> generate -> write to vault.
+2. For each entity: reuse only a safe vault hit; otherwise generate -> write.
 3. Replace span in text (tail-first preserves earlier spans).
 4. Consistency scan: replace remaining verbatim occurrences of each original.
 5. Post-replace PII leak check via detect_fp -> raise PIILeakError if any found.
@@ -16,14 +16,34 @@ Algorithm:
 from __future__ import annotations
 
 import time
+import unicodedata
 
 from pii_redactor.anonymizer.fp_generator import generate_fp
 from pii_redactor.anonymizer.tb_generator import generate_tb
-from pii_redactor.anonymizer.token_generator import generate_token
+from pii_redactor.anonymizer.token_generator import (
+    generate_token,
+    is_token_for_data_type,
+    new_token_nonce,
+    token_data_type_from_candidate,
+    token_namespace_from_candidate,
+    token_ordinal_from_candidate,
+)
 from pii_redactor.detectors.fp_detector import detect_fp
-from pii_redactor.leak_guard import pseudonym_ranges
-from pii_redactor.models import Entity, EntityRegistry, PseudonymizedDocument, VaultRecord
-from pii_redactor.session_vault import SessionVault
+from pii_redactor.leak_guard import (
+    OutboundGuardContext,
+    pseudonym_ranges,
+    scan_outbound_leaks,
+    scan_residual_signals,
+)
+from pii_redactor.models import (
+    Entity,
+    EntityRegistry,
+    PseudonymizedDocument,
+    ReplacementHighlight,
+    VaultRecord,
+)
+from pii_redactor.scan_common import canonical_value
+from pii_redactor.session_vault import SEEDED_DATA_TYPE, SessionVault
 
 
 class PIILeakError(Exception):
@@ -58,6 +78,55 @@ def _generate_pseudonym(entity: Entity, text: str, salt: str, attempt: int = 0) 
 
 _MAX_COLLISION_REROLLS = 8
 _MAX_EXTENDED_REROLLS = 64
+_MAX_TOKEN_NONCE_ATTEMPTS = 32
+
+
+def _compact_identity(value: str) -> str:
+    """Fold case, width, spacing, and punctuation for conservative comparison."""
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    return "".join(char for char in normalized if unicodedata.category(char)[0] in {"L", "M", "N"})
+
+
+def _safe_to_reuse(
+    candidate: str,
+    original: str,
+    source_text: str,
+    data_type: str,
+) -> bool:
+    """Return whether a prior pseudonym can safely represent this turn."""
+    if not candidate:
+        return False
+    typed_candidate = canonical_value(data_type, candidate)
+    typed_original = canonical_value(data_type, original)
+    compact_candidate = _compact_identity(candidate)
+    compact_original = _compact_identity(original)
+    compact_source = _compact_identity(source_text)
+    return (
+        bool(compact_candidate)
+        and (not typed_original or typed_original not in typed_candidate)
+        and compact_original not in compact_candidate
+        and compact_candidate not in compact_source
+    )
+
+
+def _seeded_candidate_is_admissible(record: VaultRecord, data_type: str, mode: str) -> bool:
+    """Require caller-supplied replacements to pass this turn's safety policy."""
+    if record.data_type != SEEDED_DATA_TYPE:
+        return True
+
+    candidate = record.pseudonym
+    empty_context = OutboundGuardContext()
+    if scan_outbound_leaks(candidate, empty_context) or scan_residual_signals(
+        candidate,
+        empty_context,
+    ):
+        return False
+
+    if mode != "token":
+        return True
+    # Legacy caller-held mappings remain readable at the explicit stateless
+    # boundary. Tokens minted by this process always carry a namespace.
+    return is_token_for_data_type(candidate, data_type, allow_legacy=True)
 
 
 def _generate_unique_pseudonym(
@@ -72,6 +141,7 @@ def _generate_unique_pseudonym(
     The fake-value pools (esp. Thai names) are small, so two different people
     can deterministically draw the same pseudonym — the vault reverse index
     would then restore the wrong person. A candidate is rejected when it:
+    - is empty or contains the original;
     - is already vaulted for a DIFFERENT original (same original = consistency,
       allowed), or
     - equals another entity's real value, or appears verbatim in the source
@@ -92,12 +162,21 @@ def _generate_unique_pseudonym(
     # otherwise the same person can get a different fake name/address each
     # turn depending on which sentence-context tb_generator happened to see.
     existing = vault.get_by_original(original, data_type=entity.data_type)
-    if existing is not None:
+    if (
+        existing is not None
+        and _seeded_candidate_is_admissible(existing, entity.data_type, "surrogate")
+        and _safe_to_reuse(
+            existing.pseudonym,
+            original,
+            text,
+            entity.data_type,
+        )
+    ):
         return existing.pseudonym
 
     def _available(candidate: str) -> bool:
-        if candidate == original:
-            return False  # a pseudonym identical to its original masks nothing
+        if not _safe_to_reuse(candidate, original, text, entity.data_type):
+            return False  # empty, identity, and embedded-original values do not mask
         owner_id = vault._reverse.get(candidate)
         if owner_id is not None:
             owner = vault._table.get(owner_id)
@@ -120,9 +199,8 @@ def _generate_unique_pseudonym(
     base = candidate
     suffix_ok = (
         entity.redact_type != "FP"
-        and base != original
+        and _safe_to_reuse(base, original, text, entity.data_type)
         and base not in all_originals
-        and base not in text
     )
     if suffix_ok:
         n = 2
@@ -144,20 +222,104 @@ def _generate_unique_pseudonym(
 
 
 def _next_token(entity: Entity, text: str, vault: SessionVault) -> str:
-    """Token-mode pseudonym: reuse the token of the same (data_type, original);
-    otherwise take the next ordinal for that data_type (continues across turns
-    because the count comes from the vault, not from this call)."""
+    """Reuse a safe token or take the next ordinal for this data type."""
     existing = vault.get_by_original(entity.original_text, data_type=entity.data_type)
+    candidates: list[VaultRecord] = []
     if existing is not None:
-        return existing.pseudonym
-    distinct = {r.original for r in vault._table.values() if r.data_type == entity.data_type}
-    ordinal = len(distinct) + 1
-    token = generate_token(entity.data_type, ordinal)
-    # a bracket token colliding with source text is near-impossible; bump anyway
-    while token in text or token in vault._reverse:
-        ordinal += 1
-        token = generate_token(entity.data_type, ordinal)
-    return token
+        candidates.append(existing)
+    candidates.extend(
+        record
+        for entity_id, record in vault._table.items()
+        if record is not existing
+        and record.original == entity.original_text
+        and record.data_type in {entity.data_type, SEEDED_DATA_TYPE}
+        and vault._reverse.get(record.pseudonym) == entity_id
+    )
+    candidates.sort(key=lambda record: record.data_type == SEEDED_DATA_TYPE)
+    for candidate in candidates:
+        if (
+            vault._reverse.get(candidate.pseudonym) == candidate.entity_id
+            and _seeded_candidate_is_admissible(candidate, entity.data_type, "token")
+            and _safe_to_reuse(
+                candidate.pseudonym,
+                entity.original_text,
+                text,
+                entity.data_type,
+            )
+        ):
+            return candidate.pseudonym
+    used_ordinals: set[int] = set()
+    for entity_id, record in vault._table.items():
+        if vault._reverse.get(record.pseudonym) != entity_id:
+            continue
+        if record.data_type == entity.data_type:
+            ordinal = token_ordinal_from_candidate(record.pseudonym, entity.data_type)
+        elif _seeded_token_is_admissible(record, entity.data_type, text):
+            ordinal = token_ordinal_from_candidate(
+                record.pseudonym,
+                entity.data_type,
+                allow_legacy=True,
+            )
+        else:
+            ordinal = None
+        if ordinal is not None:
+            used_ordinals.add(ordinal)
+    ordinal = max(used_ordinals, default=0) + 1
+    for _ in range(_MAX_TOKEN_NONCE_ATTEMPTS):
+        token = generate_token(
+            entity.data_type,
+            ordinal,
+            namespace=vault.token_namespace,
+            nonce=new_token_nonce(),
+        )
+        if token not in text and token not in vault._reverse:
+            return token
+    raise ValueError("unable to mint a unique token")
+
+
+def _seeded_token_is_admissible(
+    record: VaultRecord,
+    data_type: str,
+    text: str,
+) -> bool:
+    """Return whether one caller-held token may affect this turn."""
+    return (
+        record.data_type == SEEDED_DATA_TYPE
+        and _seeded_candidate_is_admissible(record, data_type, "token")
+        and _safe_to_reuse(
+            record.pseudonym,
+            record.original,
+            text,
+            data_type,
+        )
+    )
+
+
+def _adopt_seeded_token_namespace(
+    text: str,
+    entity_registry: EntityRegistry,
+    vault: SessionVault,
+) -> None:
+    """Continue one admissible caller-held token chain before minting."""
+    detected_types_by_original: dict[str, set[str]] = {}
+    for entity in entity_registry.entities:
+        detected_types_by_original.setdefault(entity.original_text, set()).add(entity.data_type)
+
+    namespaces: set[str] = set()
+    for entity_id, record in vault._table.items():
+        if vault._reverse.get(record.pseudonym) != entity_id:
+            continue
+        data_type = token_data_type_from_candidate(record.pseudonym)
+        detected_types = detected_types_by_original.get(record.original)
+        if detected_types is not None and data_type not in detected_types:
+            continue
+        if data_type is None or not _seeded_token_is_admissible(record, data_type, text):
+            continue
+        namespace = token_namespace_from_candidate(record.pseudonym)
+        if namespace is not None:
+            namespaces.add(namespace)
+    if len(namespaces) == 1:
+        vault.adopt_token_namespace(next(iter(namespaces)))
 
 
 def _find_all(haystack: str, needle: str) -> list[int]:
@@ -174,6 +336,41 @@ def _find_all(haystack: str, needle: str) -> list[int]:
         out.append(i)
         pos = i + len(needle)
     return out
+
+
+def _add_replacement_highlight(
+    highlights: list[ReplacementHighlight],
+    *,
+    start: int,
+    end: int,
+    replacement_length: int,
+    data_type: str,
+    redact_type: str,
+) -> None:
+    """Keep prior sanitized intervals aligned across one text splice."""
+    delta = replacement_length - (end - start)
+    shifted: list[ReplacementHighlight] = []
+    for item in highlights:
+        if item.start >= end:
+            shifted.append(
+                ReplacementHighlight(
+                    start=item.start + delta,
+                    end=item.end + delta,
+                    data_type=item.data_type,
+                    redact_type=item.redact_type,
+                )
+            )
+        else:
+            shifted.append(item)
+    shifted.append(
+        ReplacementHighlight(
+            start=start,
+            end=start + replacement_length,
+            data_type=data_type,
+            redact_type=redact_type,
+        )
+    )
+    highlights[:] = shifted
 
 
 def anonymize(
@@ -199,6 +396,9 @@ def anonymize(
         PIILeakError: if detect_fp finds any structured PII in the pseudonymized output
     """
     pseudonymized = text
+    replacement_highlights: list[ReplacementHighlight] = []
+    if mode == "token":
+        _adopt_seeded_token_namespace(text, entity_registry, vault)
 
     # Step 1: sort entities by span start DESCENDING (tail-first)
     sorted_entities = sorted(
@@ -232,6 +432,14 @@ def anonymize(
 
         start, end = entity.span
         pseudonymized = pseudonymized[:start] + pseudonym + pseudonymized[end:]
+        _add_replacement_highlight(
+            replacement_highlights,
+            start=start,
+            end=end,
+            replacement_length=len(pseudonym),
+            data_type=entity.data_type,
+            redact_type=entity.redact_type,
+        )
 
     # Step 4: consistency scan - replace remaining verbatim occurrences
     # Build known pseudonyms set first to avoid cascading: skip replacement
@@ -266,6 +474,14 @@ def anonymize(
         ]
         for start, end in reversed(hits):  # tail-first so earlier offsets stay valid
             pseudonymized = pseudonymized[:start] + pseudo + pseudonymized[end:]
+            _add_replacement_highlight(
+                replacement_highlights,
+                start=start,
+                end=end,
+                replacement_length=len(pseudo),
+                data_type=entity.data_type,
+                redact_type=entity.redact_type,
+            )
 
     # Step 5: post-replace PII leak check
     # Collect known pseudonyms so they are not mistaken for real PII leaks.
@@ -301,4 +517,7 @@ def anonymize(
         text=pseudonymized,
         entity_registry=entity_registry,
         session_id=vault.session_id,
+        replacement_highlights=tuple(
+            sorted(replacement_highlights, key=lambda item: (item.start, item.end))
+        ),
     )
