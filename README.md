@@ -74,8 +74,9 @@ dated local working-tree candidate ผ่าน runtime honeytoken/secret/cookie
 
 เพดาน config ปัจจุบัน: ข้อความ ≤ 20,000 ตัวอักษร, PDF ≤ 50MB และ ≤ 20 หน้า, อัตรารวม
 10 req/s (เกิน → 429), เส้น PDF ทำพร้อมกันได้ 2 คำขอ แต่หลักฐาน OCR ปัจจุบัน
-ครอบคลุมเพียงเอกสารสแกนหนึ่งหน้า ซึ่งใช้เวลาประมาณ 214 วินาทีและแตะ memory
-limit 6 GiB ในชุด local probe งานหลายหน้ายังไม่ผ่าน timeout/correctness/resource
+ครอบคลุมเพียงเอกสารสแกนหนึ่งหน้า ซึ่ง exact local profile ใช้เวลา 221 วินาที,
+CPU เฉลี่ยประมาณ 1.93/2 cores และแตะ memory limit 6 GiB งานหลายหน้ายังไม่ผ่าน
+timeout/correctness/resource
 gate ดังนั้น config cap นี้ไม่ใช่ capability ที่พร้อมประกาศตอน deploy
 
 endpoint ที่มี session (`/sanitize`, `/reidentify`) **ไม่เปิด**บน deployment นี้
@@ -129,6 +130,12 @@ Variables ของ GitLab) ค่าไม่ถูกพิมพ์ออก�
 ตัวจำลองเป็นการประมาณ ไม่ใช่ runner จริง ความต่างที่รู้ตัวอยู่ใน docstring
 ของสคริปต์ ส่วน `tests/nginx_contract.py` ถูกต่อไว้ใน check stage และจะรันบน
 runner จริงหลัง owner อนุญาต push หลักฐานวันนี้ยังเป็น local เท่านั้น
+
+candidate `e075ca46807a1d318447ed4280821941d20608ba` ผ่าน exact local
+BusyBox `check` 28.0 วินาทีและ provider-free `deploy` 244.3 วินาทีแล้ว
+ส่วน exact live `acceptance` ยังไม่รันเพราะต้อง rotate/reissue Tokenmind
+credential ที่ปรากฏใน transcript ก่อน หลักฐาน live/soak เดิมจึงคงสถานะ
+dated working-tree evidence และไม่ใช้แทน platform acceptance
 
 ## Deploy
 

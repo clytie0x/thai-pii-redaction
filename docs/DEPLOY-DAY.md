@@ -2,10 +2,11 @@
 
 ทุกอย่างในไฟล์นี้เป็นงานที่ **เจ้าของต้องทำเอง** เพราะออกนอกเครื่องทั้งหมด
 ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ที่ยังเหลือใน `STATE.md` ผ่านครบ หลักฐานแบบ
-dated working tree ครอบคลุม current-core `8c6efef`, caller-auth ADR,
-response minimization, Docker, Tokenmind/OCR smoke, soak/failure และ local
-pipeline approximation แล้ว แต่ยังห้ามใช้แทน exact committed rebuild:
-resource/PDF gate กับ live Tokenmind หลัง rotate credential ต้องปิดก่อน
+exact local candidate `e075ca4` ครอบคลุม current-core `8c6efef`,
+caller-auth ADR, response minimization และผ่าน provider-free `check`/`deploy`
+แล้ว ส่วน Tokenmind smoke/soak เดิมเป็น dated working-tree evidence:
+ต้อง rotate credential แล้วรัน exact live acceptance ใหม่ และปิด resource/PDF
+gate ก่อนออกนอกเครื่อง
 
 Participant Guide ทางการยืนยัน team/port/proxy/CI/resource/log/secret shape
 แล้ว แต่ไม่ได้ยืนยันว่า candidate ปัจจุบันผ่าน privacy หรือทำงานบน runner จริง
@@ -98,6 +99,7 @@ stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline
   `.gitlab-ci.yml` ตาม tag ที่เห็นใน Group → Settings → CI/CD → Runners
 - **โควตาของ gateway** `acceptance` ยิงของจริงทุกครั้งที่ push `main`
   (และ retry ได้สูงสุด 3 ครั้งเมื่อเจอ transport/5xx)
-- **PDF resource** one-page OCR บนเครื่องพัฒนาใช้เวลาประมาณ 214 วินาทีและ
-  แตะเพดาน memory 6 GiB ในชุด probe; ห้ามตีความ cap 20 หน้าเป็น capability
+- **PDF resource** exact one-page OCR บนเครื่องพัฒนาใช้เวลา 221 วินาที,
+  CPU เฉลี่ยประมาณ 1.93/2 cores และแตะเพดาน memory 6 GiB; ห้ามตีความ cap
+  20 หน้าเป็น capability
   จนกว่าจะลด/พักเส้นนี้หรือแก้ execution model และผ่าน platform measurement

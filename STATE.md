@@ -1,4 +1,4 @@
-# สถานะงาน (7 ส.ค. 2569 — current core/auth local hardening; ยังไม่ push)
+# สถานะงาน (7 ส.ค. 2569 — exact local candidate; ยังไม่ push)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
@@ -95,30 +95,39 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - **dated local GitLab approximation** ผ่านครบใน BusyBox runner image:
   check 21.5s / deploy 59.2s (warm cache) / acceptance 8.8s; acceptance
   login จริง, เรียก Tokenmind จริง, ตรวจ minimized response และ scan log
+- **exact committed candidate** `e075ca46807a1d318447ed4280821941d20608ba`
+  ผ่าน local BusyBox `check` 28.0 วินาทีและ provider-free `deploy` 244.3
+  วินาที; web/api/core healthy และ revision label ตรง commit ทั้งสามอิมเมจ
+- **exact local profile** detect 100/100 หลัง warmup ได้ p50 6.02 ms,
+  p95 7.58 ms, max 12.57 ms; one-page scanned-PDF route ผ่านใน 221.0 วินาที
+  แต่ใช้ CPU เฉลี่ยประมาณ 1.93/2 cores และ memory peak ชน 6 GiB
+  (`memory.events max=8247`, ไม่มี OOM/restart) จึงเป็น resource gate แดง
+- independent security/compatibility review จบแล้วและไม่พบ static code blocker
+  เพิ่มเติม; external/runtime gates ด้านล่างยังคงเปิด
 
 ## เหลือก่อนออกนอกเครื่อง
 
-1. independent security/compatibility review พบและปิดช่อง auth/log/storage/
-   CI/frontend race ที่แก้ได้ใน source แล้ว; ยังต้อง rebuild/รัน exact committed
-   candidate และเก็บ image IDs ใหม่
+1. exact candidate ยังไม่ได้รัน live Tokenmind `acceptance`; credential เดิม
+   ต้องถูก rotate/reissue ก่อน หลักฐาน live ด้านบนเป็น dated working-tree
+   evidence เท่านั้น
 2. fake-provider 8-worker/10-minute soak + restart ผ่านแล้ว (5849 success,
    0 failure) และ light Tokenmind 60 วินาทีผ่าน 50/50; คงตัวเลขเป็น dated
    local evidence ไม่ใช่ platform SLA
 3. fail-loud ของ auth secrets และ fixed failure เมื่อ provider key หายผ่านแล้ว
-4. บันทึก final local image IDs และ detect p50/p95/peak CPU-RAM ยังเหลือ
-   ส่วนชุด one-page OCR probe บน working tree ผ่าน route correctness แต่ใช้เวลา
-   ประมาณ 214 วินาที และ cgroup peak ตั้งแต่ recreate แตะเพดาน 6 GiB
-   (`memory.events max=21821`, ไม่มี OOM/restart) จึงเป็นหลักฐานว่าเพดาน
-   20 หน้า/timeout 300 วินาทียัง deploy ไม่ได้ ไม่ใช่ resource pass
+4. local image IDs ของ exact candidate คือ web `ff8d654a...` (26,020,221
+   bytes), api `2df7e1ac...` (26,006,890 bytes) และ core `2d938778...`
+   (809,367,137 bytes); เป็น local image IDs ไม่ใช่ registry digests
+   ส่วน PDF 20 หน้า/timeout 300 วินาทียัง deploy ไม่ได้ตาม resource profile
+   ข้างบน ต้องลด/พักเส้นนี้หรือเปลี่ยน execution model ก่อน
 5. public HTTPS/browser routing, trusted proxy client identity สำหรับ login
    limiter, PDF authoritative source-to-box และการตัดสินใจลด/พัก PDF หรือ
    เปลี่ยนเป็น async ยังเปิดอยู่
 6. Tokenmind credential ที่ปรากฏใน transcript ระหว่าง read-only compose probe
-   ต้อง rotate ก่อนใช้ภายนอก
+   ต้อง rotate ก่อนใช้ภายนอก; ลบ ignored repo-root `.env` โดยไม่อ่านค่าแล้ว
 7. staff ต้องยืนยันว่า runner ที่ถือ production Docker socket เป็น Protected
    และรับเฉพาะ protected refs หรือจัด isolated branch runner/daemon
-8. live Tokenmind gate ของ exact candidate ต้องรอ credential ใหม่หลัง rotation;
-   หลักฐาน 50/50 และ smoke เดิมคงเป็น dated evidence เท่านั้น
+8. GitLab push/runner, public HTTPS/proxy และ official platform acceptance
+   ยังไม่เกิดขึ้น
 
 ## เหลือหลัง local recertification — งานออกนอกเครื่อง เจ้าของทำเอง
 
