@@ -157,6 +157,7 @@ def do_sync(upstream: Path) -> None:
 
 # Files living under core/ that belong to the PORT, not upstream.
 PORT_OWNED = {
+    ".dockerignore",
     "Dockerfile",
     "prewarm_ocr.py",
     "aift_auth.py",

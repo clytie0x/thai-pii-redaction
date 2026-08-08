@@ -7,7 +7,7 @@
 Participant Guide ทางการถูกอ่านซ้ำเมื่อ 7 ส.ค. และยืนยัน `team08`,
 พอร์ต `20070/20071`, frontend `/`, backend `/api` ที่ถูก strip prefix,
 unprefixed `/health`, template-derived GitLab CI, main-only deploy,
-per-service limits, `50m` × 3 log rotation, masked `APP_*`, และ no-SSH ops
+per-service limits, `50m` × 3 log rotation, masked application variables และ no-SSH ops
 ตรงกับ deployment shell นี้ในระดับ config
 
 candidate ปัจจุบัน sync จาก main commit `8c6efef` ครบ 75 ไฟล์ผ่าน manifest

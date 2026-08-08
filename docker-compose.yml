@@ -3,8 +3,8 @@
 # the team range, resources.limits + healthcheck + logging max-size on every
 # service, no bind mounts (audit goes to stdout -> Docker rotation + Dozzle).
 #
-# Secrets arrive as protected, environment-scoped GitLab variables prefixed
-# APP_; deploy passes a mode-600 temporary env file and removes it on exit.
+# Secrets arrive as four explicitly allowlisted protected, environment-scoped
+# GitLab variables; deploy uses a mode-600 temporary env file and removes it.
 
 x-logging: &logging
   driver: json-file

@@ -13,7 +13,7 @@ Office add-in) และไม่เปลี่ยนบทบาท — repo �
 ทางการอีกครั้งเมื่อ 7 ส.ค. 2569: `team08`, frontend/API ports
 `20070/20071`, prefix stripping,
 unprefixed `/health`, template-derived GitLab CI, per-service limits,
-`50m` × 3 log rotation, masked `APP_*`, และ no-SSH ops ตรงกับ shell นี้
+`50m` × 3 log rotation, masked application variables และ no-SSH ops ตรงกับ shell นี้
 ในระดับ config ส่วน runner/platform จริงยังไม่เคยรัน
 
 ## โครง
@@ -141,6 +141,11 @@ BusyBox `check` 28.0 วินาทีและ provider-free `deploy` 244.3 �
 ส่วน exact live `acceptance` ยังไม่รันเพราะต้อง rotate/reissue Tokenmind
 credential ที่ปรากฏใน transcript ก่อน หลักฐาน live/soak เดิมจึงคงสถานะ
 dated working-tree evidence และไม่ใช้แทน platform acceptance
+
+CI และตัวจำลอง local ส่งต่อเฉพาะชื่อตัวแปรสี่ตัวข้างต้นผ่าน temporary env file
+สิทธิ์จำกัด ค่า access code/cookie/secret ที่ใช้ acceptance อยู่ใน process
+memory และไม่ถูกใส่ใน child-process argv ส่วน Docker build context ทั้งสามมี
+`.dockerignore` แยก และ core image ใช้ explicit `COPY` allowlist
 
 ## Deploy
 

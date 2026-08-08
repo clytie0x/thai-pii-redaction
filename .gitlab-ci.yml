@@ -1,7 +1,6 @@
-# AI Guard — AIFT team08. Based on the organizer's template (participant
-# guide §4.1); changes: team variables, migrate/reset-db dropped (no
-# database), a post-deploy acceptance stage added, and a vendored-slice
-# integrity check in the check stage.
+# AI Guard — AIFT team08. Based on the organizer participant-guide template.
+# The production-capable runner must be protected and restricted to protected
+# refs; rules in repository code are scheduling controls, not that boundary.
 
 variables:
   TEAM: "team08"
@@ -15,33 +14,23 @@ workflow:
 stages: [check, deploy, acceptance, ops]
 
 default:
-  # runner ผูกกับ subgroup ของทีม ปกติไม่ต้องใส่ tags — ถ้า job ค้าง pending
-  # ดู tag ที่ Group > Settings > CI/CD > Runners แล้วปลดคอมเมนต์
-  # tags: [<tag>]
   image: docker:27.3.1
   before_script:
     - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
-    - apk add --no-cache curl bash git jq nodejs python3 >/dev/null
+    - apk add --no-cache curl bash git nodejs python3 >/dev/null
     - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
 
 check:
   stage: check
   script:
-    # vendored slice must match the recorded upstream commit exactly
     - python3 sync/sync_from_upstream.py --check --verify-upstream
-    # the api proxy IS the security boundary here — prefix re-add, the exact
-    # allowlist that withholds the vault-bearing routes, key injection, and a
-    # query-string-free log. Checked before deploy, against the real
-    # api/Dockerfile, with a stub standing in for core. Publishes a port and
-    # curls 127.0.0.1, the same assumption the organizer's deploy job below
-    # already makes.
     - python3 tests/auth_contract.py
     - node tests/frontend_session_contract.mjs
+    - python3 tests/public_surface_contract.py
+    - python3 tests/build_context_contract.py
+    - python3 tests/secret_hygiene_contract.py
     - python3 tests/nginx_contract.py
     - python3 tests/compose_contract.py
-  # The organizer runner controls the persistent production Docker daemon.
-  # Until staff confirms isolated branch daemons, do not give branch code that
-  # socket. Branch checks belong on a separate runner.
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
@@ -54,8 +43,6 @@ deploy:
     name: $TEAM
     url: https://$TEAM.aiforthai.in.th
   script:
-    # Keep the guide's APP_* -> env-file handoff off the repository mount and
-    # delete it even when the build fails. No set -x here.
     - |
       set -e
       if [ -n "${CI_SERVER_HOST:-}" ]; then
@@ -65,8 +52,14 @@ deploy:
       fi
       umask 077
       ENV_FILE=$(mktemp)
-      trap 'rm -f "$ENV_FILE"' EXIT
-      printenv | grep '^APP_' > "$ENV_FILE"
+      cleanup_deploy() { rm -f "$ENV_FILE"; }
+      trap cleanup_deploy EXIT
+      {
+        printf 'APP_AIGUARD_API_KEY=%s\n' "${APP_AIGUARD_API_KEY:-}"
+        printf 'APP_AIFT_ACCESS_CODE=%s\n' "${APP_AIFT_ACCESS_CODE:-}"
+        printf 'APP_AIFT_COOKIE_SIGNING_KEY=%s\n' "${APP_AIFT_COOKIE_SIGNING_KEY:-}"
+        printf 'APP_TOKENMIND_API_KEY=%s\n' "${APP_TOKENMIND_API_KEY:-}"
+      } > "$ENV_FILE"
       docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --build --remove-orphans
     - |
       echo "waiting for healthcheck..."
@@ -85,9 +78,8 @@ deploy:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
-# Post-deploy proof with synthetic Thai PII against the REAL provider chain.
-# This is the only job that catches "key never reached the container": the
-# healthchecks stay green in that failure mode because /health is ungated.
+# The helper reads credentials only from inherited environment and keeps the
+# access code, signed cookie, and log-scan values out of child-process argv.
 acceptance:
   stage: acceptance
   needs: [deploy]
@@ -104,134 +96,10 @@ acceptance:
         [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
           || { echo "refusing outdated acceptance"; exit 1; }
       fi
-      EXPECTED_REVISION=${CI_COMMIT_SHA:-local-working-tree}
-      for service in web api core; do
-        ACTUAL_REVISION=$(docker inspect -f \
-          '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
-          "${TEAM}-${service}-1")
-        [ "$ACTUAL_REVISION" = "$EXPECTED_REVISION" ] \
-          || { echo "running $service image belongs to another commit"; exit 1; }
-      done
-      AUTH_HEADERS=$(mktemp)
-      LOG_DIR=$(mktemp -d)
-      cleanup_acceptance() {
-        docker exec "${TEAM}-core-1" rm -f /app/runner_route_probe.py \
-          >/dev/null 2>&1 || true
-        rm -f "$AUTH_HEADERS"
-        rm -rf "$LOG_DIR"
-      }
-      trap cleanup_acceptance EXIT
-      LOGIN=$(jq -cn --arg code "$APP_AIFT_ACCESS_CODE" '{access_code:$code}')
-      curl -fsS -D "$AUTH_HEADERS" -o /dev/null \
-        -X POST "http://127.0.0.1:${BASE_1}/auth/login" \
-        -H 'Content-Type: application/json' -d "$LOGIN"
-      LOGIN=""
-      COOKIE=$(sed -n 's/^[Ss]et-[Cc]ookie: \([^;]*\).*/\1/p' "$AUTH_HEADERS" \
-        | tr -d '\r' | head -n 1)
-      [ -n "$COOKIE" ] || { echo "caller auth did not return a cookie"; exit 1; }
-
-      [ "$(curl -s -o /dev/null -w '%{http_code}' \
-        -X POST "http://127.0.0.1:${BASE_1}/detect" \
-        -H 'Content-Type: application/json' -d '{"text":"synthetic"}')" = "401" ] \
-        || { echo "unauthenticated business request was not rejected"; exit 1; }
-      [ "$(curl -s -o /dev/null -w '%{http_code}' \
-        -X POST "http://127.0.0.1:${BASE_1}/detect" \
-        -H 'Cookie: __Host-aift_session=tampered' \
-        -H 'Content-Type: application/json' -d '{"text":"synthetic"}')" = "401" ] \
-        || { echo "tampered caller cookie was not rejected"; exit 1; }
-
-      BODY='{"text":"ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678","mode":"token","provider":"tokenmind"}'
-      # 3 attempts, transport/5xx only: the gateway's latency swings are a
-      # measured fact (p95 2.0s..9.2s, same config). A real misconfiguration
-      # (key never reached the container -> 503) fails all three and stays red.
-      R=""
-      for i in 1 2 3; do
-        R=$(curl -fsS -m 90 -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
-              -H "Cookie: $COOKIE" \
-              -H 'Content-Type: application/json' -d "$BODY") && break
-        echo "roundtrip attempt $i failed (transport or 5xx)"
-        [ "$i" = 3 ] && { echo "roundtrip failed after 3 attempts"; exit 1; }
-        sleep 10
-      done
-      echo "$R" | jq -e '.provider_used == "tokenmind"' >/dev/null || { echo "provider_used != tokenmind"; exit 1; }
-      SAN=$(echo "$R" | jq -r '.sanitized_text')
-      case "$SAN" in
-        *0812345678*|*081-234-5678*) echo "RAW PHONE LEAKED IN OUTBOUND TEXT"; exit 1 ;;
-      esac
-      case "$SAN" in
-        *สมชาย*) echo "RAW NAME LEAKED IN OUTBOUND TEXT"; exit 1 ;;
-      esac
-      echo "$R" | jq -e '
-        .detected_entity_count >= 2
-        and .safety == {"status":"pass","residual_count":0}
-        and .restoration.status == "complete"
-        and .restoration.leftover_count == 0
-        and (
-          .restoration.replaced_count == 0
-          or (
-            .restored_text != .ai_response_masked
-            and (
-              (.restored_text | contains("นายสมชาย ใจดี"))
-              or (.restored_text | contains("081-234-5678"))
-            )
-          )
-        )
-        and (.restored_text
-          | test("\\[[^]\\r\\n]+_[a-f]{25}_[a-z]{20}_[1-9][0-9]*\\]")
-          | not)
-        and (has("mapping") | not)
-        and (has("entities") | not)
-        and (has("highlights") | not)
-      ' >/dev/null || { echo "minimized/safe roundtrip projection failed"; exit 1; }
-      echo "acceptance ok: caller authenticated, outbound masked, response minimized, real provider"
-
-      [ "$(curl -s -o /dev/null -w '%{http_code}' \
-        -X POST "http://127.0.0.1:${BASE_1}/roundtrip" \
-        -H "Cookie: $COOKIE" \
-        -H 'Origin: https://example.invalid' \
-        -H 'Content-Type: application/json' -d "$BODY")" = "403" ] \
-        || { echo "cross-site request was not rejected"; exit 1; }
-      # allowlist: excluded paths must not exist
-      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/sanitize -X POST -H 'Content-Type: application/json' -d '{"text":"x"}')" = "404" ] || { echo "/sanitize escaped the allowlist"; exit 1; }
-      [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/docs)" = "404" ] || { echo "/docs escaped the allowlist"; exit 1; }
-      [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:${BASE_1}/redact-pdf)" = "404" ] || { echo "/redact-pdf escaped the allowlist"; exit 1; }
-      [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:${BASE_1}/v1/redact-pdf)" = "404" ] || { echo "/v1/redact-pdf escaped the allowlist"; exit 1; }
-      echo "allowlist ok"
-
-      docker cp tests/runner_route_probe.py "${TEAM}-core-1:/app/runner_route_probe.py"
-      docker exec -e AIFT_PROBE_API=http://api:8000 "${TEAM}-core-1" \
-        python /app/runner_route_probe.py
-      docker exec "${TEAM}-core-1" rm -f /app/runner_route_probe.py
-
-      # Scan every retained line from the exact running containers. Do not use
-      # a tail window: startup/OCR/provider leaks can otherwise scroll out.
-      for service in web api core; do
-        LOG_FILE="$LOG_DIR/$service.log"
-        docker logs "${TEAM}-${service}-1" > "$LOG_FILE" 2>&1
-        grep -Fq -e "$COOKIE" "$LOG_FILE" \
-          && { echo "CALLER COOKIE REACHED RUNTIME LOG"; exit 1; }
-        { grep -Fq -e "สมชาย" "$LOG_FILE" \
-          || grep -Fq -e "081-234-5678" "$LOG_FILE"; } \
-          && { echo "SYNTHETIC PII REACHED RUNTIME LOG"; exit 1; }
-        grep -Fq -e "$APP_AIGUARD_API_KEY" "$LOG_FILE" \
-          && { echo "CORE KEY REACHED RUNTIME LOG"; exit 1; }
-        grep -Fq -e "$APP_AIFT_ACCESS_CODE" "$LOG_FILE" \
-          && { echo "ACCESS CODE REACHED RUNTIME LOG"; exit 1; }
-        grep -Fq -e "$APP_AIFT_COOKIE_SIGNING_KEY" "$LOG_FILE" \
-          && { echo "COOKIE KEY REACHED RUNTIME LOG"; exit 1; }
-        if [ -n "$APP_TOKENMIND_API_KEY" ]; then
-          grep -Fq -e "$APP_TOKENMIND_API_KEY" "$LOG_FILE" \
-            && { echo "PROVIDER KEY REACHED RUNTIME LOG"; exit 1; }
-        fi
-      done
-      curl -fsS -o /dev/null -X POST "http://127.0.0.1:${BASE_1}/auth/logout" \
-        -H "Cookie: $COOKIE"
-      COOKIE=""
-      echo "runtime log and logout checks ok"
+      python3 tests/platform_acceptance.py
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
-# ── manual ops (the no-SSH toolbox) ──────────────────────────────────────
 .ops: &ops
   stage: ops
   when: manual

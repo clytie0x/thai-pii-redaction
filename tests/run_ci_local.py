@@ -32,23 +32,24 @@ Usage (from this repo, with the upstream venv's python for pyyaml):
     python tests/run_ci_local.py --all
     python tests/run_ci_local.py --job deploy --cold
 
-Secrets are read from the machine environment only (APP_-prefixed, as the
-platform's CI variables are), never printed, and replaced with a placeholder
+Only the four intended application variables are forwarded from the machine
+environment through a restricted temporary env file. Values never enter
+`docker run` argv, are never printed, and are replaced with a placeholder
 before any output is written to disk.
 """
 
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-
-import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 CI_FILE = REPO / ".gitlab-ci.yml"
@@ -62,9 +63,27 @@ REDACTED = "<redacted>"
 # Job order for --all: the pipeline's own stage order. deploy must precede
 # acceptance because acceptance probes what deploy brought up.
 ALL_JOBS = ["check", "deploy", "acceptance"]
+INTENDED_APP_VARIABLES = (
+    "APP_AIGUARD_API_KEY",
+    "APP_AIFT_ACCESS_CODE",
+    "APP_AIFT_COOKIE_SIGNING_KEY",
+    "APP_TOKENMIND_API_KEY",
+)
+
+
+def value_free_child_environment() -> dict[str, str]:
+    """Do not leak application values through unrelated child environments."""
+
+    return {
+        name: value
+        for name, value in os.environ.items()
+        if name not in INTENDED_APP_VARIABLES and not name.startswith("APP_")
+    }
 
 
 def load_pipeline() -> dict:
+    import yaml
+
     return yaml.safe_load(CI_FILE.read_text(encoding="utf-8"))
 
 
@@ -100,15 +119,19 @@ def build_script(pipeline: dict, job: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def docker_env_args(pipeline: dict) -> list[str]:
-    args = []
-    for name, value in (pipeline.get("variables") or {}).items():
-        args += ["-e", f"{name}={value}"]
+def docker_environment(pipeline: dict) -> dict[str, str]:
+    """Return the value map written to a private Docker env file."""
+
+    environment = {
+        str(name): str(value)
+        for name, value in (pipeline.get("variables") or {}).items()
+    }
     revision = os.environ.get("CI_COMMIT_SHA")
     if not revision:
         status = subprocess.run(
             ["git", "status", "--porcelain"],
             cwd=REPO,
+            env=value_free_child_environment(),
             capture_output=True,
             text=True,
             check=True,
@@ -117,6 +140,7 @@ def docker_env_args(pipeline: dict) -> list[str]:
             subprocess.run(
                 ["git", "rev-parse", "HEAD"],
                 cwd=REPO,
+                env=value_free_child_environment(),
                 capture_output=True,
                 text=True,
                 check=True,
@@ -124,34 +148,50 @@ def docker_env_args(pipeline: dict) -> list[str]:
             if not status.strip()
             else "local-working-tree"
         )
-    args += ["-e", f"CI_COMMIT_SHA={revision}"]
-    for name, value in os.environ.items():
-        if name.startswith("APP_"):
-            args += ["-e", f"{name}={value}"]
-    return args
+    environment["CI_COMMIT_SHA"] = revision
+    for name in INTENDED_APP_VARIABLES:
+        if name in os.environ:
+            environment[name] = os.environ[name]
+    return environment
 
 
-def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
+@contextmanager
+def private_env_file(environment: dict[str, str]):
+    """Create a mode-0600 env file and remove it on every exit path."""
+
+    descriptor, raw_path = tempfile.mkstemp(prefix="aiguard-ci-env-", suffix=".tmp")
+    path = Path(raw_path)
+    try:
+        if os.name != "nt":
+            os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
+            descriptor = -1
+            for name, value in environment.items():
+                if "\n" in value or "\r" in value:
+                    raise ValueError(f"environment value for {name} contains a newline")
+                handle.write(f"{name}={value}\n")
+        yield path
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        path.unlink(missing_ok=True)
+
+
+def docker_command(pipeline: dict, env_file: Path) -> list[str]:
     image = pipeline.get("default", {}).get("image", "docker:27.3.1")
-    script = build_script(pipeline, job)
     network_args = ["--network", "host"]
     contract_env = []
     if sys.platform == "win32":
-        # Docker Desktop's host-network bridge reaches fixed published ports,
-        # but not Docker-assigned ephemeral ports. The nginx contract uses
-        # ephemeral ports so concurrent checks cannot collide; host-gateway is
-        # the stable path back to those ports in this local simulator.
         network_args += ["--add-host", "host.docker.internal:host-gateway"]
-        contract_env = [
-            "-e",
-            "AIFT_CONTRACT_CONNECT_HOST=host.docker.internal",
-        ]
-    command = [
+        contract_env = ["-e", "AIFT_CONTRACT_CONNECT_HOST=host.docker.internal"]
+    return [
         "docker",
         "run",
         "--rm",
         "-i",
         *network_args,
+        "--env-file",
+        str(env_file),
         "-v",
         "/var/run/docker.sock:/var/run/docker.sock",
         "-v",
@@ -159,12 +199,15 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
         "-w",
         "/w",
         *contract_env,
-        *docker_env_args(pipeline),
         image,
         "sh",
         "-e",
         "-s",
     ]
+
+
+def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
+    script = build_script(pipeline, job)
     print(f"[sim] === {job} ===", flush=True)
     started = time.monotonic()
     # Bytes, not text=True. On Windows a text-mode stdin pipe rewrites "\n" to
@@ -173,7 +216,14 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
     # for a flag that plainly exists. That was a defect in this simulator
     # masquerading as a defect in the pipeline, which is the exact failure
     # mode a simulator has to be trusted not to invent.
-    result = subprocess.run(command, input=script.encode("utf-8"), capture_output=True)
+    with private_env_file(docker_environment(pipeline)) as env_file:
+        command = docker_command(pipeline, env_file)
+        result = subprocess.run(
+            command,
+            input=script.encode("utf-8"),
+            capture_output=True,
+            env=value_free_child_environment(),
+        )
     elapsed = time.monotonic() - started
 
     output = redact(
@@ -199,7 +249,10 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
 def prune_build_cache() -> None:
     print("[sim] docker builder prune -af (cold build measurement)", flush=True)
     subprocess.run(
-        ["docker", "builder", "prune", "-af"], capture_output=True, text=True
+        ["docker", "builder", "prune", "-af"],
+        capture_output=True,
+        text=True,
+        env=value_free_child_environment(),
     )
 
 
@@ -230,7 +283,11 @@ def main() -> int:
     if args.cold and args.all:
         parser.error("--cold works with a single --job only; run --all warm first")
 
-    if not subprocess.run(["docker", "info"], capture_output=True).returncode == 0:
+    if not subprocess.run(
+        ["docker", "info"],
+        capture_output=True,
+        env=value_free_child_environment(),
+    ).returncode == 0:
         print(
             "run_ci_local: the docker daemon is not reachable — start Docker Desktop",
             file=sys.stderr,

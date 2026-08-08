@@ -38,7 +38,13 @@ RUN mkdir -p "$HOME" && python prewarm_ocr.py
 # From here the container must behave identically with or without egress.
 ENV PYTHAINLP_OFFLINE=1
 
-COPY . .
+# Keep runtime contents explicit. Even if a future ignore rule regresses, a
+# service-local credential or test artifact cannot be copied into the image.
+COPY app ./app
+COPY pii_redactor ./pii_redactor
+COPY demo ./demo
+COPY aift_auth.py aift_gateway.py VERSION LICENSE NOTICE ./
+COPY licenses ./licenses
 
 RUN useradd --no-create-home --shell /bin/false appuser \
     && chown -R appuser /app "$PYTHAINLP_DATA" "$HOME"
