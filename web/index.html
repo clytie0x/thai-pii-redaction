@@ -17,7 +17,7 @@
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Sarabun','Leelawadee UI',system-ui,sans-serif;line-height:1.65;font-size:16px}
+  body{margin:0;background:radial-gradient(circle at 75% 0,#172554 0,transparent 32%),var(--bg);color:var(--text);font-family:'Sarabun','Leelawadee UI',system-ui,sans-serif;line-height:1.65;font-size:16px}
   h1,h2,h3,p,ul,ol,figure{margin:0}
   a{color:var(--blue-light)}
   img{max-width:100%;display:block}
@@ -60,6 +60,13 @@
     .flow-arrow{transform:rotate(90deg);text-align:center;padding:6px 0}
   }
   .flow-caption{margin-top:20px;font-size:13.5px;color:var(--dim-2);max-width:640px}
+  .workflow-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:34px}
+  .workflow-card{display:block;text-decoration:none;color:var(--text);background:linear-gradient(145deg,rgba(37,99,235,.15),var(--panel));border:1px solid var(--line);border-radius:14px;padding:18px;transition:transform .15s,border-color .15s}
+  .workflow-card:hover{transform:translateY(-2px);border-color:var(--blue-light)}
+  .workflow-card .step{color:var(--blue-light);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .workflow-card strong{display:block;margin:5px 0;font-size:17px}
+  .workflow-card span:last-child{display:block;color:var(--dim);font-size:13px;line-height:1.6}
+  @media(max-width:760px){.workflow-nav{grid-template-columns:1fr}}
 
   /* ── generic components ── */
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
@@ -109,6 +116,22 @@
   .auth-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   #authStatus{font-size:13px;color:var(--dim)}
   @media(max-width:820px){.auth-card{align-items:flex-start;flex-direction:column}.auth-controls{width:100%}input[type=password]{min-width:0;flex:1}}
+  .privacy-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:18px;align-items:stretch}
+  .privacy-grid .pane{min-height:330px}
+  .scan-summary{display:flex;flex-direction:column;gap:14px}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .summary-box{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .summary-box .value{font-size:26px;font-weight:700;color:var(--blue-light);line-height:1.2}
+  .summary-box .label{font-size:12px;color:var(--dim);margin-top:5px}
+  .summary-detail{font-size:13.5px;color:var(--dim);line-height:1.75}
+  @media(max-width:820px){.privacy-grid{grid-template-columns:1fr}}
+  .safe-sequence{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px;color:var(--dim);font-size:13px}
+  .safe-sequence b{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 10px}
+  .safe-sequence span{color:var(--blue-light)}
+  .safe-note{font-size:13px;color:var(--dim);margin:10px 0 18px}
+  .elapsed{min-height:22px;color:var(--dim);font-size:13px;margin-top:10px}
+  .report-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+  @media(max-width:640px){.report-summary{grid-template-columns:1fr}}
 
   /* ── evidence section ── */
   .evidence-block{margin-bottom:26px}
@@ -120,11 +143,6 @@
 
   /* ── docs section ── */
   .pdfmeta{margin-top:10px;font-size:14px;color:var(--dim)}
-  #cmpWrap{position:relative;margin-top:16px;overflow:hidden;border-radius:12px;border:1px solid var(--line)}
-  #cmpWrap img{display:block;width:100%;user-select:none;pointer-events:none}
-  #imgAfter{position:absolute;inset:0;clip-path:inset(0 0 0 50%)}
-  #cmpSlider{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
-  #cmpBar{position:absolute;top:0;bottom:0;left:50%;width:3px;background:var(--blue);pointer-events:none}
   .card h3{font-size:17px;margin-bottom:8px;font-weight:700}
   .card .card-desc{font-size:14px;color:var(--dim);margin-bottom:16px;line-height:1.75}
 
@@ -154,11 +172,10 @@
   <div class="topnav-inner">
     <a class="brand" href="#top">AI <span>Guard</span></a>
     <nav class="navlinks">
-      <a href="#problem">ปัญหา</a>
-      <a href="#demo">ลองของจริง</a>
-      <a href="#evidence">หลักฐาน</a>
-      <a href="#docs">เอกสาร</a>
-      <a href="#api">API</a>
+      <a href="#privacy-scan">Privacy Scan</a>
+      <a href="#safe-ai">Safe AI</a>
+      <a href="#pdpa-report">PDPA Report</a>
+      <a href="#evidence">ความโปร่งใส</a>
     </nav>
   </div>
 </header>
@@ -169,12 +186,11 @@
 <section id="problem">
   <div class="container" id="top">
     <p class="eyebrow">AI Guard</p>
-    <h1 class="hero-title">หยุดข้อมูลส่วนบุคคลรั่วไหลก่อนถึงมือ AI</h1>
+    <h1 class="hero-title">ปกป้องข้อมูลส่วนบุคคลภาษาไทย ก่อนส่งงานต่อให้ AI</h1>
     <p class="hero-lede">
-      เวลาเราวางข้อความลงแชท AI เพื่อขอให้ช่วยร่าง สรุป หรือแปล ข้อความนั้นมักมีเลขบัตรประชาชน ชื่อ เบอร์โทร หรือที่อยู่ติดไปด้วยโดยไม่ทันสังเกต
-      และข้อความที่ส่งออกไปแล้วเรียกคืนไม่ได้ AI Guard ทำงานบนเซิร์ฟเวอร์ของทีม
-      รับข้อความต้นฉบับเพื่อตรวจจับและปกปิดก่อนส่งต่อไปยังโมเดลภาษา
-      แล้วกู้คืนคำตอบภายในคำขอเดียว
+      AI Guard ตรวจจับข้อมูลส่วนบุคคลภาษาไทย ปกปิดก่อนประมวลผลด้วย AI ปลายทาง
+      และกู้คืนเฉพาะผลลัพธ์ที่ผ่านการตรวจความปลอดภัย ทำงานบนเซิร์ฟเวอร์ของทีม
+      แบบ stateless ภายในคำขอเดียว
     </p>
 
     <div class="flow">
@@ -208,17 +224,22 @@
       แต่ข้อความที่ AI Guard ส่งต่อไปยังโมเดลปลายทางต้องผ่านการปกปิดและการตรวจซ้ำ
       ลองด้วยตัวเองได้ในส่วนถัดไป
     </p>
+    <div class="workflow-nav" aria-label="สาม workflow สาธารณะ">
+      <a class="workflow-card" href="#privacy-scan"><span class="step">Workflow 01</span><strong>Privacy Scan</strong><span>ตรวจและไฮไลต์ PII ภาษาไทย พร้อมสรุปจำนวนและประเภท</span></a>
+      <a class="workflow-card" href="#safe-ai"><span class="step">Workflow 02 · Flagship</span><strong>Safe AI</strong><span>เห็นข้อความที่ปกปิดซึ่งส่งให้ Pathumma และผลที่กู้คืนอย่างปลอดภัย</span></a>
+      <a class="workflow-card" href="#pdpa-report"><span class="step">Workflow 03</span><strong>PDPA Report</strong><span>ดูคะแนน เกรด หมวดมาตรา 26 และดาวน์โหลดรายงานที่ไม่มีข้อความต้นฉบับ</span></a>
+    </div>
   </div>
 </section>
 
-<!-- ═══════════════ 2. ลองของจริง ═══════════════ -->
-<section id="demo">
+<!-- ═══════════════ 2. Privacy Scan ═══════════════ -->
+<section id="privacy-scan">
   <div class="container">
-    <p class="eyebrow">ทดลองใช้งาน</p>
-    <h2 class="section-title">ลองของจริง</h2>
+    <p class="eyebrow">Workflow 01</p>
+    <h2 class="section-title">Privacy Scan</h2>
     <p class="section-sub">
-      พิมพ์ข้อความของคุณเอง หรือกดเลือกตัวอย่างด้านล่าง ระบบตรวจจับข้อมูลส่วนบุคคลสดขณะพิมพ์
-      แล้วกดส่งเพื่อดูวงจรเต็มรูปแบบ ปกปิด ส่งเข้า AI แล้วกู้คืนกลับมา
+      เลือกตัวอย่างสังเคราะห์หรือพิมพ์ข้อความ ระบบจะไฮไลต์ PII พร้อมสรุปจำนวน
+      และประเภท ข้อความนี้ยังไม่ถูกส่งไป Pathumma จนกว่าจะกดใน Safe AI
     </p>
 
     <div class="auth-card" id="authCard">
@@ -241,38 +262,54 @@
       <button type="button" data-sample="ขอเชิญ นายวีรภัทร ตั้งตระกูล บ้านเลขที่ 99/12 ถนนกาญจนวณิชย์ ตำบลหาดใหญ่ อำเภอหาดใหญ่ จังหวัดสงขลา 90110 เข้าร่วมประชุมประชาคม โทร 074-123-456">หนังสือราชการ</button>
     </div>
 
-    <div class="controls">
-      <label class="field">รูปแบบการปกปิด
-        <select id="mode">
-          <option value="token">โทเคน เช่น [ชื่อ_1]</option>
-          <option value="surrogate">ข้อมูลสมมุติ (อ่านเป็นธรรมชาติ)</option>
-        </select>
-      </label>
-      <span class="dest-badge">โมเดลปลายทาง <b>Tokenmind thaillm-8b</b></span>
-      <button id="send" class="primary" type="button">ปกปิดแล้วส่งเข้า AI</button>
-    </div>
-
-    <div class="panes">
+    <div class="privacy-grid">
       <section class="pane">
-        <h3>1. ข้อความของคุณ (ตรวจจับสดขณะพิมพ์)</h3>
+        <h3>ข้อความต้นฉบับ · PII ถูกไฮไลต์ขณะพิมพ์</h3>
         <div id="editorWrap">
           <div id="highlight" aria-hidden="true"></div>
           <textarea id="editor" spellcheck="false" placeholder="พิมพ์ที่นี่..."></textarea>
         </div>
       </section>
-      <section class="pane">
-        <h3>2. สิ่งที่ AI เห็นจริง ๆ</h3>
-        <div class="body" id="masked"><span style="color:var(--dim)">ยังไม่ได้ส่ง</span></div>
-      </section>
-      <section class="pane">
-        <h3>3. คำตอบที่กู้คืนแล้ว <span id="providerTag" class="provider-tag" hidden></span></h3>
-        <div class="body" id="restored"><span style="color:var(--dim)">ยังไม่ได้ส่ง</span></div>
-      </section>
+      <aside class="card scan-summary" aria-live="polite">
+        <h3>สรุป Privacy Scan</h3>
+        <div class="summary-grid">
+          <div class="summary-box"><div class="value" id="piiCount">0</div><div class="label">รายการ PII</div></div>
+          <div class="summary-box"><div class="value" id="piiTypeCount">0</div><div class="label">ประเภทข้อมูล</div></div>
+        </div>
+        <div class="summary-detail" id="piiTypes">ยังไม่มีข้อมูลให้วิเคราะห์</div>
+        <div class="legend" id="legend"></div>
+        <div class="meta" id="meta"></div>
+        <div id="guardBar"></div>
+        <p class="summary-detail">รายงานความเสี่ยงและหมวดข้อมูลอ่อนไหวตามมาตรา 26 ดูได้ใน PDPA Report ด้านล่าง</p>
+      </aside>
     </div>
+  </div>
+</section>
 
-    <div class="legend" id="legend"></div>
-    <div class="meta" id="meta"></div>
-    <div id="guardBar"></div>
+<!-- ═══════════════ 3. Safe AI ═══════════════ -->
+<section id="safe-ai">
+  <div class="container">
+    <p class="eyebrow">Workflow 02 · Flagship</p>
+    <h2 class="section-title">Safe AI</h2>
+    <p class="section-sub">ใช้ข้อความจาก Privacy Scan แล้วดูทุกช่วงของวงจรปกปิดอย่างชัดเจน ผลสำเร็จจะแสดงต่อเมื่อ safety และ restoration ผ่านครบเท่านั้น</p>
+    <div class="safe-sequence"><b>ข้อความต้นฉบับ</b><span>→</span><b>ตรวจพบ PII</b><span>→</span><b>ข้อความที่ส่งให้ AI</b><span>→</span><b>Pathumma / thaillm-8b</b><span>→</span><b>ผลที่กู้คืน</b></div>
+    <div class="controls">
+      <label class="field">รูปแบบการปกปิด
+        <select id="mode">
+          <option value="token">โทเคน</option>
+          <option value="surrogate">ข้อมูลสมมุติ (อ่านเป็นธรรมชาติ)</option>
+        </select>
+      </label>
+      <span class="dest-badge">ปลายทาง <b>Pathumma · thaillm-8b</b></span>
+      <button id="send" class="primary" type="button">ปกปิดและส่งให้ Safe AI</button>
+    </div>
+    <p class="safe-note">ช่องกลางคือข้อความที่ออกจาก protected boundary ของ AI Guard ไปยัง provider จริง ไม่แสดง mapping หรือคู่ token–ข้อมูลต้นฉบับ</p>
+    <div class="panes">
+      <section class="pane"><h3>1. Original · จาก Privacy Scan</h3><div class="body" id="safeOriginal"><span style="color:var(--dim)">เลือกตัวอย่างหรือพิมพ์ข้อความด้านบน</span></div></section>
+      <section class="pane"><h3>2. Sanitized · สิ่งที่ provider ได้รับ</h3><div class="body" id="masked"><span style="color:var(--dim)">ยังไม่ได้ส่ง</span></div></section>
+      <section class="pane"><h3>3. Protected result <span id="providerTag" class="provider-tag" hidden></span></h3><div class="body" id="restored"><span style="color:var(--dim)">ยังไม่ได้ส่ง</span></div></section>
+    </div>
+    <div class="elapsed" id="safeElapsed" role="status"></div>
   </div>
 </section>
 
@@ -282,14 +319,14 @@
     <p class="eyebrow">ตรวจสอบได้</p>
     <h2 class="section-title">ตรวจสอบข้อความที่ส่งต่อ</h2>
     <p class="section-sub">
-      หลังกดส่งในส่วน "ลองของจริง" ด้านบน ส่วนนี้จะแสดงข้อความที่ AI Guard
+      หลังกดส่งใน Safe AI ส่วนนี้จะแสดงข้อความที่ AI Guard
       ส่งต่อจากเซิร์ฟเวอร์ไปยังโมเดลภาษาแบบตัวต่อตัวอักษร
     </p>
 
     <div class="evidence-block">
       <h3>ข้อความที่เซิร์ฟเวอร์ AI Guard ส่งเข้าโมเดลปลายทาง</h3>
       <div class="evidence-box" id="evidenceSanitized">
-        <span class="evidence-empty" id="evidenceEmpty">ยังไม่มีข้อมูล กดปุ่ม "ปกปิดแล้วส่งเข้า AI" ในส่วนลองของจริงก่อน</span>
+        <span class="evidence-empty" id="evidenceEmpty">ยังไม่มีข้อมูล กดปุ่มใน Safe AI ก่อน</span>
       </div>
     </div>
 
@@ -312,28 +349,33 @@
   </div>
 </section>
 
-<!-- ═══════════════ 4. เอกสาร ═══════════════ -->
-<section id="docs">
+<!-- ═══════════════ 5. PDPA Report ═══════════════ -->
+<section id="pdpa-report">
   <div class="container">
-    <p class="eyebrow">เครื่องมือเอกสาร</p>
-    <h2 class="section-title">เอกสาร</h2>
-    <p class="section-sub">ใช้งานตรงจากเบราว์เซอร์ ไม่ต้องติดตั้งอะไรเพิ่ม</p>
+    <p class="eyebrow">Workflow 03</p>
+    <h2 class="section-title">PDPA Report</h2>
+    <p class="section-sub">วิเคราะห์ข้อความเดียวกับ Privacy Scan แล้วแสดงคะแนน เกรด และหมวดมาตรา 26 ก่อนดาวน์โหลดรายงานภาษาไทย</p>
 
     <div class="grid-2">
       <div class="card">
         <h3>รายงาน PDPA</h3>
         <p class="card-desc">
-          ออกรายงานความเสี่ยงตาม PDPA เป็นไฟล์ PDF ภาษาไทย จากข้อความในช่อง "ลองของจริง" ด้านบน
+          ออกรายงานความเสี่ยงตาม PDPA เป็นไฟล์ PDF ภาษาไทย จากข้อความใน Privacy Scan
           รายงานมีเฉพาะคะแนน เกรด และจำนวนที่พบตามหมวด ไม่มีข้อความจริงหรือค่าข้อมูลอยู่ในไฟล์
         </p>
-        <button id="reportBtn" class="primary" type="button">ออกรายงาน PDPA (PDF)</button>
+        <div class="report-summary" aria-live="polite">
+          <div class="summary-box"><div class="value" id="reportScore">—</div><div class="label">คะแนนความเสี่ยง</div></div>
+          <div class="summary-box"><div class="value" id="reportGrade">—</div><div class="label">เกรด</div></div>
+          <div class="summary-box"><div class="value" id="reportScope">—</div><div class="label">ไฟล์ PDF ไม่มีข้อความต้นฉบับ</div></div>
+        </div>
+        <button id="reportBtn" class="primary" type="button">วิเคราะห์และดาวน์โหลด PDPA Report</button>
         <div class="pdfmeta" id="reportMeta"></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ 5. API + ความโปร่งใส ═══════════════ -->
+<!-- ═══════════════ 6. API + ความโปร่งใส ═══════════════ -->
 <section id="api">
   <div class="container">
     <p class="eyebrow">สำหรับนักพัฒนา</p>
@@ -425,6 +467,9 @@ const THAI_LABELS = {
   DATE_OF_BIRTH: "วันเกิด", ORGANIZATION: "องค์กร", BANK_ACCOUNT: "เลขบัญชี",
   CREDIT_CARD: "บัตรเครดิต", PASSPORT: "หนังสือเดินทาง", ID_NUMBER: "เลขอ้างอิง",
   STUDENT_ID: "รหัสนักศึกษา", VEHICLE_PLATE: "ทะเบียนรถ", IBAN: "IBAN",
+  RACE_ETHNICITY: "เชื้อชาติ/ชาติพันธุ์", POLITICAL_OPINION: "ความคิดเห็นทางการเมือง",
+  RELIGION: "ศาสนา", HEALTH: "สุขภาพ", SEXUAL_BEHAVIOR: "พฤติกรรมทางเพศ",
+  CRIMINAL_RECORD: "ประวัติอาชญากรรม", DISABILITY: "ความพิการ", LABOR_UNION: "สหภาพแรงงาน",
 };
 const colorFor = t => COLORS[t] || "var(--c-other)";
 const labelFor = t => THAI_LABELS[t] || t;
@@ -465,6 +510,8 @@ function detailText(body) {
 let authenticated = false;
 let authGeneration = 0;
 let detectGeneration = 0;
+let roundtripGeneration = 0;
+let reportGeneration = 0;
 let authCheckGeneration = 0;
 let authCheckController = null;
 let authMutationInFlight = false;
@@ -502,15 +549,22 @@ function setAuthMutationState(value) {
 function clearSensitiveState() {
   clearTimeout(debounceTimer);
   detectGeneration += 1;
+  roundtripGeneration += 1;
+  reportGeneration += 1;
   accessCodeInput.value = "";
   editor.value = "";
   highlight.textContent = "";
   renderLegend({});
   meta.textContent = "เข้าสู่ระบบก่อนส่งข้อความไปประมวลผล";
   document.getElementById("guardBar").textContent = "";
+  document.getElementById("piiCount").textContent = "0";
+  document.getElementById("piiTypeCount").textContent = "0";
+  document.getElementById("piiTypes").textContent = "ยังไม่มีข้อมูลให้วิเคราะห์";
 
+  document.getElementById("safeOriginal").textContent = "เลือกตัวอย่างหรือพิมพ์ข้อความด้านบน";
   document.getElementById("masked").textContent = "ยังไม่ได้ส่ง";
   document.getElementById("restored").textContent = "ยังไม่ได้ส่ง";
+  document.getElementById("safeElapsed").textContent = "";
   const tag = document.getElementById("providerTag");
   tag.hidden = true;
   tag.textContent = "";
@@ -518,6 +572,9 @@ function clearSensitiveState() {
   document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูล";
 
   document.getElementById("reportMeta").textContent = "";
+  document.getElementById("reportScore").textContent = "—";
+  document.getElementById("reportGrade").textContent = "—";
+  document.getElementById("reportScope").textContent = "—";
 }
 
 function setAuthState(value, message) {
@@ -709,6 +766,9 @@ async function detectNow() {
     renderLegend({});
     meta.textContent = "";
     document.getElementById("guardBar").innerHTML = "";
+    document.getElementById("piiCount").textContent = "0";
+    document.getElementById("piiTypeCount").textContent = "0";
+    document.getElementById("piiTypes").textContent = "ยังไม่มีข้อมูลให้วิเคราะห์";
     return;
   }
   if (!authenticated) return;
@@ -721,6 +781,12 @@ async function detectNow() {
     if (generation !== detectGeneration || text !== editor.value) return;
     renderHighlight(text, body.highlights);
     renderLegend(body.entity_type_counts);
+    const typeEntries = Object.entries(body.entity_type_counts);
+    document.getElementById("piiCount").textContent = String(body.detected_entity_count);
+    document.getElementById("piiTypeCount").textContent = String(typeEntries.length);
+    document.getElementById("piiTypes").textContent = typeEntries.length
+      ? typeEntries.map(([type, count]) => `${labelFor(type)} ${count}`).join(" · ")
+      : "ไม่พบข้อมูลส่วนบุคคลในข้อความนี้";
     meta.textContent = `พบข้อมูลส่วนบุคคล ${body.detected_entity_count} รายการ`;
     try {
       const {r: gr, body: gb} = await apiJson("/api/guard", {
@@ -747,7 +813,19 @@ async function detectNow() {
 
 editor.addEventListener("input", () => {
   detectGeneration += 1;
+  roundtripGeneration += 1;
+  reportGeneration += 1;
   highlight.textContent = editor.value;
+  document.getElementById("safeOriginal").textContent = editor.value || "เลือกตัวอย่างหรือพิมพ์ข้อความด้านบน";
+  document.getElementById("masked").textContent = "รอกดส่งข้อความชุดนี้";
+  document.getElementById("restored").textContent = "ยังไม่มีผลสำหรับข้อความชุดนี้";
+  document.getElementById("safeElapsed").textContent = "";
+  document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูลสำหรับข้อความชุดนี้";
+  document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูล";
+  document.getElementById("reportScore").textContent = "—";
+  document.getElementById("reportGrade").textContent = "—";
+  document.getElementById("reportScope").textContent = "—";
+  document.getElementById("reportMeta").textContent = "";
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(detectNow, 400);
 });
@@ -795,6 +873,8 @@ function roundtripIsSafe(body) {
 document.getElementById("send").addEventListener("click", async () => {
   const text = editor.value;
   if (!text.trim()) return;
+  const generation = ++roundtripGeneration;
+  const startedAt = Date.now();
   const btn = document.getElementById("send");
   const masked = document.getElementById("masked");
   const restored = document.getElementById("restored");
@@ -804,14 +884,17 @@ document.getElementById("send").addEventListener("click", async () => {
   tag.textContent = "";
   masked.textContent = "กำลังปกปิด...";
   restored.textContent = "กำลังรอคำตอบ...";
+  document.getElementById("safeElapsed").textContent = "กำลังตรวจ ปกปิด และรอ Pathumma...";
   try {
     const {r, body} = await apiJson("/api/roundtrip", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({text, mode: document.getElementById("mode").value, provider: "tokenmind"}),
     });
+    if (generation !== roundtripGeneration || text !== editor.value) return;
     if (!r.ok) {
       masked.innerHTML = `<span class="warn">ส่งไม่สำเร็จ ${esc(errorMessage(r.status, detailText(body), "text"))}</span>`;
       restored.innerHTML = '<span class="warn">ยังไม่มีคำตอบให้กู้คืน</span>';
+      document.getElementById("safeElapsed").textContent = `ไม่สำเร็จหลัง ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที`;
       return;
     }
     masked.textContent = body.sanitized_text;
@@ -821,6 +904,10 @@ document.getElementById("send").addEventListener("click", async () => {
       restored.innerHTML = '<span class="warn">ระบบระงับคำตอบที่กู้คืนไม่สมบูรณ์หรือมีคำเตือน</span>';
       meta.innerHTML = '<span class="warn">ไม่แสดงคำตอบจนกว่าสถานะความปลอดภัยและการกู้คืนจะผ่านครบ</span>';
       fillEvidence(body);
+      const section26 = (body.section26_categories || []).length
+        ? ` · ธงมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
+        : "";
+      document.getElementById("safeElapsed").textContent = `ระงับผลหลัง ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที · สถานะความปลอดภัยไม่ผ่าน${section26}`;
       return;
     }
     restored.textContent = body.restored_text;
@@ -828,10 +915,16 @@ document.getElementById("send").addEventListener("click", async () => {
       ? `<span class="warn">คำเตือน ${esc(body.warnings.map(warningLabel).join(" | "))}</span>`
       : `ประมวลผล ${body.detected_entity_count} รายการ และตรวจข้อความที่ปกปิดซ้ำก่อนเรียกโมเดล`;
     fillEvidence(body);
+    const section26 = (body.section26_categories || []).length
+      ? ` · ธงมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
+      : " · ไม่พบธงมาตรา 26";
+    document.getElementById("safeElapsed").textContent = `สำเร็จใน ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที · safety และ restoration ผ่าน${section26}`;
   } catch (err) {
     if (isStaleBusinessError(err)) return;
-    masked.innerHTML = `<span class="warn">เชื่อมต่อ backend ไม่ได้ ${esc(String(err))}</span>`;
+    if (generation !== roundtripGeneration || text !== editor.value) return;
+    masked.innerHTML = '<span class="warn">เชื่อมต่อ backend ไม่ได้ กรุณาลองใหม่</span>';
     restored.innerHTML = '<span class="warn">ยังไม่มีคำตอบให้กู้คืน</span>';
+    document.getElementById("safeElapsed").textContent = `ไม่สำเร็จหลัง ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที`;
   } finally {
     btn.disabled = !authenticated;
   }
@@ -842,26 +935,32 @@ document.getElementById("reportBtn").addEventListener("click", async () => {
   const text = editor.value;
   const reportMeta = document.getElementById("reportMeta");
   if (!text.trim()) {
-    reportMeta.textContent = "กรุณาใส่ข้อความในส่วนลองของจริงด้านบนก่อน";
+    reportMeta.textContent = "กรุณาใส่ข้อความใน Privacy Scan ก่อน";
     return;
   }
+  const generation = ++reportGeneration;
   const btn = document.getElementById("reportBtn");
   btn.disabled = true;
   reportMeta.textContent = "กำลังออกรายงาน...";
   try {
-    const {r, body} = await apiJson("/api/analyze-report", {
+    const {r: reportResponse, body: report} = await apiJson("/api/analyze-report", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({text}),
     });
-    if (!r.ok) {
-      reportMeta.innerHTML = `<span class="warn">ออกรายงานไม่สำเร็จ ${esc(errorMessage(r.status, detailText(body), "text"))}</span>`;
+    if (generation !== reportGeneration || text !== editor.value) return;
+    if (!reportResponse.ok) {
+      reportMeta.innerHTML = `<span class="warn">ออกรายงานไม่สำเร็จ ${esc(errorMessage(reportResponse.status, detailText(report), "text"))}</span>`;
       return;
     }
-    downloadB64(body.report_pdf_b64, "pdpa_report.pdf", "application/pdf");
-    reportMeta.textContent = `ออกรายงานแล้ว คะแนนรวม ${body.overall_score} เกรด ${body.overall_grade}`;
+    document.getElementById("reportScore").textContent = String(report.overall_score);
+    document.getElementById("reportGrade").textContent = String(report.overall_grade);
+    document.getElementById("reportScope").textContent = "พร้อม";
+    downloadB64(report.report_pdf_b64, "pdpa_report.pdf", "application/pdf");
+    reportMeta.textContent = `รายงานพร้อมดาวน์โหลด · คะแนน ${report.overall_score} · เกรด ${report.overall_grade}`;
   } catch (err) {
     if (isStaleBusinessError(err)) return;
-    reportMeta.textContent = "เชื่อมต่อ backend ไม่ได้ " + String(err);
+    if (generation !== reportGeneration || text !== editor.value) return;
+    reportMeta.textContent = "เชื่อมต่อ backend ไม่ได้ กรุณาลองใหม่";
   } finally {
     btn.disabled = !authenticated;
   }

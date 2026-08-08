@@ -132,13 +132,18 @@ def get(
         return e.code, dict(e.headers), e.read().decode("utf-8", "replace")
 
 
-def web_get(path: str) -> tuple[int, str]:
+def web_response(path: str) -> tuple[int, dict[str, str], str]:
     request = urllib.request.Request(WEB_BASE + path, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
-            return response.status, response.read().decode("utf-8")
+            return response.status, dict(response.headers), response.read().decode("utf-8")
     except urllib.error.HTTPError as error:
-        return error.code, error.read().decode("utf-8", "replace")
+        return error.code, dict(error.headers), error.read().decode("utf-8", "replace")
+
+
+def web_get(path: str) -> tuple[int, str]:
+    status, _headers, body = web_response(path)
+    return status, body
 
 
 def stub_log_lines() -> int:
@@ -397,6 +402,29 @@ def check_web_api_does_not_fall_back_to_spa(failures: list[str]) -> None:
         )
 
 
+def check_frontend_security_headers(failures: list[str]) -> None:
+    _status, headers, _body = web_response("/")
+    expected = {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Cache-Control": "no-store",
+    }
+    for name, value in expected.items():
+        if headers.get(name) != value:
+            failures.append(f"frontend header: {name} is not {value!r}")
+    csp = headers.get("Content-Security-Policy", "")
+    for directive in (
+        "default-src 'self'",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'none'",
+        "frame-ancestors 'none'",
+    ):
+        if directive not in csp:
+            failures.append(f"frontend header: CSP missing {directive!r}")
+
+
 def check_prefix_is_re_added(failures: list[str]) -> None:
     for endpoint in ENDPOINTS:
         for path in (f"/{endpoint}", f"/v1/{endpoint}"):
@@ -554,6 +582,7 @@ def main() -> int:
         check_request_target_stays_out_of_the_log(failures)
         check_web_request_target_stays_out_of_log(failures)
         check_web_api_does_not_fall_back_to_spa(failures)
+        check_frontend_security_headers(failures)
         check_responses_are_not_cacheable(failures)
         check_fixed_proxy_failures_and_timeout_policy(failures)
     except ContractFailure as e:

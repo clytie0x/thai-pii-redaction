@@ -10,6 +10,12 @@ const page = fs.readFileSync(path.join(repo, "web", "index.html"), "utf8");
 for (const forbidden of ["redact-pdf", "pdfFile", "pdfPick", "pdfDownload", "after_png_b64"]) {
   assert.ok(!page.includes(forbidden), `public PDF execution path remains: ${forbidden}`);
 }
+for (const workflow of ['id="privacy-scan"', 'id="safe-ai"', 'id="pdpa-report"']) {
+  assert.ok(page.includes(workflow), `public workflow is missing: ${workflow}`);
+}
+assert.ok(page.includes("สิ่งที่ provider ได้รับ"), "Safe AI does not label sanitized provider input");
+assert.ok(page.includes("body.sanitized_text"), "Safe AI does not render the sanitized text");
+assert.ok(!/localStorage|sessionStorage/.test(page), "frontend persists sensitive state in browser storage");
 const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 const source = scripts.find(script => script.includes("same-origin caller authentication"));
 assert.ok(source, "frontend application script is missing");
@@ -113,6 +119,7 @@ let roundtripCalls = 0;
 let slowDetect = deferred();
 let detectCalls = 0;
 let guardCalls = 0;
+let analyzeReportCalls = 0;
 const initialSession = deferred();
 let sessionCalls = 0;
 let loginCalls = 0;
@@ -149,6 +156,14 @@ const fetch = (url, _options = {}) => {
   if (url === "/api/guard") {
     guardCalls += 1;
     return Promise.resolve(response(200, {flagged: false, guard_findings: []}));
+  }
+  if (url === "/api/analyze-report") {
+    analyzeReportCalls += 1;
+    return Promise.resolve(response(200, {
+      report_pdf_b64: "JVBERi0xLjQ=",
+      overall_score: 68,
+      overall_grade: "D",
+    }));
   }
   throw new Error(`unexpected fetch: ${url}`);
 };
@@ -210,7 +225,14 @@ const seedSensitiveState = () => {
   element("evidenceSanitized").textContent = "SENSITIVE_EVIDENCE";
   element("evidenceWarnings").textContent = "SENSITIVE_WARNING";
   element("guardBar").textContent = "SENSITIVE_GUARD";
+  element("safeOriginal").textContent = "SENSITIVE_ORIGINAL";
+  element("safeElapsed").textContent = "SENSITIVE_ELAPSED";
+  element("piiTypes").textContent = "SENSITIVE_TYPES";
+  element("piiCount").textContent = "99";
   element("reportMeta").textContent = "SENSITIVE_REPORT";
+  element("reportScore").textContent = "99";
+  element("reportGrade").textContent = "F";
+  element("reportScope").textContent = "SENSITIVE_SCOPE";
 };
 const assertSensitiveStateCleared = label => {
   assert.equal(element("accessCode").value, "", `${label}: access code retained`);
@@ -220,7 +242,11 @@ const assertSensitiveStateCleared = label => {
   assert.equal(element("restored").textContent, "ยังไม่ได้ส่ง", `${label}: restored text retained`);
   assert.equal(element("evidenceSanitized").textContent, "ยังไม่มีข้อมูล", `${label}: evidence retained`);
   assert.equal(element("guardBar").textContent, "", `${label}: guard result retained`);
+  assert.equal(element("safeOriginal").textContent, "เลือกตัวอย่างหรือพิมพ์ข้อความด้านบน", `${label}: Safe AI original retained`);
+  assert.equal(element("safeElapsed").textContent, "", `${label}: elapsed state retained`);
+  assert.equal(element("piiTypes").textContent, "ยังไม่มีข้อมูลให้วิเคราะห์", `${label}: PII type summary retained`);
   assert.equal(element("reportMeta").textContent, "", `${label}: report result retained`);
+  assert.equal(element("reportScore").textContent, "—", `${label}: report score retained`);
 };
 
 seedSensitiveState();
@@ -276,6 +302,39 @@ assert.equal(
 );
 assert.equal(guardCalls, 0, "stale detect response started a guard request");
 
+roundtripMode = "deferred";
+slowRoundtrip = deferred();
+element("editor").value = "OLD_ROUNDTRIP_SOURCE";
+await element("editor").emit("input");
+vm.runInContext("clearTimeout(debounceTimer)", context);
+const staleInputRoundtrip = element("send").emit("click");
+await flush();
+element("editor").value = "NEW_ROUNDTRIP_SOURCE";
+await element("editor").emit("input");
+vm.runInContext("clearTimeout(debounceTimer)", context);
+slowRoundtrip.resolve(response(200, {
+  sanitized_text: "STALE_INPUT_SANITIZED",
+  restored_text: "STALE_INPUT_RESTORED",
+  provider_used: "tokenmind",
+  detected_entity_count: 1,
+  warnings: [],
+  safety: {status: "pass"},
+  restoration: {status: "complete", leftover_count: 0},
+}));
+await staleInputRoundtrip;
+assert.doesNotMatch(element("masked").textContent, /STALE_INPUT_/);
+assert.doesNotMatch(element("restored").textContent, /STALE_INPUT_/);
+
+element("editor").value = "synthetic health report source";
+const downloadsBeforeReport = downloads.length;
+await element("reportBtn").emit("click");
+assert.equal(analyzeReportCalls, 1, "PDPA report PDF request did not run");
+assert.equal(element("reportScore").textContent, "68");
+assert.equal(element("reportGrade").textContent, "D");
+assert.equal(element("reportScope").textContent, "พร้อม");
+assert.match(element("reportMeta").textContent, /คะแนน 68 · เกรด D/);
+assert.equal(downloads.length, downloadsBeforeReport + 1, "validated PDPA report was not downloaded");
+
 const assertRoundtripSuppressed = async (label, body) => {
   roundtripMode = "body";
   roundtripBody = body;
@@ -314,10 +373,11 @@ await assertRoundtripSuppressed("warning-bearing response", warningBody);
 
 roundtripMode = "unauthorized";
 seedSensitiveState();
+const downloadsBeforeUnauthorized = downloads.length;
 await element("send").emit("click");
 assertSensitiveStateCleared("401 response");
 assert.equal(element("send").disabled, true, "401 did not disable business controls");
-assert.equal(downloads.length, 0, "401 response triggered a download");
+assert.equal(downloads.length, downloadsBeforeUnauthorized, "401 response triggered a download");
 
 element("accessCode").value = "synthetic-access-code";
 await element("loginBtn").emit("click");
