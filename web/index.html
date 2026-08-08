@@ -299,9 +299,9 @@
     </div>
 
     <div class="disclosure">
-      เส้นทางนี้เป็น <b>stateless</b> ข้อความต้นฉบับ การจับคู่ และไฟล์ PDF
-      ถูกใช้ระหว่างคำขอเดียวเท่านั้น โดยงาน PDF/การพักข้อมูลของ proxy ใช้พื้นที่ชั่วคราว
-      แบบหน่วยความจำ (tmpfs) ไม่ใช่ดิสก์ถาวร และถูกทิ้งเมื่อ container หยุดหรือสร้างใหม่
+      เส้นทางนี้เป็น <b>stateless</b> ข้อความต้นฉบับและการจับคู่
+      ถูกใช้ระหว่างคำขอเดียวเท่านั้น พื้นที่ชั่วคราวของบริการเป็น
+      หน่วยความจำ (tmpfs) ไม่ใช่ดิสก์ถาวร และถูกทิ้งเมื่อ container หยุดหรือสร้างใหม่
       เมื่อคำขอจบ reference ชั่วคราวจะถูกลบแบบ best effort
       response คืนเฉพาะข้อความผลลัพธ์ จำนวน/ชนิด และสถานะความปลอดภัย
       ไม่คืน mapping หรือ token-bearing entity projection
@@ -320,25 +320,6 @@
     <p class="section-sub">ใช้งานตรงจากเบราว์เซอร์ ไม่ต้องติดตั้งอะไรเพิ่ม</p>
 
     <div class="grid-2">
-      <div class="card">
-        <h3>ทาดำ PDF</h3>
-        <p class="card-desc">
-          อัปโหลดไฟล์ PDF ระบบตรวจจับข้อมูลส่วนบุคคลและสร้างตัวอย่างที่วาดกล่องทึบ
-          รองรับทั้งไฟล์ที่มีชั้นข้อความและเอกสารสแกน (มี OCR ในตัว)
-          ตำแหน่งกล่องยังใช้การจับคู่เชิงประมาณ จึงต้องตรวจทุกหน้าก่อนนำไฟล์ไปใช้
-        </p>
-        <input type="file" id="pdfFile" accept="application/pdf" hidden>
-        <button id="pdfPick" class="primary" type="button">เลือกไฟล์ PDF</button>
-        <span id="pdfStatus" class="pdfmeta"></span>
-        <div id="cmpWrap" hidden>
-          <img id="imgAfter" alt="ตัวอย่างหน้าแรกหลังทาดำ">
-        </div>
-        <div class="pdfmeta" id="pdfInfo"></div>
-        <div style="margin-top:12px">
-          <button id="pdfDownload" hidden type="button">ดาวน์โหลด PDF ที่ทาดำแล้ว</button>
-        </div>
-      </div>
-
       <div class="card">
         <h3>รายงาน PDPA</h3>
         <p class="card-desc">
@@ -368,7 +349,6 @@
           <tr><td><code>POST /api/v1/detect</code></td><td>ตรวจจับข้อมูลส่วนบุคคลอย่างเดียว ไม่มี session ไม่มี vault</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
           <tr><td><code>POST /api/v1/guard</code></td><td>ตรวจสัญญาณ prompt injection ภาษาไทย/อังกฤษ แจ้งเตือนอย่างเดียว ไม่บล็อก</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
           <tr><td><code>POST /api/v1/roundtrip</code></td><td>ปกปิด ส่งเข้าโมเดลภาษา แล้วกู้คืน จบในคำขอเดียว แบบ stateless</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
-          <tr><td><code>POST /api/v1/redact-pdf</code></td><td>สร้าง PDF ตัวอย่างพร้อมกล่องทึบแบบประมาณ ต้องตรวจทุกหน้าก่อนใช้</td><td>PDF ≤ 50MB; หลักฐานปัจจุบันครอบคลุมเอกสารสแกน 1 หน้า</td></tr>
           <tr><td><code>POST /api/v1/analyze-report</code></td><td>ออกรายงานความเสี่ยง PDPA เป็นไฟล์ PDF</td><td>ข้อความ ≤ 20,000 ตัวอักษร</td></tr>
           <tr><td><code>GET /api/v1/health</code></td><td>ตรวจสถานะบริการ</td><td>ไม่มี</td></tr>
           <tr><td><code>POST /api/v1/auth/login</code></td><td>แลก access code เป็น signed HttpOnly cookie อายุ 30 นาที</td><td>มี rate limit แยก</td></tr>
@@ -454,14 +434,13 @@ function errorMessage(status, detail, kind) {
   if (status === 401) return "สิทธิ์หมดอายุหรือ access code ไม่ถูกต้อง";
   if (status === 403) return "browser context นี้ไม่ได้รับอนุญาต";
   if (status === 429) return "คำขอถี่เกินไป ลองใหม่";
-  if (status === 413) return kind === "pdf" ? "ไฟล์/จำนวนหน้าเกินเพดาน" : "ข้อความยาวเกินเพดาน";
+  if (status === 413) return "ข้อความยาวเกินเพดาน";
   const codes = {
     residual_pii: "ยังพบสัญญาณข้อมูลส่วนบุคคลหลังปกปิด ระบบจึงหยุดก่อนเรียกโมเดล",
     provider_configuration: "บริการ LLM ยังไม่พร้อม (คีย์ไม่ถูกตั้งค่า)",
     provider_unavailable: "โมเดลปลายทางยังไม่พร้อม",
     provider_rejected: "โมเดลปลายทางปฏิเสธคำขอ",
     provider_response_invalid: "คำตอบจากโมเดลไม่อยู่ในรูปแบบที่ปลอดภัย",
-    ocr_unavailable: "ระบบ OCR ยังไม่พร้อม",
     ner_unavailable: "ระบบตรวจชื่อยังไม่พร้อม",
     dependency_unavailable: "ส่วนประกอบประมวลผลยังไม่พร้อม",
     service_unavailable: "บริการยังไม่พร้อม ลองใหม่ภายหลัง",
@@ -486,7 +465,6 @@ function detailText(body) {
 let authenticated = false;
 let authGeneration = 0;
 let detectGeneration = 0;
-let pdfGeneration = 0;
 let authCheckGeneration = 0;
 let authCheckController = null;
 let authMutationInFlight = false;
@@ -524,7 +502,6 @@ function setAuthMutationState(value) {
 function clearSensitiveState() {
   clearTimeout(debounceTimer);
   detectGeneration += 1;
-  pdfGeneration += 1;
   accessCodeInput.value = "";
   editor.value = "";
   highlight.textContent = "";
@@ -540,14 +517,6 @@ function clearSensitiveState() {
   document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูล";
   document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูล";
 
-  pdfFile.value = "";
-  redactedB64 = null;
-  redactedName = "redacted.pdf";
-  document.getElementById("pdfDownload").hidden = true;
-  document.getElementById("cmpWrap").hidden = true;
-  document.getElementById("imgAfter").removeAttribute("src");
-  document.getElementById("pdfStatus").textContent = "";
-  document.getElementById("pdfInfo").textContent = "";
   document.getElementById("reportMeta").textContent = "";
 }
 
@@ -558,7 +527,7 @@ function setAuthState(value, message) {
   logoutBtn.hidden = !value;
   if (value) logoutBtn.textContent = "ออกจากระบบ";
   authStatus.textContent = message;
-  for (const id of ["send", "pdfPick", "reportBtn"]) {
+  for (const id of ["send", "reportBtn"]) {
     document.getElementById(id).disabled = !value;
   }
   if (!value) {
@@ -866,56 +835,6 @@ document.getElementById("send").addEventListener("click", async () => {
   } finally {
     btn.disabled = !authenticated;
   }
-});
-
-/* ── docs: PDF redact tool ── */
-const pdfFile = document.getElementById("pdfFile");
-let redactedB64 = null;
-let redactedName = "redacted.pdf";
-document.getElementById("pdfPick").addEventListener("click", () => pdfFile.click());
-pdfFile.addEventListener("change", async () => {
-  const f = pdfFile.files[0];
-  if (!f) return;
-  const generation = ++pdfGeneration;
-  const status = document.getElementById("pdfStatus");
-  status.textContent = "กำลังประมวลผล...";
-  redactedB64 = null;
-  redactedName = "redacted.pdf";
-  document.getElementById("pdfDownload").hidden = true;
-  document.getElementById("cmpWrap").hidden = true;
-  document.getElementById("imgAfter").removeAttribute("src");
-  document.getElementById("pdfInfo").textContent = "";
-  const fd = new FormData();
-  fd.append("pdf_file", f);
-  try {
-    const {r, body} = await apiJson("/api/redact-pdf", {method: "POST", body: fd});
-    if (generation !== pdfGeneration || pdfFile.files[0] !== f) return;
-    if (!r.ok) {
-      status.textContent = errorMessage(r.status, detailText(body), "pdf");
-      return;
-    }
-    document.getElementById("imgAfter").src = "data:image/png;base64," + body.after_png_b64;
-    document.getElementById("cmpWrap").hidden = false;
-    redactedB64 = body.redacted_pdf_b64;
-    redactedName = "redacted_document.pdf";
-    const s26 = (body.section26_categories && body.section26_categories.length)
-      ? " ธงมาตรา 26 " + body.section26_categories.join(" ")
-      : "";
-    const reviewNote = body.human_review
-      ? " OCR ระบุว่าต้องตรวจสอบเพิ่มเติม"
-      : "";
-    document.getElementById("pdfInfo").textContent =
-      `ตรวจพบ ${body.detected_entity_count} รายการ (ตัวอย่างหน้าแรก; ต้องตรวจทุกกล่องและทุกหน้าก่อนใช้)` + s26 + reviewNote;
-    document.getElementById("pdfDownload").hidden = false;
-    status.textContent = "";
-  } catch (err) {
-    if (isStaleBusinessError(err)) return;
-    if (generation !== pdfGeneration || pdfFile.files[0] !== f) return;
-    status.textContent = "เชื่อมต่อ backend ไม่ได้ " + String(err);
-  }
-});
-document.getElementById("pdfDownload").addEventListener("click", () => {
-  if (redactedB64) downloadB64(redactedB64, redactedName, "application/pdf");
 });
 
 /* ── docs: PDPA report ── */

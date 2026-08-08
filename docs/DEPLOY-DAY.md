@@ -5,8 +5,8 @@
 exact local candidate `e075ca4` ครอบคลุม current-core `8c6efef`,
 caller-auth ADR, response minimization และผ่าน provider-free `check`/`deploy`
 แล้ว ส่วน Tokenmind smoke/soak เดิมเป็น dated working-tree evidence:
-ต้อง rotate credential แล้วรัน exact live acceptance ใหม่ และปิด resource/PDF
-gate ก่อนออกนอกเครื่อง
+ต้อง rotate credential แล้วรัน exact live acceptance ใหม่ Public PDF ถูกพัก
+จาก hosted release แรกและไม่ใช่ deploy gate รอบนี้
 
 Participant Guide ทางการยืนยัน team/port/proxy/CI/resource/log/secret shape
 แล้ว แต่ไม่ได้ยืนยันว่า candidate ปัจจุบันผ่าน privacy หรือทำงานบน runner จริง
@@ -71,7 +71,7 @@ pipeline จะวิ่งเอง `check` → `deploy` → `acceptance`
   ชื่อ service ต้องเป็น `api` เท่านั้น deploy job ของผู้จัด `docker inspect`
   ชื่อนั้นตรง ๆ
 - **acceptance** login, ยิง PII สังเคราะห์ผ่านทั้งสายไปถึง thaillm-8b จริง,
-  ตรวจ minimized response, allowlist, report/one-page OCR และ scan log ทุกบรรทัด
+  ตรวจ minimized response, allowlist, PDPA Report, public PDF denial และ scan log ทุกบรรทัด
   ที่ container ปัจจุบันยังเก็บไว้
   **นี่คือ stage เดียวที่จับได้ว่า key ไปไม่ถึง container** เพราะ healthcheck
   ยังเขียวได้ในความล้มเหลวแบบนั้น (`/health` ไม่ถูก gate)
@@ -99,7 +99,7 @@ stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline
   `.gitlab-ci.yml` ตาม tag ที่เห็นใน Group → Settings → CI/CD → Runners
 - **โควตาของ gateway** `acceptance` ยิงของจริงทุกครั้งที่ push `main`
   (และ retry ได้สูงสุด 3 ครั้งเมื่อเจอ transport/5xx)
-- **PDF resource** exact one-page OCR บนเครื่องพัฒนาใช้เวลา 221 วินาที,
-  CPU เฉลี่ยประมาณ 1.93/2 cores และแตะเพดาน memory 6 GiB; ห้ามตีความ cap
-  20 หน้าเป็น capability
-  จนกว่าจะลด/พักเส้นนี้หรือแก้ execution model และผ่าน platform measurement
+- **PDF/OCR** implementation ยังอยู่ภายใน core แต่ public proxy ต้องคืน 404
+  ทั้งสอง alias และหน้าเว็บต้องไม่มี upload flow หลักฐานหนึ่งหน้าเดิม (221 วินาที,
+  CPU ~1.93/2 cores, memory ชน 6 GiB) เป็นเหตุให้พัก capability นี้ การเปิดใหม่
+  ต้องผ่าน correctness/provenance/resource acceptance แยกต่างหาก

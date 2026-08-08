@@ -7,6 +7,9 @@ import {fileURLToPath} from "node:url";
 
 const repo = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const page = fs.readFileSync(path.join(repo, "web", "index.html"), "utf8");
+for (const forbidden of ["redact-pdf", "pdfFile", "pdfPick", "pdfDownload", "after_png_b64"]) {
+  assert.ok(!page.includes(forbidden), `public PDF execution path remains: ${forbidden}`);
+}
 const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 const source = scripts.find(script => script.includes("same-origin caller authentication"));
 assert.ok(source, "frontend application script is missing");
@@ -67,16 +70,6 @@ class FakeElement {
   }
 }
 
-class FakeFormData {
-  constructor() {
-    this.entries = [];
-  }
-
-  append(name, value) {
-    this.entries.push([name, value]);
-  }
-}
-
 const elements = new Map();
 const element = id => {
   if (!elements.has(id)) elements.set(id, new FakeElement(id));
@@ -125,8 +118,6 @@ let sessionCalls = 0;
 let loginCalls = 0;
 let logoutMode = "success";
 let slowLogout = null;
-const slowPdfs = [deferred(), deferred()];
-let pdfCalls = 0;
 const fetch = (url, _options = {}) => {
   if (url === "/api/auth/session") {
     sessionCalls += 1;
@@ -159,12 +150,6 @@ const fetch = (url, _options = {}) => {
     guardCalls += 1;
     return Promise.resolve(response(200, {flagged: false, guard_findings: []}));
   }
-  if (url === "/api/redact-pdf") {
-    const request = slowPdfs[pdfCalls];
-    pdfCalls += 1;
-    if (!request) throw new Error("unexpected extra PDF request");
-    return request.promise;
-  }
   throw new Error(`unexpected fetch: ${url}`);
 };
 
@@ -172,7 +157,6 @@ const context = vm.createContext({
   AbortController,
   Array,
   Blob,
-  FormData: FakeFormData,
   JSON,
   Math,
   Number,
@@ -217,20 +201,6 @@ assert.match(
   />081-234-5678<\/mark>/,
   "astral Unicode offset did not highlight the exact phone substring",
 );
-assert.equal(
-  vm.runInContext('errorMessage(413, "", "pdf")', context),
-  "ไฟล์/จำนวนหน้าเกินเพดาน",
-);
-assert.equal(
-  vm.runInContext('errorMessage(503, "ocr_unavailable", "pdf")', context),
-  "ระบบ OCR ยังไม่พร้อม",
-);
-assert.notEqual(
-  vm.runInContext('errorMessage(413, "", "pdf")', context),
-  vm.runInContext('errorMessage(503, "ocr_unavailable", "pdf")', context),
-  "PDF size and OCR availability failures collapsed into one message",
-);
-
 const seedSensitiveState = () => {
   element("accessCode").value = "SENSITIVE_ACCESS_CODE";
   element("editor").value = "SENSITIVE_EDITOR";
@@ -240,14 +210,7 @@ const seedSensitiveState = () => {
   element("evidenceSanitized").textContent = "SENSITIVE_EVIDENCE";
   element("evidenceWarnings").textContent = "SENSITIVE_WARNING";
   element("guardBar").textContent = "SENSITIVE_GUARD";
-  element("pdfFile").value = "SENSITIVE_FILE.pdf";
-  element("pdfStatus").textContent = "SENSITIVE_PDF_STATUS";
-  element("pdfInfo").textContent = "SENSITIVE_PDF_INFO";
-  element("imgAfter").src = "data:image/png;base64,SENSITIVE_PREVIEW";
-  element("cmpWrap").hidden = false;
-  element("pdfDownload").hidden = false;
   element("reportMeta").textContent = "SENSITIVE_REPORT";
-  vm.runInContext('redactedB64 = "SENSITIVE_PDF_BYTES"', context);
 };
 const assertSensitiveStateCleared = label => {
   assert.equal(element("accessCode").value, "", `${label}: access code retained`);
@@ -257,13 +220,7 @@ const assertSensitiveStateCleared = label => {
   assert.equal(element("restored").textContent, "ยังไม่ได้ส่ง", `${label}: restored text retained`);
   assert.equal(element("evidenceSanitized").textContent, "ยังไม่มีข้อมูล", `${label}: evidence retained`);
   assert.equal(element("guardBar").textContent, "", `${label}: guard result retained`);
-  assert.equal(element("pdfFile").value, "", `${label}: file input retained`);
-  assert.equal(element("imgAfter").src, "", `${label}: PDF preview retained`);
-  assert.equal(element("cmpWrap").hidden, true, `${label}: PDF preview stayed visible`);
-  assert.equal(element("pdfDownload").hidden, true, `${label}: PDF download stayed enabled`);
-  assert.equal(element("pdfInfo").textContent, "", `${label}: PDF result retained`);
   assert.equal(element("reportMeta").textContent, "", `${label}: report result retained`);
-  assert.equal(vm.runInContext("redactedB64", context), null, `${label}: PDF bytes retained`);
 };
 
 seedSensitiveState();
@@ -318,48 +275,6 @@ assert.equal(
   "stale detect response overwrote the newer editor text",
 );
 assert.equal(guardCalls, 0, "stale detect response started a guard request");
-
-const fileA = {name: "A.pdf"};
-const fileB = {name: "B.pdf"};
-element("pdfFile").files = [fileA];
-element("pdfFile").value = "A.pdf";
-const pendingPdfA = element("pdfFile").emit("change");
-await flush();
-element("pdfFile").files = [fileB];
-element("pdfFile").value = "B.pdf";
-const pendingPdfB = element("pdfFile").emit("change");
-await flush();
-assert.equal(pdfCalls, 2, "both PDF selections did not start");
-
-slowPdfs[1].resolve(response(200, {
-  after_png_b64: "B_PREVIEW",
-  redacted_pdf_b64: "B_PDF",
-  section26_categories: [],
-  human_review: false,
-  detected_entity_count: 1,
-}));
-await pendingPdfB;
-assert.equal(element("imgAfter").src, "data:image/png;base64,B_PREVIEW");
-assert.equal(vm.runInContext("redactedB64", context), "B_PDF");
-
-slowPdfs[0].resolve(response(200, {
-  after_png_b64: "A_STALE_PREVIEW",
-  redacted_pdf_b64: "A_STALE_PDF",
-  section26_categories: [],
-  human_review: false,
-  detected_entity_count: 1,
-}));
-await pendingPdfA;
-assert.equal(
-  element("imgAfter").src,
-  "data:image/png;base64,B_PREVIEW",
-  "stale PDF A overwrote the newer PDF B preview",
-);
-assert.equal(
-  vm.runInContext("redactedB64", context),
-  "B_PDF",
-  "stale PDF A replaced the bytes downloaded for PDF B",
-);
 
 const assertRoundtripSuppressed = async (label, body) => {
   roundtripMode = "body";
@@ -464,6 +379,4 @@ await element("logoutBtn").emit("click");
 assert.equal(element("authStatus").textContent, "ออกจากระบบแล้ว");
 assert.equal(element("logoutBtn").hidden, true);
 
-console.log(
-  "frontend session contract ok: auth/logout/PDF ordering and stale responses are safe"
-);
+console.log("frontend session contract ok: auth/logout and stale responses are safe");

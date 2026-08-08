@@ -68,8 +68,9 @@ REQUEST_TARGET_MARKER = "SECRET_MARKER_9f3a1c"
 # failure here meaning "the contract is wrong", never "the test was too fast".
 PACE_SECONDS = 0.15
 
-ENDPOINTS = ["health", "detect", "guard", "roundtrip", "analyze-report", "redact-pdf"]
+ENDPOINTS = ["health", "detect", "guard", "roundtrip", "analyze-report"]
 AUTH_ENDPOINTS = ("login", "logout", "session")
+PUBLIC_ROUTE_COUNT = 16
 
 # Paths that must not exist on this deployment. The first four are the routes
 # the core really serves and this deployment withholds; /api/health catches a
@@ -85,6 +86,8 @@ DENIED = [
     "/v1/sanitize",
     "/auth/unknown",
     "/v1/auth/unknown",
+    "/redact-pdf",
+    "/v1/redact-pdf",
 ]
 
 
@@ -304,7 +307,6 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         "codePointRangeToUtf16(text, e.start, e.end)",
         "body.authenticated === true",
         'provider_configuration: "บริการ LLM ยังไม่พร้อม',
-        'ocr_unavailable: "ระบบ OCR ยังไม่พร้อม',
         'ner_unavailable: "ระบบตรวจชื่อยังไม่พร้อม',
         'body.safety.status === "pass"',
         'body.restoration.status === "complete"',
@@ -324,12 +326,9 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         "generation !== authCheckGeneration",
         "generation !== authGeneration",
         "generation !== detectGeneration || text !== editor.value",
-        "generation !== pdfGeneration || pdfFile.files[0] !== f",
         "if (isStaleBusinessError(err)) return;",
         "complete = r.status === 204;",
         "session บนเซิร์ฟเวอร์อาจยังอยู่",
-        "redactedB64 = null;",
-        'document.getElementById("imgAfter").removeAttribute("src");',
     ):
         if required_session_safety not in page:
             failures.append(
@@ -513,6 +512,8 @@ def main() -> int:
         for failure in failures:
             print(f"  - {failure}", file=sys.stderr)
         return 1
+    if len(ENDPOINTS) * 2 + len(AUTH_ENDPOINTS) * 2 != PUBLIC_ROUTE_COUNT:
+        raise ContractFailure("public route count drifted from 16")
     print(
         f"nginx contract ok: {len(ENDPOINTS) * 2} paths proxied, "
         f"{len(AUTH_ENDPOINTS) * 2} auth aliases isolated, "

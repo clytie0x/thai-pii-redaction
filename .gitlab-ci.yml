@@ -194,6 +194,8 @@ acceptance:
       # allowlist: excluded paths must not exist
       [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/sanitize -X POST -H 'Content-Type: application/json' -d '{"text":"x"}')" = "404" ] || { echo "/sanitize escaped the allowlist"; exit 1; }
       [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:${BASE_1}/docs)" = "404" ] || { echo "/docs escaped the allowlist"; exit 1; }
+      [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:${BASE_1}/redact-pdf)" = "404" ] || { echo "/redact-pdf escaped the allowlist"; exit 1; }
+      [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:${BASE_1}/v1/redact-pdf)" = "404" ] || { echo "/v1/redact-pdf escaped the allowlist"; exit 1; }
       echo "allowlist ok"
 
       docker cp tests/runner_route_probe.py "${TEAM}-core-1:/app/runner_route_probe.py"

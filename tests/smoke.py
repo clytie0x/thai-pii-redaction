@@ -2,7 +2,7 @@
 
 Prereq:  APP_AIGUARD_API_KEY set, stack up via
          `docker compose -p team08 up -d --build`
-Usage:   python tests/smoke.py            # ก ค ง จ ฉ + (ข ฌ if key/OCR ready)
+Usage:   python tests/smoke.py            # public hosted scope (provider optional)
          python tests/smoke.py --soak     # ซ: 8 concurrent x 10 min + restart
 
 Writes tests/out/smoke-<ts>.json — the phase's evidence file. Synthetic PII
@@ -189,8 +189,10 @@ def check_d_allowlist():
 
 def check_e_webpage():
     r = httpx.get(f"{WEB}/", timeout=10)
-    ok = r.status_code == 200 and all(
-        key in r.text for key in ("roundtrip", "redact-pdf", "analyze-report")
+    ok = (
+        r.status_code == 200
+        and all(key in r.text for key in ("roundtrip", "analyze-report"))
+        and "redact-pdf" not in r.text
     )
     record("จ.webpage", ok, {"status": r.status_code, "bytes": len(r.content)})
 
@@ -282,41 +284,15 @@ def _has_new_solid_redaction_band(original_pdf: bytes, png_b64: str) -> bool:
     return False
 
 
-def check_i_ocr():
-    t0 = time.monotonic()
-    original_pdf = _scanned_pdf()
-    r = httpx.post(
-        f"{API}/v1/redact-pdf",
-        files={"pdf_file": ("scan.pdf", original_pdf, "application/pdf")},
-        headers=auth_headers(),
-        timeout=360,
-    )
-    took = round(time.monotonic() - t0, 1)
-    if r.status_code != 200:
-        record(
-            "ฌ.ocr", False, {"status": r.status_code, "detail": r.text[:200], "s": took}
-        )
-        return
-    body = r.json()
-    got_pdf = len(base64.b64decode(body.get("redacted_pdf_b64", ""))) > 500
-    got_entities = body.get("detected_entity_count", 0) >= 2
-    ok = (
-        body.get("source_type") in ("pdf_text", "pdf_hybrid")
-        and got_pdf
-        and got_entities
-        and _has_new_solid_redaction_band(original_pdf, body.get("after_png_b64", ""))
-    )
-    record(
-        "ฌ.ocr",
-        ok,
-        {
-            "source_type": body.get("source_type"),
-            "entities": body.get("detected_entity_count"),
-            "ocr_confidence": body.get("ocr_confidence"),
-            "human_review": body.get("human_review"),
-            "seconds": took,
-        },
-    )
+def check_i_pdf_denial():
+    denied = {}
+    for path in ("/redact-pdf", "/v1/redact-pdf"):
+        status = httpx.post(
+            f"{API}{path}", content=b"synthetic", headers=auth_headers(), timeout=10
+        ).status_code
+        if status != 404:
+            denied[path] = status
+    record("ฌ.public_pdf_denied", not denied, denied)
 
 
 def soak():
@@ -409,7 +385,7 @@ def main():
         check_d_allowlist()
         check_e_webpage()
         check_f_checkstage()
-        check_i_ocr()
+        check_i_pdf_denial()
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     path = OUT / f"smoke-{ts}.json"
     path.write_text(json.dumps(RESULTS, ensure_ascii=False, indent=1), encoding="utf-8")

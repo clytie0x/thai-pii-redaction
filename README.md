@@ -22,7 +22,7 @@ unprefixed `/health`, template-derived GitLab CI, per-service limits,
 |---|---|
 | `core/` | vendored slice ของ repo หลักที่ pin commit `8c6efef` (คัดลอกตาม `sync/PORT_MANIFEST.json` — commit + SHA-256 ต่อไฟล์) + port-owned stateless auth wrapper + Dockerfile ที่เพิ่มชั้น OCR |
 | `api/` | nginx ตัวกลาง: เติม `/api` prefix ที่ proxy ของแพลตฟอร์มตัดออก, คง `/v1` aliases, inject contract 2 + internal core key เฉพาะ business route, rate limit และ log แบบไม่มี query string |
-| `web/` | หน้า product ห้าฉาก (static, เรียก API แบบ same-origin) |
+| `web/` | หน้า product สาม workflow: Privacy Scan, Safe AI และ PDPA Report (static, เรียก API แบบ same-origin) |
 | `sync/` | สคริปต์ sync จาก upstream + manifest — `--check` รันใน CI ทุกครั้ง |
 
 ## Trust boundary (พูดตรง ๆ)
@@ -57,6 +57,9 @@ dated local working-tree candidate ผ่าน runtime honeytoken/secret/cookie
 
 ## พื้นผิว API สาธารณะ
 
+public proxy เปิดแบบ exact-match รวม **16 routes**: 8 เส้นทางด้านล่างและ
+alias `/v1` ของแต่ละเส้นทางเท่านั้น
+
 เมื่อ candidate ผ่าน recertification และได้รับอนุญาตให้ deploy ผู้เรียกภายนอก
 จะใช้ `https://team08.aiforthai.in.th/api/v1/...` (path ไม่มี `/v1`
 ใช้ได้เหมือนกัน — คงไว้ให้ healthcheck ของแพลตฟอร์ม)
@@ -69,15 +72,17 @@ dated local working-tree candidate ผ่าน runtime honeytoken/secret/cookie
 | `POST /api/v1/detect` | ตรวจจับ PII คืน offsets (ไม่มี session) |
 | `POST /api/v1/guard` | สแกน prompt injection ไทย/อังกฤษ (เตือน ไม่บล็อก) |
 | `POST /api/v1/roundtrip` | mask → thaillm-8b → restore ในคำขอเดียว (`provider` ต้องส่ง `"tokenmind"`) |
-| `POST /api/v1/redact-pdf` | สร้าง PDF ตัวอย่างพร้อม bbox แบบประมาณ — ต้องตรวจทุกกล่อง/ทุกหน้าก่อนใช้; authoritative source-to-box mapping ยังเป็น release gate |
 | `POST /api/v1/analyze-report` | รายงานความเสี่ยง PDPA เป็น PDF ภาษาไทย |
 
-เพดาน config ปัจจุบัน: ข้อความ ≤ 20,000 ตัวอักษร, PDF ≤ 50MB และ ≤ 20 หน้า, อัตรารวม
-10 req/s (เกิน → 429), เส้น PDF ทำพร้อมกันได้ 2 คำขอ แต่หลักฐาน OCR ปัจจุบัน
-ครอบคลุมเพียงเอกสารสแกนหนึ่งหน้า ซึ่ง exact local profile ใช้เวลา 221 วินาที,
-CPU เฉลี่ยประมาณ 1.93/2 cores และแตะ memory limit 6 GiB งานหลายหน้ายังไม่ผ่าน
-timeout/correctness/resource
-gate ดังนั้น config cap นี้ไม่ใช่ capability ที่พร้อมประกาศตอน deploy
+เพดาน config สาธารณะปัจจุบัน: ข้อความ ≤ 20,000 ตัวอักษร และอัตรารวม
+10 req/s (เกิน → 429)
+
+core ยังเก็บ implementation PDF/OCR ไว้ภายใน แต่ `/redact-pdf` และ
+`/v1/redact-pdf` ถูก proxy ปฏิเสธด้วย fixed 404 และไม่มี workflow ในหน้าเว็บ
+ความสามารถนี้ไม่อยู่ใน hosted release แรก OCR ยังไม่ production-ready บน
+AI for Thai การเปิดใหม่ต้องมี correctness, provenance, timeout และ resource
+acceptance แยกต่างหาก หลักฐาน OCR เก่าใน `docs/evidence/` เป็นประวัติการทดลอง
+ไม่ใช่คำรับรองของ public deployment ปัจจุบัน
 
 endpoint ที่มี session (`/sanitize`, `/reidentify`) **ไม่เปิด**บน deployment นี้
 โดยตั้งใจ — ความต่อเนื่องข้ามคำขอโดยไม่มี state ฝั่งเซิร์ฟเวอร์เป็นงานคลื่นถัดไป

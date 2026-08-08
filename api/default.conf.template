@@ -10,13 +10,12 @@
 #      part of the access log
 #
 # External surface (after the platform strips /api):
-#   /health /detect /guard /roundtrip /redact-pdf /analyze-report
+#   /health /detect /guard /roundtrip /analyze-report
 #   /v1/<same>  — versioned aliases, the documented public contract
 
 limit_req_zone  $server_name zone=cap:1m rate=10r/s;
 limit_req_zone  $binary_remote_addr zone=auth_ip:1m rate=5r/m;
 limit_conn_zone $server_name zone=conc:1m;
-limit_conn_zone $server_name zone=conc_pdf:1m;
 limit_req_status 429;
 limit_conn_status 429;
 
@@ -34,7 +33,8 @@ server {
   error_log /dev/stderr crit;
   access_log /var/log/nginx/access.log private;
 
-  # Text endpoints get a small body; only /redact-pdf raises it below.
+  # The first hosted release accepts JSON/text requests only. Internal PDF
+  # code remains in core but is intentionally unreachable through this proxy.
   client_max_body_size 1m;
   client_body_timeout 60s;
   client_header_timeout 15s;
@@ -96,13 +96,6 @@ server {
     limit_conn conc 8;
     proxy_pass http://core:8000/api/analyze-report;
   }
-  location = /redact-pdf {
-    limit_req zone=cap burst=10;
-    limit_conn conc_pdf 2;          # OCR is the heavy path — its own small pool
-    client_max_body_size 60m;       # above the app's 50 MB cap so the app decides
-    proxy_read_timeout 300s;        # scanned multi-page OCR (measured E0: ~10s+/page)
-    proxy_pass http://core:8000/api/redact-pdf;
-  }
 
   # ── /v1 versioned aliases (documented public API) ─────────────────────
   location = /v1/health {
@@ -143,13 +136,6 @@ server {
     limit_req zone=cap burst=10;
     limit_conn conc 8;
     proxy_pass http://core:8000/api/analyze-report;
-  }
-  location = /v1/redact-pdf {
-    limit_req zone=cap burst=10;
-    limit_conn conc_pdf 2;
-    client_max_body_size 60m;
-    proxy_read_timeout 300s;
-    proxy_pass http://core:8000/api/redact-pdf;
   }
 
   # Everything else — including /sanitize, /reidentify, /docs, /openapi.json —

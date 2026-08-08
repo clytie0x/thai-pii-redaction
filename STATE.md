@@ -19,6 +19,16 @@ owner รับ ADR caller-auth เมื่อ 7 ส.ค.: static frontend ก�
 ส่วน business API ต้องแลก access code เป็น signed cookie อายุ 30 นาทีแบบ
 Secure/HttpOnly/SameSite=Strict internal core key และ provider key แยกกัน
 
+## Hosted release-candidate scope (8 ส.ค. 2569)
+
+- product สาธารณะมีสาม workflow เท่านั้น: Privacy Scan, Safe AI, PDPA Report
+- exact proxy allowlist มี 16 routes (8 canonical + 8 `/v1` aliases)
+- `/redact-pdf` และ `/v1/redact-pdf` คืน proxy-level 404; frontend ไม่มี
+  upload/call/preview/download ของ PDF redaction
+- implementation PDF/OCR และหลักฐานเก่าคงอยู่ภายใน core/เอกสารประวัติ แต่ OCR
+  ยังไม่ production-ready บน AI for Thai การเปิดใหม่ต้องผ่าน correctness,
+  provenance, timeout และ resource acceptance แยกต่างหาก
+
 ## เสร็จแล้ว (มีหลักฐาน)
 
 - **E0 spike ผ่าน**: paddle cp313 wheel มีจริง, HOME=/opt/ocr-home + chown appuser ใช้ได้,
@@ -117,11 +127,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 4. local image IDs ของ exact candidate คือ web `ff8d654a...` (26,020,221
    bytes), api `2df7e1ac...` (26,006,890 bytes) และ core `2d938778...`
    (809,367,137 bytes); เป็น local image IDs ไม่ใช่ registry digests
-   ส่วน PDF 20 หน้า/timeout 300 วินาทียัง deploy ไม่ได้ตาม resource profile
-   ข้างบน ต้องลด/พักเส้นนี้หรือเปลี่ยน execution model ก่อน
-5. public HTTPS/browser routing, trusted proxy client identity สำหรับ login
-   limiter, PDF authoritative source-to-box และการตัดสินใจลด/พัก PDF หรือ
-   เปลี่ยนเป็น async ยังเปิดอยู่
+   Public PDF ถูกพักจาก hosted release แรกแล้ว; ตัวเลขเดิมคงไว้เป็น historical evidence
+5. public HTTPS/browser routing และ trusted proxy client identity สำหรับ login
+   limiter ยังเปิดอยู่ ส่วน PDF authoritative source-to-box เป็น future internal gate
 6. Tokenmind credential ที่ปรากฏใน transcript ระหว่าง read-only compose probe
    ต้อง rotate ก่อนใช้ภายนอก; ลบ ignored repo-root `.env` โดยไม่อ่านค่าแล้ว
 7. staff ต้องยืนยันว่า runner ที่ถือ production Docker socket เป็น Protected
