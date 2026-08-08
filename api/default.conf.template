@@ -42,6 +42,13 @@ server {
   # Responses can carry restored PII — never cache anywhere.
   add_header Cache-Control "no-store" always;
 
+  # Collapse nginx/upstream infrastructure failures to fixed HTTP-v2-shaped
+  # JSON. Never relay an upstream gateway body or a request-derived value.
+  error_page 413 = @error_413;
+  error_page 429 = @error_429;
+  error_page 502 = @error_502;
+  error_page 504 = @error_504;
+
   proxy_set_header Host              $http_host;
   proxy_set_header X-Forwarded-Proto https;
   proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -52,6 +59,7 @@ server {
   proxy_connect_timeout 5s;
   proxy_read_timeout  120s;
   proxy_send_timeout   60s;
+  proxy_intercept_errors on;
   # Never spill request or restored-response content into the container layer.
   proxy_request_buffering off;
   proxy_buffering off;
@@ -89,6 +97,9 @@ server {
   location = /roundtrip {
     limit_req zone=cap burst=10;
     limit_conn conc 8;
+    # Shared core owns at most 3x60s calls plus 1s/2s backoff. Leave bounded
+    # processing headroom without widening timeouts on non-provider routes.
+    proxy_read_timeout 200s;
     proxy_pass http://core:8000/api/roundtrip;
   }
   location = /analyze-report {
@@ -130,6 +141,7 @@ server {
   location = /v1/roundtrip {
     limit_req zone=cap burst=10;
     limit_conn conc 8;
+    proxy_read_timeout 200s;
     proxy_pass http://core:8000/api/roundtrip;
   }
   location = /v1/analyze-report {
@@ -142,5 +154,30 @@ server {
   # does not exist on this deployment.
   location / {
     return 404;
+  }
+
+  location @error_413 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 413 '{"error":{"code":"request_too_large","status":413,"category":"request","count":0,"retryable":false}}';
+  }
+  location @error_429 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 429 '{"error":{"code":"rate_limited","status":429,"category":"rate_limit","count":0,"retryable":true}}';
+  }
+  location @error_502 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 502 '{"error":{"code":"upstream_unavailable","status":502,"category":"upstream","count":0,"retryable":true}}';
+  }
+  location @error_504 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 504 '{"error":{"code":"upstream_timeout","status":504,"category":"upstream","count":0,"retryable":true}}';
   }
 }

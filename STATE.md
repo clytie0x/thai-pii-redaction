@@ -31,6 +31,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - hosted core sync ถึง `44ef30b` ซึ่งรวม shared provider retries/fresh outbound
   scans, Tokenmind single-attempt และ authoritative PDF intervals โดยหยุดก่อน
   Native Broker; VERSION ยังเป็น 2.5.0
+- public 413/429/502/504 เป็น fixed value-free JSON, upstream error body ถูก
+  intercept และ roundtrip สอง alias ใช้ timeout 200 วินาทีให้ครอบ shared
+  provider envelope; health ยังคงเป็น liveness
 
 ## เสร็จแล้ว (มีหลักฐาน)
 

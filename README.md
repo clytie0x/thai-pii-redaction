@@ -77,6 +77,11 @@ alias `/v1` ของแต่ละเส้นทางเท่านั้�
 เพดาน config สาธารณะปัจจุบัน: ข้อความ ≤ 20,000 ตัวอักษร และอัตรารวม
 10 req/s (เกิน → 429)
 
+nginx คืน fixed value-free JSON สำหรับ 413/429/502/504 และไม่ส่ง upstream
+error body ต่อสู่ผู้เรียก `/roundtrip` สอง alias ใช้ read timeout 200 วินาที
+ให้ครอบ application policy สูงสุด 3×60 วินาที + backoff 1/2 วินาทีโดยไม่เพิ่ม
+retry layer ที่ proxy ส่วน `/health` เป็น liveness เท่านั้น ไม่โทร provider
+
 core ยังเก็บ implementation PDF/OCR ไว้ภายใน แต่ `/redact-pdf` และ
 `/v1/redact-pdf` ถูก proxy ปฏิเสธด้วย fixed 404 และไม่มี workflow ในหน้าเว็บ
 ความสามารถนี้ไม่อยู่ใน hosted release แรก OCR ยังไม่ production-ready บน

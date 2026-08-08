@@ -34,6 +34,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -114,10 +115,12 @@ def published_base(container: str, target: int) -> str:
     return f"http://{CONNECT_HOST}:{port}"
 
 
-def get(path: str) -> tuple[int, dict[str, str], str]:
+def get(
+    path: str, *, headers: dict[str, str] | None = None
+) -> tuple[int, dict[str, str], str]:
     """GET `path`, returning (status, headers, body) for 404s as well as 200s."""
     time.sleep(PACE_SECONDS)
-    request = urllib.request.Request(BASE + path, method="GET")
+    request = urllib.request.Request(BASE + path, headers=headers or {}, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             return (
@@ -488,6 +491,57 @@ def check_responses_are_not_cacheable(failures: list[str]) -> None:
             )
 
 
+def check_fixed_proxy_failures_and_timeout_policy(failures: list[str]) -> None:
+    expected = {
+        413: ("request_too_large", "request", False),
+        429: ("rate_limited", "rate_limit", True),
+        502: ("upstream_unavailable", "upstream", True),
+        504: ("upstream_timeout", "upstream", True),
+    }
+    for status_code, (code, category, retryable) in expected.items():
+        status, headers, body = get(
+            "/detect", headers={"X-Contract-Failure": str(status_code)}
+        )
+        if status != status_code:
+            failures.append(
+                f"fixed error: upstream {status_code} became {status}, expected {status_code}"
+            )
+            continue
+        try:
+            payload = json.loads(body)
+        except ValueError:
+            failures.append(f"fixed error: {status_code} response was not JSON")
+            continue
+        if payload != {
+            "error": {
+                "code": code,
+                "status": status_code,
+                "category": category,
+                "count": 0,
+                "retryable": retryable,
+            }
+        }:
+            failures.append(f"fixed error: {status_code} response shape drifted")
+        if "UNSAFE-UPSTREAM-BODY" in body:
+            failures.append(f"fixed error: {status_code} relayed the upstream body")
+        if headers.get("Cache-Control") != "no-store":
+            failures.append(f"fixed error: {status_code} omitted no-store")
+        if not headers.get("Content-Type", "").startswith("application/json"):
+            failures.append(f"fixed error: {status_code} content type is not JSON")
+
+    config = (REPO / "api" / "default.conf.template").read_text(encoding="utf-8")
+    for location in ("/roundtrip", "/v1/roundtrip"):
+        block = re.search(
+            rf"location = {re.escape(location)} \{{(?P<body>.*?)\n  \}}",
+            config,
+            re.DOTALL,
+        )
+        if block is None or "proxy_read_timeout 200s;" not in block.group("body"):
+            failures.append(f"timeout: {location} does not cover the shared 183s policy")
+    if config.count("proxy_read_timeout 200s;") != 2:
+        failures.append("timeout: provider deadline was widened beyond two roundtrip aliases")
+
+
 def main() -> int:
     failures: list[str] = []
     try:
@@ -501,6 +555,7 @@ def main() -> int:
         check_web_request_target_stays_out_of_log(failures)
         check_web_api_does_not_fall_back_to_spa(failures)
         check_responses_are_not_cacheable(failures)
+        check_fixed_proxy_failures_and_timeout_policy(failures)
     except ContractFailure as e:
         print(f"nginx contract: could not run — {e}", file=sys.stderr)
         return 2

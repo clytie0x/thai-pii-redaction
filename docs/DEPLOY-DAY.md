@@ -79,6 +79,10 @@ pipeline จะวิ่งเอง `check` → `deploy` → `acceptance`
   **นี่คือ stage เดียวที่จับได้ว่า key ไปไม่ถึง container** เพราะ healthcheck
   ยังเขียวได้ในความล้มเหลวแบบนั้น (`/health` ไม่ถูก gate)
 
+หลัง platform route ขึ้นแล้วต้องยืนยันว่า 413/429/502/504 เป็น fixed JSON,
+upstream body ไม่หลุด และ client-IP/rate-limit semantics หลัง organizer proxy
+ตรงกับที่คาด `/health` ยังคงเป็น liveness ไม่ใช่หลักฐานว่า Tokenmind พร้อม
+
 ถ้า `deploy` เขียวแต่ `acceptance` แดง อย่าเพิ่งดีใจ บริการขึ้นแล้วแต่ทำงาน
 ไม่ได้
 

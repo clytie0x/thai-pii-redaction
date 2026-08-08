@@ -42,6 +42,12 @@ nginx เติมกลับ (ไม่มี double-mount router — พิ�
   → ไม่มี bind mount เลยทั้ง compose และเห็นใน Dozzle จริง
 - `UVICORN_WORKERS=1` จนกว่าจะวัด (โมเดล cache ต่อโปรเซส)
 - acceptance เป็น stage แยกหลัง deploy ใน `.gitlab-ci.yml`
+- proxy errors 413/429/502/504 เป็น fixed value-free JSON; roundtrip เท่านั้น
+  ใช้ read timeout 200 วินาทีให้ครอบ shared core policy 3×60 + backoff 1/2
+  โดย nginx ไม่มี retry layer
+- `/health` เป็น liveness ตาม platform contract ไม่ใช่ live-provider readiness
+- rate-limit key ใช้ socket client IP ปัจจุบัน; semantics หลัง organizer proxy
+  ต้องพิสูจน์บน platform ก่อนเชื่อว่าเป็น end-user identity
 
 ## เพดานบน deployment (env ใน compose)
 
