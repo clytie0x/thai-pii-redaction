@@ -19,6 +19,7 @@ EXPECTED_CHECKS = {
     "python3 tests/hosted_core_contract.py",
     "python3 tests/build_context_contract.py",
     "python3 tests/secret_hygiene_contract.py",
+    "python3 tests/release_source_contract.py",
     "python3 tests/gitlab_contract.py",
     "python3 tests/nginx_contract.py",
     "python3 tests/compose_contract.py",
