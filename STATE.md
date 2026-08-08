@@ -1,4 +1,4 @@
-# สถานะงาน (7 ส.ค. 2569 — exact local candidate; ยังไม่ push)
+# สถานะงาน (8 ส.ค. 2569 — local release candidate; ยังไม่ push)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
@@ -111,15 +111,18 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - **dated local GitLab approximation** ผ่านครบใน BusyBox runner image:
   check 21.5s / deploy 59.2s (warm cache) / acceptance 8.8s; acceptance
   login จริง, เรียก Tokenmind จริง, ตรวจ minimized response และ scan log
-- **exact committed candidate** `e075ca46807a1d318447ed4280821941d20608ba`
-  ผ่าน local BusyBox `check` 28.0 วินาทีและ provider-free `deploy` 244.3
-  วินาที; web/api/core healthy และ revision label ตรง commit ทั้งสามอิมเมจ
+- **release-content commit** `71c20b37b1bf2be8f34b67294bc75137931ad3cb`
+  ผ่าน local BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8
+  วินาที, provider-free/fake acceptance + log/rate-limit/restart 28.7 วินาที
+  และ BusyBox `deploy` simulation 63.5 วินาที; revision label ตรง commit
+  ทั้งสามอิมเมจ
 - **exact local profile** detect 100/100 หลัง warmup ได้ p50 6.02 ms,
   p95 7.58 ms, max 12.57 ms; one-page scanned-PDF route ผ่านใน 221.0 วินาที
   แต่ใช้ CPU เฉลี่ยประมาณ 1.93/2 cores และ memory peak ชน 6 GiB
   (`memory.events max=8247`, ไม่มี OOM/restart) จึงเป็น resource gate แดง
-- independent security/compatibility review จบแล้วและไม่พบ static code blocker
-  เพิ่มเติม; external/runtime gates ด้านล่างยังคงเปิด
+- independent review ที่บันทึกก่อน 8 ส.ค. เป็นหลักฐานของ candidate เก่า;
+  candidate รอบนี้ต้องผ่าน review ของ diff จาก `e621c45` แยกอีกครั้งก่อน
+  fast-forward local `main`
 
 ## เหลือก่อนออกนอกเครื่อง
 
@@ -130,9 +133,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    0 failure) และ light Tokenmind 60 วินาทีผ่าน 50/50; คงตัวเลขเป็น dated
    local evidence ไม่ใช่ platform SLA
 3. fail-loud ของ auth secrets และ fixed failure เมื่อ provider key หายผ่านแล้ว
-4. local image IDs ของ exact candidate คือ web `ff8d654a...` (26,020,221
-   bytes), api `2df7e1ac...` (26,006,890 bytes) และ core `2d938778...`
-   (809,367,137 bytes); เป็น local image IDs ไม่ใช่ registry digests
+4. no-cache acceptance image IDs ของ release-content commit คือ web
+   `5ba79750f70f...`, api `998e3fc9b36c...` และ core `974852b84706...`;
+   เป็น local image IDs ไม่ใช่ registry digests
    Public PDF ถูกพักจาก hosted release แรกแล้ว; ตัวเลขเดิมคงไว้เป็น historical evidence
 5. public HTTPS/browser routing และ trusted proxy client identity สำหรับ login
    limiter ยังเปิดอยู่ ส่วน PDF correctness/resource/platform acceptance เป็น future gate

@@ -2,9 +2,10 @@
 
 ทุกอย่างในไฟล์นี้เป็นงานที่ **เจ้าของต้องทำเอง** เพราะออกนอกเครื่องทั้งหมด
 ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ที่ยังเหลือใน `STATE.md` ผ่านครบ หลักฐานแบบ
-exact local candidate `e075ca4` ครอบคลุม current-core `8c6efef`,
-caller-auth ADR, response minimization และผ่าน provider-free `check`/`deploy`
-แล้ว ส่วน Tokenmind smoke/soak เดิมเป็น dated working-tree evidence:
+release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb`
+ครอบคลุม hosted-core `44ef30b`, caller-auth, response minimization และผ่าน
+exact provider-free check/build/acceptance/restart แล้ว ส่วน Tokenmind
+smoke/soak เดิมเป็น dated evidence:
 ต้อง rotate credential แล้วรัน exact live acceptance ใหม่ Public PDF ถูกพัก
 จาก hosted release แรกและไม่ใช่ deploy gate รอบนี้
 
@@ -20,16 +21,22 @@ Native Broker และ VERSION ต้องคง `2.5.0`
 
 ## 1 สร้าง project บน GitLab
 
-`gitlab.nectec.or.th` ใน group ของทีม (สิทธิ์ Maintainer มีแล้ว)
+project เปล่าที่สร้างแล้วคือ
+`https://gitlab.nectec.or.th/ai4thai-service-hackathon/08/aiguard-aift`
+ใน namespace slug `08` (สิทธิ์ Maintainer มีแล้ว)
 ชื่อ project ไม่ผูกกับอะไรในโค้ด แต่ `TEAM: "team08"` ใน `.gitlab-ci.yml`
 กับพอร์ต 20070/20071 ผูกกับทีมแน่นอน อย่าแก้
 
 ## 2 ตั้ง CI/CD Variables ก่อน push
 
 protect branch `main` ก่อน แล้วตั้ง Settings → CI/CD → Variables เป็น
-**Protected + Masked** ทั้งสี่ตัว พร้อม environment scope `team08`
+**Protected + Masked + Hidden (ถ้ารองรับ)** ทั้งสี่ตัว ปิด variable expansion
+พร้อม environment scope `team08`
 จากนั้น protect environment `team08` และกำหนด **Allowed to deploy** เฉพาะ
 owner/maintainers
+
+ปิด Auto DevOps หรือยืนยันว่า project `.gitlab-ci.yml` เป็น pipeline source
+ที่มีผลจริง ห้ามให้ template อื่น override release pipeline นี้
 
 ตรวจ runner ก่อน push ด้วย: runner ที่มองเห็น production Docker daemon ต้อง
 ถูกตั้งเป็น **Protected runner** และรับเฉพาะ protected refs ถ้ายืนยันไม่ได้
@@ -55,14 +62,20 @@ pipeline เก่าที่มารันทีหลัง แต่ projec
 
 ## 3 ต่อ remote แล้ว push `main`
 
-repo นี้ยังไม่มี remote เลย
+repo นี้ยังไม่มี remote เลย ต้องเปิดหน้า **Code → Clone** แล้วคัดลอก SSH URL
+จาก UI ก่อน ค่าที่คาดคือ
+`git@gitlab.nectec.or.th:ai4thai-service-hackathon/08/aiguard-aift.git`
+แต่ห้ามตั้งจากการคาดเดาเพียงอย่างเดียว
 
 ```bash
-git remote add origin <ssh หรือ https ของ project>
+git remote add origin <SSH URL ที่ยืนยันจาก GitLab UI>
 git push -u origin main
 ```
 
 pipeline จะวิ่งเอง `check` → `deploy` → `acceptance`
+
+ไม่ใช้ force push และไม่แนะนำ `ci.skip`: ให้ตั้ง protections/runner/variables
+ครบก่อน publication ครั้งแรก แล้วปล่อย pipeline แรกพิสูจน์ทั้งสาม stage
 
 ## 4 ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
 

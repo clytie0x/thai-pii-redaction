@@ -40,7 +40,7 @@ unprefixed `/health`, template-derived GitLab CI, per-service limits,
   (ไม่ใช่ anonymization) — เอกสารทุกชิ้นของโปรเจกต์นี้ไม่เคลมเกินจากนี้
 - config log ทุกชั้นไม่บันทึกเนื้อหาผู้ใช้ query string หรือ request target;
   audit ของ core เป็น JSONL ที่มีแต่ counts/flags/เวลาออกทาง stdout
-dated local working-tree candidate ผ่าน runtime honeytoken/secret/cookie scan
+  exact local candidate ผ่าน runtime synthetic-PII/secret/cookie/body scan
   ในเครื่องแล้ว
   ทั้ง access log และ nginx rate-limit error path ส่วน log ที่แพลตฟอร์มเห็นจริง
   ยังต้องตรวจหลัง deploy
@@ -147,11 +147,12 @@ Variables ของ GitLab) ค่าไม่ถูกพิมพ์ออก�
 ของสคริปต์ ส่วน `tests/nginx_contract.py` ถูกต่อไว้ใน check stage และจะรันบน
 runner จริงหลัง owner อนุญาต push หลักฐานวันนี้ยังเป็น local เท่านั้น
 
-candidate `e075ca46807a1d318447ed4280821941d20608ba` ผ่าน exact local
-BusyBox `check` 28.0 วินาทีและ provider-free `deploy` 244.3 วินาทีแล้ว
-ส่วน exact live `acceptance` ยังไม่รันเพราะต้อง rotate/reissue Tokenmind
-credential ที่ปรากฏใน transcript ก่อน หลักฐาน live/soak เดิมจึงคงสถานะ
-dated working-tree evidence และไม่ใช้แทน platform acceptance
+release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb` ผ่าน exact local
+BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8 วินาที,
+provider-free/fake acceptance + log/rate-limit/restart 28.7 วินาที และ
+BusyBox `deploy` simulation 63.5 วินาที รายละเอียดอยู่ที่
+`docs/evidence/2026-08-08-local-release-candidate.md` ส่วน GitLab runner,
+AI for Thai platform และ live Tokenmind ยังไม่เคยรันและยังอ้างว่าผ่านไม่ได้
 
 CI และตัวจำลอง local ส่งต่อเฉพาะชื่อตัวแปรสี่ตัวข้างต้นผ่าน temporary env file
 สิทธิ์จำกัด ค่า access code/cookie/secret ที่ใช้ acceptance อยู่ใน process
