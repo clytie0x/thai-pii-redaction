@@ -44,7 +44,8 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - **Upstream PR #101 merge แล้ว** (`71b7120`) และ PR #102 (ADR tokenmind + port) ตามมา
 - **Port repo นี้** ประกอบครบ: sync (SHA-256 manifest + LF normalize), core/Dockerfile
   (OCR baked, UVICORN_WORKERS), api/ (nginx exact allowlist + /v1 + noquery + key inject),
-  web/index.html (ห้าฉาก tokenmind-only), docker-compose.yml, .gitlab-ci.yml, README,
+  web/index.html (หน้าเดิมห้าฉาก tokenmind-only ซึ่งถูกแทนด้วยสาม workflow
+  ปัจจุบันด้านบนแล้ว), docker-compose.yml, .gitlab-ci.yml, README,
   docs/DEPLOY-DESIGN.md (v2), tests/smoke.py
 - **Checklist ก-ฌ + ช + ซ ผ่านครบ** — evidence `docs/evidence/checklist-results.md`
   (soak fake 8 สาย 10 นาที 5465 ok 0 5xx, restart recovery, limit 124×429,
