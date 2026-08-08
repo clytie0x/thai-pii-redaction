@@ -10,7 +10,7 @@ unprefixed `/health`, template-derived GitLab CI, main-only deploy,
 per-service limits, `50m` × 3 log rotation, masked application variables และ no-SSH ops
 ตรงกับ deployment shell นี้ในระดับ config
 
-candidate ปัจจุบัน sync จาก main commit `8c6efef` ครบ 75 ไฟล์ผ่าน manifest
+candidate ปัจจุบัน sync จาก main commit `44ef30b` ครบ 75 ไฟล์ผ่าน manifest
 hash โดยคง `/v1` public aliases แต่ nginx inject contract 2 ให้ strict-v2 core
 หน้าเว็บใช้ minimized DTO แล้ว Roundtrip ไม่คืน mapping, token/original pair
 หรือ token-bearing entity projection
@@ -28,6 +28,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - implementation PDF/OCR และหลักฐานเก่าคงอยู่ภายใน core/เอกสารประวัติ แต่ OCR
   ยังไม่ production-ready บน AI for Thai การเปิดใหม่ต้องผ่าน correctness,
   provenance, timeout และ resource acceptance แยกต่างหาก
+- hosted core sync ถึง `44ef30b` ซึ่งรวม shared provider retries/fresh outbound
+  scans, Tokenmind single-attempt และ authoritative PDF intervals โดยหยุดก่อน
+  Native Broker; VERSION ยังเป็น 2.5.0
 
 ## เสร็จแล้ว (มีหลักฐาน)
 
@@ -129,7 +132,7 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    (809,367,137 bytes); เป็น local image IDs ไม่ใช่ registry digests
    Public PDF ถูกพักจาก hosted release แรกแล้ว; ตัวเลขเดิมคงไว้เป็น historical evidence
 5. public HTTPS/browser routing และ trusted proxy client identity สำหรับ login
-   limiter ยังเปิดอยู่ ส่วน PDF authoritative source-to-box เป็น future internal gate
+   limiter ยังเปิดอยู่ ส่วน PDF correctness/resource/platform acceptance เป็น future gate
 6. Tokenmind credential ที่ปรากฏใน transcript ระหว่าง read-only compose probe
    ต้อง rotate ก่อนใช้ภายนอก; ลบ ignored repo-root `.env` โดยไม่อ่านค่าแล้ว
 7. staff ต้องยืนยันว่า runner ที่ถือ production Docker socket เป็น Protected

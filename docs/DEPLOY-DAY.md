@@ -12,6 +12,9 @@ Participant Guide ทางการยืนยัน team/port/proxy/CI/resour
 แล้ว แต่ไม่ได้ยืนยันว่า candidate ปัจจุบันผ่าน privacy หรือทำงานบน runner จริง
 ไฟล์นี้คือลำดับของวันจริงหลัง local gate ปิด
 
+core ที่ใช้วัน deploy ต้องให้ manifest ชี้ exact upstream `44ef30b` ซึ่งหยุดก่อน
+Native Broker และ VERSION ต้องคง `2.5.0`
+
 เวลาที่ควรเผื่อ ประมาณหนึ่งชั่วโมงถ้าไม่มีอะไรผิด และเผื่ออีกเท่าตัวถ้าผิด
 เดดไลน์ของงานคือ 17 ส.ค. 2569 นำเสนอ 19 ส.ค.
 

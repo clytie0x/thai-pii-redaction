@@ -17,7 +17,7 @@ default:
   image: docker:27.3.1
   before_script:
     - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
-    - apk add --no-cache curl bash git nodejs python3 >/dev/null
+    - apk add --no-cache curl bash git nodejs py3-httpx python3 >/dev/null
     - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
 
 check:
@@ -27,6 +27,7 @@ check:
     - python3 tests/auth_contract.py
     - node tests/frontend_session_contract.mjs
     - python3 tests/public_surface_contract.py
+    - python3 tests/hosted_core_contract.py
     - python3 tests/build_context_contract.py
     - python3 tests/secret_hygiene_contract.py
     - python3 tests/nginx_contract.py

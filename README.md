@@ -20,7 +20,7 @@ unprefixed `/health`, template-derived GitLab CI, per-service limits,
 
 | ส่วน | คืออะไร |
 |---|---|
-| `core/` | vendored slice ของ repo หลักที่ pin commit `8c6efef` (คัดลอกตาม `sync/PORT_MANIFEST.json` — commit + SHA-256 ต่อไฟล์) + port-owned stateless auth wrapper + Dockerfile ที่เพิ่มชั้น OCR |
+| `core/` | vendored slice ของ repo หลักที่ pin commit `44ef30b` (คัดลอกตาม `sync/PORT_MANIFEST.json` — commit + SHA-256 ต่อไฟล์) + port-owned stateless auth wrapper + Dockerfile ที่เพิ่มชั้น OCR |
 | `api/` | nginx ตัวกลาง: เติม `/api` prefix ที่ proxy ของแพลตฟอร์มตัดออก, คง `/v1` aliases, inject contract 2 + internal core key เฉพาะ business route, rate limit และ log แบบไม่มี query string |
 | `web/` | หน้า product สาม workflow: Privacy Scan, Safe AI และ PDPA Report (static, เรียก API แบบ same-origin) |
 | `sync/` | สคริปต์ sync จาก upstream + manifest — `--check` รันใน CI ทุกครั้ง |
@@ -83,6 +83,12 @@ core ยังเก็บ implementation PDF/OCR ไว้ภายใน แ�
 AI for Thai การเปิดใหม่ต้องมี correctness, provenance, timeout และ resource
 acceptance แยกต่างหาก หลักฐาน OCR เก่าใน `docs/evidence/` เป็นประวัติการทดลอง
 ไม่ใช่คำรับรองของ public deployment ปัจจุบัน
+
+หมุด `44ef30b` รวม shared provider orchestration (สูงสุด 3 attempts,
+60 วินาทีต่อ attempt, backoff 1/2 วินาที), Tokenmind แบบหนึ่ง network request
+ต่อ `.complete()`, fresh outbound-policy scan ก่อน I/O ทุก attempt และ exact
+PDF source intervals แบบ fail-closed หมุดนี้อยู่ก่อน Native Broker และไม่มี
+การนำ native/desktop/extension/Office/IPC implementation ใหม่เข้ามาใน port
 
 endpoint ที่มี session (`/sanitize`, `/reidentify`) **ไม่เปิด**บน deployment นี้
 โดยตั้งใจ — ความต่อเนื่องข้ามคำขอโดยไม่มี state ฝั่งเซิร์ฟเวอร์เป็นงานคลื่นถัดไป
