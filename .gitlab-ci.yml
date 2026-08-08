@@ -8,16 +8,18 @@ variables:
   BASE_1: "20071"
 
 workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
   auto_cancel:
     on_new_commit: interruptible
 
 stages: [check, deploy, acceptance, ops]
 
 default:
-  image: docker:27.3.1
+  image: docker:27.3.1@sha256:6ca9a6811085e2cf769cbac04bc47daf66629102990391caab7cf37426e939da
   before_script:
     - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
-    - apk add --no-cache curl bash git nodejs py3-httpx python3 >/dev/null
+    - apk add --no-cache curl bash git nodejs py3-httpx py3-yaml python3 >/dev/null
     - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
 
 check:
@@ -30,6 +32,7 @@ check:
     - python3 tests/hosted_core_contract.py
     - python3 tests/build_context_contract.py
     - python3 tests/secret_hygiene_contract.py
+    - python3 tests/gitlab_contract.py
     - python3 tests/nginx_contract.py
     - python3 tests/compose_contract.py
   rules:
@@ -46,6 +49,18 @@ deploy:
   script:
     - |
       set -e
+      [ "${#APP_AIGUARD_API_KEY}" -ge 16 ] \
+        && [ "${#APP_AIFT_ACCESS_CODE}" -ge 16 ] \
+        && [ "${#APP_AIFT_COOKIE_SIGNING_KEY}" -ge 32 ] \
+        && [ -n "${APP_TOKENMIND_API_KEY:-}" ] \
+        || { echo "required protected application variables are missing or invalid"; exit 1; }
+      [ "$APP_AIGUARD_API_KEY" != "$APP_AIFT_ACCESS_CODE" ] \
+        && [ "$APP_AIGUARD_API_KEY" != "$APP_AIFT_COOKIE_SIGNING_KEY" ] \
+        && [ "$APP_AIGUARD_API_KEY" != "$APP_TOKENMIND_API_KEY" ] \
+        && [ "$APP_AIFT_ACCESS_CODE" != "$APP_AIFT_COOKIE_SIGNING_KEY" ] \
+        && [ "$APP_AIFT_ACCESS_CODE" != "$APP_TOKENMIND_API_KEY" ] \
+        && [ "$APP_AIFT_COOKIE_SIGNING_KEY" != "$APP_TOKENMIND_API_KEY" ] \
+        || { echo "protected application variables must be distinct"; exit 1; }
       if [ -n "${CI_SERVER_HOST:-}" ]; then
         LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
         [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \

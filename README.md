@@ -127,7 +127,7 @@ python sync/sync_from_upstream.py --check
 
 ## ซ้อม pipeline ก่อน push จริง
 
-`.gitlab-ci.yml` รันบน `docker:27.3.1` ซึ่ง shell คือ BusyBox ash ไม่ใช่ bash
+`.gitlab-ci.yml` รันบน `docker:27.3.1` ที่ pin ด้วย digest ซึ่ง shell คือ BusyBox ash ไม่ใช่ bash
 (`apk add bash` ใน `before_script` เปลี่ยนไม่ได้ เพราะ runner เลือก shell ตอน
 เริ่ม container) ของที่พิสูจน์บน Windows ด้วย venv จึงไม่ได้พิสูจน์สิ่งที่ CI
 จะเจอ `tests/run_ci_local.py` ปิดช่องนั้นด้วยการรัน job จริงในอิมเมจจริง
