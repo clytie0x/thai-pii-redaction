@@ -8,6 +8,7 @@ none is placed in a child-process argument or printed on failure.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import json
 import os
 import subprocess
@@ -19,7 +20,10 @@ from http.cookies import SimpleCookie
 TEAM = os.environ.get("TEAM", "team08")
 PORT = os.environ.get("BASE_1", "20071")
 BASE_URL = f"http://127.0.0.1:{PORT}"
+PUBLIC_HOST = f"{TEAM}.aiforthai.in.th"
+CI_JOB_ID = os.environ.get("CI_JOB_ID", "").strip()
 EXPECTED_REVISION = os.environ.get("CI_COMMIT_SHA", "local-working-tree")
+DIRECT_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 SYNTHETIC_TEXT = "ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678"
 APP_VARIABLES = (
     "APP_AIGUARD_API_KEY",
@@ -44,6 +48,79 @@ def _run(*args: str) -> bytes:
     return result.stdout
 
 
+def _single_identifier(output: bytes, failure: str) -> str:
+    identifiers = [
+        line.strip()
+        for line in output.decode("ascii", "replace").splitlines()
+        if line.strip()
+    ]
+    if len(identifiers) != 1:
+        raise AcceptanceFailure(failure)
+    return identifiers[0]
+
+
+def _resolve_job_container() -> str:
+    return _single_identifier(
+        _run(
+            "docker",
+            "ps",
+            "-q",
+            "--filter",
+            f"label=com.gitlab.gitlab-runner.job.id={CI_JOB_ID}",
+            "--filter",
+            "label=com.gitlab.gitlab-runner.type=build",
+        ),
+        "could not uniquely resolve the acceptance job container",
+    )
+
+
+def _resolve_compose_network() -> str:
+    return _single_identifier(
+        _run(
+            "docker",
+            "network",
+            "ls",
+            "-q",
+            "--filter",
+            f"label=com.docker.compose.project={TEAM}",
+            "--filter",
+            "label=com.docker.compose.network=default",
+        ),
+        "could not uniquely resolve the production network",
+    )
+
+
+@contextmanager
+def _reachable_api():
+    """Temporarily join this Docker-executor job to the Compose network."""
+
+    global BASE_URL
+    if not CI_JOB_ID:
+        yield
+        return
+
+    job_container = _resolve_job_container()
+    network = _resolve_compose_network()
+    _run("docker", "network", "connect", network, job_container)
+    previous_base = BASE_URL
+    BASE_URL = "http://api:8000"
+    failed = False
+    try:
+        yield
+    except BaseException:
+        failed = True
+        raise
+    finally:
+        BASE_URL = previous_base
+        result = subprocess.run(
+            ["docker", "network", "disconnect", network, job_container],
+            capture_output=True,
+            env=_value_free_child_environment(),
+        )
+        if result.returncode and not failed:
+            raise AcceptanceFailure("acceptance job network cleanup failed")
+
+
 def _request(
     path: str,
     *,
@@ -54,7 +131,10 @@ def _request(
     timeout: float = 30,
 ) -> tuple[int, object, bytes]:
     body = None
-    headers = {}
+    # This direct path validates the deployed api/core stack while deliberately
+    # bypassing the organizer edge, TLS, prefix stripping, and host publication.
+    # Preserve the real public Host contract; test those edge behaviors later.
+    headers = {"Host": PUBLIC_HOST}
     if payload is not None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         headers["Content-Type"] = "application/json"
@@ -66,7 +146,9 @@ def _request(
         BASE_URL + path, data=body, headers=headers, method=method
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        # Never let runner-level HTTP(S)_PROXY settings receive the access
+        # code, signed cookie, or synthetic request. This path is Docker DNS.
+        with DIRECT_OPENER.open(request, timeout=timeout) as response:
             return response.status, response.headers, response.read()
     except urllib.error.HTTPError as error:
         return error.code, error.headers, error.read()
@@ -216,21 +298,22 @@ def _verify_logs(cookie: str) -> None:
 
 def main() -> int:
     try:
-        _verify_revisions()
-        status, _headers, _body = _request("/health")
-        if status != 200:
-            raise AcceptanceFailure("public health failed")
-        cookie = _login()
-        _verify_public_contract(cookie)
-        _verify_live_roundtrip(cookie)
-        _verify_report_probe()
-        _verify_logs(cookie)
-        status, _headers, _body = _request(
-            "/auth/logout", method="POST", cookie=cookie
-        )
-        if status != 204:
-            raise AcceptanceFailure("caller logout failed")
-        cookie = ""
+        with _reachable_api():
+            _verify_revisions()
+            status, _headers, _body = _request("/health")
+            if status != 200:
+                raise AcceptanceFailure("public health failed")
+            cookie = _login()
+            _verify_public_contract(cookie)
+            _verify_live_roundtrip(cookie)
+            _verify_report_probe()
+            _verify_logs(cookie)
+            status, _headers, _body = _request(
+                "/auth/logout", method="POST", cookie=cookie
+            )
+            if status != 204:
+                raise AcceptanceFailure("caller logout failed")
+            cookie = ""
         print("platform acceptance passed: auth, allowlist, live roundtrip, report, logs")
         return 0
     except AcceptanceFailure as error:

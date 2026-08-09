@@ -16,8 +16,10 @@ unprefixed `/health`, non-main `check`, main-only deploy, per-service limits,
 `50m` × 3 log rotation, **Masked** application variables และ no-SSH ops
 ตรงกับ shell นี้ในระดับ config ส่วน protected-main gate, protected variables,
 runner tag และ stale-SHA checks เป็น AI Guard security hardening เพิ่มเอง
-runner #227 รัน first-publication pipeline #35715 จริงแล้ว แต่ `check` ล้มก่อน
-production; AI for Thai public platform และ live Tokenmind ยังไม่เคยรัน
+runner #227 ผ่าน exact check-only pipeline #35718 แล้ว Production attempt
+#35722 บน `5ae77ad25eb9b97a08812a7ec9571e5434de9eaa` build และยกสาม service จน
+healthy แต่ deploy job ล้มที่ redundant host-loopback probe ก่อน acceptance
+correction ปัจจุบันเก็บเหตุการณ์นี้เป็น historical evidence ไม่ใช่ acceptance
 
 ## โครง
 
@@ -79,6 +81,7 @@ alias `/v1` ของแต่ละเส้นทางเท่านั้�
 | `GET /api/v1/health` | สถานะบริการ |
 | `POST /api/v1/auth/login` | แลก access code เป็น signed cookie อายุ 30 นาที |
 | `POST /api/v1/auth/logout` | ล้าง cookie ฝั่ง browser |
+| `GET /api/v1/auth/session` | ตรวจสถานะ signed session โดยไม่คืน cookie หรือ secret |
 | `POST /api/v1/detect` | ตรวจจับ PII คืน offsets (ไม่มี session) |
 | `POST /api/v1/guard` | สแกน prompt injection ไทย/อังกฤษ (เตือน ไม่บล็อก) |
 | `POST /api/v1/roundtrip` | mask → thaillm-8b → restore ในคำขอเดียว (`provider` ต้องส่ง `"tokenmind"`) |
@@ -157,17 +160,18 @@ Variables ของ GitLab) ค่าไม่ถูกพิมพ์ออก�
 ตัวจำลองเป็นการประมาณ ไม่ใช่ runner จริง ความต่างที่รู้ตัวอยู่ใน docstring
 ของสคริปต์ `tests/nginx_contract.py` รันบน runner #227 ใน pipeline #35715 และ
 #35716 แล้ว ครั้งแรกพบ host-loopback assumption และครั้งที่สองพบว่า friendly
-job hostname ไม่ใช่ Docker daemon container identity correction ปัจจุบัน resolve
-ด้วย GitLab job label และทดสอบ path เดียวกันใน local simulator แล้ว แต่ยังต้อง
-ผ่าน exact-SHA GitLab pipeline ใหม่
+job hostname ไม่ใช่ Docker daemon container identity #35718 พิสูจน์การ resolve
+ด้วย GitLab job label จริง Production attempt #35722 พบ assumption เดียวกันใน
+deploy/acceptance path หลัง container healthy; correction ใช้ in-container probe
+และต่อเฉพาะ acceptance job เข้า Compose network ชั่วคราวด้วย exact labels
 
 release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb` ผ่าน exact local
 BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8 วินาที,
 provider-free/fake acceptance + log/rate-limit/restart 28.7 วินาที และ
 BusyBox `deploy` simulation 63.5 วินาที รายละเอียดอยู่ที่
-`docs/evidence/2026-08-08-local-release-candidate.md` GitLab runner รันแล้วแต่
-pipeline #35715 ไม่ผ่าน ส่วน AI for Thai public platform และ live Tokenmind
-ยังไม่เคยรันและยังอ้างว่าผ่านไม่ได้
+`docs/evidence/2026-08-08-local-release-candidate.md` หลักฐาน production/live
+ต้องอ้าง exact GitLab pipeline แยกต่างหาก; #35722 ไม่ถึง acceptance และห้ามใช้
+เป็นหลักฐานว่า Tokenmind หรือ public platform ผ่าน
 
 CI และตัวจำลอง local ส่งต่อเฉพาะชื่อตัวแปรสี่ตัวข้างต้นผ่าน temporary env file
 สิทธิ์จำกัด ค่า access code/cookie/secret ที่ใช้ acceptance อยู่ใน process
@@ -204,4 +208,10 @@ production authorization อย่างชัดเจน
 `APP_TOKENMIND_API_KEY` คู่มือกำหนดให้ secret เป็น **Masked** ส่วน Protected,
 Hidden (ถ้ารองรับ), expansion off และ environment scope `team08` เป็น AI Guard
 security hardening ที่ให้ตั้งหลัง protect `main` แล้ว Protected Environment ไม่ใช่
-ข้อกำหนดของคู่มือและ GitLab CE ปัจจุบันไม่มี UI นี้ environment ยังคงชื่อ `team08`
+ข้อกำหนดของคู่มือและ GitLab CE ปัจจุบันไม่มี UI นี้ เฉพาะ `deploy` และ
+`acceptance` ประกาศ environment `team08` เพื่อรับ scoped variables; manual ops
+ไม่ประกาศ environment และใช้ direct Docker commands จึงไม่ต้องรับสี่ secret
+
+`check` เป็น interruptible เพื่อยกเลิกงานตรวจที่ซ้ำเมื่อ commit ใหม่มา ส่วน
+`deploy`, `acceptance` และ manual ops เป็น non-interruptible เพื่อไม่ให้
+auto-cancel ทิ้ง production mutation หรือ acceptance ไว้กึ่งกลาง

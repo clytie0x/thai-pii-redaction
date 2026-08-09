@@ -1,6 +1,7 @@
 # วันที่ deploy ต้องทำอะไรบ้าง
 
-ทุกอย่างในไฟล์นี้เป็นงานที่ **เจ้าของต้องทำเอง** เพราะออกนอกเครื่องทั้งหมด
+ทุกอย่างในไฟล์นี้เป็นงานที่เจ้าของทำเองหรือมอบอำนาจให้ operator อย่างชัดเจน
+เพราะออกนอกเครื่องทั้งหมด
 ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ที่ยังเหลือใน `STATE.md` ผ่านครบ หลักฐานแบบ
 release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb`
 ครอบคลุม hosted-core `44ef30b`, caller-auth, response minimization และผ่าน
@@ -43,7 +44,7 @@ tag/rules ไม่ได้พิสูจน์ host isolation
 Auto DevOps ปิดอยู่แล้ว ให้ยืนยันว่า project `.gitlab-ci.yml` เป็น pipeline
 source ที่มีผลจริง ห้ามให้ template อื่น override release pipeline นี้
 
-## 3 First publication ที่เกิดขึ้นจริง และ corrective push แบบ check-only
+## 3 First publication และ production attempt ที่เกิดขึ้นจริง
 
 remote `origin` ถูกยืนยันและ first publication SHA `298401552726...` สร้าง
 remote `main` สำเร็จ GitLab auto-protected the first remote `main` เพราะเป็น
@@ -51,19 +52,20 @@ default branch ซึ่งต่างจากสมมติฐานเด�
 ตาม rules เก่า แต่ทุก job เหล่านั้นจบเป็น `skipped` เมื่อ `check` ล้มเหลว ไม่มี
 application variable, provider call หรือ production mutation
 
-กติกา repository ปัจจุบันแก้ให้ **Ordinary pushes are check-only** ทุก branch
+กติกา repository ปัจจุบันทำให้ **Ordinary pushes are check-only** ทุก branch
 รวม protected `main`; deploy/acceptance/ops สร้างได้เฉพาะ `web` pipeline ที่
 เจ้าของเริ่มผ่าน **Build → Pipelines → Run pipeline** บน protected `main`
-correction push ใช้ normal push, ไม่ใช้ `ci.skip`, และต้องยังไม่สร้าง application
-variables ตรวจหน้า pipeline ว่ามี `check` เพียง job เดียว
 
-## 4 ทบทวน `main`, สร้าง variables แล้วเริ่ม production pipeline ใหม่
+check-only pipeline #35718 ผ่าน exact `5ae77ad25eb...` บน runner #227 แล้ว
+Production pipeline #35722 ที่ SHA เดียวกันผ่าน check และยกสาม service จน
+healthy แต่ deploy job ล้มหลัง mutation เพราะ job-container loopback ไปไม่ถึง
+host ports 20070/20071 Acceptance/ops ไม่ได้ execute และ #35722 ห้ามนับเป็น
+successful deployment evidence
 
-หลัง corrective `check` เขียว ให้ไปที่ **Settings → Repository → Branch rules**
-เพื่อตรวจ rule ที่ GitLab สร้างให้อัตโนมัติ: `main` ต้อง protected, force push
-ปิด และ push/merge จำกัดตามสิทธิ์ทีม ห้ามแก้ protection ใน recovery session
+## 4 Credential gate ที่เสร็จแล้ว และ corrective production pipeline
 
-จากนั้นสร้าง variables สี่ตัว:
+`main` protected, force push ปิด และ push/merge จำกัด Maintainers แล้ว Owner
+ยืนยันว่า project variables มีสี่ชื่อครบโดยไม่เปิดเผยค่า:
 
 | ตัวแปร | ข้อกำหนดของค่า |
 |---|---|
@@ -75,20 +77,24 @@ variables ตรวจหน้า pipeline ว่ามี `check` เพีย
 **Official Participant Guide requirement:** secret ต้องเป็น Masked และไม่อยู่ใน
 source/frontend
 
-**AI Guard security hardening:** ตั้ง Protected, Hidden ถ้ารองรับ, ปิด variable
-expansion, scope `team08` และให้ค่าทั้งสี่ไม่ซ้ำกัน ทำขั้นนี้หลัง protect `main`
-แล้วเท่านั้น Protected Environment ไม่ใช่ข้อกำหนดของคู่มือและ GitLab CE ปัจจุบัน
-ไม่มี UI นี้ environment ของ job ยังคงชื่อ `team08`
+**AI Guard security hardening:** metadata ปัจจุบันเป็น Protected, Hidden,
+Masked และ scope `team08` ทั้งสี่ตัว โดยไม่อ่านค่าจริง Protected Environment
+ไม่ใช่ข้อกำหนดของคู่มือและ GitLab CE ปัจจุบันไม่มี UI นี้ เฉพาะ deploy กับ
+acceptance ประกาศ environment `team08`; manual ops ไม่ประกาศ environment
+เพื่อไม่ให้รับ application secrets ที่ไม่จำเป็น
 
 `resource_group: team08-production` ทำ serialization และ deploy/acceptance ตรวจ
 SHA กับ `origin/main` ซ้ำเพื่อกัน stale deployment คู่มือไม่กำหนด `newest_first`
 หรือ automatic rollback; ไม่ใช้สองอย่างนี้เป็น publication gate
 
-หลังได้รับ owner authorization สำหรับ production แยกต่างหาก ไปที่ **Build →
-Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable ชั่วคราว แล้ว
-สร้าง pipeline **ใหม่บน exact SHA ปัจจุบัน** source `web` นี้เท่านั้นที่ rules
-อนุญาตให้ protected `main` รัน `check → deploy → acceptance` ห้ามกด Retry บน
-pipeline #35715 เพราะใช้ SHA/rules เก่า
+correction ต้อง push ปกติก่อนเพื่อรัน check-only แล้วจึงไปที่ **Build →
+Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable ชั่วคราว
+และสร้าง pipeline **ใหม่บน exact corrective SHA** ห้าม Retry #35722 เพราะใช้
+SHA/path เก่า Owner authorization รอบนี้ครอบคลุม recovery นี้แล้ว
+
+`check` เป็น interruptible ส่วน deploy, acceptance และ ops เป็น
+non-interruptible งานตรวจซ้ำยกเลิกได้เมื่อ commit ใหม่มา แต่ production
+mutation/acceptance ต้องไม่ถูก auto-cancel กลางทาง
 
 ## 5 ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
 
@@ -98,12 +104,18 @@ pipeline #35715 เพราะใช้ SHA/rules เก่า
 - **deploy** build แล้ว `up -d` แล้วรอ healthcheck ของ `team08-api-1`
   และ `team08-web-1`
   ชื่อ service ต้องเป็น `api` เท่านั้น deploy job ของผู้จัด `docker inspect`
-  ชื่อนั้นตรง ๆ
+  ชื่อนั้นตรง ๆ Deploy แยก build → recheck remote main → `up --no-build`
+  และ probe จากใน api/web container; ห้ามกลับไป curl host-loopback จาก job
 - **acceptance** login, ยิง PII สังเคราะห์ผ่านทั้งสายไปถึง thaillm-8b จริง,
   ตรวจ minimized response, allowlist, PDPA Report, public PDF denial และ scan log ทุกบรรทัด
   ที่ container ปัจจุบันยังเก็บไว้
   **นี่คือ stage เดียวที่จับได้ว่า key ไปไม่ถึง container** เพราะ healthcheck
   ยังเขียวได้ในความล้มเหลวแบบนั้น (`/health` ไม่ถูก gate)
+
+acceptance ต่อเฉพาะ build job container เข้า Compose network ชั่วคราวและเรียก
+`http://api:8000` พร้อม public Host โดยปิด ambient proxy Path นี้ตรวจ deployed
+api/core แต่ bypass organizer edge, TLS, `/api` stripping และ host publication
+จึงยังต้องตรวจ public platform แยกหลัง pipeline เขียว
 
 หลัง platform route ขึ้นแล้วต้องยืนยันว่า 413/429/502/504 เป็น fixed JSON,
 upstream body ไม่หลุด และ client-IP/rate-limit semantics หลัง organizer proxy
@@ -114,7 +126,11 @@ upstream body ไม่หลุด และ client-IP/rate-limit semantics ห
 
 ## 6 ถ้ามีปัญหา ใช้ manual job แทน SSH
 
-stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline
+stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline ทั้งสามใช้ direct
+Docker commands ไม่ใช้ Compose interpolation และไม่ประกาศ environment `team08`
+จึงไม่รับ application secrets Restart ปฏิเสธ stale remote/image revision แล้ว
+รอ web/api/core healthy ครบก่อนผ่าน ส่วน `ps` fail closed ถ้า revision ของ
+service ใดไม่ตรง pipeline SHA และแสดง resource snapshot
 และมี Dozzle ที่ `https://team08.aiforthai.in.th/logs/`
 ไม่มี arbitrary shell job; หากต้องวินิจฉัยเพิ่มให้ส่ง reviewed one-shot job
 แทนการเปิดช่องรันคำสั่งทั่วไปบน production

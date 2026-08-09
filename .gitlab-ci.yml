@@ -31,6 +31,7 @@ default:
 
 check:
   stage: check
+  interruptible: true
   script:
     - python3 sync/sync_from_upstream.py --check --verify-upstream
     - python3 tests/auth_contract.py
@@ -39,6 +40,7 @@ check:
     - python3 tests/hosted_core_contract.py
     - python3 tests/build_context_contract.py
     - python3 tests/secret_hygiene_contract.py
+    - python3 tests/platform_acceptance_contract.py
     - python3 tests/release_source_contract.py
     - python3 tests/gitlab_contract.py
     - python3 tests/nginx_contract.py
@@ -51,7 +53,9 @@ check:
 deploy:
   stage: deploy
   timeout: 20m
-  interruptible: true
+  # A cancelled deploy can leave a partially replaced stack. New commits may
+  # cancel redundant checks, but production mutation must run to completion.
+  interruptible: false
   resource_group: team08-production
   environment:
     name: $TEAM
@@ -71,11 +75,14 @@ deploy:
         && [ "$APP_AIFT_ACCESS_CODE" != "$APP_TOKENMIND_API_KEY" ] \
         && [ "$APP_AIFT_COOKIE_SIGNING_KEY" != "$APP_TOKENMIND_API_KEY" ] \
         || { echo "protected application variables must be distinct"; exit 1; }
-      if [ -n "${CI_SERVER_HOST:-}" ]; then
-        LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
-        [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
-          || { echo "refusing an outdated main deployment"; exit 1; }
-      fi
+      require_latest_main() {
+        if [ -n "${CI_SERVER_HOST:-}" ]; then
+          LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+          [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
+            || { echo "refusing an outdated main deployment"; exit 1; }
+        fi
+      }
+      require_latest_main
       umask 077
       ENV_FILE=$(mktemp)
       cleanup_deploy() { rm -f "$ENV_FILE"; }
@@ -86,7 +93,11 @@ deploy:
         printf 'APP_AIFT_COOKIE_SIGNING_KEY=%s\n' "${APP_AIFT_COOKIE_SIGNING_KEY:-}"
         printf 'APP_TOKENMIND_API_KEY=%s\n' "${APP_TOKENMIND_API_KEY:-}"
       } > "$ENV_FILE"
-      docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --build --remove-orphans
+      docker compose --env-file "$ENV_FILE" -p "$TEAM" build
+      # A build can take minutes. Recheck the remote immediately before the
+      # first container mutation, then use only the images just built.
+      require_latest_main
+      docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --no-build --remove-orphans
     - |
       echo "waiting for healthcheck..."
       for i in $(seq 1 40); do
@@ -99,8 +110,11 @@ deploy:
       [ "$st" = "healthy" ] && [ "$web_st" = "healthy" ] \
         || { echo "deployment healthcheck timed out"; exit 1; }
       docker compose -p "$TEAM" ps
-    - curl -fsS "http://127.0.0.1:${BASE_1}/health" && echo " <- /health OK"
-    - curl -fsS -o /dev/null "http://127.0.0.1:${BASE}/" && echo "web root OK"
+    # Runner #227 uses a Docker executor: job-container loopback is not the
+    # Docker host where 20070/20071 are published. Probe inside each already
+    # healthy service container instead of assuming host-network reachability.
+    - docker exec "${TEAM}-api-1" wget -q -O /dev/null "http://127.0.0.1:8000/health" && echo "api /health OK"
+    - docker exec "${TEAM}-web-1" wget -q -O /dev/null "http://127.0.0.1:3000/" && echo "web root OK"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
@@ -109,7 +123,7 @@ deploy:
 acceptance:
   stage: acceptance
   needs: [deploy]
-  interruptible: true
+  interruptible: false
   resource_group: team08-production
   environment:
     name: $TEAM
@@ -132,25 +146,57 @@ acceptance:
   allow_failure: true
   interruptible: false
   resource_group: team08-production
-  environment:
-    name: $TEAM
-    action: access
+  # Do not declare the team08 environment here. The four application
+  # credentials are scoped to that environment and operational inspection /
+  # restart jobs do not need them.
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 logs:
   <<: *ops
   script:
-    - docker compose -p "$TEAM" logs --tail=400 --timestamps --no-color
+    - docker logs --tail=400 --timestamps "${TEAM}-web-1"
+    - docker logs --tail=400 --timestamps "${TEAM}-api-1"
+    - docker logs --tail=400 --timestamps "${TEAM}-core-1"
 
 ps:
   <<: *ops
   script:
-    - docker compose -p "$TEAM" ps
-    - docker stats --no-stream $(docker compose -p "$TEAM" ps -q) || true
+    - |
+      set -e
+      for service in web api core; do
+        actual=$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${TEAM}-${service}-1")
+        [ "$actual" = "$CI_COMMIT_SHA" ] \
+          || { echo "running image revision mismatch"; exit 1; }
+        echo "$service revision verified: $CI_COMMIT_SHA"
+      done
+    - docker ps --filter "label=com.docker.compose.project=${TEAM}" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+    - ids=$(docker ps -q --filter "label=com.docker.compose.project=${TEAM}"); [ -z "$ids" ] || docker stats --no-stream $ids
 
 restart:
   <<: *ops
   script:
-    - docker compose -p "$TEAM" restart
-    - docker compose -p "$TEAM" ps
+    - |
+      set -e
+      if [ -n "${CI_SERVER_HOST:-}" ]; then
+        LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+        [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing an outdated restart"; exit 1; }
+      fi
+      for service in web api core; do
+        actual=$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${TEAM}-${service}-1")
+        [ "$actual" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing restart of a different revision"; exit 1; }
+      done
+      docker restart "${TEAM}-core-1" "${TEAM}-api-1" "${TEAM}-web-1" >/dev/null
+      echo "waiting for restart healthchecks..."
+      for i in $(seq 1 40); do
+        core_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-core-1" 2>/dev/null || echo none)
+        api_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-api-1" 2>/dev/null || echo none)
+        web_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-web-1" 2>/dev/null || echo none)
+        [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] && break
+        sleep 5
+      done
+      [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] \
+        || { echo "restart healthcheck timed out"; exit 1; }
+      docker ps --filter "label=com.docker.compose.project=${TEAM}" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

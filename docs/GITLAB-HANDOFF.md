@@ -1,4 +1,4 @@
-# GitLab handoff (do not execute from the local release session)
+# GitLab production recovery handoff
 
 ## Official requirement vs AI Guard hardening
 
@@ -15,98 +15,72 @@ The guide does not require a Protected runner, Protected Environment,
 
 ## Current GitLab facts
 
-- Project: `ai4thai-service-hackathon/08/aiguard-aift`; repository now contains
-  first-publication SHA `298401552726a0cfbe977d23d5ee3d7f7cda66ed`.
-- GitLab auto-protected the first remote `main` when it became the default
-  branch. Review its push/merge/force-push permissions before production.
+- Project: `ai4thai-service-hackathon/08/aiguard-aift`; GitLab auto-protected
+  the first remote `main` when it became the default branch. Force push is off
+  and push/merge are restricted to Maintainers.
 - Runner #227: organizer-provided team-08 group runner, online, Docker
   amd64/Linux, tag `team-08`, accepts untagged jobs, not Protected.
 - Runner #227's missing Protected flag alone is not a guide or publication
   blocker. Organizer confirmation of project scope and Docker-daemon isolation
   remains desirable platform evidence; tag pinning is not isolation proof.
 - Auto DevOps: disabled.
-- Pipeline #35715 ran on runner #227 and failed `check` at
-  `python3 tests/nginx_contract.py` with exit 2 because the test job could not
-  reach host-loopback-published test services from the Docker executor network.
-- Corrective pipeline #35716 was check-only on exact SHA
-  `f0359dc7b71fa5563db9ea9f6670e6fd19e789ee` and also used runner #227. It
-  failed because GitLab's friendly job hostname was not a container identity
-  resolvable by the Docker daemon. The descendant correction resolves the
-  build container by GitLab job label and retains a local hostname fallback.
-- Deploy, acceptance, logs, ps, and restart were all `skipped`; no application
-  secret was consumed and no production service was changed in #35715;
-  #35716 did not create any production job.
-- Environment `team08` now has skipped deployment metadata from job #136360,
-  not a successful deployment. Protected Environments are not required by the
-  guide and are unavailable in the current GitLab CE UI.
+- Check-only pipeline #35718 passed exact SHA
+  `5ae77ad25eb9b97a08812a7ec9571e5434de9eaa` on runner #227.
+- Exactly four project variables are configured: `APP_AIGUARD_API_KEY`,
+  `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`, and
+  `APP_TOKENMIND_API_KEY`. Their values were not inspected. GitLab metadata
+  shows all four Protected, Masked, Hidden, and scoped to `team08`.
+- Pipeline #35722 was the production attempt on the same SHA and runner.
+  `check` passed;
+  Compose built and started web/api/core and all became healthy. Deploy then
+  failed because its job container curled host-loopback ports 20070/20071.
+  Acceptance and manual ops did not execute. The running stack is therefore a
+  partial deployment, not successful production acceptance evidence.
+- Protected Environments are not required by the guide and are unavailable in
+  this GitLab CE UI.
 
-## Corrective publication — check only
+## Corrective behavior
 
-The original first-publication SHA is historical evidence. Do not create the
-four application variables yet and do not use `ci.skip`. Executable rules now
-make **Ordinary pushes are check-only**, including pushes to protected `main`.
-The correction uses a normal push and must create exactly one tagged `check`
-job. `check` consumes no application secret, makes no provider request, and
-contains no production-mutating Compose command.
+Executable rules keep **Ordinary pushes are check-only**, including pushes to
+protected `main`. The corrective push must therefore create only `check` and
+cannot mutate production. Do not use `ci.skip` and do not retry #35722.
 
-## After the corrective check is green
+The corrected production path:
 
-1. Open **Settings → Repository → Branch rules** and review the automatically
-   created `main` protection; disable force push and restrict push/merge
-   appropriately if the current rule is weaker than owner policy.
-2. Create exactly these CI/CD variable names—never place values in source:
-   - `APP_AIGUARD_API_KEY`
-   - `APP_AIFT_ACCESS_CODE`
-   - `APP_AIFT_COOKIE_SIGNING_KEY`
-   - `APP_TOKENMIND_API_KEY`
-3. Set each secret **Masked** as the official guide requires.
-4. As AI Guard hardening, also set Protected, Hidden where supported, variable
-   expansion off, environment scope `team08`, and use four distinct values.
-5. Confirm the Tokenmind credential was reissued/rotated; do not reuse the old
-   credential.
+- separates Compose build from `up`, rechecks current remote main immediately
+  before mutation, and uses `up --no-build`;
+- probes health from inside the api/web containers rather than assuming runner
+  job loopback reaches host-published ports;
+- resolves the acceptance build container and Compose default network by exact
+  Docker labels, attaches only that job temporarily, uses `http://api:8000`
+  with `Host: team08.aiforthai.in.th`, disables ambient proxies, and always
+  disconnects;
+- keeps `check` interruptible while deploy, acceptance, and ops are
+  non-interruptible;
+- declares environment `team08` only on deploy and acceptance. Manual ops use
+  direct Docker commands and declare no environment, so the four scoped
+  application variables are not intentionally injected there.
 
-Do not require or claim a Protected Environment. The job environment remains
-`team08`. `resource_group: team08-production` and exact-remote-SHA checks remain
-the repository's serialization/stale-deployment controls. `newest_first` and
-automatic rollback are not guide requirements.
+`resource_group: team08-production` and exact-remote-SHA checks remain the
+repository's serialization/stale-deployment controls. `newest_first`, automatic
+rollback, Protected runners, and Protected Environments are not Participant
+Guide requirements.
 
-## First protected-main production pipeline
+## Resume procedure
 
-Do not retry pipeline #35715 or #35716; both refer to historical SHAs and old
-test-harness behavior.
+1. Push the reviewed corrective descendant to `main` normally. Require its
+   check-only pipeline to pass and confirm no production job exists in it.
+2. Open **Build → Pipelines → Run pipeline**, select that same exact protected
+   `main` SHA, add no temporary variables, and create a new pipeline.
+3. Require `check → deploy → acceptance` all green on runner #227 before using
+   any manual ops job.
+4. Do not treat internal Compose-network acceptance as proof of the organizer
+   edge. Separately verify public HTTPS/root, `/api` prefix stripping, Host and
+   client-IP behavior, real-browser login/session/logout, Privacy Scan, the
+   minimum live Safe AI call, PDPA Report, fixed failures/rate limit, PDF and
+   internal-route denial, Dozzle/log privacy, resources, restart/recovery, and
+   exact revision labels.
 
-Open **Build → Pipelines → Run pipeline**, select `main`, add no temporary
-variables, confirm the displayed SHA equals local `main`, and create a **new**
-pipeline. The `web` pipeline source is explicitly allowed only to run production
-jobs when the branch is protected `main`.
-
-Expected jobs:
-
-```text
-check → deploy → acceptance → manual logs/ps/restart
-```
-
-Feature-branch pushes, merge requests, and all ordinary pushes run `check` only.
+Feature branches, merge requests, and all ordinary pushes run `check` only.
 Tag pushes, schedules, and API-triggered pipelines cannot create production
-jobs under the checked-in rules.
-
-## First real acceptance
-
-Require check, deploy, and acceptance to refer to the same exact SHA. Then
-verify public root/health, organizer `/api` prefix stripping,
-login/session/logout, authenticated Privacy Scan and PDPA Report, live Safe AI,
-both PDF aliases denied, exact 404 surface, rate limiting, fixed errors,
-Dozzle/platform logs, restart recovery, resources, and image revision labels.
-Keep local, GitLab-runner, platform, and live-provider evidence separate.
-
-## Ready-to-paste next-session prompt
-
-> Work only in `aiguard-aift`. Verify clean local/remote `main`, VERSION 2.5.0,
-> the green exact-SHA check-only pipeline, and the historical #35715 failure.
-> Do not create the four application variables yet. Review the automatic `main`
-> protection in GitLab with the owner. After the owner supplies four rotated,
-> distinct Masked plus Protected/Hidden/scoped variables and explicitly
-> authorizes production, use Build → Pipelines → Run pipeline on the same
-> protected `main` SHA; do not retry #35715. Monitor exact-SHA
-> `check → deploy → acceptance`. Do not use the old Tokenmind credential and do
-> not treat runner tag pinning as proof of Docker-daemon isolation.
+jobs. Keep local, GitLab-runner, platform, and live-provider evidence separate.

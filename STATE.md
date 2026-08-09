@@ -1,7 +1,9 @@
-# สถานะงาน (9 ส.ค. 2569 — first publication complete; pre-deployment correction)
+# สถานะงาน (9 ส.ค. 2569 — production network correction after first attempt)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-remote `main` ถูก first-publish แล้ว แต่ **ยังไม่ deploy production**
+remote `main` ถูก first-publish และ protected แล้ว Pipeline #35722 ยก production
+stack จนสาม service healthy แต่ job ล้มหลัง mutation ที่ redundant
+Docker-executor loopback probe จึงยังไม่มี successful deployment/acceptance
 ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
 
 Participant Guide ทางการถูกอ่านครบและยืนยัน `team08`, พอร์ต `20070/20071`,
@@ -134,53 +136,39 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
   security review และ exact-revision fake-provider acceptance ใหม่ก่อน
   fast-forward local `main`; หลักฐาน commit เก่าไม่ครอบ descendant โดยอัตโนมัติ
 
-## เหลือก่อน production deployment
+## Production evidence และสิ่งที่ยังเหลือ
 
-1. exact candidate ยังไม่ได้รัน live Tokenmind `acceptance`; credential เดิม
-   ต้องถูก rotate/reissue ก่อน หลักฐาน live ด้านบนเป็น dated working-tree
-   evidence เท่านั้น
-2. fake-provider 8-worker/10-minute soak + restart ผ่านแล้ว (5849 success,
-   0 failure) และ light Tokenmind 60 วินาทีผ่าน 50/50; คงตัวเลขเป็น dated
-   local evidence ไม่ใช่ platform SLA
-3. fail-loud ของ auth secrets และ fixed failure เมื่อ provider key หายผ่านแล้ว
-4. no-cache acceptance image IDs ของ release-content commit คือ web
-   `5ba79750f70f...`, api `998e3fc9b36c...` และ core `974852b84706...`;
-   เป็น local image IDs ไม่ใช่ registry digests
-   Public PDF ถูกพักจาก hosted release แรกแล้ว; ตัวเลขเดิมคงไว้เป็น historical evidence
-5. public HTTPS/browser routing และ trusted proxy client identity สำหรับ login
-   limiter ยังเปิดอยู่ ส่วน PDF correctness/resource/platform acceptance เป็น future gate
-6. Tokenmind credential ที่ปรากฏใน transcript ระหว่าง read-only compose probe
-   ต้อง rotate ก่อนใช้ภายนอก; ลบ ignored repo-root `.env` โดยไม่อ่านค่าแล้ว
-7. Runner #227 เป็น organizer-provided team-08 group runner, online,
+1. runner #227 เป็น organizer-provided team-08 group runner, online,
    Docker amd64/Linux, tag `team-08`, accepts untagged และไม่มี Protected flag
    คู่มือไม่กำหนด Protected runner และ flag ที่ขาดไม่ใช่ publication blocker
    เพียงลำพัง แต่ staff ควรยืนยัน project scope/daemon isolation; tag เป็นเพียง
    scheduling control ไม่ใช่ isolation proof
-8. first publication สร้าง remote `main` ที่ `298401552726...`; GitLab
-   auto-protected default branch และ pipeline #35715 ใช้ runner #227 จริง
-   `check` หยุดที่ nginx contract เพราะ test ใช้ host-loopback assumption
-   deploy/acceptance/ops เป็น skipped ทั้งหมดและไม่มี production mutation
-   SHA นี้จึงเป็น historical first-publication evidence ไม่ใช่ deployment evidence
-9. corrective push `f0359dc7b71f...` สร้าง check-only pipeline #35716 จริง
-   (หนึ่ง job, ไม่มี production jobs) แต่หยุดเมื่อ friendly runner hostname
-   resolve เป็น Docker container ไม่ได้ การแก้ descendant ใช้ GitLab job label
-   และมี hostname-inspection fallback สำหรับ simulator; #35716 เป็น historical
-   failed-check evidence และไม่มี production mutation
-10. public HTTPS/proxy และ official platform acceptance ยังไม่เกิดขึ้น
-
-## เหลือหลัง local recertification — งานออกนอกเครื่อง เจ้าของทำเอง
-
-1. push corrective exact `main` ปกติ (ไม่ใช้ `ci.skip`) โดยยังไม่สร้าง
-   application variables; executable rules ต้องสร้าง `check` job เดียว
-2. ยืนยัน corrective pipeline เขียวและไม่มี production jobs
-3. ทบทวน branch rule ที่ GitLab สร้างให้อัตโนมัติ แล้วสร้าง `APP_AIGUARD_API_KEY`,
-   `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY` และ
-   `APP_TOKENMIND_API_KEY`: Masked ตามคู่มือ และเพิ่ม Protected/Hidden,
-   expansion off, scope `team08` ตาม AI Guard hardening
-4. หลัง owner อนุญาต production แยกต่างหาก จึงกด Run pipeline ใหม่บน exact
-   protected-main SHA; ห้าม retry pipeline แรก
-5. ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
-6. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
+2. first publication `298401552726...` pipeline #35715 และ correction
+   `f0359dc7b71f...` pipeline #35716 เป็น historical failed-check evidence;
+   ไม่มี production mutation #35718 ที่ exact `5ae77ad25eb...` ผ่าน check-only
+   จริงบน runner #227
+3. owner ยืนยัน project variables สี่ชื่อครบ โดย metadata เป็น Protected,
+   Masked, Hidden และ scope `team08`; repository/Codex ไม่อ่านค่าจริง
+4. production pipeline #35722 บน `5ae77ad25eb...` ผ่าน check และ build/up
+   จน web/api/core healthy แต่ deploy ล้มที่ job-container
+   `127.0.0.1:20070/20071`; acceptance และ manual ops ไม่ได้ execute
+   stack ที่ยกสำเร็จคงอยู่ แต่ #35722 ไม่ใช่ successful acceptance evidence
+5. descendant correction เปลี่ยน deploy เป็น in-container probe, ต่อเฉพาะ
+   acceptance job เข้า exact Compose network ชั่วคราว, ปิด ambient proxy,
+   รักษา public Host และ cleanup เสมอ ทั้งยังแยก build/recheck/up เพื่อลด
+   stale-main race
+6. เฉพาะ deploy/acceptance ประกาศ environment `team08` และรับ scoped secrets;
+   manual ops ใช้ direct Docker commands โดยไม่ประกาศ environment จึงไม่รับ
+   application variables Restart ตรวจ remote SHA + image revision ก่อนทำงาน
+   และรอ health ทั้งสาม service
+7. ต้อง push corrective exact `main` แบบ ordinary check-only ก่อน จากนั้นสร้าง
+   UI pipeline ใหม่บน protected `main` SHA เดียวกัน ห้าม retry #35722
+8. successful pipeline ต้องผ่าน `check → deploy → acceptance` ครบ แล้วจึงตรวจ
+   public HTTPS, organizer `/api` prefix, real browser cookie flow, rate limit,
+   Dozzle/log, resources, restart/recovery และ visual QA แยกจาก internal
+   Compose-network acceptance
+9. Public PDF ยัง proxy-level 404 ทั้งสอง alias; PDF/OCR ไม่ใช่ deploy gate
+10. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
 
 ลำดับเต็มพร้อมกับดักอยู่ที่ `docs/DEPLOY-DAY.md` และใช้ได้เมื่อ preflight
 ด้านบนผ่านแล้ว
@@ -190,5 +178,6 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - ไม่มี provider จำลองบน deployment / ไม่มีเดโมสำรอง — service จริงเท่านั้น
 - pseudonymized-มี-vault ยังเป็นข้อมูลส่วนบุคคล — ห้ามเคลมเกิน
 - ห้ามเคลมสาธารณะ "benchmark เดียวของไทย"
-- deploy ขึ้น GitLab = รอคำสั่งเจ้าของเท่านั้น (สิทธิ์ Maintainer มีแล้ว)
+- production pipeline ต้องมีคำสั่งเจ้าของชัดเจน; authorization สำหรับ recovery
+  รอบนี้ครอบคลุม exact corrective pipeline แต่ไม่ใช่สิทธิ์ deploy งานอื่นในอนาคต
 - ตัวเลขเวลาจากเครื่องนี้บอกลำดับความใหญ่ ไม่ใช่คำรับประกันบน runner ของผู้จัด

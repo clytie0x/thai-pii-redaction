@@ -41,6 +41,7 @@ EXPECTED_CHECKS = {
     "python3 tests/hosted_core_contract.py",
     "python3 tests/build_context_contract.py",
     "python3 tests/secret_hygiene_contract.py",
+    "python3 tests/platform_acceptance_contract.py",
     "python3 tests/release_source_contract.py",
     "python3 tests/gitlab_contract.py",
     "python3 tests/nginx_contract.py",
@@ -96,6 +97,7 @@ def main() -> int:
     assert pipeline["default"]["tags"] == ["team-08"]
 
     assert pipeline["check"]["rules"] == BRANCH_PIPELINES
+    assert pipeline["check"]["interruptible"] is True
     for name in PRODUCTION_JOBS:
         job = pipeline[name]
         assert job["rules"] == PROTECTED_MAIN_UI_ONLY, name
@@ -165,33 +167,60 @@ def main() -> int:
     assert pipeline["acceptance"]["needs"] == ["deploy"]
     for name in PRODUCTION_JOBS:
         assert pipeline[name]["resource_group"] == "team08-production", name
+    for name in ("deploy", "acceptance"):
         assert pipeline[name]["environment"]["name"] == "$TEAM", name
+        assert pipeline[name]["interruptible"] is False, name
+    for name in ("logs", "ps", "restart"):
+        assert "environment" not in pipeline[name], name
+        commands = "\n".join(pipeline[name]["script"])
+        assert "docker compose" not in commands, name
+        assert not APP_VARIABLES.intersection(
+            re.findall(r"APP_[A-Z0-9_]+", commands)
+        ), name
+    assert "org.opencontainers.image.revision" in "\n".join(pipeline["ps"]["script"])
+    assert "org.opencontainers.image.revision" in "\n".join(
+        pipeline["restart"]["script"]
+    )
 
     deploy_commands = "\n".join(pipeline["deploy"]["script"])
     for name in APP_VARIABLES:
         assert name in deploy_commands, name
     validation = deploy_commands.index("required protected application variables")
-    mutation = deploy_commands.index('docker compose --env-file "$ENV_FILE"')
-    assert validation < mutation
+    build = deploy_commands.index(
+        'docker compose --env-file "$ENV_FILE" -p "$TEAM" build'
+    )
+    mutation = deploy_commands.index(
+        'docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --no-build'
+    )
+    assert validation < build < mutation
+    assert deploy_commands.count("require_latest_main") >= 3
+    assert 'http://127.0.0.1:${BASE_1}' not in deploy_commands
+    assert 'http://127.0.0.1:${BASE}' not in deploy_commands
+    assert 'docker exec "${TEAM}-api-1"' in deploy_commands
+    assert 'docker exec "${TEAM}-web-1"' in deploy_commands
 
     raw = CI.read_text(encoding="utf-8")
     assert "docker compose --env-file \"$ENV_FILE\"" in raw
     assert 'LATEST_MAIN=$(git ls-remote origin refs/heads/main' in raw
     assert "tests/platform_acceptance.py" in raw
+    assert "python3 tests/platform_acceptance_contract.py" in raw
     assert "include:" not in raw
     assert "AUTO_DEVOPS" not in raw.upper()
     assert "--no-cache" not in "\n".join(pipeline["check"]["script"])
 
     handoff = (ROOT / "docs" / "GITLAB-HANDOFF.md").read_text(encoding="utf-8")
+    normalized_handoff = " ".join(handoff.split())
     for documented_bootstrap in (
         "GitLab auto-protected the first remote `main`",
         "Ordinary pushes are check-only",
         "does not require a Protected runner",
-        "Do not create the four application variables yet",
+        "Exactly four project variables are configured",
+        "Pipeline #35722",
+        "declare no environment",
         "Build → Pipelines → Run pipeline",
         "Protected Environments are not required",
     ):
-        assert documented_bootstrap in handoff, documented_bootstrap
+        assert " ".join(documented_bootstrap.split()) in normalized_handoff, documented_bootstrap
     print(
         "gitlab contract ok: every branch/MR/push check only; protected-main UI release; "
         "team-08 tagged and first-publication safe"
