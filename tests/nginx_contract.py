@@ -46,10 +46,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 
 CI_JOB_ID = os.environ.get("CI_JOB_ID", "").strip()
-DRIVER_CONTAINER = (
-    os.environ.get("AIFT_CONTRACT_DRIVER_CONTAINER", "").strip()
-    or (os.environ.get("HOSTNAME", "").strip() if CI_JOB_ID else "")
-)
+DRIVER_OVERRIDE = os.environ.get("AIFT_CONTRACT_DRIVER_CONTAINER", "").strip()
+DRIVER_CONTAINER = ""
 RUN_ID = f"ci-{CI_JOB_ID}" if CI_JOB_ID else f"local-{uuid.uuid4().hex[:12]}"
 PREFIX = f"aiguard-contract-{RUN_ID}"
 NETWORK = f"{PREFIX}-net"
@@ -105,6 +103,48 @@ def run(*args: str, check: bool = True) -> str:
     if check and result.returncode != 0:
         raise ContractFailure(f"{' '.join(args)} failed:\n{result.stderr.strip()}")
     return result.stdout
+
+
+def resolve_driver_container() -> str:
+    """Resolve this Docker-executor job to the daemon's container identity."""
+
+    if DRIVER_OVERRIDE:
+        return DRIVER_OVERRIDE
+    if not CI_JOB_ID:
+        return ""
+
+    # GitLab Runner labels the build container with the job ID. This is more
+    # reliable than HOSTNAME: the runner deliberately sets a friendly hostname
+    # that need not be a container name known to the Docker daemon.
+    labelled = run(
+        "docker",
+        "ps",
+        "-q",
+        "--filter",
+        f"label=com.gitlab.gitlab-runner.job.id={CI_JOB_ID}",
+        "--filter",
+        "label=com.gitlab.gitlab-runner.type=build",
+    ).splitlines()
+    if len(labelled) == 1:
+        return labelled[0]
+
+    # The runner simulator supplies the same labels. Keep a hostname-inspection
+    # fallback for other CI-like containers without them, without inspecting
+    # environments or printing any other container metadata.
+    hostname = os.environ.get("HOSTNAME", "").strip()
+    matches = []
+    if hostname:
+        for container_id in run("docker", "ps", "-q").splitlines():
+            configured = run(
+                "docker", "inspect", "-f", "{{.Config.Hostname}}", container_id
+            ).strip()
+            if configured == hostname:
+                matches.append(container_id)
+    if len(matches) != 1:
+        raise ContractFailure(
+            "could not uniquely resolve the Docker-executor job container"
+        )
+    return matches[0]
 
 
 def published_base(container: str, target: int) -> str:
@@ -180,7 +220,8 @@ def teardown() -> None:
 
 
 def setup() -> None:
-    global BASE, WEB_BASE
+    global BASE, DRIVER_CONTAINER, WEB_BASE
+    DRIVER_CONTAINER = resolve_driver_container()
     teardown()  # a previous run that died hard must not poison this one
     run("docker", "build", "-q", "-t", STUB_IMAGE, str(REPO / "tests" / "stub-core"))
     run("docker", "build", "-q", "-t", PROXY_IMAGE, str(REPO / "api"))

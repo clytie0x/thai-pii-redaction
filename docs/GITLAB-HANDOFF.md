@@ -28,8 +28,14 @@ The guide does not require a Protected runner, Protected Environment,
 - Pipeline #35715 ran on runner #227 and failed `check` at
   `python3 tests/nginx_contract.py` with exit 2 because the test job could not
   reach host-loopback-published test services from the Docker executor network.
+- Corrective pipeline #35716 was check-only on exact SHA
+  `f0359dc7b71fa5563db9ea9f6670e6fd19e789ee` and also used runner #227. It
+  failed because GitLab's friendly job hostname was not a container identity
+  resolvable by the Docker daemon. The descendant correction resolves the
+  build container by GitLab job label and retains a local hostname fallback.
 - Deploy, acceptance, logs, ps, and restart were all `skipped`; no application
-  secret was consumed and no production service was changed.
+  secret was consumed and no production service was changed in #35715;
+  #35716 did not create any production job.
 - Environment `team08` now has skipped deployment metadata from job #136360,
   not a successful deployment. Protected Environments are not required by the
   guide and are unavailable in the current GitLab CE UI.
@@ -66,7 +72,8 @@ automatic rollback are not guide requirements.
 
 ## First protected-main production pipeline
 
-Do not retry pipeline #35715; it refers to the historical SHA and old rules.
+Do not retry pipeline #35715 or #35716; both refer to historical SHAs and old
+test-harness behavior.
 
 Open **Build → Pipelines → Run pipeline**, select `main`, add no temporary
 variables, confirm the displayed SHA equals local `main`, and create a **new**

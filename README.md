@@ -155,9 +155,11 @@ python tests/run_ci_local.py --job deploy --cold   # จับเวลา build
 Variables ของ GitLab) ค่าไม่ถูกพิมพ์ออกและถูกแทนที่ก่อนเขียนไฟล์ผลลัพธ์เสมอ
 
 ตัวจำลองเป็นการประมาณ ไม่ใช่ runner จริง ความต่างที่รู้ตัวอยู่ใน docstring
-ของสคริปต์ `tests/nginx_contract.py` รันบน runner #227 ใน pipeline #35715 แล้ว
-และพบ host-loopback assumption ซึ่งแก้ด้วย job-container network regression;
-correction นี้ยังต้องผ่าน exact-SHA GitLab pipeline ใหม่
+ของสคริปต์ `tests/nginx_contract.py` รันบน runner #227 ใน pipeline #35715 และ
+#35716 แล้ว ครั้งแรกพบ host-loopback assumption และครั้งที่สองพบว่า friendly
+job hostname ไม่ใช่ Docker daemon container identity correction ปัจจุบัน resolve
+ด้วย GitLab job label และทดสอบ path เดียวกันใน local simulator แล้ว แต่ยังต้อง
+ผ่าน exact-SHA GitLab pipeline ใหม่
 
 release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb` ผ่าน exact local
 BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8 วินาที,

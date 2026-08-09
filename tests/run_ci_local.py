@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""Run this repo's GitLab jobs locally, before the first push to a real runner.
+"""Run this repo's GitLab jobs locally in the pinned runner image.
 
-Why this exists: `.gitlab-ci.yml` has never been executed by any runner. Every
-piece of evidence in `docs/evidence/` comes from `tests/smoke.py`, which runs
-on Windows with the upstream venv and issues commands *equivalent* to what CI
-does. Equivalent is not the same, and the gap hides a whole class of bug — the
-S0 spike (`tests/out/s0-runner-simulation.json`) found the job script runs
-under BusyBox ash with no bash present, which nothing in the local harness
-would ever have shown.
+Why this exists: local Windows checks and real Docker-executor jobs are not
+equivalent. The S0 spike (`tests/out/s0-runner-simulation.json`) found BusyBox
+shell differences, while first-publication pipelines #35715 and #35716 exposed
+job-network and container-identity differences. This simulator keeps those
+runner-specific paths reproducible before another push.
 
 The cost of that gap is higher here than usual: deploying on this platform
 *replaces* the running service, so a mistake found after deploy is a mistake
@@ -186,6 +184,12 @@ def docker_command(
     network_args = [] if gitlab_network else ["--network", "host"]
     contract_env = []
     if gitlab_network:
+        network_args = [
+            "--label",
+            "com.gitlab.gitlab-runner.job.id=local-gitlab-network",
+            "--label",
+            "com.gitlab.gitlab-runner.type=build",
+        ]
         contract_env = ["-e", "CI_JOB_ID=local-gitlab-network"]
     elif sys.platform == "win32":
         network_args += ["--add-host", "host.docker.internal:host-gateway"]

@@ -161,7 +161,12 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    `check` หยุดที่ nginx contract เพราะ test ใช้ host-loopback assumption
    deploy/acceptance/ops เป็น skipped ทั้งหมดและไม่มี production mutation
    SHA นี้จึงเป็น historical first-publication evidence ไม่ใช่ deployment evidence
-9. public HTTPS/proxy และ official platform acceptance ยังไม่เกิดขึ้น
+9. corrective push `f0359dc7b71f...` สร้าง check-only pipeline #35716 จริง
+   (หนึ่ง job, ไม่มี production jobs) แต่หยุดเมื่อ friendly runner hostname
+   resolve เป็น Docker container ไม่ได้ การแก้ descendant ใช้ GitLab job label
+   และมี hostname-inspection fallback สำหรับ simulator; #35716 เป็น historical
+   failed-check evidence และไม่มี production mutation
+10. public HTTPS/proxy และ official platform acceptance ยังไม่เกิดขึ้น
 
 ## เหลือหลัง local recertification — งานออกนอกเครื่อง เจ้าของทำเอง
 
