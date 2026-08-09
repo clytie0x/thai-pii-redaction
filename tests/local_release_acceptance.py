@@ -244,26 +244,41 @@ def verify_auth_and_public_operations() -> tuple[str, dict]:
     if status != 200 or not report_bytes.startswith(b"%PDF"):
         raise AcceptanceFailure("authenticated PDPA Report failed")
 
-    status, _headers, raw = request(
-        API,
-        "/roundtrip",
-        method="POST",
-        payload={"text": TEXT, "mode": "token", "provider": "fake"},
-        cookie=cookie,
-        timeout=120,
-    )
-    roundtrip = payload(raw)
-    sanitized = str(roundtrip.get("sanitized_text", ""))
-    if not (
-        status == 200
-        and roundtrip.get("provider_used") == "fake"
-        and SYNTHETIC_NAME not in sanitized
-        and SYNTHETIC_PHONE not in sanitized
-        and roundtrip.get("safety") == {"status": "pass", "residual_count": 0}
-        and (roundtrip.get("restoration") or {}).get("status") == "complete"
-        and not ({"mapping", "entities", "highlights"} & set(roundtrip))
-    ):
-        raise AcceptanceFailure("deterministic fake-provider safety flow failed")
+    roundtrip_modes = {}
+    for mode in ("token", "surrogate"):
+        status, _headers, raw = request(
+            API,
+            "/roundtrip",
+            method="POST",
+            payload={"text": TEXT, "mode": mode, "provider": "fake"},
+            cookie=cookie,
+            timeout=120,
+        )
+        roundtrip = payload(raw)
+        sanitized = str(roundtrip.get("sanitized_text", ""))
+        restored = str(roundtrip.get("restored_text", ""))
+        if not (
+            status == 200
+            and roundtrip.get("provider_used") == "fake"
+            and SYNTHETIC_NAME not in sanitized
+            and SYNTHETIC_PHONE not in sanitized
+            and SYNTHETIC_NAME in restored
+            and SYNTHETIC_PHONE in restored
+            and roundtrip.get("safety") == {"status": "pass", "residual_count": 0}
+            and (roundtrip.get("restoration") or {}).get("status") == "complete"
+            and (roundtrip.get("restoration") or {}).get("leftover_count") == 0
+            and not ({"mapping", "entities", "highlights"} & set(roundtrip))
+        ):
+            raise AcceptanceFailure(
+                f"deterministic fake-provider {mode} safety flow failed"
+            )
+        roundtrip_modes[mode] = {
+            "provider": "fake",
+            "safety": "pass",
+            "restoration": "complete",
+            "raw_values_absent_from_sanitized": True,
+            "raw_values_restored": True,
+        }
 
     forbidden = (
         "/sanitize",
@@ -290,7 +305,7 @@ def verify_auth_and_public_operations() -> tuple[str, dict]:
         "detect_entities": detect["detected_entity_count"],
         "report_score": report["overall_score"],
         "report_grade": report["overall_grade"],
-        "roundtrip_provider": roundtrip["provider_used"],
+        "roundtrip_modes": roundtrip_modes,
     }
 
 
