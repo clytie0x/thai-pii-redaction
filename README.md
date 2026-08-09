@@ -16,7 +16,8 @@ unprefixed `/health`, non-main `check`, main-only deploy, per-service limits,
 `50m` × 3 log rotation, **Masked** application variables และ no-SSH ops
 ตรงกับ shell นี้ในระดับ config ส่วน protected-main gate, protected variables,
 runner tag และ stale-SHA checks เป็น AI Guard security hardening เพิ่มเอง
-runner/platform จริงยังไม่เคยรัน
+runner #227 รัน first-publication pipeline #35715 จริงแล้ว แต่ `check` ล้มก่อน
+production; AI for Thai public platform และ live Tokenmind ยังไม่เคยรัน
 
 ## โครง
 
@@ -134,7 +135,7 @@ python sync/sync_from_upstream.py --from ../thai-pii-redaction
 python sync/sync_from_upstream.py --check
 ```
 
-## ซ้อม pipeline ก่อน push จริง
+## ซ้อม pipeline และเทียบ Docker-executor network
 
 `.gitlab-ci.yml` รันบน `docker:27.3.1` ที่ pin ด้วย digest ซึ่ง shell คือ BusyBox ash ไม่ใช่ bash
 (`apk add bash` ใน `before_script` เปลี่ยนไม่ได้ เพราะ runner เลือก shell ตอน
@@ -143,6 +144,7 @@ python sync/sync_from_upstream.py --check
 
 ```bash
 python tests/run_ci_local.py --job check      # เร็ว ไม่ต้องมี secret
+python tests/run_ci_local.py --job check --gitlab-network  # topology แบบ runner
 python tests/run_ci_local.py --all            # check + deploy + acceptance
 python tests/run_ci_local.py --job deploy --cold   # จับเวลา build เย็น (ทำเป็นอย่างสุดท้าย)
 ```
@@ -153,15 +155,17 @@ python tests/run_ci_local.py --job deploy --cold   # จับเวลา build
 Variables ของ GitLab) ค่าไม่ถูกพิมพ์ออกและถูกแทนที่ก่อนเขียนไฟล์ผลลัพธ์เสมอ
 
 ตัวจำลองเป็นการประมาณ ไม่ใช่ runner จริง ความต่างที่รู้ตัวอยู่ใน docstring
-ของสคริปต์ ส่วน `tests/nginx_contract.py` ถูกต่อไว้ใน check stage และจะรันบน
-runner จริงหลัง owner อนุญาต push หลักฐานวันนี้ยังเป็น local เท่านั้น
+ของสคริปต์ `tests/nginx_contract.py` รันบน runner #227 ใน pipeline #35715 แล้ว
+และพบ host-loopback assumption ซึ่งแก้ด้วย job-container network regression;
+correction นี้ยังต้องผ่าน exact-SHA GitLab pipeline ใหม่
 
 release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb` ผ่าน exact local
 BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8 วินาที,
 provider-free/fake acceptance + log/rate-limit/restart 28.7 วินาที และ
 BusyBox `deploy` simulation 63.5 วินาที รายละเอียดอยู่ที่
-`docs/evidence/2026-08-08-local-release-candidate.md` ส่วน GitLab runner,
-AI for Thai platform และ live Tokenmind ยังไม่เคยรันและยังอ้างว่าผ่านไม่ได้
+`docs/evidence/2026-08-08-local-release-candidate.md` GitLab runner รันแล้วแต่
+pipeline #35715 ไม่ผ่าน ส่วน AI for Thai public platform และ live Tokenmind
+ยังไม่เคยรันและยังอ้างว่าผ่านไม่ได้
 
 CI และตัวจำลอง local ส่งต่อเฉพาะชื่อตัวแปรสี่ตัวข้างต้นผ่าน temporary env file
 สิทธิ์จำกัด ค่า access code/cookie/secret ที่ใช้ acceptance อยู่ใน process

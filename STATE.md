@@ -1,7 +1,7 @@
-# สถานะงาน (9 ส.ค. 2569 — pre-publication CI-conformance candidate; ยังไม่ push)
+# สถานะงาน (9 ส.ค. 2569 — first publication complete; pre-deployment correction)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
+remote `main` ถูก first-publish แล้ว แต่ **ยังไม่ deploy production**
 ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
 
 Participant Guide ทางการถูกอ่านครบและยืนยัน `team08`, พอร์ต `20070/20071`,
@@ -134,7 +134,7 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
   security review และ exact-revision fake-provider acceptance ใหม่ก่อน
   fast-forward local `main`; หลักฐาน commit เก่าไม่ครอบ descendant โดยอัตโนมัติ
 
-## เหลือก่อนออกนอกเครื่อง
+## เหลือก่อน production deployment
 
 1. exact candidate ยังไม่ได้รัน live Tokenmind `acceptance`; credential เดิม
    ต้องถูก rotate/reissue ก่อน หลักฐาน live ด้านบนเป็น dated working-tree
