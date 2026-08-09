@@ -1,14 +1,15 @@
-# สถานะงาน (9 ส.ค. 2569 — competition-polish local candidate; ยังไม่ push)
+# สถานะงาน (9 ส.ค. 2569 — pre-publication CI-conformance candidate; ยังไม่ push)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
 ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
 
-Participant Guide ทางการถูกอ่านซ้ำเมื่อ 7 ส.ค. และยืนยัน `team08`,
-พอร์ต `20070/20071`, frontend `/`, backend `/api` ที่ถูก strip prefix,
-unprefixed `/health`, template-derived GitLab CI, protected-main-only deploy,
-per-service limits, `50m` × 3 log rotation, masked application variables และ no-SSH ops
-ตรงกับ deployment shell นี้ในระดับ config
+Participant Guide ทางการถูกอ่านครบและยืนยัน `team08`, พอร์ต `20070/20071`,
+frontend `/`, backend `/api` ที่ถูก strip prefix, unprefixed `/health`,
+non-main `check`, main-only deploy, per-service limits, `50m` × 3 log rotation,
+Masked application variables และ no-SSH ops ส่วน protected-main gate,
+protected variables, runner tag และ stale-SHA checks เป็น AI Guard hardening
+ไม่ใช่ข้อกำหนดที่คู่มือระบุ
 
 candidate ปัจจุบัน sync จาก main commit `44ef30b` ครบ 75 ไฟล์ผ่าน manifest
 hash โดยคง `/v1` public aliases แต่ nginx inject contract 2 ให้ strict-v2 core
@@ -27,8 +28,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
   “ข้อความที่ส่งให้ AI จริง” และ PDPA Report แบบดู score/grade ก่อนดาวน์โหลด
   ตัวอย่างเป็นเพียง input ผลทุกอย่างยังเรียก API จริง ไม่มี persistence หรือ
   third-party frontend dependency
-- ทุก CI job ถูก pin ด้วย runner tag `team-08`; `check` รันบน `main` ได้ แต่
-  deploy/acceptance/ops ต้องเป็น protected `main` ตาม executable rules
+- ทุก CI job ถูก pin ด้วย runner tag `team-08`; feature branch/MR และ unprotected
+  `main` รัน `check` เท่านั้น ส่วน deploy/acceptance/ops ต้องเป็น protected
+  `main` จาก push หรือ UI-created pipeline ตาม executable rules
 - exact proxy allowlist มี 16 routes (8 canonical + 8 `/v1` aliases)
 - `/redact-pdf` และ `/v1/redact-pdf` คืน proxy-level 404; frontend ไม่มี
   upload/call/preview/download ของ PDF redaction
@@ -149,22 +151,26 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    limiter ยังเปิดอยู่ ส่วน PDF correctness/resource/platform acceptance เป็น future gate
 6. Tokenmind credential ที่ปรากฏใน transcript ระหว่าง read-only compose probe
    ต้อง rotate ก่อนใช้ภายนอก; ลบ ignored repo-root `.env` โดยไม่อ่านค่าแล้ว
-7. staff ต้องยืนยันว่า runner ที่ถือ production Docker socket เป็น Protected
-   และรับเฉพาะ protected refs หรือจัด isolated branch runner/daemon
-   (tag `team-08` ที่เช็กอินแล้วเป็น scheduling control ไม่ใช่ isolation)
+7. Runner #227 เป็น organizer-provided team-08 group runner, online,
+   Docker amd64/Linux, tag `team-08`, accepts untagged และไม่มี Protected flag
+   คู่มือไม่กำหนด Protected runner และ flag ที่ขาดไม่ใช่ publication blocker
+   เพียงลำพัง แต่ staff ควรยืนยัน project scope/daemon isolation; tag เป็นเพียง
+   scheduling control ไม่ใช่ isolation proof
 8. GitLab push/runner, public HTTPS/proxy และ official platform acceptance
    ยังไม่เกิดขึ้น
 
 ## เหลือหลัง local recertification — งานออกนอกเครื่อง เจ้าของทำเอง
 
-1. สร้าง project บน `gitlab.nectec.or.th` ใน group ของทีม
-2. ตั้ง CI/CD Variables **ก่อน** push ครั้งแรก `APP_AIGUARD_API_KEY`,
+1. ยืนยัน project เปล่าบน `gitlab.nectec.or.th` และ SSH URL จาก UI
+2. owner อนุญาต first publication ปกติ (ไม่ใช้ `ci.skip`) โดยยังไม่สร้าง
+   application variables; pipeline แรกต้องมี `check` เท่านั้น
+3. protect remote `main` ทันที แล้วสร้าง `APP_AIGUARD_API_KEY`,
    `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY` และ
-   `APP_TOKENMIND_API_KEY` เป็น Protected + Masked, scope `team08`; protect
-   `main` และเปิด outdated-deployment protection
-3. `git remote add origin ...` แล้ว push `main` (repo นี้ยังไม่มี remote เลย)
-4. ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
-5. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
+   `APP_TOKENMIND_API_KEY`: Masked ตามคู่มือ และเพิ่ม Protected/Hidden,
+   expansion off, scope `team08` ตาม AI Guard hardening
+4. กด Run pipeline ใหม่บน exact protected-main SHA; ห้าม retry pipeline แรก
+5. ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
+6. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
 
 ลำดับเต็มพร้อมกับดักอยู่ที่ `docs/DEPLOY-DAY.md` และใช้ได้เมื่อ preflight
 ด้านบนผ่านแล้ว

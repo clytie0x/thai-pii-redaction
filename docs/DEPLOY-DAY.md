@@ -27,40 +27,23 @@ project เปล่าที่สร้างแล้วคือ
 ชื่อ project ไม่ผูกกับอะไรในโค้ด แต่ `TEAM: "team08"` ใน `.gitlab-ci.yml`
 กับพอร์ต 20070/20071 ผูกกับทีมแน่นอน อย่าแก้
 
-## 2 ตั้ง CI/CD Variables ก่อน push
+## 2 ยืนยัน runner และ pipeline source
 
-protect branch `main` ก่อน แล้วตั้ง Settings → CI/CD → Variables เป็น
-**Protected + Masked + Hidden (ถ้ารองรับ)** ทั้งสี่ตัว ปิด variable expansion
-พร้อม environment scope `team08`
-จากนั้น protect environment `team08` และกำหนด **Allowed to deploy** เฉพาะ
-owner/maintainers
+สถานะที่เจ้าของเห็นปัจจุบัน: runner `#227` เป็น organizer-provided group runner
+ของ team-08, online, Docker amd64/Linux, tag `team-08`, accepts untagged และ
+ไม่มี Protected flag ทุก job ใน repo pin tag `team-08` แล้วจึงไม่ควรถอด tag
+เพื่อให้ไปรันบน instance runner อื่น
 
-ปิด Auto DevOps หรือยืนยันว่า project `.gitlab-ci.yml` เป็น pipeline source
-ที่มีผลจริง ห้ามให้ template อื่น override release pipeline นี้
+**Participant Guide ไม่กำหนด Protected runner** และกล่าวเพียงว่าใช้ runner
+ของทีมที่ผู้จัดให้พร้อม tag ที่เห็นเมื่อมี tag อยู่ ดังนั้นการไม่มี Protected
+flag เพียงอย่างเดียวไม่ใช่ publication blocker ส่วนการยืนยันว่า project อื่น
+เข้าถึง runner/daemon เดียวกันไม่ได้ยังเป็น platform evidence ที่ควรถามผู้จัด;
+tag/rules ไม่ได้พิสูจน์ host isolation
 
-ตรวจ runner ก่อน push ด้วย: runner ที่มองเห็น production Docker daemon ต้อง
-ถูกตั้งเป็น **Protected runner** และรับเฉพาะ protected refs ถ้ายืนยันไม่ได้
-ต้องให้ staff จัด isolated daemon/runner สำหรับ branch; `rules:` ในไฟล์ CI
-อย่างเดียวกัน branch แก้เองได้จึงไม่ใช่ security boundary
+Auto DevOps ปิดอยู่แล้ว ให้ยืนยันว่า project `.gitlab-ci.yml` เป็น pipeline
+source ที่มีผลจริง ห้ามให้ template อื่น override release pipeline นี้
 
-| ตัวแปร | ค่า |
-|---|---|
-| `APP_AIFT_ACCESS_CODE` | สุ่มแยก ใช้แจกผู้เข้าถึงผ่านช่องทางส่วนตัว; ไม่ใช่ per-user account |
-| `APP_AIFT_COOKIE_SIGNING_KEY` | สุ่มอย่างน้อย 32 ไบต์ แยกจาก access code |
-| `APP_AIGUARD_API_KEY` | สุ่มอย่างน้อย 16 ไบต์ เป็น key ที่ nginx ฉีดให้ core ไม่ใช่ของผู้จัด |
-| `APP_TOKENMIND_API_KEY` | key ที่ผู้จัด reissue/rotate หลังเหตุ transcript exposure; ห้ามใช้ค่าเดิมหรือซ้ำกับสาม secret ข้างบน |
-
-ถ้าลืมข้อนี้ deploy job จะล้มตั้งแต่ compose interpolation ด้วยข้อความ
-`... is required` ซึ่งเป็นพฤติกรรมที่ตั้งใจ ไม่ใช่บั๊ก
-บริการต้องไม่บูตแบบเปิดครึ่งใบ
-
-ใน GitLab CI/CD settings เปิด **Prevent outdated deployment jobs** และตั้ง
-resource group `team08-production` เป็น `newest_first` เมื่อ resource group
-ปรากฏ ตัว job ตรวจ `origin/main` ซ้ำก่อน deploy/acceptance อยู่แล้ว จึงปฏิเสธ
-pipeline เก่าที่มารันทีหลัง แต่ project settings นี้เป็นชั้นป้องกัน production
-เพิ่มเติม
-
-## 3 ต่อ remote แล้ว push `main`
+## 3 ต่อ remote แล้ว first-publish `main` แบบ check-only
 
 repo นี้ยังไม่มี remote เลย ต้องเปิดหน้า **Code → Clone** แล้วคัดลอก SSH URL
 จาก UI ก่อน ค่าที่คาดคือ
@@ -72,18 +55,44 @@ git remote add origin <SSH URL ที่ยืนยันจาก GitLab UI>
 git push -u origin main
 ```
 
-เมื่อ `main` ถูก protect ก่อน publication และ owner controls ครบ pipeline จะ
-วิ่งเอง `check` → `deploy` → `acceptance` ทุก job inherit runner tag `team-08`
+เจ้าของต้องอนุญาตคำสั่งข้างบนแยกต่างหาก และ first publication นี้ต้องทำโดย
+**ยังไม่สร้าง application variables** ไม่ใช้ `ci.skip` pipeline source เป็น
+normal branch push; unprotected `main` จึงสร้าง `check` เท่านั้น ไม่สร้าง deploy,
+acceptance หรือ ops แม้ deploy จะถูกสร้างผิดคาด การตรวจ secret จะ fail ก่อน
+`docker compose up`
 
-ถ้า GitLab รุ่นนี้สร้าง protected rule ให้ branch ที่ยังไม่มีไม่ได้ ให้ owner
-อนุญาต first publication แบบปกติ (ไม่ใช้ `ci.skip`) executable rules จะสร้าง
-เฉพาะ `check`; deploy/acceptance/ops ต้องเห็น
-`CI_COMMIT_REF_PROTECTED == "true"` จึงจะถูกสร้าง หลัง protect branch,
-environment, runner และตั้ง variables ครบแล้ว ต้องสร้าง **pipeline ใหม่** บน
-protected `main` หรือ push reviewed follow-up commit ห้าม retry pipeline แรก
-แล้วคาดว่า rules จะเปลี่ยน
+## 4 Protect `main`, สร้าง variables แล้วเริ่ม pipeline ใหม่
 
-## 4 ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
+หลัง first-push `check` เขียว ให้ไปที่ **Settings → Repository → Branch rules**
+ทันที: protect `main`, ปิด force push และจำกัด push/merge ตามสิทธิ์ทีม
+
+จากนั้นสร้าง variables สี่ตัว:
+
+| ตัวแปร | ข้อกำหนดของค่า |
+|---|---|
+| `APP_AIFT_ACCESS_CODE` | สุ่มแยก ใช้แจกผู้เข้าถึงผ่านช่องทางส่วนตัว; ไม่ใช่ per-user account |
+| `APP_AIFT_COOKIE_SIGNING_KEY` | สุ่มอย่างน้อย 32 ไบต์ แยกจาก access code |
+| `APP_AIGUARD_API_KEY` | สุ่มอย่างน้อย 16 ไบต์ เป็น key ที่ nginx ฉีดให้ core ไม่ใช่ของผู้จัด |
+| `APP_TOKENMIND_API_KEY` | key ที่ผู้จัด reissue/rotate หลังเหตุ transcript exposure; ห้ามใช้ค่าเดิมหรือซ้ำกับสาม secret ข้างบน |
+
+**Official Participant Guide requirement:** secret ต้องเป็น Masked และไม่อยู่ใน
+source/frontend
+
+**AI Guard security hardening:** ตั้ง Protected, Hidden ถ้ารองรับ, ปิด variable
+expansion, scope `team08` และให้ค่าทั้งสี่ไม่ซ้ำกัน ทำขั้นนี้หลัง protect `main`
+แล้วเท่านั้น Protected Environment ไม่ใช่ข้อกำหนดของคู่มือและ GitLab CE ปัจจุบัน
+ไม่มี UI นี้ environment ของ job ยังคงชื่อ `team08`
+
+`resource_group: team08-production` ทำ serialization และ deploy/acceptance ตรวจ
+SHA กับ `origin/main` ซ้ำเพื่อกัน stale deployment คู่มือไม่กำหนด `newest_first`
+หรือ automatic rollback; ไม่ใช้สองอย่างนี้เป็น publication gate
+
+ไปที่ **Build → Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable
+ชั่วคราว แล้วสร้าง pipeline **ใหม่บน exact SHA เดิม** source `web` นี้ถูก rules
+อนุญาตให้ protected `main` รัน `check → deploy → acceptance` ห้ามกด Retry บน
+pipeline แรกเพราะ protected-ref rules จะไม่ถูกประเมินใหม่
+
+## 5 ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
 
 - **check** ตรวจกติกา compose ของผู้จัด ความตรงของ vendored slice กับ
   upstream Git object, caller-auth, executable frontend session contract
@@ -105,7 +114,7 @@ upstream body ไม่หลุด และ client-IP/rate-limit semantics ห
 ถ้า `deploy` เขียวแต่ `acceptance` แดง อย่าเพิ่งดีใจ บริการขึ้นแล้วแต่ทำงาน
 ไม่ได้
 
-## 5 ถ้ามีปัญหา ใช้ manual job แทน SSH
+## 6 ถ้ามีปัญหา ใช้ manual job แทน SSH
 
 stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline
 และมี Dozzle ที่ `https://team08.aiforthai.in.th/logs/`
@@ -119,9 +128,10 @@ stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline
   โมเดล OCR ไว้ แต่เครื่องนี้ไม่ใช่ runner เน็ตกับดิสก์คนละตัว
   ถ้าชน 20 นาทีจริง ให้คุยกับ Staff พร้อมตัวเลข ไม่ใช่เดา
 - **runner isolation** ทุก job pin tag `team-08` แล้ว และ deploy/acceptance/ops
-  schedule เฉพาะ protected `main` แต่ยังต้องให้ staff ยืนยันว่า
-  production-capable runner เป็น Protected จริงหรือจัด isolated branch
-  runner/daemon ก่อน pipeline เต็ม tag/rules ไม่ใช่ isolation boundary
+  schedule เฉพาะ protected `main` Participant Guide ไม่กำหนด Protected flag
+  และ runner #227 ที่ไม่มี flag นี้ไม่ใช่ publication blocker เพียงลำพัง แต่ยัง
+  ควรให้ staff ยืนยัน project scope/daemon isolation; tag/rules ไม่ใช่ isolation
+  boundary
 - **runner tag** ถ้า job ค้าง pending ให้ตรวจว่า runner ยังมี tag `team-08`
   ตรงกับ `.gitlab-ci.yml`; อย่าถอด tag เพื่อให้ไปรันบน runner อื่น
 - **โควตาของ gateway** `acceptance` ยิงของจริงทุกครั้งที่ protected `main`

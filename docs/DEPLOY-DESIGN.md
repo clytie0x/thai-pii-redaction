@@ -42,10 +42,12 @@ nginx เติมกลับ (ไม่มี double-mount router — พิ�
   → ไม่มี bind mount เลยทั้ง compose และเห็นใน Dozzle จริง
 - `UVICORN_WORKERS=1` จนกว่าจะวัด (โมเดล cache ต่อโปรเซส)
 - acceptance เป็น stage แยกหลัง deploy ใน `.gitlab-ci.yml`; deploy,
-  acceptance และ ops schedule เฉพาะ protected `main` ส่วน check-only pipeline
-  ยังใช้ยืนยัน first publication ที่จำเป็นได้อย่างไม่ deploy
+  acceptance และ ops schedule เฉพาะ protected `main` ส่วนทุก branch/MR และ
+  unprotected `main` มี check-only pipeline ที่ไม่ deploy
 - ทุก job inherit runner tag `team-08`; tag จำกัด scheduling แต่ไม่แทน
-  Protected runner หรือ daemon isolation
+  daemon isolation Participant Guide ไม่กำหนด Protected runner; การไม่มี flag
+  นี้ไม่ใช่ publication blocker เพียงลำพัง แต่ยังต้องขอ platform evidence เรื่อง
+  project scope/daemon isolation
 - proxy errors 413/429/502/504 เป็น fixed value-free JSON; roundtrip เท่านั้น
   ใช้ read timeout 200 วินาทีให้ครอบ shared core policy 3×60 + backoff 1/2
   โดย nginx ไม่มี retry layer
@@ -61,6 +63,7 @@ burst 10 ส่วน PDF limits เป็น internal-only และไม่�
 ## สิ่งที่ v1 ถามผู้จัดแล้วยังต้องรอคำตอบ
 
 Host header ที่ proxy ส่งเข้า container (เผื่อค่าใน `AIGUARD_ALLOWED_HOSTS`
-แล้ว), สถานะ Protected/isolation ของ runner ที่มี tag `team-08` — tag ถูก pin
-ใน `.gitlab-ci.yml` แล้วแต่คำถามเรื่องสิทธิ์ยังต้องให้ผู้จัดยืนยัน
+แล้ว), project scope/daemon isolation ของ runner ที่มี tag `team-08` — คู่มือ
+ไม่กำหนด Protected flag และ tag ถูก pin ใน `.gitlab-ci.yml` แล้วแต่คำถามเรื่อง
+สิทธิ์ระดับ platform ยังต้องให้ผู้จัดยืนยัน
 `/data/hack` ตัดทิ้ง (ไม่ใช้ bind mount แล้ว)

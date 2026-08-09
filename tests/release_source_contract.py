@@ -16,6 +16,7 @@ CURRENT_DOCS = (
     ROOT / "STATE.md",
     ROOT / "docs" / "DEPLOY-DAY.md",
     ROOT / "docs" / "DEPLOY-DESIGN.md",
+    ROOT / "docs" / "GITLAB-HANDOFF.md",
 )
 SECRET_PATTERNS = {
     "private-key": re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),

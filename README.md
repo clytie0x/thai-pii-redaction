@@ -12,9 +12,11 @@ Office add-in) และไม่เปลี่ยนบทบาท — repo �
 [Participant Guide](https://app.notion.com/p/PARTICIPANT-GUIDE_1-3a7488d61198800fb15fdcf8b40e9afe)
 ทางการอีกครั้งเมื่อ 7 ส.ค. 2569: `team08`, frontend/API ports
 `20070/20071`, prefix stripping,
-unprefixed `/health`, template-derived GitLab CI, per-service limits,
-`50m` × 3 log rotation, masked application variables และ no-SSH ops ตรงกับ shell นี้
-ในระดับ config ส่วน runner/platform จริงยังไม่เคยรัน
+unprefixed `/health`, non-main `check`, main-only deploy, per-service limits,
+`50m` × 3 log rotation, **Masked** application variables และ no-SSH ops
+ตรงกับ shell นี้ในระดับ config ส่วน protected-main gate, protected variables,
+runner tag และ stale-SHA checks เป็น AI Guard security hardening เพิ่มเอง
+runner/platform จริงยังไม่เคยรัน
 
 ## โครง
 
@@ -168,24 +170,31 @@ memory และไม่ถูกใส่ใน child-process argv ส่ว�
 
 ## Deploy
 
-ทุก job inherit tag `team-08` จาก `default.tags` เพื่อไม่ให้ตกไปยัง runner
-untagged โดยบังเอิญ เมื่อ push `main` job `check` ตรวจ compose, vendored
-integrity, frontend/session และ nginx contract ได้เสมอ แต่ `deploy`,
-`acceptance` และ manual ops (`logs/ps/restart`) จะถูกสร้างเฉพาะเมื่อ GitLab
-ยืนยันว่า ref เป็น protected `main` เท่านั้น จากนั้น flow คือ
-`check → deploy → acceptance → manual ops`
+Participant Guide กำหนดให้ branch อื่นรัน `check` อย่างเดียวและ deploy จาก
+`main` เท่านั้น ส่วน AI Guard เพิ่ม protected-ref gate ให้ production:
 
-ถ้า GitLab รุ่นนี้ protect branch ที่ยังไม่มีไม่ได้ first publication แบบปกติ
-(ไม่ใช้ `ci.skip`) จะรัน `check` อย่างเดียว หลัง owner protect `main`, environment,
-runner และตั้ง variables แล้วต้องสร้าง pipeline ใหม่บน protected ref; retry
-pipeline แรกไม่เปลี่ยน rules ที่ถูกประเมินไปแล้ว
+| ref/pipeline | งานที่ถูกสร้าง |
+|---|---|
+| feature branch push หรือ merge request | `check` เท่านั้น |
+| unprotected `main` | `check` เท่านั้น |
+| protected `main` จาก push หรือปุ่ม Run pipeline | `check → deploy → acceptance` แล้วจึงมี manual `logs/ps/restart` |
+| tag, schedule หรือ API-triggered pipeline | ไม่สร้าง pipeline production |
 
-tag/rules ใน repo เป็นเพียง scheduling control branch ยังแก้ CI ของตัวเองได้
-จึงไม่ใช่ isolation boundary ห้าม deploy จนกว่า staff จะยืนยันว่า
-production-capable runner เป็น **Protected runner** ที่รับเฉพาะ protected refs
-หรือจัด isolated branch daemon/runner แยก
+ทุก job inherit tag `team-08` จาก `default.tags` ตรงกับ tag ที่เห็นบน runner
+`#227` นี่เป็น repository-side scheduling hardening ไม่ใช่หลักฐานว่า Docker host
+หรือ daemon แยกจริง Participant Guide ไม่กำหนดให้ runner ต้องมี Protected flag;
+runner #227 ที่ไม่มี flag นี้จึงไม่ใช่ publication blocker เพียงลำพัง แต่ควรให้
+ผู้จัดยืนยัน scope/daemon isolation เป็น platform evidence
 
-Secrets ตั้งใน GitLab Settings → CI/CD → Variables เป็น **Protected + Masked**
-และ environment scope `team08`; protect branch `main` ก่อน push:
-`APP_AIGUARD_API_KEY`, `APP_AIFT_ACCESS_CODE`,
-`APP_AIFT_COOKIE_SIGNING_KEY`, `APP_TOKENMIND_API_KEY`
+project ปัจจุบันสร้าง protected rule ให้ branch ที่ยังไม่มีผ่าน UI ไม่ได้ จึงใช้
+bootstrap นี้โดยไม่ใช้ `ci.skip`: push exact `main` ครั้งแรกโดย **ยังไม่สร้าง
+application variables**, ให้ `check` จบ, protect remote `main`, สร้าง variables,
+แล้วกด Run pipeline เพื่อสร้าง pipeline **ใหม่** บน SHA เดิม ห้าม retry pipeline
+แรกเพราะ rules ถูกประเมินตอนสร้าง pipeline
+
+ชื่อ secret มีสี่ตัวเท่านั้น: `APP_AIGUARD_API_KEY`,
+`APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`,
+`APP_TOKENMIND_API_KEY` คู่มือกำหนดให้ secret เป็น **Masked** ส่วน Protected,
+Hidden (ถ้ารองรับ), expansion off และ environment scope `team08` เป็น AI Guard
+security hardening ที่ให้ตั้งหลัง protect `main` แล้ว Protected Environment ไม่ใช่
+ข้อกำหนดของคู่มือและ GitLab CE ปัจจุบันไม่มี UI นี้ environment ยังคงชื่อ `team08`
