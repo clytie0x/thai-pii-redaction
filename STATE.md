@@ -1,4 +1,4 @@
-# สถานะงาน (8 ส.ค. 2569 — local release candidate; ยังไม่ push)
+# สถานะงาน (9 ส.ค. 2569 — competition-polish local candidate; ยังไม่ push)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 เฟสนี้ = local ทั้งหมด **ยังไม่ deploy จนกว่าเจ้าของสั่ง**
@@ -6,7 +6,7 @@
 
 Participant Guide ทางการถูกอ่านซ้ำเมื่อ 7 ส.ค. และยืนยัน `team08`,
 พอร์ต `20070/20071`, frontend `/`, backend `/api` ที่ถูก strip prefix,
-unprefixed `/health`, template-derived GitLab CI, main-only deploy,
+unprefixed `/health`, template-derived GitLab CI, protected-main-only deploy,
 per-service limits, `50m` × 3 log rotation, masked application variables และ no-SSH ops
 ตรงกับ deployment shell นี้ในระดับ config
 
@@ -19,9 +19,16 @@ owner รับ ADR caller-auth เมื่อ 7 ส.ค.: static frontend ก�
 ส่วน business API ต้องแลก access code เป็น signed cookie อายุ 30 นาทีแบบ
 Secure/HttpOnly/SameSite=Strict internal core key และ provider key แยกกัน
 
-## Hosted release-candidate scope (8 ส.ค. 2569)
+## Hosted release-candidate scope (9 ส.ค. 2569)
 
 - product สาธารณะมีสาม workflow เท่านั้น: Privacy Scan, Safe AI, PDPA Report
+- frontend เป็น light-theme ภาษาไทย-first สำหรับการนำเสนอ: มี synthetic demo
+  presets ห้าบริบท + reset, Privacy Scan แบบ CTA ชัด, Safe AI สามช่วงโดยเน้น
+  “ข้อความที่ส่งให้ AI จริง” และ PDPA Report แบบดู score/grade ก่อนดาวน์โหลด
+  ตัวอย่างเป็นเพียง input ผลทุกอย่างยังเรียก API จริง ไม่มี persistence หรือ
+  third-party frontend dependency
+- ทุก CI job ถูก pin ด้วย runner tag `team-08`; `check` รันบน `main` ได้ แต่
+  deploy/acceptance/ops ต้องเป็น protected `main` ตาม executable rules
 - exact proxy allowlist มี 16 routes (8 canonical + 8 `/v1` aliases)
 - `/redact-pdf` และ `/v1/redact-pdf` คืน proxy-level 404; frontend ไม่มี
   upload/call/preview/download ของ PDF redaction
@@ -121,9 +128,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
   p95 7.58 ms, max 12.57 ms; one-page scanned-PDF route ผ่านใน 221.0 วินาที
   แต่ใช้ CPU เฉลี่ยประมาณ 1.93/2 cores และ memory peak ชน 6 GiB
   (`memory.events max=8247`, ไม่มี OOM/restart) จึงเป็น resource gate แดง
-- independent review ที่บันทึกก่อน 8 ส.ค. เป็นหลักฐานของ candidate เก่า;
-  candidate รอบนี้ต้องผ่าน review ของ diff จาก `e621c45` แยกอีกครั้งก่อน
-  fast-forward local `main`
+- ทุก descendant ที่เปลี่ยน frontend หรือ CI ต้องผ่าน Product/Judge review,
+  security review และ exact-revision fake-provider acceptance ใหม่ก่อน
+  fast-forward local `main`; หลักฐาน commit เก่าไม่ครอบ descendant โดยอัตโนมัติ
 
 ## เหลือก่อนออกนอกเครื่อง
 
@@ -144,6 +151,7 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    ต้อง rotate ก่อนใช้ภายนอก; ลบ ignored repo-root `.env` โดยไม่อ่านค่าแล้ว
 7. staff ต้องยืนยันว่า runner ที่ถือ production Docker socket เป็น Protected
    และรับเฉพาะ protected refs หรือจัด isolated branch runner/daemon
+   (tag `team-08` ที่เช็กอินแล้วเป็น scheduling control ไม่ใช่ isolation)
 8. GitLab push/runner, public HTTPS/proxy และ official platform acceptance
    ยังไม่เกิดขึ้น
 

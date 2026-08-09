@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast contract for the main-only GitLab release pipeline."""
+"""Fast contract for tagged main checks and protected-main releases."""
 
 from __future__ import annotations
 
@@ -11,6 +11,14 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 CI = ROOT / ".gitlab-ci.yml"
 MAIN_ONLY = [{"if": '$CI_COMMIT_BRANCH == "main"'}]
+PROTECTED_MAIN_ONLY = [
+    {
+        "if": (
+            '$CI_COMMIT_BRANCH == "main" '
+            '&& $CI_COMMIT_REF_PROTECTED == "true"'
+        )
+    }
+]
 EXPECTED_CHECKS = {
     "python3 sync/sync_from_upstream.py --check --verify-upstream",
     "python3 tests/auth_contract.py",
@@ -33,12 +41,18 @@ def main() -> int:
     image = pipeline["default"]["image"]
     assert image.startswith("docker:27.3.1@sha256:")
     assert len(image.rsplit("@sha256:", 1)[1]) == 64
+    assert pipeline["default"]["tags"] == ["team-08"]
 
-    jobs = ("check", "deploy", "acceptance", "logs", "ps", "restart")
+    assert pipeline["check"]["rules"] == MAIN_ONLY
+    jobs = ("deploy", "acceptance", "logs", "ps", "restart")
     for name in jobs:
         job = pipeline[name]
-        assert job["rules"] == MAIN_ONLY, name
+        assert job["rules"] == PROTECTED_MAIN_ONLY, name
         assert "only" not in job and "except" not in job, name
+
+    for name in ("check", *jobs):
+        job = pipeline[name]
+        assert job.get("tags", pipeline["default"]["tags"]) == ["team-08"], name
 
     assert set(pipeline["check"]["script"]) == EXPECTED_CHECKS
     assert pipeline["acceptance"]["needs"] == ["deploy"]
@@ -50,7 +64,7 @@ def main() -> int:
     assert 'LATEST_MAIN=$(git ls-remote origin refs/heads/main' in raw
     assert "tests/platform_acceptance.py" in raw
     assert "--no-cache" not in "\n".join(pipeline["check"]["script"])
-    print("gitlab contract ok: digest-pinned main-only check/deploy/acceptance/ops")
+    print("gitlab contract ok: team-08 tagged check; protected-main release and ops")
     return 0
 
 

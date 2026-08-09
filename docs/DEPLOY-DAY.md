@@ -72,10 +72,16 @@ git remote add origin <SSH URL ที่ยืนยันจาก GitLab UI>
 git push -u origin main
 ```
 
-pipeline จะวิ่งเอง `check` → `deploy` → `acceptance`
+เมื่อ `main` ถูก protect ก่อน publication และ owner controls ครบ pipeline จะ
+วิ่งเอง `check` → `deploy` → `acceptance` ทุก job inherit runner tag `team-08`
 
-ไม่ใช้ force push และไม่แนะนำ `ci.skip`: ให้ตั้ง protections/runner/variables
-ครบก่อน publication ครั้งแรก แล้วปล่อย pipeline แรกพิสูจน์ทั้งสาม stage
+ถ้า GitLab รุ่นนี้สร้าง protected rule ให้ branch ที่ยังไม่มีไม่ได้ ให้ owner
+อนุญาต first publication แบบปกติ (ไม่ใช้ `ci.skip`) executable rules จะสร้าง
+เฉพาะ `check`; deploy/acceptance/ops ต้องเห็น
+`CI_COMMIT_REF_PROTECTED == "true"` จึงจะถูกสร้าง หลัง protect branch,
+environment, runner และตั้ง variables ครบแล้ว ต้องสร้าง **pipeline ใหม่** บน
+protected `main` หรือ push reviewed follow-up commit ห้าม retry pipeline แรก
+แล้วคาดว่า rules จะเปลี่ยน
 
 ## 4 ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
 
@@ -112,12 +118,14 @@ stage `ops` มี `logs` `ps` `restart` กดจากหน้า pipeline
   ที่ rebuild ล่าสุดมีขนาด 809,367,578 ไบต์ (ประมาณ 771.9 MiB) และ bake
   โมเดล OCR ไว้ แต่เครื่องนี้ไม่ใช่ runner เน็ตกับดิสก์คนละตัว
   ถ้าชน 20 นาทีจริง ให้คุยกับ Staff พร้อมตัวเลข ไม่ใช่เดา
-- **runner isolation** config ปัจจุบัน schedule เฉพาะ protected `main` แต่
-  ยังต้องให้ staff ยืนยันว่า production-capable runner เป็น Protected จริง
-  หรือจัด isolated branch runner/daemon ก่อน push
-- **runner tag** ถ้า job ค้าง pending ให้ปลดคอมเมนต์ `tags:` ใน
-  `.gitlab-ci.yml` ตาม tag ที่เห็นใน Group → Settings → CI/CD → Runners
-- **โควตาของ gateway** `acceptance` ยิงของจริงทุกครั้งที่ push `main`
+- **runner isolation** ทุก job pin tag `team-08` แล้ว และ deploy/acceptance/ops
+  schedule เฉพาะ protected `main` แต่ยังต้องให้ staff ยืนยันว่า
+  production-capable runner เป็น Protected จริงหรือจัด isolated branch
+  runner/daemon ก่อน pipeline เต็ม tag/rules ไม่ใช่ isolation boundary
+- **runner tag** ถ้า job ค้าง pending ให้ตรวจว่า runner ยังมี tag `team-08`
+  ตรงกับ `.gitlab-ci.yml`; อย่าถอด tag เพื่อให้ไปรันบน runner อื่น
+- **โควตาของ gateway** `acceptance` ยิงของจริงทุกครั้งที่ protected `main`
+  เริ่ม full release pipeline
   (และ retry ได้สูงสุด 3 ครั้งเมื่อเจอ transport/5xx)
 - **PDF/OCR** implementation ยังอยู่ภายใน core แต่ public proxy ต้องคืน 404
   ทั้งสอง alias และหน้าเว็บต้องไม่มี upload flow หลักฐานหนึ่งหน้าเดิม (221 วินาที,

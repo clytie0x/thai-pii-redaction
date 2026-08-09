@@ -1,6 +1,7 @@
 # AI Guard — AIFT team08. Based on the organizer participant-guide template.
-# The production-capable runner must be protected and restricted to protected
-# refs; rules in repository code are scheduling controls, not that boundary.
+# The production-capable runner must still be protected and restricted to
+# protected refs; the tag and rules below are scheduling controls, not that
+# trust boundary. An unprotected first publication can run check, never deploy.
 
 variables:
   TEAM: "team08"
@@ -17,6 +18,8 @@ stages: [check, deploy, acceptance, ops]
 
 default:
   image: docker:27.3.1@sha256:6ca9a6811085e2cf769cbac04bc47daf66629102990391caab7cf37426e939da
+  tags:
+    - team-08
   before_script:
     - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
     - apk add --no-cache curl bash git nodejs py3-httpx py3-yaml python3 >/dev/null
@@ -93,7 +96,7 @@ deploy:
     - curl -fsS "http://127.0.0.1:${BASE_1}/health" && echo " <- /health OK"
     - curl -fsS -o /dev/null "http://127.0.0.1:${BASE}/" && echo "web root OK"
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 # The helper reads credentials only from inherited environment and keeps the
 # access code, signed cookie, and log-scan values out of child-process argv.
@@ -115,7 +118,7 @@ acceptance:
       fi
       python3 tests/platform_acceptance.py
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 .ops: &ops
   stage: ops
@@ -127,7 +130,7 @@ acceptance:
     name: $TEAM
     action: access
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 logs:
   <<: *ops

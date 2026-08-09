@@ -13,9 +13,28 @@ for (const forbidden of ["redact-pdf", "pdfFile", "pdfPick", "pdfDownload", "aft
 for (const workflow of ['id="privacy-scan"', 'id="safe-ai"', 'id="pdpa-report"']) {
   assert.ok(page.includes(workflow), `public workflow is missing: ${workflow}`);
 }
-assert.ok(page.includes("สิ่งที่ provider ได้รับ"), "Safe AI does not label sanitized provider input");
+assert.ok(page.includes("ข้อความที่โมเดลได้รับ"), "Safe AI does not label sanitized provider input");
+assert.ok(page.includes("ข้อความที่ส่งให้ AI จริง"), "Safe AI proof card is not judge-readable");
 assert.ok(page.includes("body.sanitized_text"), "Safe AI does not render the sanitized text");
+assert.equal((page.match(/data-sample=/g) || []).length, 5, "demo does not expose exactly five synthetic presets");
+for (const marker of [
+  'id="scanBtn"',
+  'id="resetDemo"',
+  'id="safeDemoBtn"',
+  'id="reportDownloadBtn"',
+  "ข้อความแสดงลำดับโดยประมาณ",
+  "prefers-reduced-motion",
+  "--canvas:#f4f7fb",
+]) {
+  assert.ok(page.includes(marker), `competition UX contract missing: ${marker}`);
+}
+assert.ok(
+  page.indexOf("preparedReport = report.report_pdf_b64") < page.indexOf('downloadB64(preparedReport'),
+  "PDPA report is not reviewed before explicit download",
+);
+assert.ok(!page.includes("body.ai_response_masked"), "masked provider response leaked into the frontend");
 assert.ok(!/localStorage|sessionStorage/.test(page), "frontend persists sensitive state in browser storage");
+assert.ok(!/<script[^>]+src=|<link[^>]+href=["']https?:/i.test(page), "third-party frontend dependency was added");
 const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 const source = scripts.find(script => script.includes("same-origin caller authentication"));
 assert.ok(source, "frontend application script is missing");
@@ -193,11 +212,13 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 await flush();
 assert.equal(sessionCalls, 1, "initial session check did not start");
 assert.equal(element("send").disabled, true, "business controls enabled before auth completed");
+assert.equal(element("scanBtn").disabled, true, "Privacy Scan enabled before auth completed");
 
 element("accessCode").value = "synthetic-access-code";
 await element("loginBtn").emit("click");
 assert.equal(sessionCalls, 2, "login did not start a fresh session check");
 assert.equal(element("send").disabled, false, "successful login did not enable business controls");
+assert.equal(element("scanBtn").disabled, false, "successful login did not enable Privacy Scan");
 
 initialSession.resolve(response(401, {authenticated: false}));
 await flush();
@@ -207,6 +228,11 @@ assert.equal(
   false,
   "stale initial session response cleared a newer successful login",
 );
+await element("safeDemoBtn").emit("click");
+assert.match(element("editor").value, /ใบสมัครงานสังเคราะห์/, "Safe AI quick start did not supply synthetic input");
+assert.match(element("safeElapsed").textContent, /เรียก API จริง/, "Safe AI quick start did not explain the next real call");
+await element("resetDemo").emit("click");
+assert.equal(element("editor").value, "", "one-click reset did not clear the Safe AI example");
 vm.runInContext(
   'renderHighlight("😀 โทร 081-234-5678", [{start: 6, end: 18, data_type: "PHONE"}])',
   context,
@@ -215,6 +241,28 @@ assert.match(
   element("highlight").innerHTML,
   />081-234-5678<\/mark>/,
   "astral Unicode offset did not highlight the exact phone substring",
+);
+vm.runInContext(
+  'renderHighlight("<img src=x onerror=alert(1)>", [{start: 0, end: 28, data_type: "NAME"}])',
+  context,
+);
+assert.ok(!element("highlight").innerHTML.includes("<img"), "highlighting rendered source text as HTML");
+assert.match(element("highlight").innerHTML, /&lt;img/, "highlighting did not preserve escaped source text");
+vm.runInContext(
+  'renderLegend({NAME: "<img src=x onerror=alert(1)>"})',
+  context,
+);
+assert.ok(!element("legend").innerHTML.includes("<img"), "legend rendered a count as HTML");
+assert.match(element("legend").innerHTML, /&lt;img/, "legend did not preserve an escaped count");
+assert.equal(
+  vm.runInContext('errorMessage(500, "RAW_EXCEPTION_DETAIL", "text")', context),
+  "ไม่สามารถดำเนินการได้ในขณะนี้ กรุณาตรวจข้อมูลแล้วลองใหม่",
+  "raw backend detail reached the user-facing error",
+);
+assert.match(
+  vm.runInContext('errorMessage(429, "rate_limited", "text")', context),
+  /รอสักครู่แล้วลองใหม่/,
+  "rate-limit recovery copy is missing",
 );
 const seedSensitiveState = () => {
   element("accessCode").value = "SENSITIVE_ACCESS_CODE";
@@ -242,7 +290,7 @@ const assertSensitiveStateCleared = label => {
   assert.equal(element("restored").textContent, "ยังไม่ได้ส่ง", `${label}: restored text retained`);
   assert.equal(element("evidenceSanitized").textContent, "ยังไม่มีข้อมูล", `${label}: evidence retained`);
   assert.equal(element("guardBar").textContent, "", `${label}: guard result retained`);
-  assert.equal(element("safeOriginal").textContent, "เลือกตัวอย่างหรือพิมพ์ข้อความด้านบน", `${label}: Safe AI original retained`);
+  assert.equal(element("safeOriginal").textContent, "กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที", `${label}: Safe AI original retained`);
   assert.equal(element("safeElapsed").textContent, "", `${label}: elapsed state retained`);
   assert.equal(element("piiTypes").textContent, "ยังไม่มีข้อมูลให้วิเคราะห์", `${label}: PII type summary retained`);
   assert.equal(element("reportMeta").textContent, "", `${label}: report result retained`);
@@ -297,7 +345,7 @@ slowDetect.resolve(response(200, {
 await pendingDetect;
 assert.equal(
   element("highlight").textContent,
-  "NEW_EDITOR",
+  "กดสแกนเพื่อดูตำแหน่ง PII",
   "stale detect response overwrote the newer editor text",
 );
 assert.equal(guardCalls, 0, "stale detect response started a guard request");
@@ -333,7 +381,15 @@ assert.equal(element("reportScore").textContent, "68");
 assert.equal(element("reportGrade").textContent, "D");
 assert.equal(element("reportScope").textContent, "พร้อม");
 assert.match(element("reportMeta").textContent, /คะแนน 68 · เกรด D/);
-assert.equal(downloads.length, downloadsBeforeReport + 1, "validated PDPA report was not downloaded");
+assert.equal(downloads.length, downloadsBeforeReport, "report downloaded before the user reviewed its summary");
+assert.equal(element("reportDownloadBtn").hidden, false, "validated report did not enable download");
+await element("reportDownloadBtn").emit("click");
+assert.equal(downloads.length, downloadsBeforeReport + 1, "validated PDPA report was not downloaded on request");
+const downloadsAfterReport = downloads.length;
+await element("editor").emit("input");
+assert.equal(element("reportDownloadBtn").hidden, true, "changing input retained a stale report download");
+await element("reportDownloadBtn").emit("click");
+assert.equal(downloads.length, downloadsAfterReport, "stale report bytes remained downloadable");
 
 const assertRoundtripSuppressed = async (label, body) => {
   roundtripMode = "body";

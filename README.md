@@ -22,7 +22,7 @@ unprefixed `/health`, template-derived GitLab CI, per-service limits,
 |---|---|
 | `core/` | vendored slice ของ repo หลักที่ pin commit `44ef30b` (คัดลอกตาม `sync/PORT_MANIFEST.json` — commit + SHA-256 ต่อไฟล์) + port-owned stateless auth wrapper + Dockerfile ที่เพิ่มชั้น OCR |
 | `api/` | nginx ตัวกลาง: เติม `/api` prefix ที่ proxy ของแพลตฟอร์มตัดออก, คง `/v1` aliases, inject contract 2 + internal core key เฉพาะ business route, rate limit และ log แบบไม่มี query string |
-| `web/` | หน้า product สาม workflow: Privacy Scan, Safe AI และ PDPA Report (static, เรียก API แบบ same-origin) |
+| `web/` | หน้า product light-theme สาม workflow: Privacy Scan, Safe AI และ PDPA Report (static, เรียก API แบบ same-origin, ไม่มี third-party frontend dependency หรือ browser persistence) |
 | `sync/` | สคริปต์ sync จาก upstream + manifest — `--check` รันใน CI ทุกครั้ง |
 
 ## Trust boundary (พูดตรง ๆ)
@@ -54,6 +54,13 @@ unprefixed `/health`, template-derived GitLab CI, per-service limits,
   โดย startup ปฏิเสธการใช้ secret ซ้ำกัน Rate limit เป็น
   defense-in-depth ไม่ใช่ identity ระบบนี้เป็น shared admission gate ไม่ใช่
   per-user account ([ADR](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/main/docs/decisions/2026-08-07-aift-caller-authentication.md))
+
+หน้า hosted demo ใช้ภาษาไทยเป็นหลักและมีตัวอย่างสังเคราะห์ห้าบริบทให้เลือก
+ข้อมูลตัวอย่างเป็น input เท่านั้น ทุกผลต้องมาจาก API จริง Safe AI แสดง
+`sanitized_text` เป็นการ์ดกลาง “ข้อความที่ส่งให้ AI จริง” และจะไม่แสดง
+`restored_text` จนกว่า safety/restoration/warnings จะผ่านครบ ส่วน PDPA Report
+แสดง score/grade ที่ backend คืนก่อนเปิดปุ่มดาวน์โหลด ไฟล์อยู่ใน memory ของหน้า
+ชั่วคราวและถูกล้างเมื่อ input เปลี่ยน reset logout หรือ session หมดอายุ
 
 ## พื้นผิว API สาธารณะ
 
@@ -161,16 +168,22 @@ memory และไม่ถูกใส่ใน child-process argv ส่ว�
 
 ## Deploy
 
-push ขึ้น `main` → pipeline `check` (กติกา compose + vendored integrity +
-สัญญาของ nginx proxy) →
-`deploy` (build + up + รอ healthcheck) → `acceptance` (ยิง PII สังเคราะห์ผ่าน
-ทั้งสาย พิสูจน์ auth, mask ขาออก, minimized response, allowlist และ log) → manual ops
-(logs/ps/restart) ใช้แทน SSH ไม่มี job รับคำสั่ง shell ตามอำเภอใจ
+ทุก job inherit tag `team-08` จาก `default.tags` เพื่อไม่ให้ตกไปยัง runner
+untagged โดยบังเอิญ เมื่อ push `main` job `check` ตรวจ compose, vendored
+integrity, frontend/session และ nginx contract ได้เสมอ แต่ `deploy`,
+`acceptance` และ manual ops (`logs/ps/restart`) จะถูกสร้างเฉพาะเมื่อ GitLab
+ยืนยันว่า ref เป็น protected `main` เท่านั้น จากนั้น flow คือ
+`check → deploy → acceptance → manual ops`
 
-config ที่เช็กอินจะ schedule organizer pipeline เฉพาะ protected `main` แต่
-branch สามารถแก้ไฟล์ CI ของตัวเองได้ จึงไม่ใช่ isolation boundary ห้าม push
-จนกว่า staff จะยืนยันว่า production-capable runner เป็น **Protected runner**
-ที่รับเฉพาะ protected refs หรือจัด isolated branch daemon/runner แยก
+ถ้า GitLab รุ่นนี้ protect branch ที่ยังไม่มีไม่ได้ first publication แบบปกติ
+(ไม่ใช้ `ci.skip`) จะรัน `check` อย่างเดียว หลัง owner protect `main`, environment,
+runner และตั้ง variables แล้วต้องสร้าง pipeline ใหม่บน protected ref; retry
+pipeline แรกไม่เปลี่ยน rules ที่ถูกประเมินไปแล้ว
+
+tag/rules ใน repo เป็นเพียง scheduling control branch ยังแก้ CI ของตัวเองได้
+จึงไม่ใช่ isolation boundary ห้าม deploy จนกว่า staff จะยืนยันว่า
+production-capable runner เป็น **Protected runner** ที่รับเฉพาะ protected refs
+หรือจัด isolated branch daemon/runner แยก
 
 Secrets ตั้งใน GitLab Settings → CI/CD → Variables เป็น **Protected + Masked**
 และ environment scope `team08`; protect branch `main` ก่อน push:

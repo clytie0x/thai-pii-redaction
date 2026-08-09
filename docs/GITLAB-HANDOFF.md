@@ -41,6 +41,15 @@ Preserve history; never force push. Do not use `ci.skip`: the first publication
 should execute `check → deploy → acceptance` only after protections, runner,
 environment, and variables are ready.
 
+If this GitLab version cannot protect a branch before it exists, an
+owner-authorized normal first push is fail-safe at the repository layer:
+all jobs use runner tag `team-08`, `check` runs, and deploy/acceptance/ops are
+excluded unless `CI_COMMIT_REF_PROTECTED` is true. Protect `main` and the
+environment, complete runner/variable controls, then create a **new** pipeline
+on protected `main` (or push a reviewed follow-up). Retrying the first pipeline
+does not re-evaluate its rules. Runner tag and rules do not replace a Protected
+or isolated production runner.
+
 ## First real acceptance
 
 Require all three stages to refer to the exact same candidate SHA. Then verify
@@ -58,6 +67,8 @@ Keep local, GitLab-runner, platform, and live-provider evidence separate.
 > prevention, Auto DevOps setting, all four protected/hidden/masked scoped
 > variables, and Tokenmind rotation are complete. Only after my explicit
 > confirmation, verify the SSH URL from the GitLab UI, add `origin`, push local
-> `main` without force, and monitor exact-SHA `check → deploy → acceptance`.
+> `main` without force, confirm the `team-08` tag, and monitor exact-SHA
+> `check → deploy → acceptance` (or check-only first publication when GitLab
+> cannot pre-protect an absent branch, followed by a new protected-ref pipeline).
 > Do not reuse any old Tokenmind credential. Record GitLab, platform, and live
 > provider evidence separately and stop on any SHA, route, secret, or log leak.
