@@ -1,10 +1,12 @@
-# สถานะงาน (9 ส.ค. 2569 — production network correction after first attempt)
+# สถานะงาน (9 ส.ค. 2569 — competition enhancement from accepted production)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-remote `main` ถูก first-publish และ protected แล้ว Pipeline #35722 ยก production
-stack จนสาม service healthy แต่ job ล้มหลัง mutation ที่ redundant
-Docker-executor loopback probe จึงยังไม่มี successful deployment/acceptance
-ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
+remote `main` protected และ production Pipeline #35727 ที่ exact
+`42476d09a7d80b6920fcf21c0d2ac0d5c6952872` ผ่าน `check → deploy → acceptance`
+ครบแล้ว web/api/core ใช้ revision เดียวกัน และ public acceptance ผ่าน health,
+auth, Privacy Scan, live Tokenmind Safe AI, PDPA Report, route denial, log privacy,
+resource และ restart/recovery SHA นี้เป็น rollback baseline ของ enhancement sprint
+ปัจจุบัน ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
 
 Participant Guide ทางการถูกอ่านครบและยืนยัน `team08`, พอร์ต `20070/20071`,
 frontend `/`, backend `/api` ที่ถูก strip prefix, unprefixed `/health`,
@@ -25,11 +27,12 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 ## Hosted release-candidate scope (9 ส.ค. 2569)
 
 - product สาธารณะมีสาม workflow เท่านั้น: Privacy Scan, Safe AI, PDPA Report
-- frontend เป็น light-theme ภาษาไทย-first สำหรับการนำเสนอ: มี synthetic demo
-  presets ห้าบริบท + reset, Privacy Scan แบบ CTA ชัด, Safe AI สามช่วงโดยเน้น
-  “ข้อความที่ส่งให้ AI จริง” และ PDPA Report แบบดู score/grade ก่อนดาวน์โหลด
-  ตัวอย่างเป็นเพียง input ผลทุกอย่างยังเรียก API จริง ไม่มี persistence หรือ
-  third-party frontend dependency
+- frontend เป็น light-theme ภาษาไทย-first สำหรับการนำเสนอ: Guided Demo ร้อย
+  Privacy Scan → Safe AI → PDPA Report จาก synthetic scenario เดียวกัน โดยเรียก
+  `/roundtrip` ฝั่ง frontend หนึ่งครั้งและหยุดเมื่อขั้นใดไม่ผ่าน มี gallery ห้า
+  บริบท + reset, Protection Evidence, mode `token`/`surrogate`, เวลา total ที่วัด
+  ในเบราว์เซอร์ และการ์ด “ข้อความที่ส่งให้ AI จริง” ผลทุกอย่างยังมาจาก API จริง
+  ไม่มีการเก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์หรือ third-party dependency
 - ทุก CI job ถูก pin ด้วย runner tag `team-08`; feature branch/MR และ push ทุก
   branch รวม protected `main` รัน `check` เท่านั้น ส่วน deploy/acceptance/ops
   ต้องเป็น UI-created pipeline บน protected `main` ตาม executable rules
@@ -149,7 +152,7 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    จริงบน runner #227
 3. owner ยืนยัน project variables สี่ชื่อครบ โดย metadata เป็น Protected,
    Masked, Hidden และ scope `team08`; repository/Codex ไม่อ่านค่าจริง
-4. production pipeline #35722 บน `5ae77ad25eb...` ผ่าน check และ build/up
+4. historical production pipeline #35722 บน `5ae77ad25eb...` ผ่าน check และ build/up
    จน web/api/core healthy แต่ deploy ล้มที่ job-container
    `127.0.0.1:20070/20071`; acceptance และ manual ops ไม่ได้ execute
    stack ที่ยกสำเร็จคงอยู่ แต่ #35722 ไม่ใช่ successful acceptance evidence
@@ -157,18 +160,26 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    acceptance job เข้า exact Compose network ชั่วคราว, ปิด ambient proxy,
    รักษา public Host และ cleanup เสมอ ทั้งยังแยก build/recheck/up เพื่อลด
    stale-main race
-6. เฉพาะ deploy/acceptance ประกาศ environment `team08` และรับ scoped secrets;
+6. Pipeline #35727 ที่ exact `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`
+   พิสูจน์ correction บน runner #227: check/deploy/acceptance ผ่านครบ สาม image
+   revision ตรงกัน public HTTPS และ `/api` stripping ผ่าน login/session/logout,
+   synthetic Privacy Scan, live Tokenmind/thaillm roundtrip, PDPA Report, PDF และ
+   forbidden-route denial, retained-log scan, resource และ restart/recovery
+7. เฉพาะ deploy/acceptance ประกาศ environment `team08` และรับ scoped secrets;
    manual ops ใช้ direct Docker commands โดยไม่ประกาศ environment จึงไม่รับ
    application variables Restart ตรวจ remote SHA + image revision ก่อนทำงาน
    และรอ health ทั้งสาม service
-7. ต้อง push corrective exact `main` แบบ ordinary check-only ก่อน จากนั้นสร้าง
-   UI pipeline ใหม่บน protected `main` SHA เดียวกัน ห้าม retry #35722
-8. successful pipeline ต้องผ่าน `check → deploy → acceptance` ครบ แล้วจึงตรวจ
+8. competition enhancement ต้อง push feature branch ให้ check-only เขียว ผ่าน
+   exact fake-provider local acceptance และ independent reviews ก่อน fast-forward
+   `main`; จากนั้นสร้าง UI pipeline ใหม่บน protected `main` exact SHA ห้าม retry
+   pipeline เก่าหรือใช้ baseline #35727 เป็นหลักฐานของ descendant
+9. successful pipeline ต้องผ่าน `check → deploy → acceptance` ครบ แล้วจึงตรวจ
    public HTTPS, organizer `/api` prefix, real browser cookie flow, rate limit,
    Dozzle/log, resources, restart/recovery และ visual QA แยกจาก internal
    Compose-network acceptance
-9. Public PDF ยัง proxy-level 404 ทั้งสอง alias; PDF/OCR ไม่ใช่ deploy gate
-10. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
+10. Public PDF redaction/OCR ยัง proxy-level 404 ทั้งสอง alias; PDPA Report PDF
+    ยังเปิดตามเดิม และ PDF/OCR ไม่ใช่ capability ของ hosted release นี้
+11. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
 
 ลำดับเต็มพร้อมกับดักอยู่ที่ `docs/DEPLOY-DAY.md` และใช้ได้เมื่อ preflight
 ด้านบนผ่านแล้ว
@@ -178,6 +189,6 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - ไม่มี provider จำลองบน deployment / ไม่มีเดโมสำรอง — service จริงเท่านั้น
 - pseudonymized-มี-vault ยังเป็นข้อมูลส่วนบุคคล — ห้ามเคลมเกิน
 - ห้ามเคลมสาธารณะ "benchmark เดียวของไทย"
-- production pipeline ต้องมีคำสั่งเจ้าของชัดเจน; authorization สำหรับ recovery
-  รอบนี้ครอบคลุม exact corrective pipeline แต่ไม่ใช่สิทธิ์ deploy งานอื่นในอนาคต
+- production pipeline ต้องมีคำสั่งเจ้าของชัดเจนและต้องอ้าง exact reviewed SHA;
+  ordinary branch/main pushes ยังเป็น check-only ตาม executable rules
 - ตัวเลขเวลาจากเครื่องนี้บอกลำดับความใหญ่ ไม่ใช่คำรับประกันบน runner ของผู้จัด

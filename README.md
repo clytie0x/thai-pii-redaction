@@ -16,10 +16,11 @@ unprefixed `/health`, non-main `check`, main-only deploy, per-service limits,
 `50m` × 3 log rotation, **Masked** application variables และ no-SSH ops
 ตรงกับ shell นี้ในระดับ config ส่วน protected-main gate, protected variables,
 runner tag และ stale-SHA checks เป็น AI Guard security hardening เพิ่มเอง
-runner #227 ผ่าน exact check-only pipeline #35718 แล้ว Production attempt
-#35722 บน `5ae77ad25eb9b97a08812a7ec9571e5434de9eaa` build และยกสาม service จน
-healthy แต่ deploy job ล้มที่ redundant host-loopback probe ก่อน acceptance
-correction ปัจจุบันเก็บเหตุการณ์นี้เป็น historical evidence ไม่ใช่ acceptance
+runner #227 ผ่านทั้ง check-only และ production path แล้ว Historical attempt
+#35722 เก็บไว้เป็นหลักฐาน defect ของ host-loopback probe ส่วน Pipeline #35727
+บน exact `42476d09a7d80b6920fcf21c0d2ac0d5c6952872` ผ่าน check/deploy/acceptance
+ครบ และผ่าน public HTTPS/live Tokenmind/log/resource/restart acceptance เป็น
+rollback baseline ของ competition enhancement ปัจจุบัน
 
 ## โครง
 
@@ -27,7 +28,7 @@ correction ปัจจุบันเก็บเหตุการณ์นี
 |---|---|
 | `core/` | vendored slice ของ repo หลักที่ pin commit `44ef30b` (คัดลอกตาม `sync/PORT_MANIFEST.json` — commit + SHA-256 ต่อไฟล์) + port-owned stateless auth wrapper + Dockerfile ที่เพิ่มชั้น OCR |
 | `api/` | nginx ตัวกลาง: เติม `/api` prefix ที่ proxy ของแพลตฟอร์มตัดออก, คง `/v1` aliases, inject contract 2 + internal core key เฉพาะ business route, rate limit และ log แบบไม่มี query string |
-| `web/` | หน้า product light-theme สาม workflow: Privacy Scan, Safe AI และ PDPA Report (static, เรียก API แบบ same-origin, ไม่มี third-party frontend dependency หรือ browser persistence) |
+| `web/` | หน้า product light-theme สาม workflow: Privacy Scan, Safe AI และ PDPA Report พร้อม Guided Demo, scenario gallery, Protection Evidence และ System Evidence (static, same-origin, ไม่มี third-party dependency หรือการเก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์) |
 | `sync/` | สคริปต์ sync จาก upstream + manifest — `--check` รันใน CI ทุกครั้ง |
 
 ## Trust boundary (พูดตรง ๆ)
@@ -46,26 +47,41 @@ correction ปัจจุบันเก็บเหตุการณ์นี
 - config log ทุกชั้นไม่บันทึกเนื้อหาผู้ใช้ query string หรือ request target;
   audit ของ core เป็น JSONL ที่มีแต่ counts/flags/เวลาออกทาง stdout
   exact local candidate ผ่าน runtime synthetic-PII/secret/cookie/body scan
-  ในเครื่องแล้ว
-  ทั้ง access log และ nginx rate-limit error path ส่วน log ที่แพลตฟอร์มเห็นจริง
-  ยังต้องตรวจหลัง deploy
+  ในเครื่องแล้ว และ production baseline #35727 ผ่าน retained-log scan บน
+  แพลตฟอร์มจริง ทุก descendant ต้องตรวจใหม่ก่อนอ้างหลักฐานเดียวกัน
 - provider บน deployment นี้มีตัวเดียวคือ `tokenmind` — ไม่มีโหมดจำลอง
   (`fake` ใช้ได้เฉพาะเทสในเครื่องผ่าน compose override)
 - หน้า static และ health เป็น public แต่ business API ทุกเส้นต้อง login ด้วย
   access code เพื่อรับ signed cookie อายุ 30 นาทีแบบ
-  `Secure`/`HttpOnly`/`SameSite=Strict` โค้ด frontend ไม่บันทึก code ลง
-  browser storage และอ่าน cookie ไม่ได้
+  `Secure`/`HttpOnly`/`SameSite=Strict` โค้ด frontend ไม่บันทึก code หรือเนื้อหา
+  ผู้ใช้ลงพื้นที่จัดเก็บของเบราว์เซอร์ และอ่าน cookie ไม่ได้
   และ internal `AIGUARD_API_KEY`/provider key ยังอยู่คนละ trust boundary
   โดย startup ปฏิเสธการใช้ secret ซ้ำกัน Rate limit เป็น
   defense-in-depth ไม่ใช่ identity ระบบนี้เป็น shared admission gate ไม่ใช่
   per-user account ([ADR](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/main/docs/decisions/2026-08-07-aift-caller-authentication.md))
 
-หน้า hosted demo ใช้ภาษาไทยเป็นหลักและมีตัวอย่างสังเคราะห์ห้าบริบทให้เลือก
-ข้อมูลตัวอย่างเป็น input เท่านั้น ทุกผลต้องมาจาก API จริง Safe AI แสดง
-`sanitized_text` เป็นการ์ดกลาง “ข้อความที่ส่งให้ AI จริง” และจะไม่แสดง
-`restored_text` จนกว่า safety/restoration/warnings จะผ่านครบ ส่วน PDPA Report
-แสดง score/grade ที่ backend คืนก่อนเปิดปุ่มดาวน์โหลด ไฟล์อยู่ใน memory ของหน้า
-ชั่วคราวและถูกล้างเมื่อ input เปลี่ยน reset logout หรือ session หมดอายุ
+หน้า hosted demo ใช้ภาษาไทยเป็นหลักและมี scenario gallery สังเคราะห์ห้าบริบท
+ข้อมูลตัวอย่างเป็น input เท่านั้น แต่ละชุดมีคำสั่งสรุปเฉพาะบริบทแบบกำหนดตายตัว
+เพื่อให้เห็นการกู้คืนในงานจริง การเลือกไม่ส่ง request จนผู้ใช้กด CTA
+Guided Demo ร้อยสาม workflow ตามลำดับจริงและหยุดทันทีเมื่อขั้นใดไม่ผ่าน โดย
+frontend เรียก `/roundtrip` หนึ่งครั้งต่อรอบ (server อาจ retry provider เดิมตาม
+policy ที่จำกัดไว้และไม่มี fallback ไป provider อื่น) Safe AI แสดง
+`sanitized_text` เป็นการ์ดกลาง “ข้อความที่ส่งให้ AI จริง” พร้อม Protection
+Evidence จาก strict response และจะไม่แสดง `restored_text` จนกว่า
+safety/restoration/warnings จะผ่านครบ
+
+mode สาธารณะมีเฉพาะ `token` และ `surrogate`: Token เป็น placeholder แบบวงเล็บ
+ที่บอกประเภทแต่ไม่เปิดเผยค่าจริง ส่วน Surrogate ใช้ข้อมูลสมมุติที่รักษารูปแบบ
+เป็นธรรมชาติมากขึ้น mapping อยู่ชั่วคราวในคำขอเดียวและไม่ถูก projection กลับ
+หน้าเว็บ เวลา Privacy Scan, Safe AI, PDPA Report และ Guided Demo เป็น total
+elapsed ที่วัดด้วย monotonic browser clock ไม่ใช่ detector/provider/stage
+telemetry
+
+PDPA Report แสดง score/grade ที่ endpoint คืนก่อนเปิดปุ่มดาวน์โหลด ประเภทที่
+แสดงร่วมกันถูกระบุชัดว่ามาจาก Privacy Scan ของข้อความเดียวกัน เพราะ report
+endpoint ไม่คืน breakdown ไฟล์อยู่ใน memory ของหน้าชั่วคราวและถูกล้างเมื่อ
+input เปลี่ยน reset logout หรือ session หมดอายุ Health/System Evidence เป็น
+liveness + VERSION เท่านั้น ไม่ใช่หลักฐานว่า Tokenmind พร้อม
 
 ## พื้นผิว API สาธารณะ
 
@@ -164,6 +180,8 @@ job hostname ไม่ใช่ Docker daemon container identity #35718 พิ�
 ด้วย GitLab job label จริง Production attempt #35722 พบ assumption เดียวกันใน
 deploy/acceptance path หลัง container healthy; correction ใช้ in-container probe
 และต่อเฉพาะ acceptance job เข้า Compose network ชั่วคราวด้วย exact labels
+Pipeline #35727 พิสูจน์ corrected path ครบ check/deploy/acceptance บน exact
+`42476d09a7d80b6920fcf21c0d2ac0d5c6952872`
 
 release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb` ผ่าน exact local
 BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8 วินาที,
@@ -171,7 +189,9 @@ provider-free/fake acceptance + log/rate-limit/restart 28.7 วินาที �
 BusyBox `deploy` simulation 63.5 วินาที รายละเอียดอยู่ที่
 `docs/evidence/2026-08-08-local-release-candidate.md` หลักฐาน production/live
 ต้องอ้าง exact GitLab pipeline แยกต่างหาก; #35722 ไม่ถึง acceptance และห้ามใช้
-เป็นหลักฐานว่า Tokenmind หรือ public platform ผ่าน
+เป็นหลักฐานว่า Tokenmind หรือ public platform ผ่าน ส่วน rollback baseline
+#35727 มี production acceptance แยกแล้ว แต่หลักฐานนั้นไม่ครอบ descendant ของ
+competition enhancement โดยอัตโนมัติ
 
 CI และตัวจำลอง local ส่งต่อเฉพาะชื่อตัวแปรสี่ตัวข้างต้นผ่าน temporary env file
 สิทธิ์จำกัด ค่า access code/cookie/secret ที่ใช้ acceptance อยู่ใน process

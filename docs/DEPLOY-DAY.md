@@ -2,13 +2,12 @@
 
 ทุกอย่างในไฟล์นี้เป็นงานที่เจ้าของทำเองหรือมอบอำนาจให้ operator อย่างชัดเจน
 เพราะออกนอกเครื่องทั้งหมด
-ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ที่ยังเหลือใน `STATE.md` ผ่านครบ หลักฐานแบบ
-release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb`
-ครอบคลุม hosted-core `44ef30b`, caller-auth, response minimization และผ่าน
-exact provider-free check/build/acceptance/restart แล้ว ส่วน Tokenmind
-smoke/soak เดิมเป็น dated evidence:
-ต้อง rotate credential แล้วรัน exact live acceptance ใหม่ Public PDF ถูกพัก
-จาก hosted release แรกและไม่ใช่ deploy gate รอบนี้
+ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ใน `STATE.md` ผ่านครบ Production rollback
+baseline คือ exact `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`: Pipeline #35727 ผ่าน
+check/deploy/acceptance และ public live acceptance แล้ว ทุก descendant ต้องผ่าน
+exact fake-provider local acceptance, feature-branch check, independent reviews
+และ pipeline/public acceptance ใหม่ก่อนแทน baseline นี้ Public PDF redaction/OCR
+ถูกพักจาก hosted release แรกและไม่ใช่ deploy gate ส่วน PDPA Report PDF ยังเปิด
 
 Participant Guide ทางการยืนยัน team/port/proxy/CI/resource/log/secret shape
 แล้ว แต่ไม่ได้ยืนยันว่า candidate ปัจจุบันผ่าน privacy หรือทำงานบน runner จริง
@@ -62,7 +61,7 @@ healthy แต่ deploy job ล้มหลัง mutation เพราะ job-
 host ports 20070/20071 Acceptance/ops ไม่ได้ execute และ #35722 ห้ามนับเป็น
 successful deployment evidence
 
-## 4 Credential gate ที่เสร็จแล้ว และ corrective production pipeline
+## 4 Credential gate และ production pipeline สำหรับ descendant ใหม่
 
 `main` protected, force push ปิด และ push/merge จำกัด Maintainers แล้ว Owner
 ยืนยันว่า project variables มีสี่ชื่อครบโดยไม่เปิดเผยค่า:
@@ -87,10 +86,11 @@ acceptance ประกาศ environment `team08`; manual ops ไม่ปร�
 SHA กับ `origin/main` ซ้ำเพื่อกัน stale deployment คู่มือไม่กำหนด `newest_first`
 หรือ automatic rollback; ไม่ใช้สองอย่างนี้เป็น publication gate
 
-correction ต้อง push ปกติก่อนเพื่อรัน check-only แล้วจึงไปที่ **Build →
+หลัง feature branch check-only และ local gates ผ่าน ให้ fast-forward reviewed
+commit เข้า `main` แล้ว push ปกติก่อนเพื่อรัน check-only จากนั้นไปที่ **Build →
 Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable ชั่วคราว
-และสร้าง pipeline **ใหม่บน exact corrective SHA** ห้าม Retry #35722 เพราะใช้
-SHA/path เก่า Owner authorization รอบนี้ครอบคลุม recovery นี้แล้ว
+และสร้าง pipeline **ใหม่บน exact descendant SHA** ห้าม Retry #35727 หรือ
+pipeline ก่อนหน้า เพราะ rules/evidence ต้องประเมินกับ SHA ใหม่
 
 `check` เป็น interruptible ส่วน deploy, acceptance และ ops เป็น
 non-interruptible งานตรวจซ้ำยกเลิกได้เมื่อ commit ใหม่มา แต่ production
@@ -120,6 +120,24 @@ api/core แต่ bypass organizer edge, TLS, `/api` stripping และ host p
 หลัง platform route ขึ้นแล้วต้องยืนยันว่า 413/429/502/504 เป็น fixed JSON,
 upstream body ไม่หลุด และ client-IP/rate-limit semantics หลัง organizer proxy
 ตรงกับที่คาด `/health` ยังคงเป็น liveness ไม่ใช่หลักฐานว่า Tokenmind พร้อม
+
+competition frontend acceptance หลัง pipeline เขียวต้องใช้ synthetic preset:
+
+1. login แล้วเปิด Guided Demo; ยืนยันลำดับ Privacy Scan → Safe AI → PDPA Report
+2. ยืนยัน frontend ยิง `/roundtrip` หนึ่ง invocation ในรอบ Guided ปกติ ไม่มี
+   duplicate click/retry ฝั่ง browser (server retry provider เดิมยังเป็น policy เดิม)
+3. ชี้การ์ด “ข้อความที่ส่งให้ AI จริง” และตรวจว่าค่าดิบสังเคราะห์ที่ detect พบ
+   ไม่อยู่ใน protected input; ห้ามเรียกสิ่งนี้ว่า cryptographic attestation
+4. ยืนยัน safety pass, restoration complete, residual signals/leftover tokens
+   เป็นศูนย์ และคำตอบ restored แสดงเฉพาะเมื่อทุก gate ผ่าน
+5. ยืนยัน score/grade ของ PDPA Report มาจาก endpoint; type context ต้องระบุว่า
+   มาจาก Privacy Scan ของข้อความเดียวกัน
+6. กด reset ระหว่าง/หลังรอบและ logout; raw/protected/restored/report/timing/
+   progress ต้องถูกล้างและ stale response ห้ามกลับมา
+7. ตรวจ Token และ Surrogate แยกกันเมื่อจำเป็น โดยแต่ละรอบเป็น provider call ใหม่
+8. ตรวจ System Evidence ว่า health แสดง liveness/VERSION เท่านั้น ไม่อ้าง provider
+9. ตรวจ public PDF redaction/OCR + forbidden routes ยัง 404, logs ไม่มี user
+   content/secret/cookie/request body แล้วทำ resource + restart/revision acceptance
 
 ถ้า `deploy` เขียวแต่ `acceptance` แดง อย่าเพิ่งดีใจ บริการขึ้นแล้วแต่ทำงาน
 ไม่ได้

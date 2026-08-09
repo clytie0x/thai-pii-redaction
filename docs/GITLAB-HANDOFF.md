@@ -1,4 +1,4 @@
-# GitLab production recovery handoff
+# GitLab competition enhancement handoff
 
 ## Official requirement vs AI Guard hardening
 
@@ -24,28 +24,33 @@ The guide does not require a Protected runner, Protected Environment,
   blocker. Organizer confirmation of project scope and Docker-daemon isolation
   remains desirable platform evidence; tag pinning is not isolation proof.
 - Auto DevOps: disabled.
-- Check-only pipeline #35718 passed exact SHA
-  `5ae77ad25eb9b97a08812a7ec9571e5434de9eaa` on runner #227.
+- Production rollback baseline is exact
+  `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`: Pipeline #35727 passed
+  `check → deploy → acceptance` on runner #227. Public HTTPS, prefix stripping,
+  auth, synthetic Privacy Scan, live Tokenmind Safe AI, PDPA Report, route
+  denial, log privacy, resources, revision labels, and restart/recovery passed.
 - Exactly four project variables are configured: `APP_AIGUARD_API_KEY`,
   `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`, and
   `APP_TOKENMIND_API_KEY`. Their values were not inspected. GitLab metadata
   shows all four Protected, Masked, Hidden, and scoped to `team08`.
-- Pipeline #35722 was the production attempt on the same SHA and runner.
+- Pipeline #35722 was the historical failed production attempt on an earlier SHA.
   `check` passed;
   Compose built and started web/api/core and all became healthy. Deploy then
   failed because its job container curled host-loopback ports 20070/20071.
-  Acceptance and manual ops did not execute. The running stack is therefore a
-  partial deployment, not successful production acceptance evidence.
+  Acceptance and manual ops did not execute. It remains incident evidence only;
+  #35727 superseded it with successful exact-SHA acceptance.
 - Protected Environments are not required by the guide and are unavailable in
   this GitLab CE UI.
 
-## Corrective behavior
+## Release behavior
 
 Executable rules keep **Ordinary pushes are check-only**, including pushes to
-protected `main`. The corrective push must therefore create only `check` and
-cannot mutate production. Do not use `ci.skip` and do not retry #35722.
+protected `main`. A feature-branch push and later fast-forward main push must
+therefore create only `check` and cannot mutate production. Do not use
+`ci.skip`, do not retry #35727 for a descendant, and do not treat the rollback
+baseline as evidence for changed frontend code.
 
-The corrected production path:
+The production path:
 
 - separates Compose build from `up`, rechecks current remote main immediately
   before mutation, and uses `up --no-build`;
@@ -66,20 +71,25 @@ repository's serialization/stale-deployment controls. `newest_first`, automatic
 rollback, Protected runners, and Protected Environments are not Participant
 Guide requirements.
 
-## Resume procedure
+## Competition-enhancement procedure
 
-1. Push the reviewed corrective descendant to `main` normally. Require its
-   check-only pipeline to pass and confirm no production job exists in it.
-2. Open **Build → Pipelines → Run pipeline**, select that same exact protected
+1. Push the dedicated enhancement branch normally. Require its check-only
+   pipeline to pass on runner #227 and confirm deploy/acceptance/ops do not run.
+2. Require exact fake-provider local acceptance plus Product/Judge,
+   accessibility, security, and reliability reviews with no P0/P1 finding.
+3. Fast-forward the reviewed branch into local `main`, push normally, and
+   require the new main push pipeline to remain check-only.
+4. Open **Build → Pipelines → Run pipeline**, select that same exact protected
    `main` SHA, add no temporary variables, and create a new pipeline.
-3. Require `check → deploy → acceptance` all green on runner #227 before using
+5. Require `check → deploy → acceptance` all green on runner #227 before using
    any manual ops job.
-4. Do not treat internal Compose-network acceptance as proof of the organizer
+6. Do not treat internal Compose-network acceptance as proof of the organizer
    edge. Separately verify public HTTPS/root, `/api` prefix stripping, Host and
-   client-IP behavior, real-browser login/session/logout, Privacy Scan, the
-   minimum live Safe AI call, PDPA Report, fixed failures/rate limit, PDF and
-   internal-route denial, Dozzle/log privacy, resources, restart/recovery, and
-   exact revision labels.
+   client-IP behavior, real-browser login/session/logout, Guided Demo exact
+   sequence, Privacy Scan, one live Safe AI invocation with sanitized-input
+   proof, PDPA Report, fixed failures/rate limit, PDF-redaction/OCR and
+   internal-route denial, Dozzle/log privacy, resources, restart/recovery,
+   exact revision labels, and visual QA at the required viewports.
 
 Feature branches, merge requests, and all ordinary pushes run `check` only.
 Tag pushes, schedules, and API-triggered pipelines cannot create production
