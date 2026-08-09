@@ -351,7 +351,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
     required_auth_claims = (
         "business API ทุกเส้นต้อง login",
         "HttpOnly",
-        "ไม่บันทึก access code ลง browser storage",
+        "ไม่บันทึก access code ลงพื้นที่จัดเก็บของเบราว์เซอร์",
     )
     for claim in required_auth_claims:
         if claim not in page + readme:
@@ -401,7 +401,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         "generation !== authCheckGeneration",
         "generation !== authGeneration",
         "generation !== detectGeneration || text !== editor.value",
-        "if (isStaleBusinessError(err)) return;",
+        "if (isStaleBusinessError(err)) return false;",
         "complete = r.status === 204;",
         "session บนเซิร์ฟเวอร์อาจยังอยู่",
     ):

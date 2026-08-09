@@ -16,7 +16,7 @@
     --space-1:6px; --space-2:10px; --space-3:16px; --space-4:24px; --space-5:36px; --space-6:56px;
     --shadow-sm:0 8px 24px rgba(15,48,82,.07); --shadow-md:0 18px 48px rgba(15,48,82,.11);
     --bg:var(--canvas); --bg-soft:#0d2947; --panel:var(--surface); --panel-2:#f7f9fc;
-    --line:var(--border); --line-soft:#e8eef5; --text:var(--text-primary); --dim:var(--text-secondary); --dim-2:#718299;
+    --line:var(--border); --line-soft:#e8eef5; --text:var(--text-primary); --dim:var(--text-secondary); --dim-2:#5f7188;
     --blue:var(--action); --blue-light:#2776e8; --green:var(--safe); --red:var(--danger); --amber:var(--caution);
     --c-name:#fce7f3; --c-id:#fee2e2; --c-phone:#ffedd5; --c-email:#fef9c3;
     --c-addr:#dcfce7; --c-date:#dbeafe; --c-org:#ede9fe; --c-other:#e0e7ff;
@@ -24,6 +24,7 @@
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{margin:0;background:var(--canvas);color:var(--text-primary);font-family:'Sarabun','Leelawadee UI',system-ui,-apple-system,sans-serif;line-height:1.68;font-size:16px;-webkit-font-smoothing:antialiased}
+  main{scroll-margin-top:140px}
   h1,h2,h3,p,ul,ol,figure{margin:0}
   a{color:var(--blue-light)}
   img{max-width:100%;display:block}
@@ -38,7 +39,7 @@
   .brand span{color:var(--action)}
   nav.navlinks{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
   nav.navlinks::-webkit-scrollbar{display:none}
-  nav.navlinks a{color:var(--dim);text-decoration:none;font-size:14px;padding:8px 12px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s}
+  nav.navlinks a{color:var(--dim);text-decoration:none;font-size:14px;padding:8px 12px;border-radius:8px;white-space:nowrap;transition:color .15s,background .15s;min-height:44px;display:flex;align-items:center;justify-content:center}
   nav.navlinks a:hover{color:var(--action);background:var(--surface-soft)}
 
   /* ── sections ── */
@@ -83,6 +84,7 @@
     background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;
     padding:9px 15px;font-family:inherit;font-size:14px;cursor:pointer;
   }
+  button,select{min-height:44px}
   input[type=password]{cursor:text;min-width:240px}
   button.primary{background:var(--blue);border-color:var(--blue);font-weight:600;color:#fff}
   button.primary:hover:not(:disabled){background:#1d4ed8}
@@ -187,6 +189,10 @@
   .trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
   .trust-item{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-secondary)}
   .trust-item::before{content:"✓";width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--safe-soft);color:var(--safe);font-size:12px;font-weight:900}
+  .hero-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:26px}
+  .hero-cta{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 18px;border-radius:10px;background:var(--action);color:#fff;text-decoration:none;font-weight:750;box-shadow:0 8px 18px rgba(20,99,223,.18)}
+  .hero-cta:hover{background:var(--action-hover)}
+  .hero-actions span{font-size:13px;color:var(--text-secondary)}
   .auth-card{flex-direction:column;align-items:stretch;max-width:480px;justify-self:end}
   .auth-brand{display:flex;align-items:center;gap:13px}
   .auth-brand .brand-mark{width:42px;height:47px}
@@ -199,6 +205,47 @@
   .workflow-nav{margin-top:34px}
   .workflow-card.flagship{border-color:#9ec5ff;background:#f7fbff;position:relative}
   .workflow-card.flagship::after{content:"FLAGSHIP";position:absolute;right:14px;top:14px;font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--action);background:#e8f2ff;padding:4px 7px;border-radius:6px}
+  .guided-section{padding:54px 0;background:#edf6ff}
+  .guided-shell{background:var(--surface);border:1px solid #bcd8fa;border-radius:26px;padding:28px;box-shadow:var(--shadow-md)}
+  .guided-top{display:flex;justify-content:space-between;gap:28px;align-items:flex-start;margin-bottom:24px}
+  .guided-top h2{font-size:clamp(24px,3vw,32px);line-height:1.35;margin:5px 0 8px}
+  .guided-top p{color:var(--text-secondary);max-width:690px}
+  .guided-badge{color:var(--action);background:#e8f2ff;border:1px solid #bed9fb;border-radius:9px;padding:7px 10px;font-size:12px;font-weight:850;white-space:nowrap}
+  .guided-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.35fr);gap:20px;align-items:stretch}
+  .guided-control{background:#f8fbff;border:1px solid var(--border);border-radius:18px;padding:20px;display:flex;flex-direction:column}
+  .guided-control h3{font-size:17px;margin-bottom:5px}
+  .guided-control p{font-size:13.5px;color:var(--text-secondary)}
+  .guided-selection{margin:16px 0;padding:13px 14px;background:#fff;border:1px solid var(--border);border-radius:11px}
+  .guided-selection small{display:block;color:var(--text-secondary);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
+  .guided-selection b{display:block;margin-top:3px}
+  .guided-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:auto;padding-top:14px}
+  .guided-actions button{min-height:44px}
+  .guided-status{margin-top:12px;min-height:48px;font-size:13.5px;color:var(--text-secondary)}
+  .guided-proof-link{display:inline-flex;margin-top:8px;color:var(--action);font-size:13px;font-weight:800;text-decoration:none}
+  .guided-proof-link:hover{text-decoration:underline}
+  .guided-steps{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+  .guided-step{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 14px;border:1px solid var(--border);border-radius:13px;background:#fff}
+  .guided-step-index{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#edf2f8;color:var(--text-secondary);font-size:13px;font-weight:850}
+  .guided-step strong{display:block;font-size:14px}
+  .guided-step span:not(.guided-step-index):not(.guided-step-state){display:block;color:var(--text-secondary);font-size:12px;line-height:1.5}
+  .guided-step-state{font-size:11px;font-weight:800;color:var(--text-secondary);white-space:nowrap}
+  .guided-step[data-state="active"]{border-color:#91bdf5;background:#f5faff}
+  .guided-step[data-state="active"] .guided-step-index{background:var(--action);color:#fff}
+  .guided-step[data-state="done"]{border-color:#a9ddcc;background:var(--safe-soft)}
+  .guided-step[data-state="done"] .guided-step-index{background:var(--safe);color:#fff}
+  .guided-step[data-state="error"]{border-color:#f1aab4;background:var(--danger-soft)}
+  .guided-step[data-state="error"] .guided-step-index{background:var(--danger);color:#fff}
+  .guided-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+  .guided-summary .metric-card{background:#f8fbff}
+  .scenario-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .scenario-card{text-align:left;padding:15px!important;background:#f8fbff!important;border:1px solid var(--border)!important;border-radius:13px!important;min-height:138px;display:flex;flex-direction:column;gap:7px;color:var(--text-primary)!important}
+  .scenario-card:hover,.scenario-card[aria-pressed="true"]{border-color:var(--action)!important;background:#eef6ff!important;box-shadow:0 7px 18px rgba(20,99,223,.09)}
+  .scenario-card b{font-size:15px;line-height:1.35}
+  .scenario-card small{display:block;color:var(--action);font-size:11px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}
+  .scenario-card span{display:block;color:var(--text-secondary);font-size:13px;line-height:1.5}
+  .scenario-card .scenario-proof{margin-top:auto;color:var(--safe);font-weight:700}
+  .scenario-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;color:var(--text-secondary);font-size:13px}
+  .scenario-scroll-hint{display:none;color:var(--text-secondary);font-size:12px;margin:-4px 0 10px}
   .section-shell{background:var(--surface)}
   .section-shell.alt{background:#f7faff}
   .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:28px}
@@ -229,18 +276,20 @@
   .summary-box{background:#f8fbff}
   .summary-box .value{color:var(--action)}
   mark{box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:2px 3px;border-bottom:2px solid rgba(16,36,62,.22);color:var(--text-primary)}
-  .safe-hero{border-radius:28px;background:#eef6ff;border:1px solid #cfe2fb;padding:28px;box-shadow:var(--shadow-md)}
-  .safe-controls{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px}
+  #safe-ai{padding-top:54px}
+  #safe-ai .section-head{margin-bottom:20px}
+  .safe-hero{border-radius:28px;background:#eef6ff;border:1px solid #cfe2fb;padding:22px;box-shadow:var(--shadow-md)}
+  .safe-controls{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
   .safe-controls .dest-badge{background:#fff}
   .pipeline{display:grid;grid-template-columns:1fr 1.12fr 1fr;gap:16px;align-items:stretch}
   .pipeline-card{background:#fff;border:1px solid var(--border);border-radius:18px;min-width:0;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-sm)}
-  .pipeline-card.provider-evidence{border:2px solid var(--action);box-shadow:0 16px 36px rgba(20,99,223,.15);transform:translateY(-4px)}
+  .pipeline-card.provider-evidence{border:2px solid var(--action);box-shadow:0 16px 36px rgba(20,99,223,.15);transform:translateY(-4px);scroll-margin-top:140px}
   .pipeline-label{padding:15px 16px 12px;border-bottom:1px solid var(--line-soft)}
   .pipeline-label small{display:block;color:var(--action);font-size:11px;font-weight:900;letter-spacing:.07em;margin-bottom:3px}
   .pipeline-label strong{display:block;font-size:15px}
   .pipeline-label span{display:block;color:var(--text-secondary);font-size:12px;margin-top:3px}
   .pipeline-body{padding:18px;min-height:190px;font-size:16px;line-height:1.8;white-space:pre-wrap;word-break:break-word;overflow:auto;max-height:310px}
-  .pipeline-empty{color:#8091a5}
+  .pipeline-empty{color:#5f7188}
   .pipeline-body[data-filled="true"]{color:var(--text-primary);font-weight:520}
   .evidence-ribbon{display:inline-flex;align-items:center;gap:6px;color:var(--safe);font-size:12px;font-weight:800;margin-top:8px}
   .safe-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
@@ -250,10 +299,28 @@
   .progress-panel{margin:18px 0;background:#fff;border:1px solid var(--border);border-radius:14px;padding:15px 16px}
   .progress-heading{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--text-secondary);margin-bottom:10px}
   .progress-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
-  .progress-step{font-size:11.5px;color:#718299;border-top:3px solid #dce6f1;padding-top:7px;line-height:1.4}
+  .progress-step{font-size:11.5px;color:#5f7188;border-top:3px solid #dce6f1;padding-top:7px;line-height:1.4}
   .progress-step[data-state="active"]{color:var(--action);border-color:var(--action);font-weight:750}
   .progress-step[data-state="done"]{color:var(--safe);border-color:var(--safe)}
   .safe-outcome{margin-top:14px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid var(--border)}
+  .safe-outcome:empty{display:none}
+  .mode-help{max-width:390px;font-size:12px;color:var(--text-secondary);line-height:1.55;padding-bottom:2px}
+  .mode-help b{color:var(--action)}
+  .proof-callout{margin-top:18px;border:1px solid #93d6c0;background:var(--safe-soft);border-radius:14px;padding:15px 17px;display:flex;gap:12px;align-items:flex-start}
+  .proof-icon{width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;background:var(--safe);color:#fff;font-weight:900}
+  .proof-callout strong{display:block;color:var(--safe);font-size:14px}
+  .proof-callout p{font-size:12.5px;color:var(--text-secondary);margin-top:3px}
+  .evidence-panel{margin-top:20px;background:#fff;border:1px solid var(--border);border-radius:18px;padding:19px}
+  .evidence-panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}
+  .evidence-panel-head h3{font-size:17px}
+  .evidence-panel-head p{font-size:12.5px;color:var(--text-secondary)}
+  .evidence-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+  .evidence-item{padding:11px 12px;border:1px solid var(--line-soft);border-radius:11px;background:#fbfdff}
+  .evidence-item span{display:block;font-size:10.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em}
+  .evidence-item b{display:block;margin-top:2px;font-size:13.5px;word-break:break-word}
+  .trust-claims{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+  .trust-claim{font-size:11.5px;color:var(--text-secondary);display:inline-flex;align-items:center;gap:5px}
+  .trust-claim::before{content:"✓";color:var(--safe);font-weight:900}
   .report-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:24px;align-items:start}
   .report-explainer{padding:26px;background:#0d2947;color:#fff;border-radius:22px;box-shadow:var(--shadow-md)}
   .report-explainer p{color:#ccdae8;margin-top:9px}
@@ -262,6 +329,19 @@
   .report-summary{grid-template-columns:repeat(2,1fr)}
   .report-summary .summary-box .value{font-size:34px}
   .report-ready{margin-top:16px;padding:13px;background:var(--safe-soft);border:1px solid #b9e3d5;border-radius:11px;color:var(--safe);font-size:14px}
+  .report-context{margin-top:11px;padding:12px 13px;border:1px solid var(--border);border-radius:10px;background:#fbfdff;color:var(--text-secondary);font-size:12.5px;line-height:1.65}
+  .enterprise-section{background:#f7faff}
+  .enterprise-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-top:24px}
+  .enterprise-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;min-height:156px}
+  .enterprise-card small{color:var(--action);font-weight:850;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+  .enterprise-card h3{font-size:15px;margin:5px 0}
+  .enterprise-card p{font-size:12px;color:var(--text-secondary);line-height:1.6}
+  .system-evidence{margin-top:24px;background:#0d2947;color:#fff;border-radius:20px;padding:22px;display:grid;grid-template-columns:1.15fr repeat(5,1fr);gap:12px;align-items:stretch}
+  .system-evidence-intro h3{font-size:18px}
+  .system-evidence-intro p{font-size:12px;color:#c8d8e8;margin-top:5px}
+  .system-evidence-item{border:1px solid rgba(255,255,255,.16);border-radius:11px;padding:11px;background:rgba(255,255,255,.05)}
+  .system-evidence-item span{display:block;color:#acc1d5;font-size:10.5px}
+  .system-evidence-item b{display:block;margin-top:3px;font-size:13px;color:#fff}
   .trust-details{margin-top:30px;border:1px solid var(--border);border-radius:16px;background:#fff;overflow:hidden}
   .trust-details summary{cursor:pointer;padding:17px 20px;font-weight:750;color:var(--text-primary)}
   .trust-details summary:focus-visible{outline:3px solid rgba(20,99,223,.28);outline-offset:-3px}
@@ -272,9 +352,10 @@
   button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid rgba(20,99,223,.3);outline-offset:3px}
   [hidden]{display:none!important}
   .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics{grid-template-columns:1fr 1fr}.nav-proof{display:none}}
-  @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head{align-items:flex-start;flex-direction:column}.demo-studio,.safe-hero{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.workflow-nav{grid-template-columns:1fr}}
-  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}}
+  @media(max-width:1100px){.enterprise-grid{grid-template-columns:repeat(3,1fr)}.system-evidence{grid-template-columns:repeat(3,1fr)}.system-evidence-intro{grid-column:1/-1}}
+  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid{grid-template-columns:1fr 1fr}.nav-proof{display:none}}
+  @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head,.guided-top{align-items:flex-start;flex-direction:column}.demo-studio,.safe-hero,.guided-shell{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics,.guided-summary{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.workflow-nav{grid-template-columns:1fr}.scenario-gallery,.enterprise-grid{grid-template-columns:1fr 1fr}.system-evidence{grid-template-columns:1fr 1fr}}
+  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}}
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.pipeline-card.provider-evidence{transform:none}}
 </style>
 </head>
@@ -293,7 +374,7 @@
   </div>
 </header>
 
-<main id="main-content">
+<main id="main-content" tabindex="-1">
 
 <!-- First five seconds: proposition, protection flow, and access -->
 <section class="hero-section" id="top">
@@ -307,9 +388,13 @@
           <b>ตรวจจับ</b><span>→</span><b>ปกปิด</b><span>→</span><b>ส่งเฉพาะข้อความที่ปกป้องแล้ว</b><span>→</span><b>กู้คืน</b>
         </div>
         <div class="trust-row" aria-label="หลักการปกป้อง">
-          <span class="trust-item">Thai PII detection</span>
-          <span class="trust-item">Mapping ไม่ส่งให้โมเดล</span>
-          <span class="trust-item">ไม่บันทึกข้อมูลถาวรใน browser</span>
+          <span class="trust-item">ตรวจจับ PII ภาษาไทย</span>
+          <span class="trust-item">ข้อมูลจับคู่ไม่ถูกส่งให้โมเดล</span>
+          <span class="trust-item">ไม่บันทึกเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
+        </div>
+        <div class="hero-actions">
+          <a class="hero-cta" href="#guided-demo">ดูเดโมครบ 3 ขั้นตอน</a>
+          <span>ใช้ข้อมูลสังเคราะห์ · ส่ง Safe AI API เพียง 1 ครั้งต่อรอบ</span>
         </div>
       </div>
 
@@ -328,7 +413,7 @@
           <button id="logoutBtn" class="secondary-action" type="button" hidden>ออกจากระบบและล้างข้อมูล</button>
           <span id="authStatus" role="status" aria-live="polite">กำลังตรวจสอบสิทธิ์...</span>
         </div>
-        <p>ระบบใช้ session cookie อายุไม่เกิน 30 นาทีแบบ Secure และ HttpOnly โดยไม่บันทึก access code ลง browser storage</p>
+        <p>ระบบใช้ session cookie อายุไม่เกิน 30 นาทีแบบ Secure และ HttpOnly โดยไม่บันทึก access code ลงพื้นที่จัดเก็บของเบราว์เซอร์</p>
       </aside>
     </div>
 
@@ -337,6 +422,64 @@
       <a class="workflow-card flagship" href="#safe-ai"><span class="step">WORKFLOW 02</span><strong>Safe AI</strong><span>พิสูจน์ให้เห็นว่าข้อความใดถูกส่งให้ thaillm-8b จริง ก่อนกู้คืนผลลัพธ์</span></a>
       <a class="workflow-card" href="#pdpa-report"><span class="step">WORKFLOW 03</span><strong>PDPA Report</strong><span>ดูคะแนนและเกรดก่อนดาวน์โหลดรายงานภาษาไทยที่ลดการเปิดเผยข้อมูล</span></a>
     </nav>
+  </div>
+</section>
+
+<!-- Guided Demo coordinates the three existing workflows; it adds no API route. -->
+<section class="guided-section" id="guided-demo" aria-labelledby="guidedTitle">
+  <div class="container">
+    <div class="guided-shell">
+      <div class="guided-top">
+        <div>
+          <p class="workflow-number">Guided Demo · เส้นทางแนะนำสำหรับกรรมการ</p>
+          <h2 id="guidedTitle">เห็นคุณค่าครบทั้ง 3 เวิร์กโฟลว์ในครั้งเดียว</h2>
+          <p>กดครั้งเดียวเพื่อใช้ตัวอย่างสังเคราะห์ แล้วเรียก Privacy Scan → Safe AI → PDPA Report ตามลำดับจริง ระบบจะหยุดอย่างปลอดภัยหากขั้นใดไม่ผ่าน และไม่สร้างผลสำเร็จจำลอง</p>
+        </div>
+        <span class="guided-badge">เรียก SAFE AI 1 ครั้งต่อรอบ</span>
+      </div>
+
+      <div class="guided-layout">
+        <div class="guided-control">
+          <h3>พร้อมเริ่มเส้นทางปกป้องข้อมูล</h3>
+          <p>หากยังไม่เลือกสถานการณ์ ระบบจะใช้ตัวอย่างสมัครงานสังเคราะห์แบบกำหนดตายตัว โดยไม่ส่งอะไรจนกดเริ่ม</p>
+          <div class="guided-selection">
+            <small>สถานการณ์ที่เลือก</small>
+            <b id="guidedScenario">สมัครงาน / HR · ข้อมูลสังเคราะห์</b>
+          </div>
+          <div class="guided-actions">
+            <button id="guidedStart" class="primary primary-action" type="button">เริ่ม Guided Demo</button>
+            <button id="guidedReset" class="secondary-action" type="button">หยุดและเริ่มใหม่</button>
+          </div>
+          <div class="guided-status" id="guidedStatus" role="status" aria-live="polite">เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง</div>
+          <a class="guided-proof-link" id="guidedProofLink" href="#providerEvidenceCard" hidden>ดู “ข้อความที่ส่งให้ AI จริง” ↓</a>
+        </div>
+
+        <ol class="guided-steps" aria-label="สถานะ Guided Demo">
+          <li class="guided-step" id="guidedStepScan" data-state="idle">
+            <span class="guided-step-index" aria-hidden="true">01</span>
+            <div><strong>Privacy Scan</strong><span>ตรวจจับและไฮไลต์ PII พร้อมสรุปประเภท</span></div>
+            <span class="guided-step-state" id="guidedStateScan">รอเริ่ม</span>
+          </li>
+          <li class="guided-step" id="guidedStepSafe" data-state="idle">
+            <span class="guided-step-index" aria-hidden="true">02</span>
+            <div><strong>Safe AI</strong><span>ส่งข้อความที่ปกป้องแล้วให้ Pathumma และหยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span></div>
+            <span class="guided-step-state" id="guidedStateSafe">รอเริ่ม</span>
+          </li>
+          <li class="guided-step" id="guidedStepReport" data-state="idle">
+            <span class="guided-step-index" aria-hidden="true">03</span>
+            <div><strong>PDPA Report</strong><span>สร้างคะแนนและเกรดที่ระบบคำนวณจริงก่อนให้ดาวน์โหลด</span></div>
+            <span class="guided-step-state" id="guidedStateReport">รอเริ่ม</span>
+          </li>
+        </ol>
+      </div>
+
+      <div class="guided-summary" aria-live="polite">
+        <div class="metric-card"><b id="guidedPii">—</b><span>PII ที่ตรวจพบจริง</span></div>
+        <div class="metric-card"><b id="guidedMode">Token</b><span>รูปแบบการปกป้อง</span></div>
+        <div class="metric-card"><b id="guidedSafety">รอผล</b><span>ความปลอดภัยและการกู้คืน</span></div>
+        <div class="metric-card"><b id="guidedTiming">—</b><span>เวลารวมที่วัดในเบราว์เซอร์</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -353,14 +496,27 @@
     </div>
 
     <div class="demo-studio">
-      <div class="samples" aria-label="ตัวอย่างสังเคราะห์สำหรับเดโม">
-        <span class="samples-label">เลือกตัวอย่าง</span>
-        <button type="button" data-sample="ใบสมัครงานสังเคราะห์: นางสาวอรุณี ตัวอย่าง สมัครตำแหน่งนักวิเคราะห์ ติดต่อ 081-000-1020 หรือ arunee@example.invalid ที่อยู่ 88/8 ถนนตัวอย่าง เขตบางรัก กรุงเทพมหานคร">สมัครงาน / CV</button>
-        <button type="button" data-sample="เวชระเบียนสังเคราะห์: ผู้ป่วยชื่อ นางสาวสมมุติ ทดสอบ เลขบัตรประชาชน 1-1017-00230-70-8 เกิดวันที่ 12 มีนาคม 2534 มีประวัติแพ้ยาปฏิชีวนะ ติดต่อ 082-000-2040">โรงพยาบาล</button>
-        <button type="button" data-sample="ข้อมูลนักเรียนสังเคราะห์: เด็กชายเรียนดี ตัวอย่าง รหัสนักศึกษา 65001234 ผู้ปกครองชื่อ นายทดสอบ ใจดี โทร 083-000-3060 โรงเรียนสาธิตตัวอย่าง">โรงเรียน</button>
-        <button type="button" data-sample="บทสนทนาสังเคราะห์: ลูกค้าชื่อ คุณบริการ ดีมาก แจ้งหมายเลขโทรศัพท์ 084-000-4080 และอีเมล service@example.invalid เพื่อให้ติดต่อเรื่องคำสั่งซื้อ">บริการลูกค้า</button>
-        <button type="button" data-sample="เอกสารราชการสังเคราะห์: ขอเชิญ นายประชาชน ตัวอย่าง บ้านเลขที่ 99/12 ถนนสาธิต ตำบลหาดใหญ่ อำเภอหาดใหญ่ จังหวัดสงขลา 90110 โทร 074-000-505">เอกสารราชการ</button>
-        <button type="button" data-action="reset" id="resetDemo">↺ เริ่มใหม่</button>
+      <div class="scenario-gallery" aria-label="ตัวอย่างสังเคราะห์สำหรับเดโม">
+        <button class="scenario-card" type="button" data-scenario="hr" aria-pressed="false" data-sample="ใบสมัครงานสังเคราะห์: นางสาวอรุณี ตัวอย่าง สมัครตำแหน่งนักวิเคราะห์ ติดต่อ 081-000-1020 หรือ arunee@example.invalid ที่อยู่ 88/8 ถนนตัวอย่าง เขตบางรัก กรุงเทพมหานคร กรุณาสรุปผู้สมัคร 2 ประโยค โดยระบุชื่อ ตำแหน่ง เบอร์โทรศัพท์ และอีเมล">
+          <small>HR</small><b>สมัครงาน</b><span>คาดว่าอาจพบ: ชื่อ · โทรศัพท์ · อีเมล · ที่อยู่</span><span>ความเสี่ยง: ส่ง CV เข้า AI ภายนอก</span><span class="scenario-proof">จุดสาธิต: ปกป้องก่อนคัดกรอง</span>
+        </button>
+        <button class="scenario-card" type="button" data-scenario="healthcare" aria-pressed="false" data-sample="เวชระเบียนสังเคราะห์: ผู้ป่วยชื่อ นางสาวสมมุติ ทดสอบ เลขบัตรประชาชน 1-1017-00230-70-8 เกิดวันที่ 12 มีนาคม 2534 มีประวัติแพ้ยาปฏิชีวนะ ติดต่อ 082-000-2040 กรุณาสรุปเพื่อส่งต่อแพทย์ 2 ประโยค โดยระบุชื่อ วันเกิด ประวัติแพ้ยา และเบอร์โทรศัพท์">
+          <small>Healthcare</small><b>โรงพยาบาล</b><span>คาดว่าอาจพบ: ชื่อ · เลขประชาชน · วันเกิด · สุขภาพ</span><span>ความเสี่ยง: สรุปเวชระเบียนด้วย AI</span><span class="scenario-proof">จุดสาธิต: ดูผล PII/มาตรา 26 หลังเรียกจริง</span>
+        </button>
+        <button class="scenario-card" type="button" data-scenario="education" aria-pressed="false" data-sample="ข้อมูลนักเรียนสังเคราะห์: เด็กชายเรียนดี ตัวอย่าง รหัสนักศึกษา 65001234 ผู้ปกครองชื่อ นายทดสอบ ใจดี โทร 083-000-3060 โรงเรียนสาธิตตัวอย่าง กรุณาสรุปบันทึกนักเรียน 2 ประโยค โดยระบุชื่อนักเรียน รหัส ชื่อผู้ปกครอง และเบอร์โทรศัพท์">
+          <small>Education</small><b>โรงเรียน</b><span>คาดว่าอาจพบ: ชื่อ · รหัส · ผู้ปกครอง · โทรศัพท์</span><span>ความเสี่ยง: ส่งข้อมูลผู้เรียนให้ AI ช่วยสรุป</span><span class="scenario-proof">จุดสาธิต: ลดข้อมูลก่อน AI</span>
+        </button>
+        <button class="scenario-card" type="button" data-scenario="customer-service" aria-pressed="false" data-sample="บทสนทนาสังเคราะห์: ลูกค้าชื่อ คุณบริการ ดีมาก แจ้งหมายเลขโทรศัพท์ 084-000-4080 และอีเมล service@example.invalid เพื่อให้ติดต่อเรื่องคำสั่งซื้อ กรุณาร่างบันทึกส่งต่อ 2 ประโยค โดยระบุชื่อลูกค้า เบอร์โทรศัพท์ และอีเมล">
+          <small>Customer Service</small><b>บริการลูกค้า</b><span>คาดว่าอาจพบ: ชื่อ · โทรศัพท์ · อีเมล</span><span>ความเสี่ยง: ให้ AI ร่างคำตอบจากบทสนทนา</span><span class="scenario-proof">จุดสาธิต: ลดการเปิดเผยบริบท</span>
+        </button>
+        <button class="scenario-card" type="button" data-scenario="government" aria-pressed="false" data-sample="เอกสารราชการสังเคราะห์: ขอเชิญ นายประชาชน ตัวอย่าง บ้านเลขที่ 99/12 ถนนสาธิต ตำบลหาดใหญ่ อำเภอหาดใหญ่ จังหวัดสงขลา 90110 โทร 074-000-505 กรุณาสรุปหนังสือเชิญ 2 ประโยค โดยระบุชื่อผู้รับ ที่อยู่ และเบอร์โทรศัพท์">
+          <small>Government</small><b>เอกสารราชการ</b><span>คาดว่าอาจพบ: ชื่อ · ที่อยู่ · จังหวัด · โทรศัพท์</span><span>ความเสี่ยง: ใช้ AI ช่วยสรุปงานเอกสาร</span><span class="scenario-proof">จุดสาธิต: หลักฐานและรายงาน PDPA</span>
+        </button>
+      </div>
+      <p class="scenario-scroll-hint">เลื่อนเพื่อดูสถานการณ์เพิ่มเติม แล้วแตะเพื่อเลือกโดยยังไม่ส่งข้อมูล</p>
+      <div class="scenario-toolbar">
+        <span id="scenarioStatus">ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น</span>
+        <button type="button" data-action="reset" id="resetDemo">↺ ล้างผลและเริ่มใหม่</button>
       </div>
 
       <label class="input-label" for="editor">ข้อความสำหรับทั้ง 3 เวิร์กโฟลว์ <span id="characterCount">0 / 20,000 ตัวอักษร</span></label>
@@ -369,6 +525,7 @@
         <button id="scanBtn" class="primary primary-action" type="button">สแกนข้อมูลส่วนบุคคล</button>
         <span class="status-line" id="meta" role="status" aria-live="polite">เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น</span>
       </div>
+      <div class="status-line" id="scanTiming" aria-live="polite">ยังไม่มีเวลาคำขอ</div>
     </div>
 
     <div class="privacy-grid">
@@ -406,18 +563,19 @@
     <div class="safe-hero">
       <div class="safe-controls">
         <label class="field" for="mode">รูปแบบการปกป้อง
-          <select id="mode">
-            <option value="token">แทนที่ด้วยโทเคน</option>
+          <select id="mode" aria-describedby="modeDescription">
+            <option value="token">Token · placeholder แบบวงเล็บ (แนะนำ)</option>
             <option value="surrogate">แทนที่ด้วยข้อมูลสมมุติ</option>
           </select>
         </label>
+        <div class="mode-help" id="modeDescription"><b>Token — แนะนำ:</b> placeholder แบบวงเล็บบอกประเภท แต่ไม่เปิดเผยค่าจริง เหมาะกับการกู้คืนภายในคำขอเดียว</div>
         <span class="dest-badge">โมเดลปลายทาง <b>Pathumma · thaillm-8b</b></span>
         <button id="safeDemoBtn" class="secondary-action" type="button">ใช้ตัวอย่างสังเคราะห์</button>
         <button id="send" class="primary primary-action" type="button">ปกป้องและส่งให้ Safe AI</button>
       </div>
 
       <div class="progress-panel" id="safeProgress" hidden>
-        <div class="progress-heading"><strong>ลำดับการปกป้อง</strong><span>ข้อความแสดงลำดับโดยประมาณ จนกว่าระบบจะตอบกลับ</span></div>
+        <div class="progress-heading"><strong>ลำดับการปกป้อง</strong><span>ข้อความแสดงลำดับโดยประมาณ · ไม่ใช่เวลารายขั้นจากเซิร์ฟเวอร์</span></div>
         <div class="progress-steps" aria-hidden="true">
           <span class="progress-step" id="safeStage0">ตรวจหาข้อมูลส่วนบุคคล</span>
           <span class="progress-step" id="safeStage1">ปกป้องข้อมูลสำคัญ</span>
@@ -427,15 +585,16 @@
         </div>
       </div>
 
-      <div class="safe-outcome status-line" id="safeElapsed" role="status" aria-live="polite">ใส่ข้อความ แล้วกดปุ่มเพื่อเริ่มเส้นทางจริงผ่าน API</div>
+      <div class="safe-outcome status-line" id="safeElapsed">ใส่ข้อความ แล้วกดปุ่มเพื่อเริ่มเส้นทางจริงผ่าน API</div>
+      <div class="visually-hidden" id="safeAnnouncement" role="status" aria-live="polite"></div>
 
       <div class="pipeline" aria-label="เส้นทาง Safe AI สามขั้น">
         <article class="pipeline-card">
           <div class="pipeline-label"><small>01 · ORIGINAL</small><strong>ข้อความต้นฉบับ</strong><span>ข้อความที่เลือกสำหรับเดโม</span></div>
           <div class="pipeline-body pipeline-empty" id="safeOriginal">กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที</div>
         </article>
-        <article class="pipeline-card provider-evidence">
-          <div class="pipeline-label"><small>02 · AI INPUT</small><strong>ข้อความที่ส่งให้ AI จริง</strong><span>ข้อความที่โมเดลได้รับ หลังตรวจซ้ำ</span><span class="evidence-ribbon">✓ จุดพิสูจน์สำคัญของ Safe AI</span></div>
+        <article class="pipeline-card provider-evidence" id="providerEvidenceCard">
+          <div class="pipeline-label"><small>02 · WHAT THE AI SAW</small><strong>ข้อความที่ส่งให้ AI จริง</strong><span>ข้อความที่ AI Guard ส่งต่อหลังปกป้องและตรวจซ้ำ</span><span class="evidence-ribbon">✓ จุดพิสูจน์สำคัญของ Safe AI</span></div>
           <div class="pipeline-body pipeline-empty" id="masked">ยังไม่ได้ส่ง</div>
         </article>
         <article class="pipeline-card">
@@ -444,13 +603,41 @@
         </article>
       </div>
 
+      <div class="proof-callout" id="proofCallout">
+        <span class="proof-icon" aria-hidden="true">✓</span>
+        <div><strong id="proofStatus">รอผล Safe AI</strong><p id="proofMethod">เมื่อ Privacy Scan และ Safe AI ใช้ข้อความเดียวกัน เบราว์เซอร์จะเปรียบเทียบค่าที่ตรวจพบกับข้อความที่ส่งให้ AI โดยไม่แสดงข้อมูลจับคู่</p></div>
+      </div>
+
       <div class="safe-metrics" aria-live="polite">
         <div class="metric-card"><b id="safeCount">—</b><span>PII ที่ตรวจพบ</span></div>
         <div class="metric-card"><b id="safeTypes">—</b><span id="safeTypeLabels">ประเภทข้อมูลที่ตรวจพบ</span></div>
         <div class="metric-card"><b id="safeProtection">รอผล</b><span>สถานะการปกป้อง</span></div>
         <div class="metric-card"><b id="safeRestoration">รอผล</b><span>สถานะการกู้คืน</span></div>
       </div>
-      <div class="safe-outcome" id="evidenceWarnings"><span class="chip ok-chip">ยังไม่มีข้อมูลความปลอดภัย</span></div>
+
+      <section class="evidence-panel" id="protectionEvidence" aria-labelledby="evidenceTitle">
+        <div class="evidence-panel-head">
+          <div><h3 id="evidenceTitle">หลักฐานการปกป้อง · Protection Evidence</h3><p>แสดงเฉพาะผลจาก API จริงและหลักการที่มีการทดสอบรองรับ</p></div>
+          <span class="demo-label">ไม่ส่งข้อมูลจับคู่ให้โมเดล</span>
+        </div>
+        <div class="evidence-grid" aria-live="polite">
+          <div class="evidence-item"><span>รูปแบบการปกป้อง</span><b id="safeMode">Token</b></div>
+          <div class="evidence-item"><span>โมเดลปลายทาง</span><b id="safeProvider">รอผล</b></div>
+          <div class="evidence-item"><span>สัญญาณ PII หลังตรวจซ้ำ</span><b id="safeResidual">รอผล</b></div>
+          <div class="evidence-item"><span>โทเคนตกค้างหลังการกู้คืน</span><b id="safeLeftover">รอผล</b></div>
+          <div class="evidence-item"><span>สถานะตรวจความปลอดภัย</span><b id="safeEvidenceSafety">รอผล</b></div>
+          <div class="evidence-item"><span>สถานะการกู้คืน</span><b id="safeEvidenceRestoration">รอผล</b></div>
+          <div class="evidence-item"><span>หมวดอ่อนไหว ม.26</span><b id="safeSection26">รอผล</b></div>
+          <div class="evidence-item"><span>เวลารวมบนหน้าเว็บ</span><b id="safeDuration">—</b></div>
+        </div>
+        <div class="safe-outcome" id="evidenceWarnings"><span class="chip ok-chip">ยังไม่มีข้อมูลความปลอดภัย</span></div>
+        <div class="trust-claims">
+          <span class="trust-claim">ข้อมูลจับคู่ไม่ถูกส่งให้โมเดล</span>
+          <span class="trust-claim">คีย์ของโมเดลอยู่ฝั่งเซิร์ฟเวอร์</span>
+          <span class="trust-claim">ไม่เก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
+          <span class="trust-claim">หยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span>
+        </div>
+      </section>
       <div class="visually-hidden" id="evidenceSanitized">ยังไม่มีข้อมูล</div>
     </div>
 
@@ -461,7 +648,8 @@
           <b>ข้อความไทย</b><span>→</span><b>ตรวจจับ PII</b><span>→</span><b>ปกปิด</b><span>→</span><b>โมเดล AI</b><span>→</span><b>ตรวจคำตอบ</b><span>→</span><b>กู้คืน</b>
         </div>
         <p>ข้อความต้นฉบับเดินทางถึงแพลตฟอร์มและเซิร์ฟเวอร์ AI Guard ก่อน จากนั้นจึงปกปิดและตรวจซ้ำก่อนส่งต่อจากเซิร์ฟเวอร์ไปยังโมเดลภาษา การจับคู่ใช้ชั่วคราวภายในคำขอเดียว ไม่ส่งให้โมเดล และ response ไม่คืน mapping หรือ token-bearing entity projection</p>
-        <p>การปกปิดเป็น pseudonymization ไม่ใช่ anonymization ถาวร ข้อความที่ปกปิดแล้วจึงยังต้องได้รับการดูแลตาม PDPA</p>
+        <p>การปกปิดเป็น pseudonymization ไม่ใช่ anonymization ถาวร ข้อความที่ปกปิดแล้วจึงยังต้องได้รับการดูแลตาม PDPA การตรวจจับอัตโนมัติมีโอกาสพลาดได้ จึงควรมี human review สำหรับงานความเสี่ยงสูง</p>
+        <p>หนึ่งการกด Safe AI เรียก <code>/roundtrip</code> หนึ่งครั้ง ฝั่งเซิร์ฟเวอร์อาจลอง provider เดิมซ้ำตาม retry policy ที่จำกัดไว้ แต่ไม่มีการ fallback ไป provider อื่น</p>
       </div>
     </details>
   </div>
@@ -498,21 +686,52 @@
           <div class="summary-box"><div class="value" id="reportGrade">—</div><div class="label">เกรดที่ระบบส่งกลับ</div></div>
         </div>
         <div class="report-ready" id="reportScope">ยังไม่ได้สร้างรายงาน</div>
+        <div class="report-context" id="reportCategories">ประเภทข้อมูลจะแสดงจาก Privacy Scan ของข้อความเดียวกัน โดยไม่ใส่ข้อความต้นฉบับในสรุปนี้</div>
         <div class="action-row">
           <button id="reportBtn" class="primary primary-action" type="button">วิเคราะห์รายงาน PDPA</button>
           <button id="reportDownloadBtn" class="secondary-action" type="button" hidden>ดาวน์โหลดรายงาน PDPA</button>
         </div>
         <div class="pdfmeta status-line" id="reportMeta" role="status" aria-live="polite"></div>
+        <div class="status-line" id="reportTiming" aria-live="polite">ยังไม่มีเวลาคำขอ</div>
       </div>
     </div>
 
     <details class="trust-details">
       <summary>ขอบเขตความเป็นส่วนตัวและข้อจำกัดที่ควรรู้</summary>
       <div class="trust-details-content">
-        <p>หน้าเว็บและ health เปิดอ่านได้ แต่ business API ทุกเส้นต้อง login ผ่าน cookie แบบ HttpOnly ข้อมูลต้นฉบับวิ่งผ่าน reverse proxy และเซิร์ฟเวอร์ของทีมก่อนถูกปกปิด ไม่มีฐานข้อมูลผู้ใช้ และโค้ดหน้านี้ไม่ใช้พื้นที่จัดเก็บถาวรใน browser</p>
+        <p>หน้าเว็บและ health เปิดอ่านได้ แต่ business API ทุกเส้นต้อง login ผ่าน cookie แบบ HttpOnly ข้อมูลต้นฉบับวิ่งผ่าน reverse proxy และเซิร์ฟเวอร์ของทีมก่อนถูกปกปิด ไม่มีฐานข้อมูลผู้ใช้ และโค้ดหน้านี้ไม่ใช้พื้นที่จัดเก็บถาวรสำหรับเนื้อหาผู้ใช้ในเบราว์เซอร์</p>
         <p>AI Guard เน้น recall แต่ไม่รับประกันการตรวจพบ 100% หมวดอ่อนไหวตามมาตรา 26 ที่ API รองรับจะแสดงเป็นคำเตือนตามผลจริง และไม่ถูกปกปิดอัตโนมัติเพียงเพราะอยู่ในหมวดดังกล่าว</p>
       </div>
     </details>
+  </div>
+</section>
+
+<section class="enterprise-section" id="enterprise-value" aria-labelledby="enterpriseTitle">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="workflow-number">สำหรับองค์กร · For Organizations</p>
+        <h2 class="section-title" id="enterpriseTitle">ชั้นปกป้องข้อมูลก่อนองค์กรใช้ AI</h2>
+        <p class="section-sub">ใช้หลักการเดียวกันกับงานที่มีข้อมูลบุคคลหลายบริบท โดยคง provider credential และการกู้คืนไว้ฝั่งเซิร์ฟเวอร์</p>
+      </div>
+      <span class="demo-label">ภาษาไทยเป็นหลัก · เว็บไซต์เดียวกัน</span>
+    </div>
+    <div class="enterprise-grid">
+      <article class="enterprise-card"><small>HR</small><h3>คัดกรองใบสมัคร</h3><p>ลดการเปิดเผยชื่อ ช่องทางติดต่อ และที่อยู่ ก่อนส่งบริบทให้ AI ช่วยสรุป</p></article>
+      <article class="enterprise-card"><small>Healthcare</small><h3>สรุปงานสุขภาพ</h3><p>มองเห็นข้อมูลระบุตัวและหมวดข้อมูลอ่อนไหวตามมาตรา 26 ที่ระบบพบ โดยไม่อ้างว่าเป็นคำรับรองทางกฎหมาย</p></article>
+      <article class="enterprise-card"><small>Education</small><h3>ช่วยงานผู้เรียน</h3><p>ปกป้องข้อมูลนักเรียนและผู้ปกครองก่อนใช้โมเดลภายนอกช่วยจัดเนื้อหา</p></article>
+      <article class="enterprise-card"><small>Customer Service</small><h3>ร่างคำตอบลูกค้า</h3><p>รักษาบริบทการสนทนา พร้อมลดการส่งชื่อ โทรศัพท์ และอีเมลที่ไม่จำเป็น</p></article>
+      <article class="enterprise-card"><small>Government</small><h3>งานเอกสารภาครัฐ</h3><p>เพิ่มหลักฐานการปกป้องและสรุป PDPA สำหรับกระบวนงานเอกสารภาษาไทย</p></article>
+    </div>
+
+    <div class="system-evidence" id="systemEvidence" aria-label="หลักฐานสถานะระบบ">
+      <div class="system-evidence-intro"><h3>หลักฐานสถานะระบบ · System Evidence</h3><p>ตรวจสถานะบริการครั้งเดียวเมื่อเปิดหน้า ไม่ตรวจซ้ำต่อเนื่องและไม่แสดงข้อมูลภายใน</p></div>
+      <div class="system-evidence-item"><span>สถานะบริการ</span><b id="serviceStatus">กำลังตรวจสอบ</b></div>
+      <div class="system-evidence-item"><span>เวอร์ชันผลิตภัณฑ์</span><b id="serviceVersion">—</b></div>
+      <div class="system-evidence-item"><span>รูปแบบการปกป้อง</span><b id="systemMode">Token</b></div>
+      <div class="system-evidence-item"><span>โมเดลปลายทาง</span><b>Pathumma · thaillm-8b</b></div>
+      <div class="system-evidence-item"><span>ขอบเขตเวอร์ชัน Hosted</span><b>การลบ PII ใน PDF/OCR แบบสาธารณะ: ปิด</b></div>
+    </div>
   </div>
 </section>
 
@@ -534,7 +753,34 @@ const COLORS = {
   EMAIL: "var(--c-email)", ADDRESS: "var(--c-addr)", LOCATION: "var(--c-addr)",
   DATE: "var(--c-date)", DATE_OF_BIRTH: "var(--c-date)", ORGANIZATION: "var(--c-org)",
 };
-const SAFE_AI_DEMO_TEXT = "ใบสมัครงานสังเคราะห์: นางสาวอรุณี ตัวอย่าง สมัครตำแหน่งนักวิเคราะห์ ติดต่อ 081-000-1020 หรือ arunee@example.invalid ที่อยู่ 88/8 ถนนตัวอย่าง เขตบางรัก กรุงเทพมหานคร";
+const SAFE_AI_DEMO_TEXT = "ใบสมัครงานสังเคราะห์: นางสาวอรุณี ตัวอย่าง สมัครตำแหน่งนักวิเคราะห์ ติดต่อ 081-000-1020 หรือ arunee@example.invalid ที่อยู่ 88/8 ถนนตัวอย่าง เขตบางรัก กรุงเทพมหานคร กรุณาสรุปผู้สมัคร 2 ประโยค โดยระบุชื่อ ตำแหน่ง เบอร์โทรศัพท์ และอีเมล";
+const SCENARIO_LABELS = Object.freeze({
+  hr: "สมัครงาน / HR · ข้อมูลสังเคราะห์",
+  healthcare: "โรงพยาบาล / Healthcare · ข้อมูลสังเคราะห์",
+  education: "โรงเรียน / Education · ข้อมูลสังเคราะห์",
+  "customer-service": "บริการลูกค้า / Customer Service · ข้อมูลสังเคราะห์",
+  government: "เอกสารราชการ / Government · ข้อมูลสังเคราะห์",
+  custom: "ข้อความที่ผู้ใช้กรอกเอง",
+});
+const MODE_DETAILS = Object.freeze({
+  token: {
+    label: "Token",
+    description: "ใช้ placeholder แบบวงเล็บที่บอกประเภท แต่ไม่เปิดเผยค่าจริง และกู้คืนได้ภายในคำขอเดียว",
+  },
+  surrogate: {
+    label: "Surrogate",
+    description: "ใช้ข้อมูลสมมุติที่รักษารูปแบบภาษาให้เป็นธรรมชาติมากขึ้น และยังคงกู้คืนภายในคำขอเดียว",
+  },
+});
+function normalizeProtectionMode(value) {
+  return Object.prototype.hasOwnProperty.call(MODE_DETAILS, value) ? value : "token";
+}
+function selectedProtectionMode() {
+  const select = document.getElementById("mode");
+  const mode = normalizeProtectionMode(select.value);
+  if (select.value !== mode) select.value = mode;
+  return mode;
+}
 const THAI_LABELS = {
   NAME: "ชื่อบุคคล", THAI_ID: "เลขบัตรประชาชน", PHONE: "เบอร์โทรศัพท์",
   EMAIL: "อีเมล", ADDRESS: "ที่อยู่", LOCATION: "สถานที่", DATE: "วันที่",
@@ -594,11 +840,16 @@ let authGeneration = 0;
 let detectGeneration = 0;
 let roundtripGeneration = 0;
 let reportGeneration = 0;
+let guidedGeneration = 0;
 let authCheckGeneration = 0;
 let authCheckController = null;
 let authMutationInFlight = false;
 let safeProgressTimer = null;
 let preparedReport = null;
+let guidedRunning = false;
+let selectedScenario = "hr";
+let lastDetection = null;
+let lastRoundtrip = null;
 const businessControllers = new Set();
 const accessCodeInput = document.getElementById("accessCode");
 const loginBtn = document.getElementById("loginBtn");
@@ -644,49 +895,128 @@ function clearPreparedReport() {
   document.getElementById("reportDownloadBtn").hidden = true;
 }
 
-function clearSensitiveState() {
-  clearTimeout(debounceTimer);
-  clearSafeProgress();
-  clearPreparedReport();
-  detectGeneration += 1;
-  roundtripGeneration += 1;
-  reportGeneration += 1;
-  accessCodeInput.value = "";
-  editor.value = "";
-  highlight.textContent = "";
-  document.getElementById("characterCount").textContent = "0 / 20,000 ตัวอักษร";
+function monotonicNow() {
+  return typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now();
+}
+
+function formatElapsed(startedAt) {
+  return `${((monotonicNow() - startedAt) / 1000).toFixed(1)} วินาที`;
+}
+
+function setGuidedStep(name, state, label) {
+  const suffix = name === "scan" ? "Scan" : name === "safe" ? "Safe" : "Report";
+  document.getElementById("guidedStep" + suffix).dataset.state = state;
+  document.getElementById("guidedState" + suffix).textContent = label;
+}
+
+function resetGuidedPresentation(message = "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง") {
+  guidedRunning = false;
+  for (const name of ["scan", "safe", "report"]) setGuidedStep(name, "idle", "รอเริ่ม");
+  document.getElementById("guidedStatus").textContent = message;
+  document.getElementById("guidedStatus").dataset.tone = "";
+  document.getElementById("guidedPii").textContent = "—";
+  document.getElementById("guidedMode").textContent = MODE_DETAILS[selectedProtectionMode()].label;
+  document.getElementById("guidedSafety").textContent = "รอผล";
+  document.getElementById("guidedTiming").textContent = "—";
+  document.getElementById("guidedProofLink").hidden = true;
+}
+
+function resetScanPresentation(message = "เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น") {
+  lastDetection = null;
+  highlight.textContent = editor.value.trim() ? "กดสแกนเพื่อดูตำแหน่ง PII" : "ผลการไฮไลต์จะแสดงที่นี่หลังสแกน";
   renderLegend({});
-  meta.textContent = "เข้าสู่ระบบก่อนส่งข้อความไปประมวลผล";
-  document.getElementById("guardBar").textContent = "";
   document.getElementById("piiCount").textContent = "0";
   document.getElementById("piiTypeCount").textContent = "0";
   document.getElementById("piiTypes").textContent = "ยังไม่มีข้อมูลให้วิเคราะห์";
+  document.getElementById("guardBar").textContent = "";
+  document.getElementById("scanTiming").textContent = "ยังไม่มีเวลาคำขอ";
+  meta.textContent = message;
+  meta.dataset.tone = "";
+}
 
-  document.getElementById("safeOriginal").textContent = "กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที";
-  document.getElementById("masked").textContent = "ยังไม่ได้ส่ง";
-  document.getElementById("restored").textContent = "ยังไม่ได้ส่ง";
-  document.getElementById("safeOriginal").dataset.filled = "false";
-  document.getElementById("masked").dataset.filled = "false";
-  document.getElementById("restored").dataset.filled = "false";
-  document.getElementById("masked").dataset.tone = "";
-  document.getElementById("restored").dataset.tone = "";
-  document.getElementById("safeElapsed").textContent = "";
+function resetSafePresentation(message) {
+  clearSafeProgress();
+  lastRoundtrip = null;
+  document.getElementById("safeOriginal").textContent = editor.value || "กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที";
+  document.getElementById("masked").textContent = editor.value.trim() ? "รอกดส่งข้อความชุดนี้" : "ยังไม่ได้ส่ง";
+  document.getElementById("restored").textContent = editor.value.trim() ? "ยังไม่มีผลสำหรับข้อความชุดนี้" : "ยังไม่ได้ส่ง";
+  document.getElementById("safeOriginal").dataset.filled = editor.value.trim() ? "true" : "false";
+  for (const id of ["masked", "restored"]) {
+    document.getElementById(id).dataset.filled = "false";
+    document.getElementById(id).dataset.tone = "";
+  }
+  document.getElementById("safeElapsed").textContent = message === undefined
+    ? (editor.value.trim() ? "พร้อมเริ่มเส้นทาง Safe AI" : "กด “ใช้ตัวอย่างสังเคราะห์” หรือเลือกข้อความจาก Privacy Scan")
+    : message;
   document.getElementById("safeElapsed").dataset.tone = "";
+  document.getElementById("safeAnnouncement").textContent = "";
   document.getElementById("safeCount").textContent = "—";
   document.getElementById("safeTypes").textContent = "—";
   document.getElementById("safeTypeLabels").textContent = "ประเภทข้อมูลที่ตรวจพบ";
   document.getElementById("safeProtection").textContent = "รอผล";
   document.getElementById("safeRestoration").textContent = "รอผล";
-  const tag = document.getElementById("providerTag");
-  tag.hidden = true;
-  tag.textContent = "";
+  document.getElementById("safeMode").textContent = MODE_DETAILS[selectedProtectionMode()].label;
+  document.getElementById("safeProvider").textContent = "รอผล";
+  document.getElementById("safeResidual").textContent = "รอผล";
+  document.getElementById("safeLeftover").textContent = "รอผล";
+  document.getElementById("safeEvidenceSafety").textContent = "รอผล";
+  document.getElementById("safeEvidenceRestoration").textContent = "รอผล";
+  document.getElementById("safeSection26").textContent = "รอผล";
+  document.getElementById("safeDuration").textContent = "—";
+  document.getElementById("providerTag").hidden = true;
+  document.getElementById("providerTag").textContent = "";
   document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูล";
-  document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูล";
+  document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูลความปลอดภัย";
+  document.getElementById("proofStatus").textContent = "รอผล Safe AI";
+  document.getElementById("proofMethod").textContent = "เมื่อ Privacy Scan และ Safe AI ใช้ข้อความเดียวกัน เบราว์เซอร์จะเปรียบเทียบค่าที่ตรวจพบกับข้อความที่ส่งให้ AI โดยไม่แสดงข้อมูลจับคู่";
+  document.getElementById("proofCallout").dataset.tone = "";
+}
 
+function resetReportPresentation() {
+  clearPreparedReport();
   document.getElementById("reportMeta").textContent = "";
+  document.getElementById("reportMeta").dataset.tone = "";
   document.getElementById("reportScore").textContent = "—";
   document.getElementById("reportGrade").textContent = "—";
   document.getElementById("reportScope").textContent = "ยังไม่ได้สร้างรายงาน";
+  document.getElementById("reportCategories").textContent = "ประเภทข้อมูลจะแสดงจาก Privacy Scan ของข้อความเดียวกัน โดยไม่ใส่ข้อความต้นฉบับในสรุปนี้";
+  document.getElementById("reportTiming").textContent = "ยังไม่มีเวลาคำขอ";
+}
+
+function syncBusinessControls() {
+  const blocked = !authenticated || guidedRunning;
+  for (const id of ["scanBtn", "send", "reportBtn", "guidedStart"]) {
+    document.getElementById(id).disabled = blocked;
+  }
+  document.getElementById("reportDownloadBtn").disabled = !authenticated || guidedRunning;
+  document.getElementById("mode").disabled = guidedRunning;
+  document.getElementById("safeDemoBtn").disabled = guidedRunning;
+  for (const button of document.querySelectorAll("[data-scenario]")) button.disabled = guidedRunning;
+}
+
+function clearSensitiveState() {
+  clearTimeout(debounceTimer);
+  detectGeneration += 1;
+  roundtripGeneration += 1;
+  reportGeneration += 1;
+  guidedGeneration += 1;
+  guidedRunning = false;
+  accessCodeInput.value = "";
+  editor.value = "";
+  document.getElementById("characterCount").textContent = "0 / 20,000 ตัวอักษร";
+  resetScanPresentation("เข้าสู่ระบบก่อนส่งข้อความไปประมวลผล");
+  highlight.textContent = "";
+  resetSafePresentation("");
+  resetReportPresentation();
+  resetGuidedPresentation("เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  selectedScenario = "hr";
+  document.getElementById("guidedScenario").textContent = SCENARIO_LABELS.hr;
+  document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
+  for (const button of document.querySelectorAll("[data-scenario]")) {
+    button.setAttribute("aria-pressed", "false");
+  }
 }
 
 function setAuthState(value, message) {
@@ -699,10 +1029,6 @@ function setAuthState(value, message) {
   authStatus.textContent = message;
   const neutralAuthMessage = message.includes("กำลัง") || message.includes("กรุณาใส่");
   authStatus.dataset.tone = value ? "safe" : neutralAuthMessage ? "" : "error";
-  for (const id of ["scanBtn", "send", "reportBtn"]) {
-    document.getElementById(id).disabled = !value;
-  }
-  document.getElementById("reportDownloadBtn").disabled = !value;
   if (!value) {
     invalidateAuthCheck();
     invalidateBusinessRequests();
@@ -711,7 +1037,26 @@ function setAuthState(value, message) {
     meta.textContent = "เลือกตัวอย่างสังเคราะห์หรือพิมพ์ข้อความเพื่อเริ่มต้น";
     highlight.textContent = "ผลการไฮไลต์จะแสดงที่นี่หลังสแกน";
     document.getElementById("safeElapsed").textContent = "กด “ใช้ตัวอย่างสังเคราะห์” หรือเลือกข้อความจาก Privacy Scan";
+    document.getElementById("guidedStatus").textContent = "พร้อมเริ่ม Guided Demo ด้วยข้อมูลสังเคราะห์";
   }
+  syncBusinessControls();
+}
+
+function showSessionExpiredRecovery(url) {
+  const message = "เซสชันหมดอายุ · กรุณากลับไปเข้าสู่ระบบด้านบน";
+  if (url === "/api/roundtrip") {
+    document.getElementById("safeElapsed").textContent = message;
+    document.getElementById("safeElapsed").dataset.tone = "caution";
+  } else if (url === "/api/analyze-report") {
+    document.getElementById("reportMeta").textContent = message;
+    document.getElementById("reportMeta").dataset.tone = "caution";
+  } else {
+    meta.textContent = message;
+    meta.dataset.tone = "caution";
+  }
+  document.getElementById("guidedStatus").textContent = message;
+  document.getElementById("guidedStatus").dataset.tone = "caution";
+  if (typeof accessCodeInput.focus === "function") accessCodeInput.focus();
 }
 
 async function checkAuthSession() {
@@ -754,6 +1099,7 @@ async function apiJson(url, options = {}) {
     });
     if (r.status === 401) {
       setAuthState(false, "session หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
+      showSessionExpiredRecovery(url);
       throw new StaleBusinessRequest();
     }
     const body = await safeJson(r);
@@ -882,6 +1228,7 @@ function renderLegend(counts) {
 async function detectNow() {
   const text = editor.value;
   const generation = ++detectGeneration;
+  const startedAt = monotonicNow();
   const scanBtn = document.getElementById("scanBtn");
   if (!text.trim()) {
     highlight.textContent = "กรุณาใส่ข้อความหรือเลือกตัวอย่างก่อนสแกน";
@@ -892,15 +1239,23 @@ async function detectNow() {
     document.getElementById("piiCount").textContent = "0";
     document.getElementById("piiTypeCount").textContent = "0";
     document.getElementById("piiTypes").textContent = "ยังไม่มีข้อมูลให้วิเคราะห์";
-    return;
+    document.getElementById("scanTiming").textContent = "ยังไม่มีเวลาคำขอ";
+    return false;
   }
   if (!authenticated) {
     meta.textContent = "กรุณาเข้าสู่ระบบก่อนสแกนข้อมูล";
     meta.dataset.tone = "caution";
-    return;
+    return false;
   }
   scanBtn.disabled = true;
+  lastDetection = null;
   highlight.textContent = "กำลังวิเคราะห์ข้อความ...";
+  renderLegend({});
+  document.getElementById("piiCount").textContent = "—";
+  document.getElementById("piiTypeCount").textContent = "—";
+  document.getElementById("piiTypes").textContent = "กำลังสรุปผลใหม่";
+  document.getElementById("guardBar").textContent = "";
+  document.getElementById("scanTiming").textContent = "กำลังวัดเวลาคำขอ /detect ในเบราว์เซอร์";
   meta.textContent = "กำลังสแกนข้อมูลส่วนบุคคลภาษาไทย";
   meta.dataset.tone = "";
   try {
@@ -911,14 +1266,25 @@ async function detectNow() {
     if (!r.ok) {
       if (generation !== detectGeneration || text !== editor.value) return;
       highlight.textContent = "ยังไม่มีผลการสแกน";
+      renderLegend({});
+      document.getElementById("piiCount").textContent = "0";
+      document.getElementById("piiTypeCount").textContent = "0";
+      document.getElementById("piiTypes").textContent = "ไม่มีผลใหม่ให้แสดง";
+      document.getElementById("scanTiming").textContent = `คำขอไม่สำเร็จหลัง ${formatElapsed(startedAt)}`;
       meta.textContent = errorMessage(r.status, detailText(body), "text");
       meta.dataset.tone = "error";
-      return;
+      return false;
     }
-    if (generation !== detectGeneration || text !== editor.value) return;
+    if (generation !== detectGeneration || text !== editor.value) return false;
     renderHighlight(text, body.highlights);
     renderLegend(body.entity_type_counts);
     const typeEntries = Object.entries(body.entity_type_counts);
+    lastDetection = {
+      text,
+      highlights: body.highlights.map(item => ({start: item.start, end: item.end, data_type: item.data_type})),
+      entityTypeCounts: {...body.entity_type_counts},
+      detectedEntityCount: body.detected_entity_count,
+    };
     document.getElementById("piiCount").textContent = String(body.detected_entity_count);
     document.getElementById("piiTypeCount").textContent = String(typeEntries.length);
     document.getElementById("piiTypes").textContent = typeEntries.length
@@ -928,99 +1294,122 @@ async function detectNow() {
       ? `พบข้อมูลส่วนบุคคล ${body.detected_entity_count} รายการ จาก ${typeEntries.length} ประเภท`
       : "ไม่พบข้อมูลส่วนบุคคลในข้อความนี้";
     meta.dataset.tone = body.detected_entity_count ? "caution" : "safe";
+    document.getElementById("scanTiming").textContent = `Privacy Scan /detect · เวลารวมที่วัดในเบราว์เซอร์ ${formatElapsed(startedAt)}`;
     try {
       const {r: gr, body: gb} = await apiJson("/api/guard", {
         method: "POST", headers: {"Content-Type": "application/json"},
         body: JSON.stringify({text}),
       });
-      if (gr.ok) {
-        if (generation !== detectGeneration || text !== editor.value) return;
-        const bar = document.getElementById("guardBar");
-        bar.innerHTML = gb.flagged
-          ? '<span class="guard-ok">พบสัญญาณคำสั่งที่ควรตรวจสอบ</span> '
-            + gb.guard_findings.map(g => `<span class="chip guard-chip" title="${escAttr(g.severity)}">${esc(g.category)}</span>`).join("")
-          : '<span class="guard-ok">ไม่พบคำสั่งแทรกแซงโมเดล (prompt injection)</span>';
+      if (generation !== detectGeneration || text !== editor.value) return false;
+      const bar = document.getElementById("guardBar");
+      if (!gr.ok) {
+        bar.textContent = "การตรวจเตือนคำสั่งไม่พร้อม · ผล Privacy Scan ยังแสดงได้ แต่ Guided Demo จะหยุดขั้นนี้";
+        return false;
       }
+      bar.innerHTML = gb.flagged
+        ? '<span class="guard-ok">พบสัญญาณคำสั่งที่ควรตรวจสอบ</span> '
+          + gb.guard_findings.map(g => `<span class="chip guard-chip" title="${escAttr(g.severity)}">${esc(g.category)}</span>`).join("")
+        : '<span class="guard-ok">ไม่พบสัญญาณ prompt injection ตามกฎตรวจเตือน</span>';
     } catch (err) {
-      if (isStaleBusinessError(err)) return;
-      /* เครือข่ายล้ม ปล่อย */
+      if (isStaleBusinessError(err)) return false;
+      if (generation !== detectGeneration || text !== editor.value) return false;
+      document.getElementById("guardBar").textContent = "เชื่อมต่อการตรวจเตือนคำสั่งไม่ได้ · ผล Privacy Scan ยังแสดงได้ แต่ Guided Demo จะหยุดขั้นนี้";
+      return false;
     }
+    return true;
   } catch (err) {
-    if (isStaleBusinessError(err)) return;
-    if (generation !== detectGeneration || text !== editor.value) return;
+    if (isStaleBusinessError(err)) return false;
+    if (generation !== detectGeneration || text !== editor.value) return false;
+    lastDetection = null;
     highlight.textContent = "ยังไม่มีผลการสแกน";
+    renderLegend({});
+    document.getElementById("piiCount").textContent = "0";
+    document.getElementById("piiTypeCount").textContent = "0";
+    document.getElementById("piiTypes").textContent = "ไม่มีผลใหม่ให้แสดง";
     meta.textContent = "เชื่อมต่อบริการไม่ได้ กรุณาลองใหม่";
     meta.dataset.tone = "error";
+    document.getElementById("scanTiming").textContent = `เชื่อมต่อไม่สำเร็จหลัง ${formatElapsed(startedAt)}`;
+    return false;
   } finally {
-    scanBtn.disabled = !authenticated;
+    if (generation === detectGeneration) scanBtn.disabled = !authenticated || guidedRunning;
   }
 }
 
-function handleInputChange() {
+function handleInputChange({preserveScenario = false} = {}) {
+  if (guidedRunning) invalidateBusinessRequests();
   detectGeneration += 1;
   roundtripGeneration += 1;
   reportGeneration += 1;
-  clearSafeProgress();
-  clearPreparedReport();
+  guidedGeneration += 1;
+  guidedRunning = false;
   document.getElementById("characterCount").textContent = `${Array.from(editor.value).length.toLocaleString()} / 20,000 ตัวอักษร`;
-  highlight.textContent = editor.value.trim() ? "กดสแกนเพื่อดูตำแหน่ง PII" : "ผลการไฮไลต์จะแสดงที่นี่หลังสแกน";
-  renderLegend({});
-  document.getElementById("piiCount").textContent = "0";
-  document.getElementById("piiTypeCount").textContent = "0";
-  document.getElementById("piiTypes").textContent = "ยังไม่มีข้อมูลให้วิเคราะห์";
-  document.getElementById("guardBar").textContent = "";
-  meta.textContent = editor.value.trim() ? "พร้อมสแกนข้อความชุดนี้" : "เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น";
-  meta.dataset.tone = "";
-  document.getElementById("safeOriginal").textContent = editor.value || "กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที";
-  document.getElementById("masked").textContent = "รอกดส่งข้อความชุดนี้";
-  document.getElementById("restored").textContent = "ยังไม่มีผลสำหรับข้อความชุดนี้";
-  document.getElementById("safeOriginal").dataset.filled = editor.value.trim() ? "true" : "false";
-  document.getElementById("masked").dataset.filled = "false";
-  document.getElementById("restored").dataset.filled = "false";
-  document.getElementById("masked").dataset.tone = "";
-  document.getElementById("restored").dataset.tone = "";
-  document.getElementById("safeElapsed").textContent = editor.value.trim() ? "พร้อมเริ่มเส้นทาง Safe AI" : "กด “ใช้ตัวอย่างสังเคราะห์” หรือเลือกข้อความจาก Privacy Scan";
-  document.getElementById("safeElapsed").dataset.tone = "";
-  document.getElementById("safeCount").textContent = "—";
-  document.getElementById("safeTypes").textContent = "—";
-  document.getElementById("safeTypeLabels").textContent = "ประเภทข้อมูลที่ตรวจพบ";
-  document.getElementById("safeProtection").textContent = "รอผล";
-  document.getElementById("safeRestoration").textContent = "รอผล";
-  const providerTag = document.getElementById("providerTag");
-  providerTag.hidden = true;
-  providerTag.textContent = "";
-  document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูลสำหรับข้อความชุดนี้";
-  document.getElementById("evidenceWarnings").textContent = "ยังไม่มีข้อมูลความปลอดภัย";
-  document.getElementById("reportScore").textContent = "—";
-  document.getElementById("reportGrade").textContent = "—";
-  document.getElementById("reportScope").textContent = "ยังไม่ได้สร้างรายงาน";
-  document.getElementById("reportMeta").textContent = "";
+  resetScanPresentation(editor.value.trim() ? "พร้อมสแกนข้อความชุดนี้" : "เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น");
+  resetSafePresentation();
+  resetReportPresentation();
+  if (!preserveScenario) selectedScenario = editor.value.trim() ? "custom" : "hr";
+  const scenarioLabel = SCENARIO_LABELS[selectedScenario];
+  document.getElementById("guidedScenario").textContent = scenarioLabel;
+  document.getElementById("scenarioStatus").textContent = selectedScenario === "custom"
+    ? "ข้อความที่ผู้ใช้กรอกเอง · ตรวจสอบว่าไม่มีข้อมูลจริงก่อนเดโม"
+    : `เลือกแล้ว: ${scenarioLabel}`;
+  for (const button of document.querySelectorAll("[data-scenario]")) {
+    button.setAttribute("aria-pressed", editor.value.trim() && button.dataset.scenario === selectedScenario ? "true" : "false");
+  }
+  resetGuidedPresentation(authenticated ? "พร้อมเริ่ม Guided Demo ด้วยข้อมูลชุดนี้" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
   clearTimeout(debounceTimer);
+  syncBusinessControls();
 }
 
 editor.addEventListener("input", handleInputChange);
 document.getElementById("scanBtn").addEventListener("click", detectNow);
 
-document.querySelectorAll(".samples button[data-sample]").forEach(btn => {
+document.querySelectorAll("[data-scenario][data-sample]").forEach(btn => {
   btn.addEventListener("click", () => {
+    selectedScenario = btn.dataset.scenario;
     editor.value = btn.dataset.sample;
-    handleInputChange();
+    handleInputChange({preserveScenario: true});
     if (typeof editor.focus === "function") editor.focus();
   });
 });
 
 document.getElementById("safeDemoBtn").addEventListener("click", () => {
+  selectedScenario = "hr";
   editor.value = SAFE_AI_DEMO_TEXT;
-  handleInputChange();
+  handleInputChange({preserveScenario: true});
   document.getElementById("safeElapsed").textContent = "ตัวอย่างสังเคราะห์พร้อมแล้ว กดปกป้องและส่งให้ Safe AI เพื่อเรียก API จริง";
   if (typeof document.getElementById("send").focus === "function") document.getElementById("send").focus();
 });
 
-document.getElementById("resetDemo").addEventListener("click", () => {
+function resetAllDemoState() {
   invalidateBusinessRequests();
+  guidedGeneration += 1;
+  guidedRunning = false;
+  selectedScenario = "hr";
   editor.value = "";
-  handleInputChange();
+  handleInputChange({preserveScenario: true});
+  document.getElementById("guidedScenario").textContent = SCENARIO_LABELS.hr;
+  document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
+  resetGuidedPresentation(authenticated ? "ล้างผลทั้งหมดแล้ว พร้อมเริ่ม Guided Demo ใหม่" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  syncBusinessControls();
   if (typeof editor.focus === "function") editor.focus();
+}
+
+document.getElementById("resetDemo").addEventListener("click", resetAllDemoState);
+document.getElementById("guidedReset").addEventListener("click", resetAllDemoState);
+
+document.getElementById("mode").addEventListener("change", event => {
+  const mode = normalizeProtectionMode(event.target.value);
+  event.target.value = mode;
+  const detail = MODE_DETAILS[mode];
+  document.getElementById("modeDescription").textContent = `${detail.label}${mode === "token" ? " — แนะนำ" : ""}: ${detail.description}`;
+  document.getElementById("safeMode").textContent = detail.label;
+  document.getElementById("guidedMode").textContent = detail.label;
+  document.getElementById("systemMode").textContent = detail.label;
+  roundtripGeneration += 1;
+  guidedGeneration += 1;
+  resetSafePresentation("เปลี่ยนรูปแบบการปกป้องแล้ว พร้อมเริ่มคำขอใหม่");
+  resetGuidedPresentation(authenticated ? "เลือกรูปแบบแล้ว พร้อมเริ่ม Guided Demo" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  syncBusinessControls();
 });
 
 /* ── demo: send roundtrip (provider hard-coded to tokenmind) ── */
@@ -1042,14 +1431,63 @@ function fillEvidence(body) {
 function roundtripIsSafe(body) {
   return Boolean(
     body
+    && typeof body.sanitized_text === "string"
+    && typeof body.restored_text === "string"
+    && body.provider_used === "tokenmind"
+    && Number.isInteger(body.detected_entity_count)
+    && body.detected_entity_count >= 0
+    && body.entity_type_counts
+    && typeof body.entity_type_counts === "object"
+    && Array.isArray(body.section26_categories)
     && body.safety
     && body.safety.status === "pass"
+    && body.safety.residual_count === 0
     && body.restoration
     && body.restoration.status === "complete"
     && body.restoration.leftover_count === 0
     && Array.isArray(body.warnings)
     && body.warnings.length === 0
   );
+}
+
+function compareDetectedValues(text, sanitizedText) {
+  if (!lastDetection || lastDetection.text !== text || !lastDetection.highlights.length) {
+    return {status: "unknown", checked: 0, remaining: 0};
+  }
+  const values = lastDetection.highlights.map(item => {
+    const [start, end] = codePointRangeToUtf16(text, item.start, item.end);
+    return text.slice(start, end);
+  }).filter(Boolean);
+  const remaining = values.filter(value => sanitizedText.includes(value)).length;
+  return {status: remaining === 0 ? "pass" : "fail", checked: values.length, remaining};
+}
+
+function renderProtectionEvidence(body, text, startedAt, requestedMode) {
+  const mode = MODE_DETAILS[normalizeProtectionMode(requestedMode)];
+  const proof = compareDetectedValues(text, body.sanitized_text);
+  const section26 = body.section26_categories || [];
+  document.getElementById("safeMode").textContent = mode.label;
+  document.getElementById("safeProvider").textContent = body.provider_used === "tokenmind" ? "Pathumma · thaillm-8b" : body.provider_used;
+  document.getElementById("safeResidual").textContent = String(body.safety.residual_count);
+  document.getElementById("safeLeftover").textContent = String(body.restoration.leftover_count);
+  document.getElementById("safeEvidenceSafety").textContent = body.safety.status === "pass" ? "ผ่าน" : "ระงับ";
+  document.getElementById("safeEvidenceRestoration").textContent = body.restoration.status === "complete" ? "สมบูรณ์" : "ระงับ";
+  document.getElementById("safeSection26").textContent = section26.length ? section26.map(labelFor).join(" · ") : "ไม่พบธง";
+  document.getElementById("safeDuration").textContent = formatElapsed(startedAt);
+  if (proof.status === "pass") {
+    document.getElementById("proofStatus").textContent = `ตรวจเทียบแล้ว: ไม่พบค่าที่ Privacy Scan ตรวจจับ ${proof.checked} รายการในข้อความที่ส่งให้ AI`;
+    document.getElementById("proofMethod").textContent = "เป็นการเปรียบเทียบค่าตรงกันในเบราว์เซอร์กับข้อความปกป้องที่ API คืนมา โดยไม่แสดงข้อมูลจับคู่หรือค่าคู่แทนที่";
+    document.getElementById("proofCallout").dataset.tone = "safe";
+  } else if (proof.status === "fail") {
+    document.getElementById("proofStatus").textContent = "การตรวจเทียบในเบราว์เซอร์ไม่ผ่าน ระบบจึงไม่แสดงผลลัพธ์เป็นความสำเร็จ";
+    document.getElementById("proofMethod").textContent = `ยังพบค่าที่ตรวจจับ ${proof.remaining} รายการใน sanitized_text`;
+    document.getElementById("proofCallout").dataset.tone = "error";
+  } else {
+    document.getElementById("proofStatus").textContent = "แสดงข้อความปกป้องที่ API ส่งต่อให้ provider แล้ว";
+    document.getElementById("proofMethod").textContent = "รัน Privacy Scan ก่อน Safe AI หรือใช้ Guided Demo เพื่อเพิ่มการตรวจเทียบค่าที่ตรวจจับในเบราว์เซอร์";
+    document.getElementById("proofCallout").dataset.tone = "safe";
+  }
+  return proof;
 }
 
 function beginSafeProgress(startedAt, generation) {
@@ -1067,9 +1505,9 @@ function beginSafeProgress(startedAt, generation) {
   const advance = () => {
     if (generation !== roundtripGeneration) return;
     for (let index = 0; index < messages.length; index += 1) {
-      document.getElementById("safeStage" + index).dataset.state = index < current ? "done" : index === current ? "active" : "idle";
+      document.getElementById("safeStage" + index).dataset.state = index === current ? "active" : "idle";
     }
-    const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+    const elapsed = ((monotonicNow() - startedAt) / 1000).toFixed(1);
     status.textContent = `กำลังดำเนินการ ${elapsed} วินาที · ลำดับโดยประมาณ: ${messages[current]}`;
     status.dataset.tone = "";
     current = Math.min(current + 1, messages.length - 1);
@@ -1088,21 +1526,25 @@ function finishSafeProgress(success) {
   }
 }
 
-document.getElementById("send").addEventListener("click", async () => {
+async function runSafeAI() {
   const text = editor.value;
   const safeElapsed = document.getElementById("safeElapsed");
   if (!text.trim()) {
     safeElapsed.textContent = "กรุณาใส่ข้อความหรือเลือกตัวอย่างก่อนเริ่ม Safe AI";
     safeElapsed.dataset.tone = "caution";
-    return;
+    return false;
   }
+  if (!authenticated) return false;
   const generation = ++roundtripGeneration;
-  const startedAt = Date.now();
+  const startedAt = monotonicNow();
+  const requestedMode = selectedProtectionMode();
   const btn = document.getElementById("send");
   const masked = document.getElementById("masked");
   const restored = document.getElementById("restored");
   const tag = document.getElementById("providerTag");
+  resetSafePresentation();
   btn.disabled = true;
+  document.getElementById("mode").disabled = true;
   tag.hidden = true;
   tag.textContent = "";
   masked.textContent = "กำลังเตรียมข้อความที่ปกป้องแล้ว...";
@@ -1116,13 +1558,16 @@ document.getElementById("send").addEventListener("click", async () => {
   document.getElementById("safeTypeLabels").textContent = "กำลังสรุปประเภท";
   document.getElementById("safeProtection").textContent = "กำลังตรวจ";
   document.getElementById("safeRestoration").textContent = "รอผล";
+  document.getElementById("safeMode").textContent = MODE_DETAILS[requestedMode].label;
+  document.getElementById("safeDuration").textContent = "กำลังวัด";
+  document.getElementById("safeAnnouncement").textContent = "เริ่ม Safe AI แล้ว ระบบกำลังปกป้องและประมวลผลข้อความ";
   beginSafeProgress(startedAt, generation);
   try {
     const {r, body} = await apiJson("/api/roundtrip", {
       method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({text, mode: document.getElementById("mode").value, provider: "tokenmind"}),
+      body: JSON.stringify({text, mode: requestedMode, provider: "tokenmind"}),
     });
-    if (generation !== roundtripGeneration || text !== editor.value) return;
+    if (generation !== roundtripGeneration || text !== editor.value) return false;
     if (!r.ok) {
       finishSafeProgress(false);
       masked.textContent = "ไม่มีข้อความถูกส่งสำเร็จในคำขอนี้";
@@ -1134,10 +1579,21 @@ document.getElementById("send").addEventListener("click", async () => {
       document.getElementById("safeTypeLabels").textContent = "ยังไม่มีข้อมูล";
       document.getElementById("safeProtection").textContent = "ไม่สำเร็จ";
       document.getElementById("safeRestoration").textContent = "ไม่เริ่ม";
-      safeElapsed.textContent = `${errorMessage(r.status, detailText(body), "text")} · ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที`;
+      document.getElementById("safeProvider").textContent = "ไม่ส่งสำเร็จ";
+      document.getElementById("safeResidual").textContent = "—";
+      document.getElementById("safeLeftover").textContent = "—";
+      document.getElementById("safeEvidenceSafety").textContent = "ไม่สำเร็จ";
+      document.getElementById("safeEvidenceRestoration").textContent = "ไม่เริ่ม";
+      document.getElementById("safeSection26").textContent = "—";
+      document.getElementById("safeDuration").textContent = formatElapsed(startedAt);
+      document.getElementById("proofStatus").textContent = "ไม่มีหลักฐานใหม่จากคำขอนี้";
+      document.getElementById("proofMethod").textContent = "ผลเดิมถูกล้างก่อนเริ่ม และระบบไม่แสดง response ภายในเมื่อคำขอไม่สำเร็จ";
+      document.getElementById("proofCallout").dataset.tone = "error";
+      safeElapsed.textContent = `${errorMessage(r.status, detailText(body), "text")} · ${formatElapsed(startedAt)}`;
       safeElapsed.dataset.tone = "error";
+      document.getElementById("safeAnnouncement").textContent = "Safe AI ไม่สำเร็จ ระบบไม่แสดงผลลัพธ์";
       document.getElementById("evidenceWarnings").textContent = "คำขอหยุดโดยไม่แสดงข้อมูลภายในหรือคำตอบดิบ";
-      return;
+      return false;
     }
     masked.textContent = body.sanitized_text;
     masked.dataset.filled = "true";
@@ -1150,7 +1606,8 @@ document.getElementById("send").addEventListener("click", async () => {
       ? typeEntries.map(([type]) => labelFor(type)).join(" · ")
       : "ไม่พบข้อมูลส่วนบุคคล";
     document.getElementById("safeProtection").textContent = body.safety && body.safety.status === "pass" ? "ผ่าน" : "ระงับ";
-    if (!roundtripIsSafe(body)) {
+    const browserProof = renderProtectionEvidence(body, text, startedAt, requestedMode);
+    if (!roundtripIsSafe(body) || browserProof.status === "fail") {
       finishSafeProgress(false);
       restored.textContent = "ระบบระงับคำตอบที่กู้คืนไม่สมบูรณ์หรือมีคำเตือน";
       restored.dataset.filled = "false";
@@ -1158,11 +1615,12 @@ document.getElementById("send").addEventListener("click", async () => {
       document.getElementById("safeRestoration").textContent = "ระงับ";
       fillEvidence(body);
       const section26 = (body.section26_categories || []).length
-        ? ` · ธงมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
+        ? ` · หมวดข้อมูลอ่อนไหวตามมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
         : "";
-      safeElapsed.textContent = `ระงับผลหลัง ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที · ไม่แสดงคำตอบจนกว่าสถานะความปลอดภัยและการกู้คืนจะผ่านครบ${section26}`;
+      safeElapsed.textContent = `ระงับผลหลัง ${formatElapsed(startedAt)} · ไม่แสดงคำตอบจนกว่าสถานะความปลอดภัยและการกู้คืนจะผ่านครบ${section26}`;
       safeElapsed.dataset.tone = "error";
-      return;
+      document.getElementById("safeAnnouncement").textContent = "Safe AI ระงับผลลัพธ์ที่ไม่ผ่านการตรวจความปลอดภัย";
+      return false;
     }
     finishSafeProgress(true);
     restored.textContent = body.restored_text;
@@ -1170,14 +1628,24 @@ document.getElementById("send").addEventListener("click", async () => {
     restored.dataset.tone = "";
     document.getElementById("safeRestoration").textContent = "สมบูรณ์";
     fillEvidence(body);
+    lastRoundtrip = {
+      text,
+      mode: requestedMode,
+      providerUsed: body.provider_used,
+      section26Categories: [...(body.section26_categories || [])],
+      detectedEntityCount: body.detected_entity_count,
+      entityTypeCounts: {...(body.entity_type_counts || {})},
+    };
     const section26 = (body.section26_categories || []).length
-      ? ` · ธงมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
-      : " · ไม่พบธงมาตรา 26";
-    safeElapsed.textContent = `ปกป้องสำเร็จใน ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที · การปกป้องและการกู้คืนผ่านครบ${section26}`;
+      ? ` · หมวดข้อมูลอ่อนไหวตามมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
+      : " · ไม่พบหมวดข้อมูลอ่อนไหวตามมาตรา 26";
+    safeElapsed.textContent = `ปกป้องสำเร็จใน ${formatElapsed(startedAt)} · การปกป้องและการกู้คืนผ่านครบ${section26}`;
     safeElapsed.dataset.tone = "safe";
+    document.getElementById("safeAnnouncement").textContent = "Safe AI สำเร็จ การปกป้องและการกู้คืนผ่านครบ";
+    return true;
   } catch (err) {
-    if (isStaleBusinessError(err)) return;
-    if (generation !== roundtripGeneration || text !== editor.value) return;
+    if (isStaleBusinessError(err)) return false;
+    if (generation !== roundtripGeneration || text !== editor.value) return false;
     finishSafeProgress(false);
     masked.textContent = "ไม่มีข้อความถูกส่งสำเร็จในคำขอนี้";
     restored.textContent = "ไม่มีผลลัพธ์ให้แสดง";
@@ -1190,58 +1658,209 @@ document.getElementById("send").addEventListener("click", async () => {
     document.getElementById("safeTypeLabels").textContent = "ยังไม่มีข้อมูล";
     document.getElementById("safeProtection").textContent = "ไม่สำเร็จ";
     document.getElementById("safeRestoration").textContent = "ไม่เริ่ม";
-    safeElapsed.textContent = `เชื่อมต่อแพลตฟอร์มไม่ได้ กรุณาลองใหม่ · ${((Date.now() - startedAt) / 1000).toFixed(1)} วินาที`;
+    document.getElementById("safeProvider").textContent = "เชื่อมต่อไม่ได้";
+    document.getElementById("safeResidual").textContent = "—";
+    document.getElementById("safeLeftover").textContent = "—";
+    document.getElementById("safeEvidenceSafety").textContent = "ไม่สำเร็จ";
+    document.getElementById("safeEvidenceRestoration").textContent = "ไม่เริ่ม";
+    document.getElementById("safeSection26").textContent = "—";
+    document.getElementById("safeDuration").textContent = formatElapsed(startedAt);
+    document.getElementById("proofStatus").textContent = "ไม่มีหลักฐานใหม่จากคำขอนี้";
+    document.getElementById("proofMethod").textContent = "เชื่อมต่อแพลตฟอร์มไม่ได้ และผลเดิมถูกล้างแล้ว";
+    document.getElementById("proofCallout").dataset.tone = "error";
+    document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูล";
+    document.getElementById("evidenceWarnings").textContent = "คำขอไม่สำเร็จโดยไม่แสดงข้อมูลภายใน";
+    safeElapsed.textContent = `เชื่อมต่อแพลตฟอร์มไม่ได้ กรุณาลองใหม่ · ${formatElapsed(startedAt)}`;
     safeElapsed.dataset.tone = "error";
+    document.getElementById("safeAnnouncement").textContent = "Safe AI เชื่อมต่อแพลตฟอร์มไม่สำเร็จ";
+    return false;
   } finally {
-    btn.disabled = !authenticated;
+    if (generation === roundtripGeneration) {
+      btn.disabled = !authenticated || guidedRunning;
+      document.getElementById("mode").disabled = guidedRunning;
+    }
   }
-});
+}
+
+document.getElementById("send").addEventListener("click", runSafeAI);
+
+async function runGuidedDemo() {
+  if (!authenticated || guidedRunning) return false;
+  // A Guided run owns the business-request lane. Abort any direct request
+  // before starting so two provider-bound roundtrips cannot overlap.
+  invalidateBusinessRequests();
+  if (!editor.value.trim()) {
+    selectedScenario = "hr";
+    editor.value = SAFE_AI_DEMO_TEXT;
+    handleInputChange({preserveScenario: true});
+  } else {
+    handleInputChange({preserveScenario: true});
+  }
+
+  const generation = ++guidedGeneration;
+  const startedAt = monotonicNow();
+  guidedRunning = true;
+  syncBusinessControls();
+  document.getElementById("guidedStatus").textContent = "กำลังเริ่ม Privacy Scan ด้วยข้อความสังเคราะห์ที่เลือก";
+  document.getElementById("guidedStatus").dataset.tone = "";
+  document.getElementById("guidedMode").textContent = MODE_DETAILS[selectedProtectionMode()].label;
+  document.getElementById("guidedTiming").textContent = "กำลังวัด";
+  setGuidedStep("scan", "active", "กำลังสแกน");
+
+  let completed = false;
+  try {
+    const scanPassed = await detectNow();
+    if (generation !== guidedGeneration || !guidedRunning) return false;
+    if (!scanPassed) {
+      setGuidedStep("scan", "error", "ไม่สำเร็จ");
+      document.getElementById("guidedSafety").textContent = "หยุดอย่างปลอดภัย";
+      document.getElementById("guidedStatus").textContent = "Guided Demo หยุดที่ Privacy Scan · แก้ไขตามข้อความแจ้งเตือนแล้วกดลองใหม่";
+      document.getElementById("guidedStatus").dataset.tone = "error";
+      return false;
+    }
+
+    setGuidedStep("scan", "done", "ผ่าน");
+    document.getElementById("guidedPii").textContent = String(lastDetection.detectedEntityCount);
+    setGuidedStep("safe", "active", "กำลังปกป้อง");
+    document.getElementById("guidedStatus").textContent = "Privacy Scan ผ่าน · กำลังเรียก Safe AI หนึ่งครั้ง";
+    const safePassed = await runSafeAI();
+    if (generation !== guidedGeneration || !guidedRunning) return false;
+    if (!safePassed) {
+      setGuidedStep("safe", "error", "ถูกระงับ");
+      document.getElementById("guidedSafety").textContent = "หยุดอย่างปลอดภัย";
+      document.getElementById("guidedStatus").textContent = "Guided Demo หยุดที่ Safe AI · ระบบไม่แสดงขั้นรายงานเป็นความสำเร็จ";
+      document.getElementById("guidedStatus").dataset.tone = "error";
+      return false;
+    }
+
+    setGuidedStep("safe", "done", "ผ่าน");
+    document.getElementById("guidedSafety").textContent = "ผ่านครบ";
+    document.getElementById("guidedMode").textContent = MODE_DETAILS[lastRoundtrip.mode].label;
+    setGuidedStep("report", "active", "กำลังสร้าง");
+    document.getElementById("guidedStatus").textContent = "Safe AI ผ่าน · กำลังสร้าง PDPA Report จากข้อความเดียวกัน";
+    const reportPassed = await generateReport();
+    if (generation !== guidedGeneration || !guidedRunning) return false;
+    if (!reportPassed) {
+      setGuidedStep("report", "error", "ไม่สำเร็จ");
+      document.getElementById("guidedStatus").textContent = "Safe AI ผ่าน แต่ PDPA Report ไม่สำเร็จ · ผลก่อนหน้ายังคงแยกสถานะอย่างชัดเจน";
+      document.getElementById("guidedStatus").dataset.tone = "error";
+      return false;
+    }
+
+    setGuidedStep("report", "done", "พร้อม");
+    document.getElementById("guidedTiming").textContent = formatElapsed(startedAt);
+    document.getElementById("guidedStatus").textContent = "Guided Demo สำเร็จครบ 3 เวิร์กโฟลว์ · เลื่อนดูข้อความที่ส่งให้ AI จริงและสรุปรายงานได้เลย";
+    document.getElementById("guidedStatus").dataset.tone = "safe";
+    document.getElementById("guidedProofLink").hidden = false;
+    completed = true;
+    return true;
+  } catch {
+    if (generation !== guidedGeneration) return false;
+    document.getElementById("guidedStatus").textContent = "Guided Demo หยุดอย่างปลอดภัยจากปัญหาการเชื่อมต่อ กรุณาลองใหม่";
+    document.getElementById("guidedStatus").dataset.tone = "error";
+    return false;
+  } finally {
+    if (generation === guidedGeneration) {
+      guidedRunning = false;
+      document.getElementById("guidedTiming").textContent = formatElapsed(startedAt);
+      if (!completed && document.getElementById("guidedSafety").textContent === "รอผล") {
+        document.getElementById("guidedSafety").textContent = "ไม่สำเร็จ";
+      }
+      syncBusinessControls();
+    }
+  }
+}
+
+document.getElementById("guidedStart").addEventListener("click", runGuidedDemo);
 
 /* ── PDPA report: inspect server summary before volatile download ── */
-document.getElementById("reportBtn").addEventListener("click", async () => {
+function validReportPayload(report) {
+  if (
+    !report
+    || typeof report.overall_score !== "number"
+    || !Number.isFinite(report.overall_score)
+    || report.overall_score < 0
+    || report.overall_score > 100
+    || !["A", "B", "C", "D", "F"].includes(report.overall_grade)
+    || typeof report.report_pdf_b64 !== "string"
+    || !report.report_pdf_b64
+  ) return false;
+  try {
+    return atob(report.report_pdf_b64).slice(0, 5) === "%PDF-";
+  } catch {
+    return false;
+  }
+}
+
+async function generateReport() {
   const text = editor.value;
   const reportMeta = document.getElementById("reportMeta");
   if (!text.trim()) {
     reportMeta.textContent = "กรุณาใส่ข้อความใน Privacy Scan ก่อน";
     reportMeta.dataset.tone = "caution";
-    return;
+    return false;
   }
+  if (!authenticated) return false;
   const generation = ++reportGeneration;
+  const startedAt = monotonicNow();
   const btn = document.getElementById("reportBtn");
-  clearPreparedReport();
+  resetReportPresentation();
   btn.disabled = true;
   document.getElementById("reportScope").textContent = "กำลังสร้างรายงาน";
   reportMeta.textContent = "กำลังวิเคราะห์คะแนนและสร้างรายงานภาษาไทย...";
   reportMeta.dataset.tone = "";
+  document.getElementById("reportTiming").textContent = "กำลังวัดเวลาคำขอ /analyze-report ในเบราว์เซอร์";
   try {
     const {r: reportResponse, body: report} = await apiJson("/api/analyze-report", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({text}),
     });
-    if (generation !== reportGeneration || text !== editor.value) return;
+    if (generation !== reportGeneration || text !== editor.value) return false;
     if (!reportResponse.ok) {
       document.getElementById("reportScope").textContent = "ยังไม่มีรายงาน";
       reportMeta.textContent = errorMessage(reportResponse.status, detailText(report), "text");
       reportMeta.dataset.tone = "error";
-      return;
+      document.getElementById("reportTiming").textContent = `คำขอไม่สำเร็จหลัง ${formatElapsed(startedAt)}`;
+      return false;
+    }
+    if (!validReportPayload(report)) {
+      document.getElementById("reportScope").textContent = "รายงานถูกระงับ";
+      reportMeta.textContent = "ระบบระงับรายงานที่ตรวจสอบรูปแบบไม่ได้ กรุณาลองใหม่";
+      reportMeta.dataset.tone = "error";
+      document.getElementById("reportTiming").textContent = `ระงับผลหลัง ${formatElapsed(startedAt)}`;
+      return false;
     }
     document.getElementById("reportScore").textContent = String(report.overall_score);
     document.getElementById("reportGrade").textContent = String(report.overall_grade);
     document.getElementById("reportScope").textContent = "พร้อม";
     preparedReport = report.report_pdf_b64;
     document.getElementById("reportDownloadBtn").hidden = false;
+    if (lastDetection && lastDetection.text === text) {
+      const labels = Object.keys(lastDetection.entityTypeCounts).map(labelFor);
+      document.getElementById("reportCategories").textContent = labels.length
+        ? `บริบทจาก Privacy Scan ของข้อความเดียวกัน: ${lastDetection.detectedEntityCount} รายการ · ${labels.join(" · ")}`
+        : "Privacy Scan ของข้อความเดียวกันไม่พบข้อมูลส่วนบุคคล";
+    } else {
+      document.getElementById("reportCategories").textContent = "รายงาน endpoint ส่งกลับเฉพาะคะแนนและเกรด · รัน Privacy Scan เพื่อดูประเภทของข้อความเดียวกัน";
+    }
     reportMeta.textContent = `รายงานพร้อมดาวน์โหลด · คะแนน ${report.overall_score} · เกรด ${report.overall_grade}`;
     reportMeta.dataset.tone = "safe";
+    document.getElementById("reportTiming").textContent = `PDPA Report /analyze-report · เวลารวมที่วัดในเบราว์เซอร์ ${formatElapsed(startedAt)}`;
+    return true;
   } catch (err) {
-    if (isStaleBusinessError(err)) return;
-    if (generation !== reportGeneration || text !== editor.value) return;
+    if (isStaleBusinessError(err)) return false;
+    if (generation !== reportGeneration || text !== editor.value) return false;
     document.getElementById("reportScope").textContent = "ยังไม่มีรายงาน";
     reportMeta.textContent = "เชื่อมต่อแพลตฟอร์มไม่ได้ กรุณาลองใหม่";
     reportMeta.dataset.tone = "error";
+    document.getElementById("reportTiming").textContent = `เชื่อมต่อไม่สำเร็จหลัง ${formatElapsed(startedAt)}`;
+    return false;
   } finally {
-    btn.disabled = !authenticated;
+    if (generation === reportGeneration) btn.disabled = !authenticated || guidedRunning;
   }
-});
+}
+
+document.getElementById("reportBtn").addEventListener("click", generateReport);
 
 document.getElementById("reportDownloadBtn").addEventListener("click", () => {
   if (!authenticated || !preparedReport) return;
@@ -1249,8 +1868,29 @@ document.getElementById("reportDownloadBtn").addEventListener("click", () => {
   document.getElementById("reportMeta").textContent = "ดาวน์โหลดรายงานแล้ว · ไฟล์ยังพร้อมให้ดาวน์โหลดซ้ำจนกว่าจะเปลี่ยนข้อความหรือออกจากระบบ";
 });
 
+async function checkServiceHealth() {
+  const status = document.getElementById("serviceStatus");
+  const version = document.getElementById("serviceVersion");
+  try {
+    const response = await fetch("/api/health", {credentials: "same-origin"});
+    const body = await safeJson(response);
+    if (response.ok && body.status === "ok" && typeof body.version === "string" && body.version) {
+      status.textContent = "ออนไลน์ · บริการตอบสนอง";
+      status.dataset.tone = "safe";
+      version.textContent = body.version;
+      return;
+    }
+  } catch {
+    /* fixed state below; never render a raw response or exception */
+  }
+  status.textContent = "ตรวจสถานะบริการไม่สำเร็จ";
+  status.dataset.tone = "error";
+  version.textContent = "—";
+}
+
 setAuthState(false, "กำลังตรวจสอบสิทธิ์...");
 checkAuthSession();
+checkServiceHealth();
 </script>
 </body>
 </html>

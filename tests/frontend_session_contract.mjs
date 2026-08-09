@@ -13,10 +13,49 @@ for (const forbidden of ["redact-pdf", "pdfFile", "pdfPick", "pdfDownload", "aft
 for (const workflow of ['id="privacy-scan"', 'id="safe-ai"', 'id="pdpa-report"']) {
   assert.ok(page.includes(workflow), `public workflow is missing: ${workflow}`);
 }
-assert.ok(page.includes("ข้อความที่โมเดลได้รับ"), "Safe AI does not label sanitized provider input");
+for (const guidedMarker of [
+  'id="guided-demo"',
+  'id="guidedStart"',
+  'id="guidedReset"',
+  'id="guidedStepScan"',
+  'id="guidedStepSafe"',
+  'id="guidedStepReport"',
+  'id="guidedProofLink"',
+  'id="protectionEvidence"',
+  'id="proofStatus"',
+  'id="systemEvidence"',
+]) {
+  assert.ok(page.includes(guidedMarker), `Guided Demo contract missing: ${guidedMarker}`);
+}
+assert.ok(page.includes("ข้อความที่ AI Guard ส่งต่อหลังปกป้องและตรวจซ้ำ"), "Safe AI does not label sanitized provider input");
 assert.ok(page.includes("ข้อความที่ส่งให้ AI จริง"), "Safe AI proof card is not judge-readable");
+assert.ok(page.includes('href="#providerEvidenceCard"'), "Guided proof jump does not target the complete evidence card");
+assert.ok(page.includes("scroll-margin-top:140px"), "sticky navigation can obscure the Safe AI proof target");
+assert.ok(page.includes('<main id="main-content" tabindex="-1">'), "skip-link target is not programmatically focusable");
 assert.ok(page.includes("body.sanitized_text"), "Safe AI does not render the sanitized text");
 assert.equal((page.match(/data-sample=/g) || []).length, 5, "demo does not expose exactly five synthetic presets");
+assert.equal((page.match(/data-scenario=/g) || []).length, 5, "scenario gallery does not expose exactly five scenarios");
+for (const match of page.matchAll(/data-sample="([^"]+)"/g)) {
+  assert.match(match[1], /กรุณา/, "synthetic scenario lacks a deterministic AI task");
+}
+for (const scenario of ["HR", "Healthcare", "Education", "Customer Service", "Government"]) {
+  assert.ok(page.includes(scenario), `scenario context missing: ${scenario}`);
+}
+assert.ok(page.includes("เวลารวมที่วัดในเบราว์เซอร์"), "browser-total timing is not labelled honestly");
+assert.ok(page.includes("ไม่ใช่เวลารายขั้นจากเซิร์ฟเวอร์"), "approximate progress is not distinguished from telemetry");
+assert.ok(page.includes("ไม่มีการ fallback ไป provider อื่น"), "fail-closed provider trust claim is missing");
+assert.ok(page.includes("การลบ PII ใน PDF/OCR แบบสาธารณะ: ปิด"), "system evidence does not show the PDF quarantine");
+assert.ok(page.includes("monotonicNow()"), "browser timing does not use the monotonic clock helper");
+assert.ok(!page.includes('index < current ? "done"'), "approximate stages falsely claim server-side completion");
+assert.ok(!page.includes("Leftover mappings"), "leftover tokens are mislabelled as mappings");
+assert.ok(!page.includes("โทเคนทึบ"), "type-labelled token placeholders are described as opaque");
+for (const ownershipGuard of [
+  "if (generation === detectGeneration) scanBtn.disabled",
+  "if (generation === roundtripGeneration)",
+  "if (generation === reportGeneration) btn.disabled",
+]) {
+  assert.ok(page.includes(ownershipGuard), `stale request finalizer lacks ownership guard: ${ownershipGuard}`);
+}
 for (const marker of [
   'id="scanBtn"',
   'id="resetDemo"',
@@ -93,6 +132,14 @@ class FakeElement {
   removeAttribute(name) {
     if (name === "src") this.src = "";
   }
+
+  setAttribute(name, value) {
+    if (name === "aria-pressed") this.ariaPressed = String(value);
+  }
+
+  focus() {
+    this.focused = true;
+  }
 }
 
 const elements = new Map();
@@ -100,10 +147,18 @@ const element = id => {
   if (!elements.has(id)) elements.set(id, new FakeElement(id));
   return elements.get(id);
 };
+element("mode").value = "token";
+const scenarioButtons = [...page.matchAll(/<button class="scenario-card"[^>]*data-scenario="([^"]+)"[^>]*data-sample="([^"]+)"/g)]
+  .map(match => {
+    const button = element(`scenario-${match[1]}`);
+    button.dataset.scenario = match[1];
+    button.dataset.sample = match[2];
+    return button;
+  });
 const downloads = [];
 const document = {
   getElementById: element,
-  querySelectorAll: () => [],
+  querySelectorAll: selector => selector.includes("data-scenario") ? scenarioButtons : [],
   createElement: tag => {
     assert.equal(tag, "a");
     return {
@@ -135,16 +190,56 @@ let roundtripMode = "deferred";
 let slowRoundtrip = deferred();
 let roundtripBody = null;
 let roundtripCalls = 0;
+const roundtripRequests = [];
 let slowDetect = deferred();
+let detectMode = "deferred";
+let detectBody = null;
 let detectCalls = 0;
 let guardCalls = 0;
+let guardMode = "success";
+let guardBody = {flagged: false, guard_findings: []};
 let analyzeReportCalls = 0;
+let reportMode = "success";
+let slowReport = deferred();
+let abortedRoundtripCalls = 0;
+const requestOrder = [];
 const initialSession = deferred();
 let sessionCalls = 0;
 let loginCalls = 0;
 let logoutMode = "success";
 let slowLogout = null;
+const abortable = (promise, signal, onAbort = () => {}) => {
+  if (!signal) return promise;
+  if (signal.aborted) {
+    onAbort();
+    const error = new Error("aborted");
+    error.name = "AbortError";
+    return Promise.reject(error);
+  }
+  return new Promise((resolve, reject) => {
+    const abort = () => {
+      onAbort();
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      reject(error);
+    };
+    signal.addEventListener("abort", abort, {once: true});
+    promise.then(
+      value => {
+        signal.removeEventListener("abort", abort);
+        resolve(value);
+      },
+      error => {
+        signal.removeEventListener("abort", abort);
+        reject(error);
+      },
+    );
+  });
+};
 const fetch = (url, _options = {}) => {
+  if (url === "/api/health") {
+    return Promise.resolve(response(200, {status: "ok", version: "2.5.0", contract_version: 2}));
+  }
   if (url === "/api/auth/session") {
     sessionCalls += 1;
     if (sessionCalls === 1) return initialSession.promise;
@@ -162,7 +257,11 @@ const fetch = (url, _options = {}) => {
   }
   if (url === "/api/roundtrip") {
     roundtripCalls += 1;
-    if (roundtripMode === "deferred") return slowRoundtrip.promise;
+    requestOrder.push(url);
+    roundtripRequests.push(JSON.parse(_options.body));
+    if (roundtripMode === "deferred") {
+      return abortable(slowRoundtrip.promise, _options.signal, () => { abortedRoundtripCalls += 1; });
+    }
     if (roundtripMode === "body") return Promise.resolve(response(200, roundtripBody));
     if (roundtripMode === "unauthorized") {
       return Promise.resolve(response(401, {error: {code: "authentication_required"}}));
@@ -170,14 +269,24 @@ const fetch = (url, _options = {}) => {
   }
   if (url === "/api/detect") {
     detectCalls += 1;
+    requestOrder.push(url);
+    if (detectMode === "body") return Promise.resolve(response(200, detectBody));
+    if (detectMode === "error") return Promise.resolve(response(503, {error: {code: "service_unavailable"}}));
     return slowDetect.promise;
   }
   if (url === "/api/guard") {
     guardCalls += 1;
-    return Promise.resolve(response(200, {flagged: false, guard_findings: []}));
+    requestOrder.push(url);
+    if (guardMode === "error") return Promise.resolve(response(503, {error: {code: "service_unavailable"}}));
+    if (guardMode === "network-error") return Promise.reject(new Error("guard network down"));
+    return Promise.resolve(response(200, guardBody));
   }
   if (url === "/api/analyze-report") {
     analyzeReportCalls += 1;
+    requestOrder.push(url);
+    if (reportMode === "error") return Promise.resolve(response(503, {error: {code: "service_unavailable"}}));
+    if (reportMode === "malformed") return Promise.resolve(response(200, {}));
+    if (reportMode === "deferred") return abortable(slowReport.promise, _options.signal);
     return Promise.resolve(response(200, {
       report_pdf_b64: "JVBERi0xLjQ=",
       overall_score: 68,
@@ -213,12 +322,16 @@ await flush();
 assert.equal(sessionCalls, 1, "initial session check did not start");
 assert.equal(element("send").disabled, true, "business controls enabled before auth completed");
 assert.equal(element("scanBtn").disabled, true, "Privacy Scan enabled before auth completed");
+assert.equal(element("guidedStart").disabled, true, "Guided Demo enabled before auth completed");
+assert.equal(element("serviceStatus").textContent, "ออนไลน์ · บริการตอบสนอง", "public health was not normalized into system evidence");
+assert.equal(element("serviceVersion").textContent, "2.5.0", "health version was not shown safely");
 
 element("accessCode").value = "synthetic-access-code";
 await element("loginBtn").emit("click");
 assert.equal(sessionCalls, 2, "login did not start a fresh session check");
 assert.equal(element("send").disabled, false, "successful login did not enable business controls");
 assert.equal(element("scanBtn").disabled, false, "successful login did not enable Privacy Scan");
+assert.equal(element("guidedStart").disabled, false, "successful login did not enable Guided Demo");
 
 initialSession.resolve(response(401, {authenticated: false}));
 await flush();
@@ -254,6 +367,13 @@ vm.runInContext(
 );
 assert.ok(!element("legend").innerHTML.includes("<img"), "legend rendered a count as HTML");
 assert.match(element("legend").innerHTML, /&lt;img/, "legend did not preserve an escaped count");
+vm.runInContext(
+  'fillEvidence({sanitized_text: "synthetic", warnings: [{code: "<img src=x onerror=alert(1)>", count: "<svg onload=alert(2)>"}]})',
+  context,
+);
+assert.ok(!element("evidenceWarnings").innerHTML.includes("<img"), "warning code rendered as HTML");
+assert.ok(!element("evidenceWarnings").innerHTML.includes("<svg"), "warning count rendered as HTML");
+assert.match(element("evidenceWarnings").innerHTML, /&lt;img/, "warning evidence did not preserve escaped text");
 assert.equal(
   vm.runInContext('errorMessage(500, "RAW_EXCEPTION_DETAIL", "text")', context),
   "ไม่สามารถดำเนินการได้ในขณะนี้ กรุณาตรวจข้อมูลแล้วลองใหม่",
@@ -275,14 +395,20 @@ const seedSensitiveState = () => {
   element("guardBar").textContent = "SENSITIVE_GUARD";
   element("safeOriginal").textContent = "SENSITIVE_ORIGINAL";
   element("safeElapsed").textContent = "SENSITIVE_ELAPSED";
+  element("safeAnnouncement").textContent = "SENSITIVE_ANNOUNCEMENT";
+  element("proofStatus").textContent = "SENSITIVE_PROOF";
+  element("safeDuration").textContent = "SENSITIVE_DURATION";
   element("piiTypes").textContent = "SENSITIVE_TYPES";
   element("piiCount").textContent = "99";
   element("reportMeta").textContent = "SENSITIVE_REPORT";
   element("reportScore").textContent = "99";
   element("reportGrade").textContent = "F";
   element("reportScope").textContent = "SENSITIVE_SCOPE";
+  element("reportCategories").textContent = "SENSITIVE_CATEGORIES";
+  element("guidedStatus").textContent = "SENSITIVE_GUIDED";
+  element("guidedPii").textContent = "99";
 };
-const assertSensitiveStateCleared = label => {
+const assertSensitiveStateCleared = (label, {sessionExpired = false} = {}) => {
   assert.equal(element("accessCode").value, "", `${label}: access code retained`);
   assert.equal(element("editor").value, "", `${label}: editor retained source text`);
   assert.equal(element("highlight").textContent, "", `${label}: highlight retained source text`);
@@ -291,10 +417,20 @@ const assertSensitiveStateCleared = label => {
   assert.equal(element("evidenceSanitized").textContent, "ยังไม่มีข้อมูล", `${label}: evidence retained`);
   assert.equal(element("guardBar").textContent, "", `${label}: guard result retained`);
   assert.equal(element("safeOriginal").textContent, "กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที", `${label}: Safe AI original retained`);
-  assert.equal(element("safeElapsed").textContent, "", `${label}: elapsed state retained`);
+  if (sessionExpired) {
+    assert.match(element("safeElapsed").textContent, /เซสชันหมดอายุ/, `${label}: local recovery guidance missing`);
+  } else {
+    assert.equal(element("safeElapsed").textContent, "", `${label}: elapsed state retained`);
+  }
+  assert.equal(element("safeAnnouncement").textContent, "", `${label}: screen-reader Safe AI state retained`);
+  assert.equal(element("proofStatus").textContent, "รอผล Safe AI", `${label}: proof state retained`);
+  assert.equal(element("safeDuration").textContent, "—", `${label}: Safe AI timing retained`);
   assert.equal(element("piiTypes").textContent, "ยังไม่มีข้อมูลให้วิเคราะห์", `${label}: PII type summary retained`);
   assert.equal(element("reportMeta").textContent, "", `${label}: report result retained`);
   assert.equal(element("reportScore").textContent, "—", `${label}: report score retained`);
+  assert.match(element("reportCategories").textContent, /ประเภทข้อมูลจะแสดงจาก Privacy Scan/, `${label}: report category context retained`);
+  assert.equal(element("guidedPii").textContent, "—", `${label}: Guided result retained`);
+  assert.equal(element("guidedStepScan").dataset.state, "idle", `${label}: Guided progress retained`);
 };
 
 seedSensitiveState();
@@ -373,10 +509,201 @@ await staleInputRoundtrip;
 assert.doesNotMatch(element("masked").textContent, /STALE_INPUT_/);
 assert.doesNotMatch(element("restored").textContent, /STALE_INPUT_/);
 
+const guidedSource = "นายทดสอบ ตัวอย่าง โทร 081-000-0000";
+const guidedPhone = "081-000-0000";
+const guidedPhoneStart = Array.from(guidedSource.slice(0, guidedSource.indexOf(guidedPhone))).length;
+const guidedDetectBody = {
+  highlights: [{
+    start: guidedPhoneStart,
+    end: guidedPhoneStart + Array.from(guidedPhone).length,
+    data_type: "PHONE",
+  }],
+  entity_type_counts: {PHONE: 1},
+  detected_entity_count: 1,
+};
+const guidedSafeBody = restoredText => ({
+  sanitized_text: "นายทดสอบ ตัวอย่าง โทร [PHONE_SYNTHETIC]",
+  restored_text: restoredText,
+  provider_used: "tokenmind",
+  detected_entity_count: 1,
+  entity_type_counts: {PHONE: 1},
+  section26_categories: [],
+  guard_findings: [],
+  warnings: [],
+  safety: {status: "pass", residual_count: 0},
+  restoration: {status: "complete", replaced_count: 1, leftover_count: 0},
+});
+
+const callsBeforeScenario = requestOrder.length;
+await scenarioButtons[1].emit("click");
+assert.match(element("editor").value, /เวชระเบียนสังเคราะห์/, "scenario selection did not populate its synthetic input");
+assert.equal(requestOrder.length, callsBeforeScenario, "scenario selection submitted an API request");
+assert.equal(scenarioButtons[1].ariaPressed, "true", "selected scenario is not exposed accessibly");
+
+detectMode = "body";
+detectBody = guidedDetectBody;
+roundtripMode = "body";
+roundtripBody = guidedSafeBody("คำตอบที่กู้คืนแล้ว");
+reportMode = "success";
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+const guidedOrderStart = requestOrder.length;
+const guidedRoundtripStart = roundtripCalls;
+const guidedReportStart = analyzeReportCalls;
+await element("guidedStart").emit("click");
+assert.deepEqual(
+  requestOrder.slice(guidedOrderStart),
+  ["/api/detect", "/api/guard", "/api/roundtrip", "/api/analyze-report"],
+  "Guided Demo did not execute the intended endpoint sequence",
+);
+assert.equal(roundtripCalls, guidedRoundtripStart + 1, "Guided Demo made more than one Safe AI API invocation");
+assert.equal(analyzeReportCalls, guidedReportStart + 1, "Guided Demo did not make exactly one report request");
+assert.equal(roundtripRequests.at(-1).mode, "token", "Guided Demo did not send the selected allowlisted mode exactly");
+assert.equal(roundtripRequests.at(-1).provider, "tokenmind", "Guided Demo changed the fixed hosted provider");
+assert.equal(element("guidedStepScan").dataset.state, "done");
+assert.equal(element("guidedStepSafe").dataset.state, "done");
+assert.equal(element("guidedStepReport").dataset.state, "done");
+assert.equal(element("masked").textContent, roundtripBody.sanitized_text, "exact sanitized provider input was not rendered");
+assert.match(element("proofStatus").textContent, /ไม่พบค่าที่ Privacy Scan ตรวจจับ 1 รายการ/);
+assert.doesNotMatch(element("proofStatus").textContent, new RegExp(guidedPhone), "proof exposed a detected raw value");
+assert.notEqual(element("guidedTiming").textContent, "—", "Guided Demo total timing was not recorded");
+assert.equal(element("guidedProofLink").hidden, false, "Guided completion did not reveal the proof jump");
+
+await element("guidedReset").emit("click");
+assert.equal(element("editor").value, "", "Guided reset retained source text");
+assert.equal(element("guidedStepScan").dataset.state, "idle", "Guided reset retained completed progress");
+assert.equal(element("masked").textContent, "ยังไม่ได้ส่ง", "Guided reset retained protected text");
+assert.equal(element("reportScore").textContent, "—", "Guided reset retained report metadata");
+assert.equal(element("guidedProofLink").hidden, true, "Guided reset retained the stale proof jump");
+
+// Starting Guided Demo must abort an older direct provider-bound request, and
+// that stale request must not re-enable controls while Guided owns the lane.
+roundtripMode = "deferred";
+slowRoundtrip = deferred();
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+const directBeforeGuided = vm.runInContext("runSafeAI()", context);
+await flush();
+const abortsBeforeGuided = abortedRoundtripCalls;
+const guidedOverlapRoundtrip = deferred();
+slowRoundtrip = guidedOverlapRoundtrip;
+detectMode = "body";
+detectBody = guidedDetectBody;
+reportMode = "success";
+const pendingOverlapGuided = element("guidedStart").emit("click");
+await flush();
+await flush();
+await directBeforeGuided;
+assert.equal(abortedRoundtripCalls, abortsBeforeGuided + 1, "Guided Demo did not abort an older Safe AI request");
+assert.equal(element("send").disabled, true, "stale Safe AI finalizer re-enabled send during Guided Demo");
+assert.equal(element("mode").disabled, true, "stale Safe AI finalizer unfroze mode during Guided Demo");
+guidedOverlapRoundtrip.resolve(response(200, guidedSafeBody("คำตอบจาก Guided ที่ไม่ซ้อนคำขอ")));
+await pendingOverlapGuided;
+assert.equal(element("guidedStepReport").dataset.state, "done", "Guided Demo did not recover after aborting prior work");
+await element("guidedReset").emit("click");
+
+// Unsupported DOM values are normalized back to the strict allowlist; both
+// supported modes are sent exactly as selected.
+roundtripMode = "body";
+roundtripBody = guidedSafeBody("คำตอบจากโหมดที่ตรวจสอบแล้ว");
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+element("mode").value = "__proto__";
+await element("send").emit("click");
+assert.equal(element("mode").value, "token", "unsupported mode was not normalized in the control");
+assert.equal(roundtripRequests.at(-1).mode, "token", "unsupported mode escaped the frontend allowlist");
+element("mode").value = "surrogate";
+await element("mode").emit("change");
+await element("send").emit("click");
+assert.equal(roundtripRequests.at(-1).mode, "surrogate", "supported surrogate mode was not sent exactly");
+element("mode").value = "token";
+await element("mode").emit("change");
+
+detectMode = "error";
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+const detectFailureRoundtrips = roundtripCalls;
+const detectFailureReports = analyzeReportCalls;
+await element("guidedStart").emit("click");
+assert.equal(roundtripCalls, detectFailureRoundtrips, "Guided Demo called Safe AI after detect failure");
+assert.equal(analyzeReportCalls, detectFailureReports, "Guided Demo called report after detect failure");
+assert.equal(element("guidedStepScan").dataset.state, "error");
+assert.equal(element("guidedStepSafe").dataset.state, "idle");
+assert.equal(element("guidedStepReport").dataset.state, "idle");
+
+guardMode = "error";
+detectMode = "body";
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+const guardFailureRoundtrips = roundtripCalls;
+const guardFailureReports = analyzeReportCalls;
+await element("guidedStart").emit("click");
+assert.equal(roundtripCalls, guardFailureRoundtrips, "Guided Demo called Safe AI after guard failure");
+assert.equal(analyzeReportCalls, guardFailureReports, "Guided Demo called report after guard failure");
+assert.equal(element("guidedStepScan").dataset.state, "error");
+assert.match(element("guardBar").textContent, /ตรวจเตือนคำสั่งไม่พร้อม/);
+guardMode = "success";
+
+detectMode = "body";
+roundtripMode = "body";
+roundtripBody = guidedSafeBody("UNSAFE_GUIDED_RESULT");
+roundtripBody.safety = {status: "fail", residual_count: 1};
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+const unsafeGuidedReports = analyzeReportCalls;
+await element("guidedStart").emit("click");
+assert.equal(analyzeReportCalls, unsafeGuidedReports, "Guided Demo called report after unsafe Safe AI result");
+assert.equal(element("guidedStepScan").dataset.state, "done");
+assert.equal(element("guidedStepSafe").dataset.state, "error");
+assert.equal(element("guidedStepReport").dataset.state, "idle");
+assert.doesNotMatch(element("restored").textContent, /UNSAFE_GUIDED_RESULT/);
+
+roundtripBody = guidedSafeBody("คำตอบที่ปลอดภัย");
+reportMode = "error";
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+await element("guidedStart").emit("click");
+assert.equal(element("guidedStepScan").dataset.state, "done");
+assert.equal(element("guidedStepSafe").dataset.state, "done");
+assert.equal(element("guidedStepReport").dataset.state, "error");
+assert.notEqual(element("guidedStatus").dataset.tone, "safe", "report failure was presented as Guided success");
+
+reportMode = "malformed";
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+await element("guidedStart").emit("click");
+assert.equal(element("guidedStepScan").dataset.state, "done");
+assert.equal(element("guidedStepSafe").dataset.state, "done");
+assert.equal(element("guidedStepReport").dataset.state, "error", "malformed report was presented as complete");
+assert.equal(element("reportDownloadBtn").hidden, true, "malformed report exposed a download");
+assert.notEqual(element("guidedStatus").dataset.tone, "safe", "malformed report produced Guided success");
+
+reportMode = "success";
+roundtripMode = "deferred";
+slowRoundtrip = deferred();
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+const pendingGuided = element("guidedStart").emit("click");
+await flush();
+await flush();
+await element("guidedReset").emit("click");
+slowRoundtrip.resolve(response(200, guidedSafeBody("STALE_GUIDED_RESTORED")));
+await pendingGuided;
+assert.equal(element("editor").value, "", "reset during Guided request retained source text");
+assert.doesNotMatch(element("restored").textContent, /STALE_GUIDED/);
+assert.equal(element("guidedStepScan").dataset.state, "idle", "stale Guided completion repopulated progress");
+assert.equal(element("reportScore").textContent, "—", "stale Guided completion repopulated report state");
+
+roundtripMode = "body";
+roundtripBody = guidedSafeBody("คำตอบหลังทดสอบ Guided");
+detectMode = "body";
+reportMode = "success";
+
 element("editor").value = "synthetic health report source";
 const downloadsBeforeReport = downloads.length;
+const directReportCallsBefore = analyzeReportCalls;
 await element("reportBtn").emit("click");
-assert.equal(analyzeReportCalls, 1, "PDPA report PDF request did not run");
+assert.equal(analyzeReportCalls, directReportCallsBefore + 1, "PDPA report PDF request did not run");
 assert.equal(element("reportScore").textContent, "68");
 assert.equal(element("reportGrade").textContent, "D");
 assert.equal(element("reportScope").textContent, "พร้อม");
@@ -385,11 +712,58 @@ assert.equal(downloads.length, downloadsBeforeReport, "report downloaded before 
 assert.equal(element("reportDownloadBtn").hidden, false, "validated report did not enable download");
 await element("reportDownloadBtn").emit("click");
 assert.equal(downloads.length, downloadsBeforeReport + 1, "validated PDPA report was not downloaded on request");
+reportMode = "error";
+await element("reportBtn").emit("click");
+assert.equal(element("reportScore").textContent, "—", "failed report retry retained a stale score");
+assert.equal(element("reportGrade").textContent, "—", "failed report retry retained a stale grade");
+assert.equal(element("reportDownloadBtn").hidden, true, "failed report retry retained stale PDF bytes");
+assert.match(element("reportMeta").textContent, /ยังไม่พร้อม|ไม่สามารถ|ลองใหม่/);
+reportMode = "success";
 const downloadsAfterReport = downloads.length;
 await element("editor").emit("input");
 assert.equal(element("reportDownloadBtn").hidden, true, "changing input retained a stale report download");
 await element("reportDownloadBtn").emit("click");
 assert.equal(downloads.length, downloadsAfterReport, "stale report bytes remained downloadable");
+
+detectMode = "body";
+detectBody = guidedDetectBody;
+element("editor").value = guidedSource;
+await element("editor").emit("input");
+await element("scanBtn").emit("click");
+assert.equal(element("piiCount").textContent, "1", "scan setup did not render its result");
+guardBody = {
+  flagged: true,
+  guard_findings: [{category: "<img src=x onerror=alert(1)>", severity: "<svg onload=alert(2)>"}],
+};
+await element("scanBtn").emit("click");
+assert.ok(!element("guardBar").innerHTML.includes("<img"), "guard category rendered as HTML");
+assert.ok(!element("guardBar").innerHTML.includes("<svg"), "guard severity rendered as HTML");
+assert.match(element("guardBar").innerHTML, /&lt;img/, "guard finding did not preserve escaped text");
+guardBody = {flagged: false, guard_findings: []};
+detectMode = "deferred";
+slowDetect = deferred();
+const pendingFailedRescan = element("scanBtn").emit("click");
+await flush();
+assert.equal(element("piiCount").textContent, "—", "rescan retained the prior count while loading");
+assert.equal(element("legend").textContent, "", "rescan retained the prior legend while loading");
+slowDetect.resolve(response(503, {error: {code: "service_unavailable"}}));
+await pendingFailedRescan;
+assert.equal(element("piiCount").textContent, "0", "failed rescan retained the prior count");
+detectMode = "body";
+
+roundtripMode = "body";
+roundtripBody = guidedSafeBody("คำตอบก่อน retry");
+await element("send").emit("click");
+assert.equal(element("evidenceSanitized").textContent, roundtripBody.sanitized_text);
+roundtripMode = "deferred";
+slowRoundtrip = deferred();
+const pendingFailedSafeRetry = element("send").emit("click");
+await flush();
+assert.equal(element("evidenceSanitized").textContent, "ยังไม่มีข้อมูล", "Safe AI retry retained stale sanitized evidence");
+assert.doesNotMatch(element("evidenceWarnings").textContent, /ไม่พบคำเตือน/, "Safe AI retry retained stale warning state");
+slowRoundtrip.resolve(response(503, {error: {code: "provider_unavailable"}}));
+await pendingFailedSafeRetry;
+assert.equal(element("evidenceSanitized").textContent, "ยังไม่มีข้อมูล", "failed Safe AI retry repopulated stale evidence");
 
 const assertRoundtripSuppressed = async (label, body) => {
   roundtripMode = "body";
@@ -431,9 +805,12 @@ roundtripMode = "unauthorized";
 seedSensitiveState();
 const downloadsBeforeUnauthorized = downloads.length;
 await element("send").emit("click");
-assertSensitiveStateCleared("401 response");
+assertSensitiveStateCleared("401 response", {sessionExpired: true});
 assert.equal(element("send").disabled, true, "401 did not disable business controls");
 assert.equal(downloads.length, downloadsBeforeUnauthorized, "401 response triggered a download");
+assert.match(element("safeElapsed").textContent, /เซสชันหมดอายุ.*เข้าสู่ระบบด้านบน/, "401 left Safe AI without local recovery guidance");
+assert.equal(element("safeElapsed").dataset.tone, "caution", "401 recovery was not presented calmly");
+assert.equal(element("accessCode").focused, true, "401 did not return focus to the login field");
 
 element("accessCode").value = "synthetic-access-code";
 await element("loginBtn").emit("click");
