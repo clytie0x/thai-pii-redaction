@@ -43,28 +43,25 @@ tag/rules ไม่ได้พิสูจน์ host isolation
 Auto DevOps ปิดอยู่แล้ว ให้ยืนยันว่า project `.gitlab-ci.yml` เป็น pipeline
 source ที่มีผลจริง ห้ามให้ template อื่น override release pipeline นี้
 
-## 3 ต่อ remote แล้ว first-publish `main` แบบ check-only
+## 3 First publication ที่เกิดขึ้นจริง และ corrective push แบบ check-only
 
-repo นี้ยังไม่มี remote เลย ต้องเปิดหน้า **Code → Clone** แล้วคัดลอก SSH URL
-จาก UI ก่อน ค่าที่คาดคือ
-`git@gitlab.nectec.or.th:ai4thai-service-hackathon/08/aiguard-aift.git`
-แต่ห้ามตั้งจากการคาดเดาเพียงอย่างเดียว
+remote `origin` ถูกยืนยันและ first publication SHA `298401552726...` สร้าง
+remote `main` สำเร็จ GitLab auto-protected the first remote `main` เพราะเป็น
+default branch ซึ่งต่างจากสมมติฐานเดิม Pipeline #35715 จึงสร้าง production jobs
+ตาม rules เก่า แต่ทุก job เหล่านั้นจบเป็น `skipped` เมื่อ `check` ล้มเหลว ไม่มี
+application variable, provider call หรือ production mutation
 
-```bash
-git remote add origin <SSH URL ที่ยืนยันจาก GitLab UI>
-git push -u origin main
-```
+กติกา repository ปัจจุบันแก้ให้ **Ordinary pushes are check-only** ทุก branch
+รวม protected `main`; deploy/acceptance/ops สร้างได้เฉพาะ `web` pipeline ที่
+เจ้าของเริ่มผ่าน **Build → Pipelines → Run pipeline** บน protected `main`
+correction push ใช้ normal push, ไม่ใช้ `ci.skip`, และต้องยังไม่สร้าง application
+variables ตรวจหน้า pipeline ว่ามี `check` เพียง job เดียว
 
-เจ้าของต้องอนุญาตคำสั่งข้างบนแยกต่างหาก และ first publication นี้ต้องทำโดย
-**ยังไม่สร้าง application variables** ไม่ใช้ `ci.skip` pipeline source เป็น
-normal branch push; unprotected `main` จึงสร้าง `check` เท่านั้น ไม่สร้าง deploy,
-acceptance หรือ ops แม้ deploy จะถูกสร้างผิดคาด การตรวจ secret จะ fail ก่อน
-`docker compose up`
+## 4 ทบทวน `main`, สร้าง variables แล้วเริ่ม production pipeline ใหม่
 
-## 4 Protect `main`, สร้าง variables แล้วเริ่ม pipeline ใหม่
-
-หลัง first-push `check` เขียว ให้ไปที่ **Settings → Repository → Branch rules**
-ทันที: protect `main`, ปิด force push และจำกัด push/merge ตามสิทธิ์ทีม
+หลัง corrective `check` เขียว ให้ไปที่ **Settings → Repository → Branch rules**
+เพื่อตรวจ rule ที่ GitLab สร้างให้อัตโนมัติ: `main` ต้อง protected, force push
+ปิด และ push/merge จำกัดตามสิทธิ์ทีม ห้ามแก้ protection ใน recovery session
 
 จากนั้นสร้าง variables สี่ตัว:
 
@@ -87,10 +84,11 @@ expansion, scope `team08` และให้ค่าทั้งสี่ไม
 SHA กับ `origin/main` ซ้ำเพื่อกัน stale deployment คู่มือไม่กำหนด `newest_first`
 หรือ automatic rollback; ไม่ใช้สองอย่างนี้เป็น publication gate
 
-ไปที่ **Build → Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable
-ชั่วคราว แล้วสร้าง pipeline **ใหม่บน exact SHA เดิม** source `web` นี้ถูก rules
+หลังได้รับ owner authorization สำหรับ production แยกต่างหาก ไปที่ **Build →
+Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable ชั่วคราว แล้ว
+สร้าง pipeline **ใหม่บน exact SHA ปัจจุบัน** source `web` นี้เท่านั้นที่ rules
 อนุญาตให้ protected `main` รัน `check → deploy → acceptance` ห้ามกด Retry บน
-pipeline แรกเพราะ protected-ref rules จะไม่ถูกประเมินใหม่
+pipeline #35715 เพราะใช้ SHA/rules เก่า
 
 ## 5 ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
 

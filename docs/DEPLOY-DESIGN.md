@@ -42,8 +42,9 @@ nginx เติมกลับ (ไม่มี double-mount router — พิ�
   → ไม่มี bind mount เลยทั้ง compose และเห็นใน Dozzle จริง
 - `UVICORN_WORKERS=1` จนกว่าจะวัด (โมเดล cache ต่อโปรเซส)
 - acceptance เป็น stage แยกหลัง deploy ใน `.gitlab-ci.yml`; deploy,
-  acceptance และ ops schedule เฉพาะ protected `main` ส่วนทุก branch/MR และ
-  unprotected `main` มี check-only pipeline ที่ไม่ deploy
+  acceptance และ ops schedule เฉพาะ UI-created pipeline บน protected `main`
+  ส่วนทุก branch/MR และ ordinary push รวม protected `main` มี check-only
+  pipeline ที่ไม่ deploy
 - ทุก job inherit runner tag `team-08`; tag จำกัด scheduling แต่ไม่แทน
   daemon isolation Participant Guide ไม่กำหนด Protected runner; การไม่มี flag
   นี้ไม่ใช่ publication blocker เพียงลำพัง แต่ยังต้องขอ platform evidence เรื่อง

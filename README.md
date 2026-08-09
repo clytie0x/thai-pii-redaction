@@ -176,8 +176,8 @@ Participant Guide กำหนดให้ branch อื่นรัน `check` 
 | ref/pipeline | งานที่ถูกสร้าง |
 |---|---|
 | feature branch push หรือ merge request | `check` เท่านั้น |
-| unprotected `main` | `check` เท่านั้น |
-| protected `main` จาก push หรือปุ่ม Run pipeline | `check → deploy → acceptance` แล้วจึงมี manual `logs/ps/restart` |
+| push ทุก branch รวม protected/unprotected `main` | `check` เท่านั้น |
+| protected `main` จากปุ่ม Run pipeline | `check → deploy → acceptance` แล้วจึงมี manual `logs/ps/restart` |
 | tag, schedule หรือ API-triggered pipeline | ไม่สร้าง pipeline production |
 
 ทุก job inherit tag `team-08` จาก `default.tags` ตรงกับ tag ที่เห็นบน runner
@@ -186,11 +186,12 @@ Participant Guide กำหนดให้ branch อื่นรัน `check` 
 runner #227 ที่ไม่มี flag นี้จึงไม่ใช่ publication blocker เพียงลำพัง แต่ควรให้
 ผู้จัดยืนยัน scope/daemon isolation เป็น platform evidence
 
-project ปัจจุบันสร้าง protected rule ให้ branch ที่ยังไม่มีผ่าน UI ไม่ได้ จึงใช้
-bootstrap นี้โดยไม่ใช้ `ci.skip`: push exact `main` ครั้งแรกโดย **ยังไม่สร้าง
-application variables**, ให้ `check` จบ, protect remote `main`, สร้าง variables,
-แล้วกด Run pipeline เพื่อสร้าง pipeline **ใหม่** บน SHA เดิม ห้าม retry pipeline
-แรกเพราะ rules ถูกประเมินตอนสร้าง pipeline
+GitLab auto-protected the first remote `main` เมื่อสร้าง default branch จริง
+pipeline #35715 จึงพิสูจน์ว่าสมมติฐาน unprotected-bootstrap เดิมไม่ถูกต้อง
+Executable rules ปัจจุบันทำให้ **Ordinary pushes are check-only** เสมอ แม้
+`main` protected แล้ว ส่วน production ต้องเริ่มด้วยปุ่ม Run pipeline บน protected
+`main` เท่านั้น วิธีนี้ไม่ใช้ `ci.skip` และแยก source publication ออกจาก
+production authorization อย่างชัดเจน
 
 ชื่อ secret มีสี่ตัวเท่านั้น: `APP_AIGUARD_API_KEY`,
 `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`,

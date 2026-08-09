@@ -46,6 +46,10 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 
 CI_JOB_ID = os.environ.get("CI_JOB_ID", "").strip()
+DRIVER_CONTAINER = (
+    os.environ.get("AIFT_CONTRACT_DRIVER_CONTAINER", "").strip()
+    or (os.environ.get("HOSTNAME", "").strip() if CI_JOB_ID else "")
+)
 RUN_ID = f"ci-{CI_JOB_ID}" if CI_JOB_ID else f"local-{uuid.uuid4().hex[:12]}"
 PREFIX = f"aiguard-contract-{RUN_ID}"
 NETWORK = f"{PREFIX}-net"
@@ -152,6 +156,16 @@ def stub_log_lines() -> int:
 
 def teardown() -> None:
     run("docker", "rm", "-f", STUB, PROXY, WEB, check=False)
+    if DRIVER_CONTAINER:
+        run(
+            "docker",
+            "network",
+            "disconnect",
+            "-f",
+            NETWORK,
+            DRIVER_CONTAINER,
+            check=False,
+        )
     run("docker", "network", "rm", NETWORK, check=False)
     run(
         "docker",
@@ -217,8 +231,20 @@ def setup() -> None:
         "127.0.0.1::3000",
         WEB_IMAGE,
     )
-    BASE = published_base(PROXY, 8000)
-    WEB_BASE = published_base(WEB, 3000)
+    # Docker-executor jobs run inside a container. Host-loopback publications
+    # are deliberately unreachable from that container, so attach the job
+    # container to this isolated test network and use Docker DNS. Local runs
+    # retain the published-loopback path. In both modes, resolving the
+    # publication first proves the production bind stays on 127.0.0.1.
+    proxy_published = published_base(PROXY, 8000)
+    web_published = published_base(WEB, 3000)
+    if DRIVER_CONTAINER:
+        run("docker", "network", "connect", NETWORK, DRIVER_CONTAINER)
+        BASE = f"http://{PROXY}:8000"
+        WEB_BASE = f"http://{WEB}:3000"
+    else:
+        BASE = proxy_published
+        WEB_BASE = web_published
     for _ in range(60):
         try:
             if get("/health")[0] == 200 and web_get("/")[0] == 200:

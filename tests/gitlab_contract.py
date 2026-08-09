@@ -16,14 +16,7 @@ BRANCH_PIPELINES = [
     {"if": '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'},
     {"if": '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH'},
 ]
-PROTECTED_MAIN_ONLY = [
-    {
-        "if": (
-            '$CI_PIPELINE_SOURCE == "push" '
-            '&& $CI_COMMIT_BRANCH == "main" '
-            '&& $CI_COMMIT_REF_PROTECTED == "true"'
-        )
-    },
+PROTECTED_MAIN_UI_ONLY = [
     {
         "if": (
             '$CI_PIPELINE_SOURCE == "web" '
@@ -105,7 +98,7 @@ def main() -> int:
     assert pipeline["check"]["rules"] == BRANCH_PIPELINES
     for name in PRODUCTION_JOBS:
         job = pipeline[name]
-        assert job["rules"] == PROTECTED_MAIN_ONLY, name
+        assert job["rules"] == PROTECTED_MAIN_UI_ONLY, name
         assert "only" not in job and "except" not in job, name
 
     for name in PUBLIC_JOBS:
@@ -133,7 +126,7 @@ def main() -> int:
         ),
         "protected main push": (
             {"source": "push", "branch": "main", "protected": True},
-            release,
+            check_only,
         ),
         "protected main UI pipeline": (
             {"source": "web", "branch": "main", "protected": True},
@@ -191,8 +184,8 @@ def main() -> int:
 
     handoff = (ROOT / "docs" / "GITLAB-HANDOFF.md").read_text(encoding="utf-8")
     for documented_bootstrap in (
-        "first unprotected-main push",
-        "Do not retry the first-push pipeline",
+        "GitLab auto-protected the first remote `main`",
+        "Ordinary pushes are check-only",
         "does not require a Protected runner",
         "Do not create the four application variables yet",
         "Build → Pipelines → Run pipeline",
@@ -200,8 +193,8 @@ def main() -> int:
     ):
         assert documented_bootstrap in handoff, documented_bootstrap
     print(
-        "gitlab contract ok: branch/MR check only; protected-main push/UI release; "
-        "team-08 tagged and first-push safe"
+        "gitlab contract ok: every branch/MR/push check only; protected-main UI release; "
+        "team-08 tagged and first-publication safe"
     )
     return 0
 

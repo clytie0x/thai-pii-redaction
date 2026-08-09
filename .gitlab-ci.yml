@@ -1,7 +1,9 @@
 # AI Guard — AIFT team08. Based on the organizer participant-guide template.
 # The guide requires non-main branches to run check only. AI Guard additionally
-# requires protected main for production jobs. The team-08 tag is scheduling
-# hardening, not proof of runner-host or Docker-daemon isolation.
+# requires an explicitly started UI pipeline on protected main for production
+# jobs. Ordinary pushes stay check-only even when GitLab auto-protects the
+# default branch. The team-08 tag is scheduling hardening, not proof of
+# runner-host or Docker-daemon isolation.
 
 variables:
   TEAM: "team08"
@@ -100,7 +102,6 @@ deploy:
     - curl -fsS "http://127.0.0.1:${BASE_1}/health" && echo " <- /health OK"
     - curl -fsS -o /dev/null "http://127.0.0.1:${BASE}/" && echo "web root OK"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 # The helper reads credentials only from inherited environment and keeps the
@@ -123,7 +124,6 @@ acceptance:
       fi
       python3 tests/platform_acceptance.py
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 .ops: &ops
@@ -136,7 +136,6 @@ acceptance:
     name: $TEAM
     action: access
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
 logs:

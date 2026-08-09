@@ -28,9 +28,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
   “ข้อความที่ส่งให้ AI จริง” และ PDPA Report แบบดู score/grade ก่อนดาวน์โหลด
   ตัวอย่างเป็นเพียง input ผลทุกอย่างยังเรียก API จริง ไม่มี persistence หรือ
   third-party frontend dependency
-- ทุก CI job ถูก pin ด้วย runner tag `team-08`; feature branch/MR และ unprotected
-  `main` รัน `check` เท่านั้น ส่วน deploy/acceptance/ops ต้องเป็น protected
-  `main` จาก push หรือ UI-created pipeline ตาม executable rules
+- ทุก CI job ถูก pin ด้วย runner tag `team-08`; feature branch/MR และ push ทุก
+  branch รวม protected `main` รัน `check` เท่านั้น ส่วน deploy/acceptance/ops
+  ต้องเป็น UI-created pipeline บน protected `main` ตาม executable rules
 - exact proxy allowlist มี 16 routes (8 canonical + 8 `/v1` aliases)
 - `/redact-pdf` และ `/v1/redact-pdf` คืน proxy-level 404; frontend ไม่มี
   upload/call/preview/download ของ PDF redaction
@@ -156,19 +156,24 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    คู่มือไม่กำหนด Protected runner และ flag ที่ขาดไม่ใช่ publication blocker
    เพียงลำพัง แต่ staff ควรยืนยัน project scope/daemon isolation; tag เป็นเพียง
    scheduling control ไม่ใช่ isolation proof
-8. GitLab push/runner, public HTTPS/proxy และ official platform acceptance
-   ยังไม่เกิดขึ้น
+8. first publication สร้าง remote `main` ที่ `298401552726...`; GitLab
+   auto-protected default branch และ pipeline #35715 ใช้ runner #227 จริง
+   `check` หยุดที่ nginx contract เพราะ test ใช้ host-loopback assumption
+   deploy/acceptance/ops เป็น skipped ทั้งหมดและไม่มี production mutation
+   SHA นี้จึงเป็น historical first-publication evidence ไม่ใช่ deployment evidence
+9. public HTTPS/proxy และ official platform acceptance ยังไม่เกิดขึ้น
 
 ## เหลือหลัง local recertification — งานออกนอกเครื่อง เจ้าของทำเอง
 
-1. ยืนยัน project เปล่าบน `gitlab.nectec.or.th` และ SSH URL จาก UI
-2. owner อนุญาต first publication ปกติ (ไม่ใช้ `ci.skip`) โดยยังไม่สร้าง
-   application variables; pipeline แรกต้องมี `check` เท่านั้น
-3. protect remote `main` ทันที แล้วสร้าง `APP_AIGUARD_API_KEY`,
+1. push corrective exact `main` ปกติ (ไม่ใช้ `ci.skip`) โดยยังไม่สร้าง
+   application variables; executable rules ต้องสร้าง `check` job เดียว
+2. ยืนยัน corrective pipeline เขียวและไม่มี production jobs
+3. ทบทวน branch rule ที่ GitLab สร้างให้อัตโนมัติ แล้วสร้าง `APP_AIGUARD_API_KEY`,
    `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY` และ
    `APP_TOKENMIND_API_KEY`: Masked ตามคู่มือ และเพิ่ม Protected/Hidden,
    expansion off, scope `team08` ตาม AI Guard hardening
-4. กด Run pipeline ใหม่บน exact protected-main SHA; ห้าม retry pipeline แรก
+4. หลัง owner อนุญาต production แยกต่างหาก จึงกด Run pipeline ใหม่บน exact
+   protected-main SHA; ห้าม retry pipeline แรก
 5. ดูให้ครบสาม stage ไม่ใช่แค่ deploy เขียว
 6. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
 

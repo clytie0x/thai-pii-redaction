@@ -19,8 +19,9 @@ failure. This joins them into one text and runs it under `sh -e`, which is
 close but not identical — a failure inside a pipeline or a subshell can be
 reported differently. It also ignores `rules:`, running the job as if the
 branch were `main`, and it knows nothing about the runner's tags, caches or
-artifacts. It proves the shell, the network shape and the commands. It does
-not prove the runner.
+artifacts. The optional `--gitlab-network` mode reproduces a Docker executor's
+job-container network for `check`; the default host-network mode supports
+deployment-shaped local jobs. Neither mode proves the organizer runner.
 
 This file is deliberately NOT referenced by `.gitlab-ci.yml`: it is a local
 tool, and a tool that CI depends on is another thing that can fail on the
@@ -29,6 +30,7 @@ runner.
 Usage (from this repo, with the upstream venv's python for pyyaml):
 
     python tests/run_ci_local.py --job check
+    python tests/run_ci_local.py --job check --gitlab-network
     python tests/run_ci_local.py --all
     python tests/run_ci_local.py --job deploy --cold
 
@@ -177,11 +179,15 @@ def private_env_file(environment: dict[str, str]):
         path.unlink(missing_ok=True)
 
 
-def docker_command(pipeline: dict, env_file: Path) -> list[str]:
+def docker_command(
+    pipeline: dict, env_file: Path, *, gitlab_network: bool = False
+) -> list[str]:
     image = pipeline.get("default", {}).get("image", "docker:27.3.1")
-    network_args = ["--network", "host"]
+    network_args = [] if gitlab_network else ["--network", "host"]
     contract_env = []
-    if sys.platform == "win32":
+    if gitlab_network:
+        contract_env = ["-e", "CI_JOB_ID=local-gitlab-network"]
+    elif sys.platform == "win32":
         network_args += ["--add-host", "host.docker.internal:host-gateway"]
         contract_env = ["-e", "AIFT_CONTRACT_CONNECT_HOST=host.docker.internal"]
     return [
@@ -206,7 +212,9 @@ def docker_command(pipeline: dict, env_file: Path) -> list[str]:
     ]
 
 
-def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
+def run_job(
+    pipeline: dict, job: str, secrets: list[str], *, gitlab_network: bool = False
+) -> dict:
     script = build_script(pipeline, job)
     print(f"[sim] === {job} ===", flush=True)
     started = time.monotonic()
@@ -217,7 +225,7 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
     # masquerading as a defect in the pipeline, which is the exact failure
     # mode a simulator has to be trusted not to invent.
     with private_env_file(docker_environment(pipeline)) as env_file:
-        command = docker_command(pipeline, env_file)
+        command = docker_command(pipeline, env_file, gitlab_network=gitlab_network)
         result = subprocess.run(
             command,
             input=script.encode("utf-8"),
@@ -242,6 +250,7 @@ def run_job(pipeline: dict, job: str, secrets: list[str]) -> dict:
         "job": job,
         "exit_code": result.returncode,
         "seconds": round(elapsed, 1),
+        "gitlab_network": gitlab_network,
         "tail": output.splitlines()[-TAIL_LINES:],
     }
 
@@ -259,6 +268,11 @@ def prune_build_cache() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job", help="run one job by name")
+    parser.add_argument(
+        "--gitlab-network",
+        action="store_true",
+        help="run check in a Docker-executor-style job network (check only)",
+    )
     parser.add_argument(
         "--all", action="store_true", help=f"run {', '.join(ALL_JOBS)} in order"
     )
@@ -282,6 +296,8 @@ def main() -> int:
     # measurement and never a side effect of asking for the whole pipeline.
     if args.cold and args.all:
         parser.error("--cold works with a single --job only; run --all warm first")
+    if args.gitlab_network and (args.all or args.job != "check"):
+        parser.error("--gitlab-network is supported only with --job check")
 
     if not subprocess.run(
         ["docker", "info"],
@@ -303,7 +319,9 @@ def main() -> int:
 
     results = []
     for job in jobs:
-        result = run_job(pipeline, job, secrets)
+        result = run_job(
+            pipeline, job, secrets, gitlab_network=bool(args.gitlab_network)
+        )
         result["cold"] = bool(args.cold)
         results.append(result)
         if result["exit_code"] != 0:
