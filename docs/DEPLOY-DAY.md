@@ -2,12 +2,14 @@
 
 ทุกอย่างในไฟล์นี้เป็นงานที่เจ้าของทำเองหรือมอบอำนาจให้ operator อย่างชัดเจน
 เพราะออกนอกเครื่องทั้งหมด
-ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ใน `STATE.md` ผ่านครบ Production rollback
-ก่อน Sprint 2 คือ exact `9d38c6753aa0242bc35d09ec3332e90fe3f90079`:
-Pipeline #35736 ผ่าน check/deploy/acceptance และ public live acceptance แล้ว
-ทุก descendant ต้องผ่าน
+ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ใน `STATE.md` ผ่านครบ Production known-good
+ปัจจุบันคือ exact `72e18bbe723adaf54c847e4b17c2177dfa60dd68`:
+Pipeline #35744 ผ่าน check/deploy/acceptance และ public live acceptance แล้ว
+ส่วน `9d38c6753aa0242bc35d09ec3332e90fe3f90079` เป็น rollback ก่อน Sprint 2
+ทุก runtime descendant ต้องผ่าน
 exact fake-provider local acceptance, feature-branch check, independent reviews
-และ pipeline/public acceptance ใหม่ก่อนแทน baseline นี้ Public PDF redaction/OCR
+และ pipeline/public acceptance ใหม่ก่อนแทน baseline นี้ Evaluation/tests/docs-only
+descendant ต้องผ่าน check/review แต่ไม่ควร deploy runtime ซ้ำโดยไม่มี runtime change Public PDF redaction/OCR
 ถูกพักจาก hosted release แรกและไม่ใช่ deploy gate ส่วน PDPA Report PDF ยังเปิด
 
 Participant Guide ทางการยืนยัน team/port/proxy/CI/resource/log/secret shape

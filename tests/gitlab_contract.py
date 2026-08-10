@@ -39,6 +39,7 @@ EXPECTED_CHECKS = {
     "node tests/frontend_session_contract.mjs",
     "python3 tests/public_surface_contract.py",
     "python3 tests/hosted_core_contract.py",
+    "python3 tests/thai_pii_evaluation_contract.py",
     "python3 tests/build_context_contract.py",
     "python3 tests/secret_hygiene_contract.py",
     "python3 tests/platform_acceptance_contract.py",

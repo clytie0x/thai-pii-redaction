@@ -18,11 +18,11 @@ unprefixed `/health`, non-main `check`, main-only deploy, per-service limits,
 runner tag และ stale-SHA checks เป็น AI Guard security hardening เพิ่มเอง
 runner #227 ผ่านทั้ง check-only และ production path แล้ว Historical attempt
 #35722 เก็บไว้เป็นหลักฐาน defect ของ host-loopback probe และ Pipeline #35727
-พิสูจน์ network correction ครั้งแรก ส่วน known-good production rollback ก่อน
-Sprint 2 คือ Pipeline #35736 บน exact
-`9d38c6753aa0242bc35d09ec3332e90fe3f90079` ซึ่งผ่าน
-check/deploy/acceptance, public HTTPS, live Tokenmind, log privacy, resource และ
-restart/recovery ครบ Sprint 2 descendant ต้องสร้างหลักฐาน exact-SHA ใหม่
+พิสูจน์ network correction ครั้งแรก ส่วน known-good production ปัจจุบันคือ
+Pipeline #35744 บน exact `72e18bbe723adaf54c847e4b17c2177dfa60dd68`
+ซึ่งผ่าน check/deploy/acceptance, public HTTPS, live Tokenmind, log privacy,
+resource และ restart/recovery ครบ SHA `9d38c6753aa0242bc35d09ec3332e90fe3f90079`
+ยังเก็บเป็น rollback ก่อน Sprint 2
 
 ## โครง
 
@@ -32,6 +32,7 @@ restart/recovery ครบ Sprint 2 descendant ต้องสร้างหล
 | `api/` | nginx ตัวกลาง: เติม `/api` prefix ที่ proxy ของแพลตฟอร์มตัดออก, คง `/v1` aliases, inject contract 2 + internal core key เฉพาะ business route, rate limit และ log แบบไม่มี query string |
 | `web/` | หน้า product light-theme สาม workflow: Privacy Scan, Safe AI และ PDPA Report พร้อม Guided Demo, Executive Result Summary, Raw-vs-Protected, Sensitive Data Map, Prompt Risk, Protection Receipt, Presenter/fullscreen, entity glossary และ System Evidence (static, same-origin, ไม่มี third-party dependency หรือ persistent browser storage ของเนื้อหาผู้ใช้) |
 | `sync/` | สคริปต์ sync จาก upstream + manifest — `--check` รันใน CI ทุกครั้ง |
+| `evaluation/thai_pii/` | Sprint 3 synthetic/adversarial corpus, capability inventory, provider-free evaluator, value-minimized result และ reproducibility manifest; อยู่นอก runtime build context |
 
 ## Trust boundary (พูดตรง ๆ)
 
@@ -49,8 +50,8 @@ restart/recovery ครบ Sprint 2 descendant ต้องสร้างหล
 - config log ทุกชั้นไม่บันทึกเนื้อหาผู้ใช้ query string หรือ request target;
   audit ของ core เป็น JSONL ที่มีแต่ counts/flags/เวลาออกทาง stdout
   exact local candidate ผ่าน runtime synthetic-PII/secret/cookie/body scan
-  ในเครื่องแล้ว และ production rollback #35736 ผ่าน retained-log scan บน
-  แพลตฟอร์มจริง ทุก descendant ต้องตรวจใหม่ก่อนอ้างหลักฐานเดียวกัน
+  ในเครื่องแล้ว และ production #35744 ผ่าน retained-log scan บนแพลตฟอร์มจริง
+  ทุก runtime descendant ต้องตรวจใหม่ก่อนอ้างหลักฐานเดียวกัน
 - provider บน deployment นี้มีตัวเดียวคือ `tokenmind` — ไม่มีโหมดจำลอง
   (`fake` ใช้ได้เฉพาะเทสในเครื่องผ่าน compose override)
 - หน้า static และ health เป็น public แต่ business API ทุกเส้นต้อง login ด้วย
@@ -93,6 +94,15 @@ mapping อยู่ชั่วคราวในคำขอเดียวแ
 หน้าเว็บ เวลา Privacy Scan, Safe AI, PDPA Report และ Guided Demo เป็น total
 elapsed ที่วัดด้วย monotonic browser clock ไม่ใช่ detector/provider/stage
 telemetry
+
+Sprint 3 เพิ่มหลักฐาน detector แบบไม่แตะ runtime: corpus ภาษาไทยที่สร้างจาก
+template 138 กรณี + Section 26 heuristic 32 กรณี, exact span/type metrics,
+hard-negative false positives, Token/Surrogate protection, restoration,
+value-free error ledger และ local performance หลักฐานผูกกับ corpus/image/model
+asset/prediction hash และเรียก provider 0 ครั้ง อ่านวิธีและข้อจำกัดที่
+`docs/evaluation/thai-pii-competition-evaluation.md` ตัวเลขนี้เป็น deterministic
+synthetic/adversarial evaluation ไม่ใช่ population benchmark หรือ real-world
+accuracy claim และไม่เพิ่มหน้า dashboard/route สาธารณะ
 
 PDPA Report แสดง score/grade ที่ endpoint คืนก่อนเปิดปุ่มดาวน์โหลด ประเภทที่
 แสดงร่วมกันถูกระบุชัดว่ามาจาก Privacy Scan ของข้อความเดียวกัน เพราะ report
@@ -199,8 +209,9 @@ deploy/acceptance path หลัง container healthy; correction ใช้ in-c
 และต่อเฉพาะ acceptance job เข้า Compose network ชั่วคราวด้วย exact labels
 Pipeline #35727 พิสูจน์ corrected path ครบ check/deploy/acceptance บน exact
 `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`; Pipeline #35736 บน exact
-`9d38c6753aa0242bc35d09ec3332e90fe3f90079` คือ known-good production
-rollback ที่ใหม่กว่าและผ่าน live/platform acceptance ครบก่อน Sprint 2
+`9d38c6753aa0242bc35d09ec3332e90fe3f90079` คือ rollback ก่อน Sprint 2 และ
+Pipeline #35744 บน exact `72e18bbe723adaf54c847e4b17c2177dfa60dd68`
+คือ known-good production ปัจจุบันที่ผ่าน Sprint 2 live/platform acceptance ครบ
 
 release-content commit `71c20b37b1bf2be8f34b67294bc75137931ad3cb` ผ่าน exact local
 BusyBox `check` 25.7 วินาที, no-cache build สาม image 230.8 วินาที,
@@ -208,9 +219,9 @@ provider-free/fake acceptance + log/rate-limit/restart 28.7 วินาที �
 BusyBox `deploy` simulation 63.5 วินาที รายละเอียดอยู่ที่
 `docs/evidence/2026-08-08-local-release-candidate.md` หลักฐาน production/live
 ต้องอ้าง exact GitLab pipeline แยกต่างหาก; #35722 ไม่ถึง acceptance และห้ามใช้
-เป็นหลักฐานว่า Tokenmind หรือ public platform ผ่าน ส่วน rollback #35736 มี
-production acceptance แยกแล้ว แต่หลักฐานนั้นไม่ครอบ Sprint 2 descendant
-โดยอัตโนมัติ
+เป็นหลักฐานว่า Tokenmind หรือ public platform ผ่าน ส่วน #35744 มี production
+acceptance แยกแล้ว Sprint 3 evaluation-only descendant ไม่เปลี่ยน deployed
+runtime และต้องแยก evaluation SHA ออกจาก production SHA อย่างชัดเจน
 
 CI และตัวจำลอง local ส่งต่อเฉพาะชื่อตัวแปรสี่ตัวข้างต้นผ่าน temporary env file
 สิทธิ์จำกัด ค่า access code/cookie/secret ที่ใช้ acceptance อยู่ใน process

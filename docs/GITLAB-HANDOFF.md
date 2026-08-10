@@ -24,13 +24,14 @@ The guide does not require a Protected runner, Protected Environment,
   blocker. Organizer confirmation of project scope and Docker-daemon isolation
   remains desirable platform evidence; tag pinning is not isolation proof.
 - Auto DevOps: disabled.
-- Production rollback evidence preserved for Sprint 2 is exact
-  `9d38c6753aa0242bc35d09ec3332e90fe3f90079`: Pipeline #35736 passed
+- Current known-good production is exact
+  `72e18bbe723adaf54c847e4b17c2177dfa60dd68`: Pipeline #35744 passed
   `check → deploy → acceptance` on runner #227. Public HTTPS, prefix stripping,
   auth, synthetic Privacy Scan, live Tokenmind Safe AI, PDPA Report, route
   denial, log privacy, resources, revision labels, restart/recovery, and live
-  visual acceptance passed. Pipeline #35727 remains historical evidence of the
-  first successful runner-network correction.
+  visual acceptance passed. `9d38c6753aa0242bc35d09ec3332e90fe3f90079`
+  remains the pre-Sprint-2 rollback; Pipeline #35727 remains historical evidence
+  of the first successful runner-network correction.
 - Exactly four project variables are configured: `APP_AIGUARD_API_KEY`,
   `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`, and
   `APP_TOKENMIND_API_KEY`. Their values were not inspected. GitLab metadata
@@ -93,14 +94,21 @@ Guide requirements.
    internal-route denial, Dozzle/log privacy, resources, restart/recovery,
    exact revision labels, and visual QA at the required viewports.
 
-Sprint 2 adds only client-rendered evidence and presentation surfaces from the
+Sprint 2 added only client-rendered evidence and presentation surfaces from the
 existing 16-route contract: Executive Result Summary, Raw-vs-Protected,
 Sensitive Data Map, warning-only Prompt Risk, request-scoped non-cryptographic
 Protection Receipt, Presenter/fullscreen, and glossary/mode guidance. These must
 not create an extra `/roundtrip`, expose mapping or raw entity values, or revive
-public PDF redaction/OCR. The exact Sprint 2 SHA therefore needs new local fake,
-feature-branch, protected-main pipeline, live-provider, log, resource/restart,
-and responsive visual evidence before replacing rollback SHA `9d38c675...`.
+public PDF redaction/OCR. That runtime is now production at exact `72e18bbe...`
+with Pipeline #35744 and live/platform acceptance complete.
+
+Sprint 3 adds only `evaluation/`, one mandatory check contract, and documentation.
+Its committed 138-case Thai synthetic/adversarial corpus and 32-case Section 26
+signal suite run provider-free against the exact `72e18bbe...` detector image.
+Feature-branch and main pushes remain check-only. If the final diff still has no
+`core/`, `web/`, `api/`, Compose, or public-route change, integrate the reviewed
+evaluation SHA but do not create a pointless production deployment: report the
+evaluation HEAD separately while deployed runtime stays `72e18bbe...`.
 
 Feature branches, merge requests, and all ordinary pushes run `check` only.
 Tag pushes, schedules, and API-triggered pipelines cannot create production

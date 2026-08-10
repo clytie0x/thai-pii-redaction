@@ -1,13 +1,13 @@
-# สถานะงาน (10 ส.ค. 2569 — Competition Enhancement Sprint 2)
+# สถานะงาน (10 ส.ค. 2569 — Competition Sprint 3: Thai PII Evaluation)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-remote `main` protected และ known-good production Pipeline #35736 ที่ exact
-`9d38c6753aa0242bc35d09ec3332e90fe3f90079` ผ่าน
+remote `main` protected และ known-good production Pipeline #35744 ที่ exact
+`72e18bbe723adaf54c847e4b17c2177dfa60dd68` ผ่าน
 `check → deploy → acceptance` ครบแล้ว web/api/core ใช้ revision เดียวกัน และ
 public acceptance ผ่าน health, auth, Privacy Scan, live Tokenmind Safe AI,
 PDPA Report, route denial, log privacy, resource และ restart/recovery SHA นี้เป็น
-rollback evidence ที่ต้องรักษาระหว่าง Sprint 2 ขั้นตอนของวันจริงอยู่ที่
-`docs/DEPLOY-DAY.md`
+rollback evidence ก่อนหน้า `9d38c6753aa0242bc35d09ec3332e90fe3f90079`
+ยังต้องรักษา ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
 
 Participant Guide ทางการถูกอ่านครบและยืนยัน `team08`, พอร์ต `20070/20071`,
 frontend `/`, backend `/api` ที่ถูก strip prefix, unprefixed `/health`,
@@ -25,7 +25,7 @@ owner รับ ADR caller-auth เมื่อ 7 ส.ค.: static frontend ก�
 ส่วน business API ต้องแลก access code เป็น signed cookie อายุ 30 นาทีแบบ
 Secure/HttpOnly/SameSite=Strict internal core key และ provider key แยกกัน
 
-## Hosted Sprint 2 candidate scope (10 ส.ค. 2569)
+## Hosted production scope หลัง Sprint 2 (10 ส.ค. 2569)
 
 - product สาธารณะมีสาม workflow เท่านั้น: Privacy Scan, Safe AI, PDPA Report
 - frontend เป็น light-theme ภาษาไทย-first สำหรับการนำเสนอ: Guided Demo ร้อย
@@ -57,6 +57,38 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 - public 413/429/502/504 เป็น fixed value-free JSON, upstream error body ถูก
   intercept และ roundtrip สอง alias ใช้ timeout 200 วินาทีให้ครอบ shared
   provider envelope; health ยังคงเป็น liveness
+
+## Sprint 3 evaluation scope (10 ส.ค. 2569)
+
+- สร้าง corpus จาก deterministic local templates เท่านั้น 138 direct-PII cases
+  (102 positive, 24 hard negative, 12 ambiguous ที่ไม่นับ headline) และ 32
+  Section 26 heuristic cases; ไม่มี production/user/log/provider record
+- ครบ entity type ที่ hosted revision ปล่อยออกมา 18 ชนิด Ground truth ใช้
+  half-open Python Unicode code-point spans และ generated manifest ผูก seed,
+  generator/schema/corpus SHA-256
+- baseline บังคับวัด detector ที่ exact production SHA `72e18bbe...` ก่อนพิจารณา
+  fix ได้ exact typed P/R/F1 = 76.86/77.50/77.18%, protective-character recall
+  91.57% และ hard-negative document FP rate 25.00%; per-type ทุกแถวยัง support
+  ต่ำกว่า 25 จึงเป็น descriptive only
+- recognized value removal = 100% ทั้ง Token/Surrogate; controlled-echo restore
+  exact = 100% ในรอบที่ sanitize สำเร็จ Surrogate สอง zero-width PHONE cases
+  ถูกหยุด fail closed ไม่มี unsafe text คืน ส่วน expected-gold removal อยู่ราว
+  94% เพราะ detector miss ต้องรายงานช่องว่างนี้ตรง ๆ
+- Section 26 แยกเป็น HEURISTIC SIGNAL EVALUATION: recall 100%, precision 50%,
+  F1 66.67% บน 32 cases แสดงชัดว่าคำ keyword ใน negation/context ยัง flag;
+  ไม่ใช่ PDPA compliance/legal classifier
+- evaluator รันใน revision-labelled core image ด้วย `--network none` + socket
+  tripwire, environment allowlist, offline thainer; provider calls/production
+  credentials/real PII = 0 และ artifact ไม่มี corpus text, replacement หรือ
+  reidentification pair
+- ไม่มีการแก้ `core/`: manifest-pinned vendored ownership ทำให้ address/name/
+  parenthesized-or-zero-width phone remediation เป็น upstream task ไม่ใช่การ
+  tune fixture ใน hosted shell
+- ไม่มี frontend/runtime/API change ไม่เพิ่ม public evidence card เพื่อหลีกเลี่ยง
+  demo clutter หลักฐานอยู่ที่ `docs/evaluation/thai-pii-competition-evaluation.md`
+  และ machine result `evaluation/thai_pii/baseline.72e18bbe.json`
+- independent Thai human adjudication ยัง pending; จึงห้ามอ้าง population-wide
+  accuracy หรือ perfect detection
 
 ## เสร็จแล้ว (มีหลักฐาน)
 
@@ -171,8 +203,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    stale-main race
 6. Pipeline #35727 ที่ exact `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`
    พิสูจน์ network correction ครั้งแรกบน runner #227; Pipeline #35736 ที่ exact
-   `9d38c6753aa0242bc35d09ec3332e90fe3f90079` คือ known-good production
-   rollback ก่อน Sprint 2: check/deploy/acceptance ผ่านครบ สาม image revision
+   `9d38c6753aa0242bc35d09ec3332e90fe3f90079` คือ rollback ก่อน Sprint 2 และ
+   Pipeline #35744 ที่ exact `72e18bbe723adaf54c847e4b17c2177dfa60dd68`
+   คือ known-good production ปัจจุบัน: check/deploy/acceptance ผ่านครบ สาม image revision
    ตรงกัน public HTTPS และ `/api` stripping ผ่าน login/session/logout, synthetic
    Privacy Scan, live Tokenmind/thaillm roundtrip, PDPA Report, PDF/forbidden-route
    denial, retained-log scan, resource และ restart/recovery
@@ -180,10 +213,10 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    manual ops ใช้ direct Docker commands โดยไม่ประกาศ environment จึงไม่รับ
    application variables Restart ตรวจ remote SHA + image revision ก่อนทำงาน
    และรอ health ทั้งสาม service
-8. competition enhancement ต้อง push feature branch ให้ check-only เขียว ผ่าน
+8. competition enhancement ที่เปลี่ยน runtime ต้อง push feature branch ให้ check-only เขียว ผ่าน
    exact fake-provider local acceptance และ independent reviews ก่อน fast-forward
    `main`; จากนั้นสร้าง UI pipeline ใหม่บน protected `main` exact SHA ห้าม retry
-   pipeline เก่าหรือใช้ rollback #35736 เป็นหลักฐานของ descendant
+   pipeline เก่าหรือใช้ rollback #35736/#35744 เป็นหลักฐานของ runtime descendant
 9. successful pipeline ต้องผ่าน `check → deploy → acceptance` ครบ แล้วจึงตรวจ
    public HTTPS, organizer `/api` prefix, real browser cookie flow, rate limit,
    Dozzle/log, resources, restart/recovery และ visual QA แยกจาก internal
@@ -191,6 +224,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 10. Public PDF redaction/OCR ยัง proxy-level 404 ทั้งสอง alias; PDPA Report PDF
     ยังเปิดตามเดิม และ PDF/OCR ไม่ใช่ capability ของ hosted release นี้
 11. คำตอบแบบสำรวจ + การตัดสินใจช่อง ASR ยังรอกรอก/ส่ง
+12. Sprint 3 เป็น evaluation/tests/docs-only ถ้า feature check และ reviews ผ่าน
+    ให้ integrate ตาม protected-main workflow แต่ไม่สร้าง production deployment
+    ที่ไร้ runtime change; deployed SHA ต้องคง `72e18bbe...` และแยกจาก evaluation HEAD
 
 ลำดับเต็มพร้อมกับดักอยู่ที่ `docs/DEPLOY-DAY.md` และใช้ได้เมื่อ preflight
 ด้านบนผ่านแล้ว
