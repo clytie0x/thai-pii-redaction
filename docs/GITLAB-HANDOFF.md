@@ -24,11 +24,13 @@ The guide does not require a Protected runner, Protected Environment,
   blocker. Organizer confirmation of project scope and Docker-daemon isolation
   remains desirable platform evidence; tag pinning is not isolation proof.
 - Auto DevOps: disabled.
-- Production rollback baseline is exact
-  `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`: Pipeline #35727 passed
+- Production rollback evidence preserved for Sprint 2 is exact
+  `9d38c6753aa0242bc35d09ec3332e90fe3f90079`: Pipeline #35736 passed
   `check → deploy → acceptance` on runner #227. Public HTTPS, prefix stripping,
   auth, synthetic Privacy Scan, live Tokenmind Safe AI, PDPA Report, route
-  denial, log privacy, resources, revision labels, and restart/recovery passed.
+  denial, log privacy, resources, revision labels, restart/recovery, and live
+  visual acceptance passed. Pipeline #35727 remains historical evidence of the
+  first successful runner-network correction.
 - Exactly four project variables are configured: `APP_AIGUARD_API_KEY`,
   `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`, and
   `APP_TOKENMIND_API_KEY`. Their values were not inspected. GitLab metadata
@@ -38,7 +40,7 @@ The guide does not require a Protected runner, Protected Environment,
   Compose built and started web/api/core and all became healthy. Deploy then
   failed because its job container curled host-loopback ports 20070/20071.
   Acceptance and manual ops did not execute. It remains incident evidence only;
-  #35727 superseded it with successful exact-SHA acceptance.
+  #35727 superseded that failure; #35736 is the newer rollback evidence.
 - Protected Environments are not required by the guide and are unavailable in
   this GitLab CE UI.
 
@@ -47,7 +49,7 @@ The guide does not require a Protected runner, Protected Environment,
 Executable rules keep **Ordinary pushes are check-only**, including pushes to
 protected `main`. A feature-branch push and later fast-forward main push must
 therefore create only `check` and cannot mutate production. Do not use
-`ci.skip`, do not retry #35727 for a descendant, and do not treat the rollback
+`ci.skip`, do not retry #35736 for a descendant, and do not treat the rollback
 baseline as evidence for changed frontend code.
 
 The production path:
@@ -90,6 +92,15 @@ Guide requirements.
    proof, PDPA Report, fixed failures/rate limit, PDF-redaction/OCR and
    internal-route denial, Dozzle/log privacy, resources, restart/recovery,
    exact revision labels, and visual QA at the required viewports.
+
+Sprint 2 adds only client-rendered evidence and presentation surfaces from the
+existing 16-route contract: Executive Result Summary, Raw-vs-Protected,
+Sensitive Data Map, warning-only Prompt Risk, request-scoped non-cryptographic
+Protection Receipt, Presenter/fullscreen, and glossary/mode guidance. These must
+not create an extra `/roundtrip`, expose mapping or raw entity values, or revive
+public PDF redaction/OCR. The exact Sprint 2 SHA therefore needs new local fake,
+feature-branch, protected-main pipeline, live-provider, log, resource/restart,
+and responsive visual evidence before replacing rollback SHA `9d38c675...`.
 
 Feature branches, merge requests, and all ordinary pushes run `check` only.
 Tag pushes, schedules, and API-triggered pipelines cannot create production

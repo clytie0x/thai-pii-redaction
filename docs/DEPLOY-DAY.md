@@ -3,8 +3,9 @@
 ทุกอย่างในไฟล์นี้เป็นงานที่เจ้าของทำเองหรือมอบอำนาจให้ operator อย่างชัดเจน
 เพราะออกนอกเครื่องทั้งหมด
 ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ใน `STATE.md` ผ่านครบ Production rollback
-baseline คือ exact `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`: Pipeline #35727 ผ่าน
-check/deploy/acceptance และ public live acceptance แล้ว ทุก descendant ต้องผ่าน
+ก่อน Sprint 2 คือ exact `9d38c6753aa0242bc35d09ec3332e90fe3f90079`:
+Pipeline #35736 ผ่าน check/deploy/acceptance และ public live acceptance แล้ว
+ทุก descendant ต้องผ่าน
 exact fake-provider local acceptance, feature-branch check, independent reviews
 และ pipeline/public acceptance ใหม่ก่อนแทน baseline นี้ Public PDF redaction/OCR
 ถูกพักจาก hosted release แรกและไม่ใช่ deploy gate ส่วน PDPA Report PDF ยังเปิด
@@ -89,7 +90,7 @@ SHA กับ `origin/main` ซ้ำเพื่อกัน stale deployment �
 หลัง feature branch check-only และ local gates ผ่าน ให้ fast-forward reviewed
 commit เข้า `main` แล้ว push ปกติก่อนเพื่อรัน check-only จากนั้นไปที่ **Build →
 Pipelines → Run pipeline**, เลือก branch `main`, ไม่เพิ่ม variable ชั่วคราว
-และสร้าง pipeline **ใหม่บน exact descendant SHA** ห้าม Retry #35727 หรือ
+และสร้าง pipeline **ใหม่บน exact descendant SHA** ห้าม Retry #35736 หรือ
 pipeline ก่อนหน้า เพราะ rules/evidence ต้องประเมินกับ SHA ใหม่
 
 `check` เป็น interruptible ส่วน deploy, acceptance และ ops เป็น
@@ -128,15 +129,24 @@ competition frontend acceptance หลัง pipeline เขียวต้อ�
    duplicate click/retry ฝั่ง browser (server retry provider เดิมยังเป็น policy เดิม)
 3. ชี้การ์ด “ข้อความที่ส่งให้ AI จริง” และตรวจว่าค่าดิบสังเคราะห์ที่ detect พบ
    ไม่อยู่ใน protected input; ห้ามเรียกสิ่งนี้ว่า cryptographic attestation
-4. ยืนยัน safety pass, restoration complete, residual signals/leftover tokens
+4. ตรวจ Executive Result Summary และ Raw-vs-Protected ว่าผูกข้อความ/mode ของ
+   รอบเดียวกัน custom raw/restored ต้องถูกซ่อนเป็น default ใน Presenter/fullscreen
+5. ตรวจ Sensitive Data Map ว่าแสดง count/type/position โดยไม่เปิดค่าที่ตรวจพบ;
+   Prompt Risk ต้องบอกชัดว่า warning-only และแสดง unavailable อย่างซื่อตรง
+6. ตรวจ Protection Receipt ว่าเป็น request-scoped screen evidence ไม่ใช่
+   cryptographic attestation/PDPA certificate และไม่มี mapping/pair/provider body
+7. ยืนยัน safety pass, restoration complete, residual signals/leftover tokens
    เป็นศูนย์ และคำตอบ restored แสดงเฉพาะเมื่อทุก gate ผ่าน
-5. ยืนยัน score/grade ของ PDPA Report มาจาก endpoint; type context ต้องระบุว่า
+8. ยืนยัน score/grade ของ PDPA Report มาจาก endpoint; type context ต้องระบุว่า
    มาจาก Privacy Scan ของข้อความเดียวกัน
-6. กด reset ระหว่าง/หลังรอบและ logout; raw/protected/restored/report/timing/
+9. กด reset ระหว่าง/หลังรอบและ logout; raw/protected/restored/receipt/map/report/timing/
    progress ต้องถูกล้างและ stale response ห้ามกลับมา
-7. ตรวจ Token และ Surrogate แยกกันเมื่อจำเป็น โดยแต่ละรอบเป็น provider call ใหม่
-8. ตรวจ System Evidence ว่า health แสดง liveness/VERSION เท่านั้น ไม่อ้าง provider
-9. ตรวจ public PDF redaction/OCR + forbidden routes ยัง 404, logs ไม่มี user
+10. ตรวจ Token และ Surrogate แยกกันเมื่อจำเป็น: ทั้งคู่เป็น pseudonymization
+    ไม่ใช่ anonymization และ Surrogate ไม่ได้ปลอดภัยกว่าโดยอัตโนมัติ
+11. เปิด/ปิด Presenter Mode และ fullscreen โดยยืนยันว่าไม่มี request เพิ่ม,
+    ออกจากโหมดได้ และ projector/mobile ไม่มี horizontal clipping
+12. ตรวจ System Evidence ว่า health แสดง liveness/VERSION เท่านั้น ไม่อ้าง provider
+13. ตรวจ public PDF redaction/OCR + forbidden routes ยัง 404, logs ไม่มี user
    content/secret/cookie/request body แล้วทำ resource + restart/revision acceptance
 
 ถ้า `deploy` เขียวแต่ `acceptance` แดง อย่าเพิ่งดีใจ บริการขึ้นแล้วแต่ทำงาน

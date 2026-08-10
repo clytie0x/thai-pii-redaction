@@ -1,12 +1,13 @@
-# สถานะงาน (9 ส.ค. 2569 — competition enhancement from accepted production)
+# สถานะงาน (10 ส.ค. 2569 — Competition Enhancement Sprint 2)
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-remote `main` protected และ production Pipeline #35727 ที่ exact
-`42476d09a7d80b6920fcf21c0d2ac0d5c6952872` ผ่าน `check → deploy → acceptance`
-ครบแล้ว web/api/core ใช้ revision เดียวกัน และ public acceptance ผ่าน health,
-auth, Privacy Scan, live Tokenmind Safe AI, PDPA Report, route denial, log privacy,
-resource และ restart/recovery SHA นี้เป็น rollback baseline ของ enhancement sprint
-ปัจจุบัน ขั้นตอนของวันจริงอยู่ที่ `docs/DEPLOY-DAY.md`
+remote `main` protected และ known-good production Pipeline #35736 ที่ exact
+`9d38c6753aa0242bc35d09ec3332e90fe3f90079` ผ่าน
+`check → deploy → acceptance` ครบแล้ว web/api/core ใช้ revision เดียวกัน และ
+public acceptance ผ่าน health, auth, Privacy Scan, live Tokenmind Safe AI,
+PDPA Report, route denial, log privacy, resource และ restart/recovery SHA นี้เป็น
+rollback evidence ที่ต้องรักษาระหว่าง Sprint 2 ขั้นตอนของวันจริงอยู่ที่
+`docs/DEPLOY-DAY.md`
 
 Participant Guide ทางการถูกอ่านครบและยืนยัน `team08`, พอร์ต `20070/20071`,
 frontend `/`, backend `/api` ที่ถูก strip prefix, unprefixed `/health`,
@@ -24,15 +25,23 @@ owner รับ ADR caller-auth เมื่อ 7 ส.ค.: static frontend ก�
 ส่วน business API ต้องแลก access code เป็น signed cookie อายุ 30 นาทีแบบ
 Secure/HttpOnly/SameSite=Strict internal core key และ provider key แยกกัน
 
-## Hosted release-candidate scope (9 ส.ค. 2569)
+## Hosted Sprint 2 candidate scope (10 ส.ค. 2569)
 
 - product สาธารณะมีสาม workflow เท่านั้น: Privacy Scan, Safe AI, PDPA Report
 - frontend เป็น light-theme ภาษาไทย-first สำหรับการนำเสนอ: Guided Demo ร้อย
   Privacy Scan → Safe AI → PDPA Report จาก synthetic scenario เดียวกัน โดยเรียก
   `/roundtrip` ฝั่ง frontend หนึ่งครั้งและหยุดเมื่อขั้นใดไม่ผ่าน มี gallery ห้า
-  บริบท + reset, Protection Evidence, mode `token`/`surrogate`, เวลา total ที่วัด
-  ในเบราว์เซอร์ และการ์ด “ข้อความที่ส่งให้ AI จริง” ผลทุกอย่างยังมาจาก API จริง
-  ไม่มีการเก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์หรือ third-party dependency
+  บริบท + reset, Executive Result Summary, Raw-vs-Protected, Sensitive Data Map,
+  Prompt Risk, Protection Receipt, Presenter/fullscreen, entity glossary,
+  mode `token`/`surrogate`, เวลา total ที่วัดในเบราว์เซอร์ และการ์ด
+  “ข้อความที่ส่งให้ AI จริง” ผลทั้งหมด derive จาก response เดิมและไม่สร้าง
+  provider call หรือ public route เพิ่ม
+- Protection Receipt เป็นหลักฐานบนหน้าจอเฉพาะคำขอ ไม่ใช่หลักฐานเข้ารหัสหรือ
+  ใบรับรอง PDPA และไม่แสดง mapping/pair/provider body/raw value ส่วน Prompt Risk
+  เป็น heuristic warning-only ที่ไม่บล็อกและไม่รับรองว่าปลอดภัย
+- Presenter/fullscreen ไม่ persist state ไม่เรียก network และซ่อน raw/restored
+  ของ custom input โดย default; frontend ไม่มี third-party dependency หรือ
+  persistent browser storage ของเนื้อหาผู้ใช้
 - ทุก CI job ถูก pin ด้วย runner tag `team-08`; feature branch/MR และ push ทุก
   branch รวม protected `main` รัน `check` เท่านั้น ส่วน deploy/acceptance/ops
   ต้องเป็น UI-created pipeline บน protected `main` ตาม executable rules
@@ -161,10 +170,12 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    รักษา public Host และ cleanup เสมอ ทั้งยังแยก build/recheck/up เพื่อลด
    stale-main race
 6. Pipeline #35727 ที่ exact `42476d09a7d80b6920fcf21c0d2ac0d5c6952872`
-   พิสูจน์ correction บน runner #227: check/deploy/acceptance ผ่านครบ สาม image
-   revision ตรงกัน public HTTPS และ `/api` stripping ผ่าน login/session/logout,
-   synthetic Privacy Scan, live Tokenmind/thaillm roundtrip, PDPA Report, PDF และ
-   forbidden-route denial, retained-log scan, resource และ restart/recovery
+   พิสูจน์ network correction ครั้งแรกบน runner #227; Pipeline #35736 ที่ exact
+   `9d38c6753aa0242bc35d09ec3332e90fe3f90079` คือ known-good production
+   rollback ก่อน Sprint 2: check/deploy/acceptance ผ่านครบ สาม image revision
+   ตรงกัน public HTTPS และ `/api` stripping ผ่าน login/session/logout, synthetic
+   Privacy Scan, live Tokenmind/thaillm roundtrip, PDPA Report, PDF/forbidden-route
+   denial, retained-log scan, resource และ restart/recovery
 7. เฉพาะ deploy/acceptance ประกาศ environment `team08` และรับ scoped secrets;
    manual ops ใช้ direct Docker commands โดยไม่ประกาศ environment จึงไม่รับ
    application variables Restart ตรวจ remote SHA + image revision ก่อนทำงาน
@@ -172,7 +183,7 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
 8. competition enhancement ต้อง push feature branch ให้ check-only เขียว ผ่าน
    exact fake-provider local acceptance และ independent reviews ก่อน fast-forward
    `main`; จากนั้นสร้าง UI pipeline ใหม่บน protected `main` exact SHA ห้าม retry
-   pipeline เก่าหรือใช้ baseline #35727 เป็นหลักฐานของ descendant
+   pipeline เก่าหรือใช้ rollback #35736 เป็นหลักฐานของ descendant
 9. successful pipeline ต้องผ่าน `check → deploy → acceptance` ครบ แล้วจึงตรวจ
    public HTTPS, organizer `/api` prefix, real browser cookie flow, rate limit,
    Dozzle/log, resources, restart/recovery และ visual QA แยกจาก internal

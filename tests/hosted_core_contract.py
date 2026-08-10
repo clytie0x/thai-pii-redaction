@@ -165,6 +165,48 @@ class HostedProviderContract(unittest.TestCase):
                     provider.complete("system", MASKED_TEXT)
                 self.assertEqual(len(calls), 1)
 
+    def test_successful_first_attempt_roundtrip_path_calls_provider_once(self):
+        provider = self._provider([MASKED_TEXT])
+        checks = []
+
+        response, _latency, attempts = self.ai.complete_provider_with_retry_policy(
+            provider,
+            SYSTEM_PROMPT,
+            MASKED_TEXT,
+            before_attempt=checks.append,
+        )
+
+        self.assertEqual((response, attempts), (MASKED_TEXT, 1))
+        self.assertEqual(checks, [0])
+        self.assertEqual(provider.calls, [(SYSTEM_PROMPT, MASKED_TEXT, 60.0)])
+        self.assertEqual(self.delays, [])
+
+        server = (CORE / "app" / "server.py").read_text(encoding="utf-8")
+        roundtrip_path = server[server.index("def roundtrip(") : server.index("def guard(")]
+        self.assertEqual(roundtrip_path.count("complete_provider_with_retry_policy("), 1)
+        self.assertIn("before_attempt=validate_provider_attempt", roundtrip_path)
+        self.assertNotIn("provider.complete(", roundtrip_path)
+
+    def test_initial_outbound_validation_rejection_calls_provider_zero_times(self):
+        provider = self._provider([MASKED_TEXT])
+        checks = []
+
+        def reject_before_provider(attempt):
+            checks.append(attempt)
+            raise self.OutboundPolicyError("fixed pre-provider policy rejection")
+
+        with self.assertRaises(self.OutboundPolicyError):
+            self.ai.complete_provider_with_retry_policy(
+                provider,
+                SYSTEM_PROMPT,
+                MASKED_TEXT,
+                before_attempt=reject_before_provider,
+            )
+
+        self.assertEqual(checks, [0])
+        self.assertEqual(provider.calls, [])
+        self.assertEqual(self.delays, [])
+
     def test_shared_orchestration_owns_three_attempts_and_fresh_scans(self):
         transient = (
             httpx.ReadTimeout("synthetic timeout"),

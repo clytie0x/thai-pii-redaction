@@ -229,6 +229,23 @@ def verify_auth_and_public_operations() -> tuple[str, dict]:
         raise AcceptanceFailure("authenticated Privacy Scan failed")
 
     status, _headers, raw = request(
+        API, "/guard", method="POST", payload={"text": TEXT}, cookie=cookie
+    )
+    guard = payload(raw)
+    if (
+        status != 200
+        or type(guard.get("flagged")) is not bool
+        or not isinstance(guard.get("guard_findings"), list)
+        or any(
+            not isinstance(item, dict)
+            or not isinstance(item.get("category"), str)
+            or not isinstance(item.get("severity"), str)
+            for item in guard["guard_findings"]
+        )
+    ):
+        raise AcceptanceFailure("authenticated prompt-risk warning contract failed")
+
+    status, _headers, raw = request(
         API,
         "/analyze-report",
         method="POST",
@@ -257,16 +274,25 @@ def verify_auth_and_public_operations() -> tuple[str, dict]:
         roundtrip = payload(raw)
         sanitized = str(roundtrip.get("sanitized_text", ""))
         restored = str(roundtrip.get("restored_text", ""))
+        counts = roundtrip.get("entity_type_counts")
+        restoration = roundtrip.get("restoration") or {}
         if not (
             status == 200
             and roundtrip.get("provider_used") == "fake"
+            and isinstance(counts, dict)
+            and all(isinstance(name, str) and type(count) is int and count > 0 for name, count in counts.items())
+            and sum(counts.values()) == roundtrip.get("detected_entity_count")
+            and isinstance(roundtrip.get("section26_categories"), list)
+            and isinstance(roundtrip.get("guard_findings"), list)
             and SYNTHETIC_NAME not in sanitized
             and SYNTHETIC_PHONE not in sanitized
             and SYNTHETIC_NAME in restored
             and SYNTHETIC_PHONE in restored
             and roundtrip.get("safety") == {"status": "pass", "residual_count": 0}
-            and (roundtrip.get("restoration") or {}).get("status") == "complete"
-            and (roundtrip.get("restoration") or {}).get("leftover_count") == 0
+            and restoration.get("status") == "complete"
+            and type(restoration.get("replaced_count")) is int
+            and restoration.get("replaced_count") >= 0
+            and restoration.get("leftover_count") == 0
             and not ({"mapping", "entities", "highlights"} & set(roundtrip))
         ):
             raise AcceptanceFailure(
@@ -296,13 +322,21 @@ def verify_auth_and_public_operations() -> tuple[str, dict]:
         if status != 404:
             raise AcceptanceFailure("forbidden public route escaped the allowlist")
 
-    status, _headers, _raw = request(
+    status, logout_headers, _raw = request(
         API, "/auth/logout", method="POST", cookie=cookie
     )
-    if status != 204:
+    cleared_cookie = logout_headers.get("Set-Cookie", "")
+    if status != 204 or not all(
+        flag in cleared_cookie
+        for flag in ("__Host-aift_session=", "Max-Age=0", "Secure", "HttpOnly", "SameSite=Strict")
+    ):
         raise AcceptanceFailure("caller logout failed")
     return cookie, {
         "detect_entities": detect["detected_entity_count"],
+        "guard": {
+            "flagged": guard["flagged"],
+            "finding_count": len(guard["guard_findings"]),
+        },
         "report_score": report["overall_score"],
         "report_grade": report["overall_grade"],
         "roundtrip_modes": roundtrip_modes,

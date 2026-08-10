@@ -17,7 +17,7 @@
     --shadow-sm:0 8px 24px rgba(15,48,82,.07); --shadow-md:0 18px 48px rgba(15,48,82,.11);
     --bg:var(--canvas); --bg-soft:#0d2947; --panel:var(--surface); --panel-2:#f7f9fc;
     --line:var(--border); --line-soft:#e8eef5; --text:var(--text-primary); --dim:var(--text-secondary); --dim-2:#5f7188;
-    --blue:var(--action); --blue-light:#2776e8; --green:var(--safe); --red:var(--danger); --amber:var(--caution);
+    --blue:var(--action); --blue-light:#0f5fc7; --green:var(--safe); --red:var(--danger); --amber:var(--caution);
     --c-name:#fce7f3; --c-id:#fee2e2; --c-phone:#ffedd5; --c-email:#fef9c3;
     --c-addr:#dcfce7; --c-date:#dbeafe; --c-org:#ede9fe; --c-other:#e0e7ff;
   }
@@ -344,18 +344,123 @@
   .system-evidence-item b{display:block;margin-top:3px;font-size:13px;color:#fff}
   .trust-details{margin-top:30px;border:1px solid var(--border);border-radius:16px;background:#fff;overflow:hidden}
   .trust-details summary{cursor:pointer;padding:17px 20px;font-weight:750;color:var(--text-primary)}
-  .trust-details summary:focus-visible{outline:3px solid rgba(20,99,223,.28);outline-offset:-3px}
+  .trust-details summary:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0b4fab}
   .trust-details-content{padding:0 20px 20px;color:var(--text-secondary);font-size:14px;line-height:1.85}
   .trust-diagram{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 16px}
   .trust-diagram b{background:var(--surface-soft);color:var(--text-primary);padding:7px 10px;border-radius:8px}
   .trust-diagram span{color:var(--action)}
-  button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid rgba(20,99,223,.3);outline-offset:3px}
+
+  /* ── Sprint 2: judge-facing evidence and presentation layer ── */
+  .presentation-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  .presentation-actions button{background:#fff;font-weight:750}
+  .mode-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
+  .mode-card{text-align:left;background:#fff!important;border:1px solid var(--border)!important;border-radius:14px!important;padding:14px 16px!important;min-height:98px;box-shadow:none!important}
+  .mode-card[aria-pressed="true"]{border-color:var(--action)!important;background:#f1f7ff!important;box-shadow:0 0 0 2px rgba(20,99,223,.09)!important}
+  .mode-card strong{display:block;color:var(--text-primary);font-size:16px;margin-bottom:3px}
+  .mode-card span{display:block;color:var(--text-secondary);font-size:13px;line-height:1.55}
+  .mode-card small{display:block;color:var(--action);font-size:11.5px;font-weight:850;margin-top:7px}
+  .presentation-stage{margin-top:22px;background:#f9fcff;border:2px solid #b8d5f7;border-radius:22px;padding:22px;scroll-margin-top:138px}
+  .presentation-stage:fullscreen{overflow:auto;background:#f4f8fd;padding:32px}
+  .presentation-stage-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}
+  .presentation-stage-head h3{font-size:23px;line-height:1.35}
+  .presentation-stage-head p{color:var(--text-secondary);font-size:13.5px;margin-top:4px}
+  .fullscreen-only{display:none}
+  .presentation-stage:fullscreen .fullscreen-only{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .executive-summary{border:1px solid #9bd4c0;background:var(--safe-soft);border-radius:16px;padding:17px 18px;margin-bottom:14px}
+  .executive-verdict{display:flex;gap:12px;align-items:flex-start}
+  .executive-verdict-icon{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;border-radius:10px;background:var(--safe);color:#fff;font-weight:900}
+  .executive-verdict strong{display:block;color:var(--safe);font-size:18px}
+  .executive-verdict p{color:var(--text-secondary);font-size:14px;margin-top:2px}
+  .executive-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
+  .executive-metric{background:#fff;border:1px solid #c7e7dc;border-radius:11px;padding:10px 12px}
+  .executive-metric b{display:block;font-size:17px}
+  .executive-metric span{display:block;color:var(--text-secondary);font-size:14px;margin-top:2px}
+  .raw-protected-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;padding:0;border-bottom:0}
+  .comparison-card{position:relative;background:#fff;border:1px solid var(--border);border-radius:15px;overflow:hidden}
+  .comparison-card.protected{border-color:#8fc8b6}
+  .comparison-head{padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+  .comparison-head small{display:block;color:var(--action);font-size:12.5px;font-weight:900;letter-spacing:.06em}
+  .comparison-head strong{display:block;font-size:15px}
+  .comparison-text{padding:15px;min-height:124px;max-height:230px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.78}
+  .comparison-card[data-private="true"] .comparison-shield{display:flex}
+  .comparison-shield{display:none;position:absolute;inset:53px 0 0;align-items:center;justify-content:center;text-align:center;padding:20px;background:#edf3f9;color:var(--text-primary);font-weight:750;z-index:1}
+  .comparison-proof{grid-column:1/-1;display:flex;gap:9px;flex-wrap:wrap;color:var(--text-secondary);font-size:14px}
+  .comparison-proof span{background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 9px}
+  .evidence-duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .judge-card{background:#fff;border:1px solid var(--border);border-radius:15px;padding:16px;min-width:0}
+  .judge-card h4{font-size:16px;margin:0 0 4px}
+  .judge-card>.card-note{color:var(--text-secondary);font-size:14px;line-height:1.55;margin-bottom:12px}
+  .data-map-list,.guard-risk-list{display:grid;gap:8px}
+  .data-map-row{display:grid;grid-template-columns:minmax(110px,.7fr) minmax(80px,1.3fr) auto;gap:9px;align-items:center;font-size:14.5px}
+  .data-map-track{position:relative;display:block;height:9px;background:#e7eef6;border-radius:99px;overflow:hidden}
+  .data-map-track.unavailable{background:repeating-linear-gradient(90deg,#e7eef6 0 8px,#f6f9fc 8px 14px)}
+  .data-map-fill{position:absolute;top:0;display:block;height:100%;min-width:8px;background:var(--action);border-radius:99px}
+  .risk-row{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;border:1px solid var(--line-soft);border-radius:10px;padding:9px 10px}
+  .risk-row strong{font-size:15px}
+  .risk-severity{font-size:14px;font-weight:800;color:var(--caution)}
+  .risk-clear{color:var(--safe);font-size:14.5px}
+  .receipt{background:#0d2947;color:#fff;border-radius:16px;padding:18px;margin-bottom:14px}
+  .receipt-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:13px}
+  .receipt h4{font-size:18px}
+  .receipt-head p,.receipt-note{color:#cbdbea;font-size:14px;line-height:1.55}
+  .receipt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .receipt-item{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);border-radius:10px;padding:9px 10px}
+  .receipt-item span{display:block;color:#c7d8e7;font-size:13.5px}
+  .receipt-item b{display:block;color:#fff;font-size:16px;margin-top:2px;word-break:break-word}
+  .receipt-note{margin-top:12px}
+  .restored-stage{position:relative;background:#fff;border:1px solid #9bd4c0;border-radius:15px;overflow:hidden;padding:0}
+  .restored-stage[data-private="true"] .comparison-shield{display:flex}
+  .restored-stage .comparison-shield{inset:53px 0 0}
+  .entity-glossary{margin-top:18px}
+  .glossary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .glossary-item{background:#fff;border:1px solid var(--border);border-radius:11px;padding:11px 12px}
+  .glossary-item b{display:block;font-size:15px}
+  .glossary-item span{display:block;color:var(--text-secondary);font-size:14px;line-height:1.55;margin-top:2px}
+  .glossary-detected{margin-top:12px;color:var(--text-secondary);font-size:14px}
+
+  body.presenter-mode .hero-section,
+  body.presenter-mode #privacy-scan,
+  body.presenter-mode #pdpa-report,
+  body.presenter-mode #enterprise-value,
+  body.presenter-mode footer,
+  body.presenter-mode .trust-details,
+  body.presenter-mode .section-head .section-sub,
+  body.presenter-mode .safe-controls,
+  body.presenter-mode .mode-choice-grid,
+  body.presenter-mode .safe-metrics,
+  body.presenter-mode #protectionEvidence{display:none!important}
+  body.presenter-mode #safe-ai{padding:24px 0;min-height:calc(100vh - 72px)}
+  body.presenter-mode #safe-ai .container{max-width:1320px}
+  body.presenter-mode .safe-hero{padding:18px}
+  body.presenter-mode .pipeline-body,.presentation-stage:fullscreen .comparison-text{font-size:20px;max-height:280px}
+  body.presenter-mode .pipeline-label strong,.presentation-stage:fullscreen h3{font-size:20px}
+  body.presenter-mode .executive-metric b,.presentation-stage:fullscreen .executive-metric b{font-size:18px}
+  body.presenter-mode .executive-metric span,.presentation-stage:fullscreen .executive-metric span,
+  body.presenter-mode .judge-card>.card-note,.presentation-stage:fullscreen .judge-card>.card-note,
+  body.presenter-mode .receipt-head p,.presentation-stage:fullscreen .receipt-head p,
+  body.presenter-mode .receipt-note,.presentation-stage:fullscreen .receipt-note,
+  body.presenter-mode .comparison-proof,.presentation-stage:fullscreen .comparison-proof{font-size:14.5px}
+  body.presenter-mode .data-map-row,.presentation-stage:fullscreen .data-map-row,
+  body.presenter-mode .risk-row strong,.presentation-stage:fullscreen .risk-row strong{font-size:15px}
+  body.presenter-mode .risk-severity,.presentation-stage:fullscreen .risk-severity,
+  body.presenter-mode .receipt-item span,.presentation-stage:fullscreen .receipt-item span{font-size:14px}
+  body.presenter-mode .receipt-item b,.presentation-stage:fullscreen .receipt-item b{font-size:17px}
+  body.presenter-mode .presentation-stage{margin-top:14px}
+  body.presenter-mode .safe-hero>.pipeline,
+  body.presenter-mode .safe-hero>.proof-callout,
+  body.presenter-mode .safe-hero>.progress-panel,
+  body.presenter-mode .safe-hero>.safe-outcome{display:none!important}
+  body.presenter-mode[data-private-input="true"] .pipeline-card:first-child{position:relative}
+  body.presenter-mode[data-private-input="true"] #safeOriginal{color:transparent;user-select:none;background:#edf3f9}
+  body.presenter-mode[data-private-input="true"] .pipeline-card:first-child::after{content:"ซ่อนข้อความที่ผู้ใช้กรอกเองในโหมดนำเสนอ";position:absolute;inset:64px 16px 16px;display:grid;place-items:center;text-align:center;color:var(--text-primary);font-weight:750;background:#edf3f9}
+
+  button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.presentation-stage:focus-visible,.section-shell:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0b4fab}
   [hidden]{display:none!important}
   .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
   @media(max-width:1100px){.enterprise-grid{grid-template-columns:repeat(3,1fr)}.system-evidence{grid-template-columns:repeat(3,1fr)}.system-evidence-intro{grid-column:1/-1}}
-  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid{grid-template-columns:1fr 1fr}.nav-proof{display:none}}
-  @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head,.guided-top{align-items:flex-start;flex-direction:column}.demo-studio,.safe-hero,.guided-shell{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics,.guided-summary{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.workflow-nav{grid-template-columns:1fr}.scenario-gallery,.enterprise-grid{grid-template-columns:1fr 1fr}.system-evidence{grid-template-columns:1fr 1fr}}
-  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}}
+  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid,.executive-metrics,.receipt-grid{grid-template-columns:1fr 1fr}.evidence-duo{grid-template-columns:1fr}.nav-proof{display:none}}
+  @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head,.guided-top,.presentation-stage-head{align-items:flex-start;flex-direction:column}.presentation-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;justify-content:stretch}.presentation-actions .demo-label{grid-column:1/-1;justify-self:start}.presentation-actions button{width:100%;font-size:14px}.demo-studio,.safe-hero,.guided-shell{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics,.guided-summary{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.workflow-nav{grid-template-columns:1fr}.scenario-gallery,.enterprise-grid{grid-template-columns:1fr 1fr}.system-evidence{grid-template-columns:1fr 1fr}.raw-protected-grid,.mode-choice-grid{grid-template-columns:1fr}.comparison-proof{grid-column:1}.data-map-row{grid-template-columns:minmax(100px,.8fr) minmax(60px,1.2fr) auto}.glossary-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence,.executive-metrics,.receipt-grid,.glossary-grid{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}.presentation-stage{padding:15px}.presentation-actions{width:100%}.presentation-actions button{flex:1}.receipt-head{flex-direction:column}.comparison-text{font-size:16px}}
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.pipeline-card.provider-evidence{transform:none}}
 </style>
 </head>
@@ -398,7 +503,7 @@
         </div>
       </div>
 
-      <aside class="auth-card" id="authCard" aria-labelledby="accessTitle">
+      <aside class="auth-card" id="authCard" aria-labelledby="accessTitle" tabindex="-1">
         <div class="auth-brand">
           <span class="brand-mark" aria-hidden="true">✓</span>
           <div>
@@ -473,7 +578,7 @@
         </ol>
       </div>
 
-      <div class="guided-summary" aria-live="polite">
+      <div class="guided-summary">
         <div class="metric-card"><b id="guidedPii">—</b><span>PII ที่ตรวจพบจริง</span></div>
         <div class="metric-card"><b id="guidedMode">Token</b><span>รูปแบบการปกป้อง</span></div>
         <div class="metric-card"><b id="guidedSafety">รอผล</b><span>ความปลอดภัยและการกู้คืน</span></div>
@@ -525,7 +630,7 @@
         <button id="scanBtn" class="primary primary-action" type="button">สแกนข้อมูลส่วนบุคคล</button>
         <span class="status-line" id="meta" role="status" aria-live="polite">เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น</span>
       </div>
-      <div class="status-line" id="scanTiming" aria-live="polite">ยังไม่มีเวลาคำขอ</div>
+      <div class="status-line" id="scanTiming">ยังไม่มีเวลาคำขอ</div>
     </div>
 
     <div class="privacy-grid">
@@ -533,7 +638,7 @@
         <div class="pane-title"><span>ข้อความพร้อมจุดที่ตรวจพบ</span><span class="demo-label">PII HIGHLIGHT</span></div>
         <div class="result-highlight pipeline-empty" id="highlight">ผลการไฮไลต์จะแสดงที่นี่หลังสแกน</div>
       </article>
-      <aside class="card scan-summary" aria-live="polite">
+      <aside class="card scan-summary">
         <h3>สรุปผลการสแกน</h3>
         <div class="summary-grid">
           <div class="summary-box"><div class="value" id="piiCount">0</div><div class="label">รายการ PII</div></div>
@@ -549,7 +654,7 @@
 </section>
 
 <!-- Workflow 02: the competition's memorable proof moment -->
-<section class="section-shell alt" id="safe-ai" aria-labelledby="safeTitle">
+<section class="section-shell alt" id="safe-ai" aria-labelledby="safeTitle" tabindex="-1">
   <div class="container">
     <div class="section-head">
       <div>
@@ -557,10 +662,26 @@
         <h2 class="section-title" id="safeTitle">Safe AI</h2>
         <p class="section-sub">เห็นการเปลี่ยนผ่านตั้งแต่ข้อความต้นฉบับ จนถึงข้อความที่ AI ได้รับจริง และแสดงผลสุดท้ายเฉพาะเมื่อการตรวจความปลอดภัยผ่านครบ</p>
       </div>
-      <span class="demo-label">PROTECTED BEFORE AI</span>
+      <div class="presentation-actions" aria-label="เครื่องมือสำหรับการนำเสนอ">
+        <span class="demo-label">PROTECTED BEFORE AI</span>
+        <button id="presenterModeBtn" type="button" aria-pressed="false" disabled>โหมดนำเสนอ</button>
+        <button id="fullscreenBtn" type="button" aria-pressed="false" disabled>แสดงหลักฐานเต็มจอ</button>
+      </div>
     </div>
 
     <div class="safe-hero">
+      <div class="mode-choice-grid" role="group" aria-label="เลือกรูปแบบการปกป้อง">
+        <button class="mode-card" id="modeTokenCard" type="button" data-mode-card="token" aria-pressed="true">
+          <strong>Token · ตรวจสอบง่าย</strong>
+          <span>placeholder แบบวงเล็บที่บอกประเภทข้อมูล แต่ไม่เปิดเผยค่าจริง</span>
+          <small>แนะนำสำหรับเดโมและงานที่ต้องเห็นหลักฐานชัด</small>
+        </button>
+        <button class="mode-card" id="modeSurrogateCard" type="button" data-mode-card="surrogate" aria-pressed="false">
+          <strong>Surrogate · อ่านเป็นธรรมชาติ</strong>
+          <span>แทนค่าจริงด้วยข้อมูลสมมุติที่รักษารูปแบบภาษาและกู้คืนได้ในคำขอเดียว</span>
+          <small>ทั้งสองแบบเป็น pseudonymization ไม่ใช่ anonymization</small>
+        </button>
+      </div>
       <div class="safe-controls">
         <label class="field" for="mode">รูปแบบการปกป้อง
           <select id="mode" aria-describedby="modeDescription">
@@ -608,19 +729,104 @@
         <div><strong id="proofStatus">รอผล Safe AI</strong><p id="proofMethod">เมื่อ Privacy Scan และ Safe AI ใช้ข้อความเดียวกัน เบราว์เซอร์จะเปรียบเทียบค่าที่ตรวจพบกับข้อความที่ส่งให้ AI โดยไม่แสดงข้อมูลจับคู่</p></div>
       </div>
 
-      <div class="safe-metrics" aria-live="polite">
+      <div class="safe-metrics">
         <div class="metric-card"><b id="safeCount">—</b><span>PII ที่ตรวจพบ</span></div>
         <div class="metric-card"><b id="safeTypes">—</b><span id="safeTypeLabels">ประเภทข้อมูลที่ตรวจพบ</span></div>
         <div class="metric-card"><b id="safeProtection">รอผล</b><span>สถานะการปกป้อง</span></div>
         <div class="metric-card"><b id="safeRestoration">รอผล</b><span>สถานะการกู้คืน</span></div>
       </div>
 
+      <section class="presentation-stage" id="presentationStage" aria-labelledby="presentationTitle" tabindex="-1" hidden>
+        <div class="presentation-stage-head">
+          <div>
+            <p class="workflow-number">Competition Evidence</p>
+            <h3 id="presentationTitle">สรุปหลักฐานจากคำขอนี้</h3>
+            <p>รวมผลจริงจาก Privacy Scan, Guard, Safe AI และ PDPA Report โดยไม่เพิ่ม provider call หรือสร้างข้อสรุปแทน API</p>
+          </div>
+          <div>
+            <span class="demo-label" id="presentationScenario">ข้อมูลชุดปัจจุบัน</span>
+            <div class="fullscreen-only">
+              <button id="fullscreenExitBtn" type="button">ออกจากเต็มจอ</button>
+              <button id="presenterLogoutBtn" type="button">ออกจากระบบและล้างข้อมูล</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="executive-summary" id="executiveSummary" aria-labelledby="executiveTitle" hidden>
+          <div class="executive-verdict">
+            <span class="executive-verdict-icon" aria-hidden="true">✓</span>
+            <div><strong id="executiveTitle">ปกป้องและกู้คืนผ่านสำหรับคำขอนี้</strong><p id="executiveNarrative">รอผลที่ตรวจสอบครบ</p></div>
+          </div>
+          <div class="executive-metrics">
+            <div class="executive-metric"><b id="executivePii">—</b><span>PII ที่ระบบตรวจพบ</span></div>
+            <div class="executive-metric"><b id="executiveProtection">—</b><span>รูปแบบ · ปลายทาง</span></div>
+            <div class="executive-metric"><b id="executivePromptRisk">—</b><span>Prompt Risk แบบเตือน</span></div>
+            <div class="executive-metric"><b id="executiveReport">รอรายงาน</b><span>คะแนน/เกรดจาก PDPA Report</span></div>
+          </div>
+        </section>
+
+        <section class="raw-protected-grid" id="rawProtectedComparison" aria-labelledby="comparisonTitle" hidden>
+          <h4 class="visually-hidden" id="comparisonTitle">เปรียบเทียบข้อความต้นฉบับกับข้อความที่ปกป้องแล้ว</h4>
+          <article class="comparison-card" id="comparisonRawCard">
+            <div class="comparison-head"><small>RAW · BEFORE</small><strong>ข้อความก่อนปกป้อง</strong></div>
+            <div class="comparison-shield">ซ่อนข้อความที่ผู้ใช้กรอกเองในโหมดนำเสนอ</div>
+            <div class="comparison-text" id="comparisonRaw"></div>
+          </article>
+          <article class="comparison-card protected">
+            <div class="comparison-head"><small>PROTECTED · WHAT THE AI SAW</small><strong>ข้อความที่ส่งให้ AI หลังปกป้อง</strong></div>
+            <div class="comparison-text" id="comparisonProtected"></div>
+          </article>
+          <div class="comparison-proof">
+            <span id="comparisonLengths">รอผลการเปรียบเทียบ</span>
+            <span id="comparisonDetectedProof">รอผลตรวจเทียบค่าที่ตรวจพบ</span>
+          </div>
+        </section>
+
+        <div class="evidence-duo">
+          <section class="judge-card" id="sensitiveDataMap" aria-labelledby="dataMapTitle" hidden>
+            <h4 id="dataMapTitle">แผนที่ข้อมูลอ่อนไหว · Sensitive Data Map</h4>
+            <p class="card-note" id="dataMapNote">แผนที่แสดงประเภทและตำแหน่งเชิงสัดส่วนเท่านั้น ไม่แสดงค่าข้อมูล</p>
+            <div class="data-map-list" id="dataMapList"></div>
+          </section>
+          <section class="judge-card" id="guardRiskPanel" aria-labelledby="guardRiskTitle" hidden>
+            <h4 id="guardRiskTitle">สัญญาณคำสั่งเสี่ยง · Prompt Risk</h4>
+            <p class="card-note">กฎ Guard ใช้เพื่อให้ผู้ใช้งานตรวจทานเท่านั้น ไม่ได้บล็อกคำขอหรือรับรองว่าข้อความปลอดภัย</p>
+            <div class="guard-risk-list" id="guardRiskList"></div>
+          </section>
+        </div>
+
+        <section class="receipt" id="protectionReceipt" aria-labelledby="receiptTitle" hidden>
+          <div class="receipt-head">
+            <div><h4 id="receiptTitle">ใบสรุปการปกป้อง · Protection Receipt</h4><p>หลักฐานบนหน้าจอจากผล API ที่ผ่าน gate สำหรับคำขอนี้</p></div>
+            <span class="demo-label">REQUEST-SCOPED</span>
+          </div>
+          <div class="receipt-grid">
+            <div class="receipt-item"><span>รูปแบบ</span><b id="receiptMode">—</b></div>
+            <div class="receipt-item"><span>ปลายทาง</span><b id="receiptProvider">—</b></div>
+            <div class="receipt-item"><span>PII / ประเภท</span><b id="receiptPii">—</b></div>
+            <div class="receipt-item"><span>ตรวจความปลอดภัย</span><b id="receiptSafety">—</b></div>
+            <div class="receipt-item"><span>สัญญาณตกค้าง</span><b id="receiptResidual">—</b></div>
+            <div class="receipt-item"><span>การกู้คืน</span><b id="receiptRestoration">—</b></div>
+            <div class="receipt-item"><span>หมวดอ่อนไหว ม.26</span><b id="receiptSection26">—</b></div>
+            <div class="receipt-item"><span>เวลารวมบนหน้าเว็บ</span><b id="receiptDuration">—</b></div>
+          </div>
+          <p class="receipt-note" id="receiptTypes">ยังไม่มีประเภทข้อมูล</p>
+          <p class="receipt-note">เป็นสรุปผลของคำขอนี้ ไม่ใช่หลักฐานเข้ารหัส ใบรับรอง PDPA หรือคำปรึกษากฎหมาย และไม่แสดง mapping หรือค่าคู่แทนที่</p>
+        </section>
+
+        <section class="restored-stage" id="executiveRestoredCard" aria-labelledby="executiveRestoredTitle" hidden>
+          <div class="comparison-head"><small>RESTORED · FINAL RESULT</small><strong id="executiveRestoredTitle">ผลลัพธ์ที่กู้คืนและผ่าน gate</strong></div>
+          <div class="comparison-shield">ซ่อนผลลัพธ์ของข้อความที่ผู้ใช้กรอกเองในโหมดนำเสนอ</div>
+          <div class="comparison-text" id="executiveRestored"></div>
+        </section>
+      </section>
+
       <section class="evidence-panel" id="protectionEvidence" aria-labelledby="evidenceTitle">
         <div class="evidence-panel-head">
           <div><h3 id="evidenceTitle">หลักฐานการปกป้อง · Protection Evidence</h3><p>แสดงเฉพาะผลจาก API จริงและหลักการที่มีการทดสอบรองรับ</p></div>
           <span class="demo-label">ไม่ส่งข้อมูลจับคู่ให้โมเดล</span>
         </div>
-        <div class="evidence-grid" aria-live="polite">
+        <div class="evidence-grid">
           <div class="evidence-item"><span>รูปแบบการปกป้อง</span><b id="safeMode">Token</b></div>
           <div class="evidence-item"><span>โมเดลปลายทาง</span><b id="safeProvider">รอผล</b></div>
           <div class="evidence-item"><span>สัญญาณ PII หลังตรวจซ้ำ</span><b id="safeResidual">รอผล</b></div>
@@ -652,6 +858,23 @@
         <p>หนึ่งการกด Safe AI เรียก <code>/roundtrip</code> หนึ่งครั้ง ฝั่งเซิร์ฟเวอร์อาจลอง provider เดิมซ้ำตาม retry policy ที่จำกัดไว้ แต่ไม่มีการ fallback ไป provider อื่น</p>
       </div>
     </details>
+
+    <details class="trust-details entity-glossary" id="entityGlossary">
+      <summary>อภิธานศัพท์สำหรับกรรมการ · Entity & Protection Glossary</summary>
+      <div class="trust-details-content">
+        <div class="glossary-grid">
+          <div class="glossary-item"><b>PII</b><span>ข้อมูลที่อาจระบุหรือเชื่อมโยงถึงบุคคลได้</span></div>
+          <div class="glossary-item"><b>Token</b><span>placeholder ที่บอกประเภทข้อมูล แต่ไม่เปิดเผยค่าจริง</span></div>
+          <div class="glossary-item"><b>Surrogate</b><span>ข้อมูลสมมุติรูปแบบใกล้เคียงจริง เพื่อช่วยให้โมเดลอ่านบริบทเป็นธรรมชาติ</span></div>
+          <div class="glossary-item"><b>Protected / Sanitized</b><span>ข้อความหลัง AI Guard ปกป้องและตรวจซ้ำก่อนส่งต่อ</span></div>
+          <div class="glossary-item"><b>Restored</b><span>คำตอบที่กู้คืนบริบทแล้วและผ่านเงื่อนไขความปลอดภัย</span></div>
+          <div class="glossary-item"><b>Residual</b><span>สัญญาณข้อมูลที่การตรวจซ้ำยังพบหลังปกป้อง</span></div>
+          <div class="glossary-item"><b>Prompt Risk</b><span>สัญญาณเตือนจากกฎ Guard เพื่อให้มนุษย์ตรวจทาน ไม่ใช่ตัวบล็อก</span></div>
+          <div class="glossary-item"><b>มาตรา 26</b><span>ธงหมวดข้อมูลอ่อนไหวที่ระบบรองรับ ไม่ใช่ข้อสรุปทางกฎหมาย</span></div>
+        </div>
+        <p class="glossary-detected" id="glossaryDetected">ประเภทที่พบในคำขอปัจจุบัน: ยังไม่มีผล</p>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -681,7 +904,7 @@
       <div class="card report-card">
         <h3>สรุปก่อนดาวน์โหลด</h3>
         <p class="card-desc">กดวิเคราะห์เพื่อสร้างรายงานจากข้อความใน Privacy Scan ผลจะเก็บไว้ชั่วคราวเฉพาะในหน้านี้จนกว่าจะเปลี่ยนข้อความ เริ่มใหม่ หรือออกจากระบบ</p>
-        <div class="report-summary" aria-live="polite">
+        <div class="report-summary">
           <div class="summary-box"><div class="value" id="reportScore">—</div><div class="label">คะแนนความเสี่ยง / 100</div></div>
           <div class="summary-box"><div class="value" id="reportGrade">—</div><div class="label">เกรดที่ระบบส่งกลับ</div></div>
         </div>
@@ -692,7 +915,7 @@
           <button id="reportDownloadBtn" class="secondary-action" type="button" hidden>ดาวน์โหลดรายงาน PDPA</button>
         </div>
         <div class="pdfmeta status-line" id="reportMeta" role="status" aria-live="polite"></div>
-        <div class="status-line" id="reportTiming" aria-live="polite">ยังไม่มีเวลาคำขอ</div>
+        <div class="status-line" id="reportTiming">ยังไม่มีเวลาคำขอ</div>
       </div>
     </div>
 
@@ -744,6 +967,8 @@
   </div>
 </footer>
 
+<div class="visually-hidden" id="appAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
+
 <script>
 "use strict";
 
@@ -765,11 +990,11 @@ const SCENARIO_LABELS = Object.freeze({
 const MODE_DETAILS = Object.freeze({
   token: {
     label: "Token",
-    description: "ใช้ placeholder แบบวงเล็บที่บอกประเภท แต่ไม่เปิดเผยค่าจริง และกู้คืนได้ภายในคำขอเดียว",
+    description: "ใช้ placeholder แบบวงเล็บที่บอกประเภทและสุ่ม namespace ต่อคำขอ ตรวจสอบง่ายโดยไม่เปิดเผยค่าจริง และกู้คืนได้ภายในคำขอเดียว",
   },
   surrogate: {
     label: "Surrogate",
-    description: "ใช้ข้อมูลสมมุติที่รักษารูปแบบภาษาให้เป็นธรรมชาติมากขึ้น และยังคงกู้คืนภายในคำขอเดียว",
+    description: "ใช้ข้อมูลสมมุติที่รักษารูปแบบภาษาให้เป็นธรรมชาติมากขึ้น กู้คืนได้ภายในคำขอเดียว และไม่ได้หมายความว่าปลอดภัยกว่า Token",
   },
 });
 function normalizeProtectionMode(value) {
@@ -849,7 +1074,16 @@ let preparedReport = null;
 let guidedRunning = false;
 let selectedScenario = "hr";
 let lastDetection = null;
+let lastGuard = null;
 let lastRoundtrip = null;
+let lastReport = null;
+let presentationRawText = "";
+let presentationRestoredText = "";
+let providerLaneActive = false;
+let providerLaneReleaseTimer = null;
+let sessionExpiryTimer = null;
+let sessionExpiresAt = 0;
+let fullscreenReturnFocus = null;
 const businessControllers = new Set();
 const accessCodeInput = document.getElementById("accessCode");
 const loginBtn = document.getElementById("loginBtn");
@@ -864,8 +1098,15 @@ function isStaleBusinessError(error) {
 
 function invalidateBusinessRequests() {
   authGeneration += 1;
-  for (const controller of businessControllers) controller.abort();
-  businessControllers.clear();
+  // A browser abort cannot prove that an already-dispatched provider request
+  // stopped on the server. Keep that request alive and its single-flight lane
+  // locked until the HTTP exchange settles; only local-only requests are aborted.
+  for (const record of businessControllers) {
+    if (!record.providerBound) {
+      record.controller.abort();
+      businessControllers.delete(record);
+    }
+  }
 }
 
 function invalidateAuthCheck() {
@@ -905,6 +1146,341 @@ function formatElapsed(startedAt) {
   return `${((monotonicNow() - startedAt) / 1000).toFixed(1)} วินาที`;
 }
 
+const GUARD_LABELS = Object.freeze({
+  instruction_override: "พยายามเปลี่ยนคำสั่งหลัก",
+  role_hijack: "พยายามสวมบทบาทหรือเปลี่ยนบทบาท",
+  exfiltration: "ขอเปิดเผยข้อมูลหรือคำสั่งภายใน",
+  hidden_chars: "พบอักขระซ่อนหรือรูปแบบผิดปกติ",
+  suspicious_payload: "พบ payload ที่ควรให้มนุษย์ตรวจทาน",
+});
+const SEVERITY_LABELS = Object.freeze({low: "ต่ำ", medium: "ปานกลาง", high: "สูง"});
+
+function validDetectPayload(body, text) {
+  if (!body || typeof body !== "object"
+      || !Number.isInteger(body.detected_entity_count) || body.detected_entity_count < 0
+      || !body.entity_type_counts || typeof body.entity_type_counts !== "object" || Array.isArray(body.entity_type_counts)
+      || !Array.isArray(body.highlights)) return false;
+  const counts = Object.entries(body.entity_type_counts);
+  if (counts.some(([type, count]) => !/^[A-Z][A-Z0-9_]*$/.test(type) || !Number.isInteger(count) || count <= 0)
+      || counts.reduce((sum, [, count]) => sum + count, 0) !== body.detected_entity_count
+      || body.highlights.length !== body.detected_entity_count) return false;
+  const textLength = Array.from(text).length;
+  const seen = Object.fromEntries(counts.map(([type]) => [type, 0]));
+  let previousEnd = 0;
+  for (const item of body.highlights) {
+    if (!item || typeof item !== "object"
+        || !Number.isInteger(item.start) || !Number.isInteger(item.end)
+        || item.start < previousEnd || item.end <= item.start || item.end > textLength
+        || typeof item.data_type !== "string" || !Object.prototype.hasOwnProperty.call(seen, item.data_type)
+        || (item.redact_type !== "FP" && item.redact_type !== "TB")) return false;
+    seen[item.data_type] += 1;
+    previousEnd = item.end;
+  }
+  return counts.every(([type, count]) => seen[type] === count);
+}
+
+function validGuardPayload(body) {
+  if (!body || typeof body !== "object" || typeof body.flagged !== "boolean"
+      || !Array.isArray(body.guard_findings)) return false;
+  if (body.flagged !== Boolean(body.guard_findings.length)) return false;
+  return body.guard_findings.every(item => item && typeof item === "object"
+    && Object.prototype.hasOwnProperty.call(GUARD_LABELS, item.category)
+    && Object.prototype.hasOwnProperty.call(SEVERITY_LABELS, item.severity));
+}
+
+function announce(message) {
+  document.getElementById("appAnnouncement").textContent = message;
+}
+
+function syncModeCards(mode = selectedProtectionMode()) {
+  for (const card of document.querySelectorAll("[data-mode-card]")) {
+    const cardMode = card.dataset.modeCard || card.dataset.mode;
+    card.setAttribute("aria-pressed", cardMode === mode ? "true" : "false");
+  }
+}
+
+function anyPresentationEvidenceVisible() {
+  return ["executiveSummary", "rawProtectedComparison", "sensitiveDataMap", "guardRiskPanel", "protectionReceipt"]
+    .some(id => !document.getElementById(id).hidden);
+}
+
+function syncPresentationVisibility() {
+  const stage = document.getElementById("presentationStage");
+  stage.hidden = !anyPresentationEvidenceVisible();
+  document.getElementById("presenterModeBtn").disabled = stage.hidden;
+  document.getElementById("fullscreenBtn").disabled = stage.hidden;
+  document.getElementById("presentationScenario").textContent = selectedScenario === "custom"
+    ? "ข้อความที่ผู้ใช้กรอกเอง"
+    : `${SCENARIO_LABELS[selectedScenario] || "ข้อมูลสังเคราะห์"}`;
+  if (stage.hidden) {
+    // Reset/logout/session-expiry owns recovery focus. Do not let a delayed
+    // fullscreenchange return focus to the now-disabled presentation trigger.
+    fullscreenReturnFocus = null;
+    if (document.fullscreenElement === stage && typeof document.exitFullscreen === "function") {
+      Promise.resolve(document.exitFullscreen()).catch(() => {});
+    }
+  }
+  if (stage.hidden && document.body.classList.contains("presenter-mode")) leavePresenterMode();
+}
+
+function resetExecutiveEvidence() {
+  lastRoundtrip = null;
+  presentationRawText = "";
+  presentationRestoredText = "";
+  document.getElementById("executiveSummary").hidden = true;
+  document.getElementById("rawProtectedComparison").hidden = true;
+  document.getElementById("protectionReceipt").hidden = true;
+  document.getElementById("executiveRestoredCard").hidden = true;
+  document.getElementById("executiveRestored").textContent = "";
+  for (const id of ["comparisonRaw", "comparisonProtected"]) document.getElementById(id).textContent = "";
+  document.getElementById("comparisonRawCard").dataset.private = "false";
+  document.getElementById("executivePii").textContent = "—";
+  document.getElementById("executiveProtection").textContent = "—";
+  document.getElementById("executivePromptRisk").textContent = "—";
+  document.getElementById("executiveReport").textContent = "รอรายงาน";
+  document.getElementById("executiveNarrative").textContent = "รอผลที่ตรวจสอบครบ";
+  document.getElementById("comparisonLengths").textContent = "รอผลการเปรียบเทียบ";
+  document.getElementById("comparisonDetectedProof").textContent = "รอผลตรวจเทียบค่าที่ตรวจพบ";
+  for (const id of ["receiptMode", "receiptProvider", "receiptPii", "receiptSafety", "receiptResidual", "receiptRestoration", "receiptSection26", "receiptDuration"]) {
+    document.getElementById(id).textContent = "—";
+  }
+  document.getElementById("receiptTypes").textContent = "ยังไม่มีประเภทข้อมูล";
+  syncPresentationVisibility();
+}
+
+function resetScanEvidence() {
+  lastGuard = null;
+  document.getElementById("sensitiveDataMap").hidden = true;
+  document.getElementById("guardRiskPanel").hidden = true;
+  document.getElementById("dataMapList").textContent = "";
+  document.getElementById("guardRiskList").textContent = "";
+  document.getElementById("dataMapNote").textContent = "แผนที่แสดงประเภทและตำแหน่งเชิงสัดส่วนเท่านั้น ไม่แสดงค่าข้อมูล";
+  document.getElementById("glossaryDetected").textContent = "ประเภทที่พบในคำขอปัจจุบัน: ยังไม่มีผล";
+  syncPresentationVisibility();
+  if (lastRoundtrip && lastRoundtrip.text === editor.value) updateExecutiveSummary();
+}
+
+function resetReportEvidence() {
+  lastReport = null;
+  if (lastRoundtrip && lastRoundtrip.text === editor.value) updateExecutiveSummary();
+}
+
+function renderSensitiveDataMap(text, counts, highlights = []) {
+  const entries = Object.entries(counts || {}).filter(([, count]) => Number.isInteger(count) && count > 0);
+  const list = document.getElementById("dataMapList");
+  const panel = document.getElementById("sensitiveDataMap");
+  const textLength = Math.max(1, Array.from(text || "").length);
+  if (!entries.length) {
+    list.innerHTML = '<p class="risk-clear">ไม่พบประเภทข้อมูลส่วนบุคคลในผลปัจจุบัน</p>';
+  } else {
+    list.innerHTML = entries.map(([type, count]) => {
+      const matching = highlights.filter(item => item.data_type === type
+        && Number.isInteger(item.start) && Number.isInteger(item.end)
+        && item.start >= 0 && item.end > item.start && item.end <= textLength);
+      const fills = matching.map(item => {
+        const left = Math.max(0, Math.min(99, (item.start / textLength) * 100));
+        const width = Math.max(1, Math.min(100 - left, ((item.end - item.start) / textLength) * 100));
+        return `<i class="data-map-fill" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%"></i>`;
+      }).join("");
+      const unavailable = matching.length ? "" : " unavailable";
+      return `<div class="data-map-row"><b>${esc(labelFor(type))}</b><span class="data-map-track${unavailable}" aria-hidden="true">${fills}</span><span>${count}</span></div>`;
+    }).join("");
+  }
+  document.getElementById("dataMapNote").textContent = highlights.length
+    ? "แสดงประเภท จำนวน และตำแหน่งเชิงสัดส่วนจาก Privacy Scan โดยไม่แสดงค่าข้อมูล"
+    : "แสดงประเภทและจำนวนจาก Safe AI; รัน Privacy Scan เพื่อเพิ่มตำแหน่งเชิงสัดส่วน";
+  document.getElementById("glossaryDetected").textContent = entries.length
+    ? `ประเภทที่พบในคำขอปัจจุบัน: ${entries.map(([type]) => labelFor(type)).join(" · ")}`
+    : "ประเภทที่พบในคำขอปัจจุบัน: ไม่พบ";
+  panel.hidden = false;
+  syncPresentationVisibility();
+}
+
+function renderGuardRisk(findings, available = true) {
+  const safeFindings = Array.isArray(findings) ? findings : [];
+  const list = document.getElementById("guardRiskList");
+  if (!available) {
+    list.innerHTML = '<p class="warn">การตรวจ Guard ไม่พร้อม · ผล Privacy Scan ยังใช้ได้ แต่ไม่ควรตีความว่าไม่มีความเสี่ยง</p>';
+  } else if (!safeFindings.length) {
+    list.innerHTML = '<p class="risk-clear">ไม่พบสัญญาณตามกฎ Guard ที่มีขอบเขตจำกัด</p>';
+  } else {
+    list.innerHTML = safeFindings.map(item => {
+      const category = GUARD_LABELS[item.category] || item.category;
+      const severity = SEVERITY_LABELS[item.severity] || item.severity;
+      return `<div class="risk-row"><strong>${esc(category)}</strong><span class="risk-severity">ระดับ ${esc(severity)}</span></div>`;
+    }).join("");
+  }
+  document.getElementById("guardRiskPanel").hidden = false;
+  syncPresentationVisibility();
+  if (lastRoundtrip && lastRoundtrip.text === editor.value) updateExecutiveSummary();
+}
+
+function currentGuardSummary() {
+  if (!lastGuard || lastGuard.text !== editor.value) return "ยังไม่ตรวจ";
+  if (!lastGuard.available) return "ตรวจไม่ได้";
+  return lastGuard.findings.length ? `พบ ${lastGuard.findings.length} สัญญาณ` : "ไม่พบตามกฎ";
+}
+
+function updateExecutiveSummary() {
+  if (!lastRoundtrip || lastRoundtrip.text !== editor.value) {
+    document.getElementById("executiveSummary").hidden = true;
+    syncPresentationVisibility();
+    return;
+  }
+  const typeLabels = Object.keys(lastRoundtrip.entityTypeCounts).map(labelFor);
+  document.getElementById("executivePii").textContent = `${lastRoundtrip.detectedEntityCount} รายการ · ${typeLabels.length} ประเภท`;
+  document.getElementById("executiveProtection").textContent = `${MODE_DETAILS[lastRoundtrip.mode].label} · thaillm-8b`;
+  document.getElementById("executivePromptRisk").textContent = currentGuardSummary();
+  const reportBound = lastReport && lastReport.text === editor.value;
+  document.getElementById("executiveReport").textContent = reportBound
+    ? `${lastReport.score}/100 · เกรด ${lastReport.grade}`
+    : "รอ PDPA Report";
+  const reportSentence = reportBound
+    ? ` PDPA Report ของข้อความเดียวกันให้คะแนน ${lastReport.score} และเกรด ${lastReport.grade}.`
+    : " ยังไม่ได้สร้าง PDPA Report สำหรับข้อความชุดนี้";
+  document.getElementById("executiveNarrative").textContent =
+    `AI Guard ตรวจพบ ${lastRoundtrip.detectedEntityCount} รายการ ปกป้องก่อนส่งไปยัง thaillm-8b และกู้คืนผลครบตาม gate ของคำขอนี้.${reportSentence}`;
+  document.getElementById("executiveSummary").hidden = false;
+  syncPresentationVisibility();
+}
+
+function renderRawProtectedComparison(text, sanitizedText, proof) {
+  presentationRawText = text;
+  document.getElementById("comparisonProtected").textContent = sanitizedText;
+  syncRawPresentationPrivacy();
+  document.getElementById("comparisonLengths").textContent =
+    `ก่อนปกป้อง ${Array.from(text).length} ตัวอักษร · หลังปกป้อง ${Array.from(sanitizedText).length} ตัวอักษร`;
+  document.getElementById("comparisonDetectedProof").textContent = proof.status === "pass"
+    ? `ตรวจเทียบค่าที่ Privacy Scan พบ ${proof.checked} รายการ · ไม่พบค่าตรงกันในข้อความที่ส่งต่อ`
+    : proof.status === "unknown"
+      ? "ยังไม่มีตำแหน่งจาก Privacy Scan สำหรับตรวจเทียบค่าตรงกัน"
+      : "การตรวจเทียบไม่ผ่าน · ผลไม่ได้รับสถานะสำเร็จ";
+  document.getElementById("rawProtectedComparison").hidden = false;
+  syncPresentationVisibility();
+}
+
+function renderProtectionReceipt(snapshot) {
+  const types = Object.keys(snapshot.entityTypeCounts).map(labelFor);
+  document.getElementById("receiptMode").textContent = MODE_DETAILS[snapshot.mode].label;
+  document.getElementById("receiptProvider").textContent = "Pathumma · thaillm-8b";
+  document.getElementById("receiptPii").textContent = `${snapshot.detectedEntityCount} รายการ / ${types.length} ประเภท`;
+  document.getElementById("receiptSafety").textContent = "ผ่าน · residual 0";
+  document.getElementById("receiptResidual").textContent = `${snapshot.residualCount} สัญญาณ`;
+  document.getElementById("receiptRestoration").textContent = `สมบูรณ์ · ตกค้าง ${snapshot.leftoverCount}`;
+  document.getElementById("receiptSection26").textContent = snapshot.section26Categories.length
+    ? snapshot.section26Categories.map(labelFor).join(" · ")
+    : "ไม่พบธง";
+  document.getElementById("receiptDuration").textContent = snapshot.duration;
+  document.getElementById("receiptTypes").textContent = types.length
+    ? `ประเภทที่ระบบตรวจพบ: ${types.join(" · ")}`
+    : "ประเภทที่ระบบตรวจพบ: ไม่พบข้อมูลส่วนบุคคล";
+  document.getElementById("protectionReceipt").hidden = false;
+  syncPresentationVisibility();
+}
+
+function clearSessionExpiry() {
+  clearTimeout(sessionExpiryTimer);
+  sessionExpiryTimer = null;
+  sessionExpiresAt = 0;
+}
+
+function expireLocalSession() {
+  if (!authenticated) return;
+  setAuthState(false, "session หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
+  showSessionExpiredRecovery("/api/session");
+}
+
+function scheduleSessionExpiry(expiresIn) {
+  clearSessionExpiry();
+  const boundedSeconds = Math.max(0, Math.min(1800, Number(expiresIn) || 0));
+  sessionExpiresAt = Date.now() + boundedSeconds * 1000;
+  sessionExpiryTimer = setTimeout(expireLocalSession, boundedSeconds * 1000);
+  if (sessionExpiryTimer && typeof sessionExpiryTimer.unref === "function") sessionExpiryTimer.unref();
+}
+
+function enforceSessionDeadline() {
+  if (authenticated && sessionExpiresAt && Date.now() >= sessionExpiresAt) expireLocalSession();
+}
+
+const PROVIDER_UNCERTAIN_LOCK_MS = 205000;
+
+function acquireProviderLane() {
+  if (providerLaneActive) return false;
+  clearTimeout(providerLaneReleaseTimer);
+  providerLaneReleaseTimer = null;
+  providerLaneActive = true;
+  syncBusinessControls();
+  return true;
+}
+
+function settleProviderLane(responseReceived) {
+  clearTimeout(providerLaneReleaseTimer);
+  providerLaneReleaseTimer = null;
+  if (responseReceived) {
+    providerLaneActive = false;
+    syncBusinessControls();
+    return;
+  }
+  // With no HTTP response the browser cannot know whether the server/provider
+  // is still running. Hold the lane through the configured 200s proxy window.
+  providerLaneActive = true;
+  providerLaneReleaseTimer = setTimeout(() => {
+    providerLaneActive = false;
+    providerLaneReleaseTimer = null;
+    syncBusinessControls();
+    announce("พร้อมลอง Safe AI ใหม่หลังช่วงป้องกันคำขอซ้ำ");
+  }, PROVIDER_UNCERTAIN_LOCK_MS);
+  if (providerLaneReleaseTimer && typeof providerLaneReleaseTimer.unref === "function") {
+    providerLaneReleaseTimer.unref();
+  }
+  syncBusinessControls();
+}
+
+function leavePresenterMode() {
+  document.body.classList.remove("presenter-mode");
+  const button = document.getElementById("presenterModeBtn");
+  button.setAttribute("aria-pressed", "false");
+  button.textContent = "โหมดนำเสนอ";
+  syncRawPresentationPrivacy();
+  const stage = document.getElementById("presentationStage");
+  if (document.fullscreenElement === stage && typeof document.exitFullscreen === "function") {
+    Promise.resolve(document.exitFullscreen()).catch(() => {});
+  }
+}
+
+function syncRawPresentationPrivacy(forcePrivate = false) {
+  const presenting = document.body.classList.contains("presenter-mode")
+    || document.fullscreenElement === document.getElementById("presentationStage")
+    || forcePrivate;
+  const privateActive = presenting && selectedScenario === "custom";
+  document.getElementById("comparisonRawCard").dataset.private = privateActive ? "true" : "false";
+  document.getElementById("executiveRestoredCard").dataset.private = privateActive ? "true" : "false";
+  document.getElementById("comparisonRaw").textContent = privateActive
+    ? "ซ่อนข้อความที่ผู้ใช้กรอกเองระหว่างการนำเสนอ"
+    : presentationRawText;
+  document.getElementById("executiveRestored").textContent = privateActive
+    ? "ซ่อนผลลัพธ์ของข้อความที่ผู้ใช้กรอกเองระหว่างการนำเสนอ"
+    : presentationRestoredText;
+}
+
+function syncFullscreenState() {
+  const stage = document.getElementById("presentationStage");
+  const active = document.fullscreenElement === stage;
+  const button = document.getElementById("fullscreenBtn");
+  button.setAttribute("aria-pressed", active ? "true" : "false");
+  button.textContent = active ? "ออกจากเต็มจอ" : "แสดงหลักฐานเต็มจอ";
+  syncRawPresentationPrivacy();
+  if (active) {
+    stage.focus({preventScroll: true});
+    announce("แสดงหลักฐานเต็มจอแล้ว กด Escape หรือปุ่มออกจากเต็มจอเพื่อกลับ");
+  } else if (fullscreenReturnFocus) {
+    const returnTarget = button.disabled ? document.getElementById("safe-ai") : fullscreenReturnFocus;
+    fullscreenReturnFocus = null;
+    returnTarget.focus({preventScroll: true});
+    announce("ออกจากการแสดงหลักฐานเต็มจอแล้ว");
+  }
+}
+
 function setGuidedStep(name, state, label) {
   const suffix = name === "scan" ? "Scan" : name === "safe" ? "Safe" : "Report";
   document.getElementById("guidedStep" + suffix).dataset.state = state;
@@ -925,6 +1501,7 @@ function resetGuidedPresentation(message = "เข้าสู่ระบบ �
 
 function resetScanPresentation(message = "เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น") {
   lastDetection = null;
+  resetScanEvidence();
   highlight.textContent = editor.value.trim() ? "กดสแกนเพื่อดูตำแหน่ง PII" : "ผลการไฮไลต์จะแสดงที่นี่หลังสแกน";
   renderLegend({});
   document.getElementById("piiCount").textContent = "0";
@@ -938,7 +1515,7 @@ function resetScanPresentation(message = "เลือกตัวอย่า�
 
 function resetSafePresentation(message) {
   clearSafeProgress();
-  lastRoundtrip = null;
+  resetExecutiveEvidence();
   document.getElementById("safeOriginal").textContent = editor.value || "กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที";
   document.getElementById("masked").textContent = editor.value.trim() ? "รอกดส่งข้อความชุดนี้" : "ยังไม่ได้ส่ง";
   document.getElementById("restored").textContent = editor.value.trim() ? "ยังไม่มีผลสำหรับข้อความชุดนี้" : "ยังไม่ได้ส่ง";
@@ -976,6 +1553,7 @@ function resetSafePresentation(message) {
 
 function resetReportPresentation() {
   clearPreparedReport();
+  resetReportEvidence();
   document.getElementById("reportMeta").textContent = "";
   document.getElementById("reportMeta").dataset.tone = "";
   document.getElementById("reportScore").textContent = "—";
@@ -987,13 +1565,16 @@ function resetReportPresentation() {
 
 function syncBusinessControls() {
   const blocked = !authenticated || guidedRunning;
-  for (const id of ["scanBtn", "send", "reportBtn", "guidedStart"]) {
+  for (const id of ["scanBtn", "reportBtn"]) {
     document.getElementById(id).disabled = blocked;
   }
+  document.getElementById("send").disabled = blocked || providerLaneActive;
+  document.getElementById("guidedStart").disabled = blocked || providerLaneActive;
   document.getElementById("reportDownloadBtn").disabled = !authenticated || guidedRunning;
-  document.getElementById("mode").disabled = guidedRunning;
-  document.getElementById("safeDemoBtn").disabled = guidedRunning;
-  for (const button of document.querySelectorAll("[data-scenario]")) button.disabled = guidedRunning;
+  document.getElementById("mode").disabled = guidedRunning || providerLaneActive;
+  document.getElementById("safeDemoBtn").disabled = guidedRunning || providerLaneActive;
+  for (const button of document.querySelectorAll("[data-mode-card]")) button.disabled = guidedRunning || providerLaneActive;
+  for (const button of document.querySelectorAll("[data-scenario]")) button.disabled = guidedRunning || providerLaneActive;
 }
 
 function clearSensitiveState() {
@@ -1011,7 +1592,9 @@ function clearSensitiveState() {
   resetSafePresentation("");
   resetReportPresentation();
   resetGuidedPresentation("เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  leavePresenterMode();
   selectedScenario = "hr";
+  document.body.dataset.privateInput = "false";
   document.getElementById("guidedScenario").textContent = SCENARIO_LABELS.hr;
   document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
   for (const button of document.querySelectorAll("[data-scenario]")) {
@@ -1030,6 +1613,7 @@ function setAuthState(value, message) {
   const neutralAuthMessage = message.includes("กำลัง") || message.includes("กรุณาใส่");
   authStatus.dataset.tone = value ? "safe" : neutralAuthMessage ? "" : "error";
   if (!value) {
+    clearSessionExpiry();
     invalidateAuthCheck();
     invalidateBusinessRequests();
     clearSensitiveState();
@@ -1078,6 +1662,7 @@ async function checkAuthSession() {
       && body.expires_in >= 0
       && body.expires_in <= 1800;
     setAuthState(valid, valid ? "เข้าสู่ระบบแล้ว — session อายุไม่เกิน 30 นาที" : "กรุณาใส่ access code");
+    if (valid) scheduleSessionExpiry(body.expires_in);
   } catch (err) {
     if (generation !== authCheckGeneration || (err && err.name === "AbortError")) return;
     setAuthState(false, "ตรวจสอบสิทธิ์ไม่ได้");
@@ -1090,13 +1675,17 @@ async function apiJson(url, options = {}) {
   if (!authenticated) throw new StaleBusinessRequest();
   const generation = authGeneration;
   const controller = new AbortController();
-  businessControllers.add(controller);
+  const providerBound = url === "/api/roundtrip";
+  const record = {controller, providerBound};
+  let responseReceived = false;
+  businessControllers.add(record);
   try {
     const r = await fetch(url, {
       ...options,
       credentials: "same-origin",
       signal: controller.signal,
     });
+    responseReceived = true;
     if (r.status === 401) {
       setAuthState(false, "session หมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
       showSessionExpiredRecovery(url);
@@ -1108,13 +1697,15 @@ async function apiJson(url, options = {}) {
     }
     return {r, body};
   } finally {
-    businessControllers.delete(controller);
+    businessControllers.delete(record);
+    if (providerBound) settleProviderLane(responseReceived);
   }
 }
 
 loginBtn.addEventListener("click", async () => {
   if (authMutationInFlight) return;
   let code = accessCodeInput.value;
+  let loginSucceeded = false;
   if (!code) return;
   setAuthMutationState(true);
   logoutBtn.hidden = true;
@@ -1129,6 +1720,7 @@ loginBtn.addEventListener("click", async () => {
     });
     if (r.status === 204) {
       await checkAuthSession();
+      loginSucceeded = authenticated;
     } else {
       const body = await safeJson(r);
       setAuthState(false, errorMessage(r.status, detailText(body), "auth"));
@@ -1139,6 +1731,7 @@ loginBtn.addEventListener("click", async () => {
     code = "";
     accessCodeInput.value = "";
     setAuthMutationState(false);
+    if (loginSucceeded) logoutBtn.focus({preventScroll: true});
   }
 });
 
@@ -1150,6 +1743,7 @@ logoutBtn.addEventListener("click", async () => {
   if (authMutationInFlight) return;
   setAuthMutationState(true);
   setAuthState(false, "กำลังออกจากระบบ...");
+  document.getElementById("authCard").focus({preventScroll: true});
   let complete = false;
   try {
     const r = await fetch("/api/auth/logout", {method: "POST", credentials: "same-origin"});
@@ -1163,12 +1757,14 @@ logoutBtn.addEventListener("click", async () => {
     logoutBtn.hidden = true;
     logoutBtn.textContent = "ออกจากระบบ";
     authStatus.textContent = "ออกจากระบบแล้ว";
+    accessCodeInput.focus({preventScroll: true});
   } else {
     logoutBtn.hidden = false;
     logoutBtn.textContent = "ลองออกจากระบบอีกครั้ง";
     authStatus.textContent =
       "ล้างข้อมูลในหน้านี้แล้ว แต่ session บนเซิร์ฟเวอร์อาจยังอยู่ กรุณาลองออกจากระบบอีกครั้ง";
     authStatus.dataset.tone = "error";
+    logoutBtn.focus({preventScroll: true});
   }
 });
 
@@ -1249,6 +1845,7 @@ async function detectNow() {
   }
   scanBtn.disabled = true;
   lastDetection = null;
+  resetScanEvidence();
   highlight.textContent = "กำลังวิเคราะห์ข้อความ...";
   renderLegend({});
   document.getElementById("piiCount").textContent = "—";
@@ -1276,6 +1873,17 @@ async function detectNow() {
       return false;
     }
     if (generation !== detectGeneration || text !== editor.value) return false;
+    if (!validDetectPayload(body, text)) {
+      highlight.textContent = "ยังไม่มีผลการสแกนที่ตรวจสอบได้";
+      renderLegend({});
+      document.getElementById("piiCount").textContent = "0";
+      document.getElementById("piiTypeCount").textContent = "0";
+      document.getElementById("piiTypes").textContent = "ผลตอบกลับไม่ครบตามสัญญา API";
+      document.getElementById("scanTiming").textContent = `คำขอหยุดอย่างปลอดภัยหลัง ${formatElapsed(startedAt)}`;
+      meta.textContent = "ผล Privacy Scan ไม่สมบูรณ์ กรุณาลองใหม่";
+      meta.dataset.tone = "error";
+      return false;
+    }
     renderHighlight(text, body.highlights);
     renderLegend(body.entity_type_counts);
     const typeEntries = Object.entries(body.entity_type_counts);
@@ -1285,6 +1893,7 @@ async function detectNow() {
       entityTypeCounts: {...body.entity_type_counts},
       detectedEntityCount: body.detected_entity_count,
     };
+    renderSensitiveDataMap(text, body.entity_type_counts, lastDetection.highlights);
     document.getElementById("piiCount").textContent = String(body.detected_entity_count);
     document.getElementById("piiTypeCount").textContent = String(typeEntries.length);
     document.getElementById("piiTypes").textContent = typeEntries.length
@@ -1302,18 +1911,25 @@ async function detectNow() {
       });
       if (generation !== detectGeneration || text !== editor.value) return false;
       const bar = document.getElementById("guardBar");
-      if (!gr.ok) {
-        bar.textContent = "การตรวจเตือนคำสั่งไม่พร้อม · ผล Privacy Scan ยังแสดงได้ แต่ Guided Demo จะหยุดขั้นนี้";
+      if (!gr.ok || !validGuardPayload(gb)) {
+        lastGuard = {text, available: false, findings: []};
+        renderGuardRisk([], false);
+        bar.textContent = "การตรวจเตือนคำสั่งไม่พร้อม · Privacy Scan ผ่าน แต่ Guided Demo จะหยุดก่อนเรียก Safe AI";
         return false;
       }
-      bar.innerHTML = gb.flagged
-        ? '<span class="guard-ok">พบสัญญาณคำสั่งที่ควรตรวจสอบ</span> '
-          + gb.guard_findings.map(g => `<span class="chip guard-chip" title="${escAttr(g.severity)}">${esc(g.category)}</span>`).join("")
-        : '<span class="guard-ok">ไม่พบสัญญาณ prompt injection ตามกฎตรวจเตือน</span>';
+      const findings = Array.isArray(gb.guard_findings) ? gb.guard_findings : [];
+      lastGuard = {text, available: true, findings: findings.map(item => ({category: item.category, severity: item.severity}))};
+      renderGuardRisk(lastGuard.findings, true);
+      bar.innerHTML = findings.length
+        ? '<span class="guard-ok">พบสัญญาณคำสั่งที่ควรตรวจสอบ · ดู Prompt Risk ด้านล่าง</span> '
+          + findings.map(g => `<span class="chip guard-chip">${esc(GUARD_LABELS[g.category] || g.category)} · ${esc(SEVERITY_LABELS[g.severity] || g.severity)}</span>`).join("")
+        : '<span class="guard-ok">ไม่พบสัญญาณตามกฎ Guard ที่มีขอบเขตจำกัด · Guard เป็นคำเตือนและไม่บล็อก</span>';
     } catch (err) {
       if (isStaleBusinessError(err)) return false;
       if (generation !== detectGeneration || text !== editor.value) return false;
-      document.getElementById("guardBar").textContent = "เชื่อมต่อการตรวจเตือนคำสั่งไม่ได้ · ผล Privacy Scan ยังแสดงได้ แต่ Guided Demo จะหยุดขั้นนี้";
+      lastGuard = {text, available: false, findings: []};
+      renderGuardRisk([], false);
+      document.getElementById("guardBar").textContent = "เชื่อมต่อการตรวจเตือนคำสั่งไม่ได้ · Privacy Scan ผ่าน แต่ Guided Demo จะหยุดก่อนเรียก Safe AI";
       return false;
     }
     return true;
@@ -1347,6 +1963,8 @@ function handleInputChange({preserveScenario = false} = {}) {
   resetSafePresentation();
   resetReportPresentation();
   if (!preserveScenario) selectedScenario = editor.value.trim() ? "custom" : "hr";
+  document.body.dataset.privateInput = selectedScenario === "custom" ? "true" : "false";
+  syncRawPresentationPrivacy();
   const scenarioLabel = SCENARIO_LABELS[selectedScenario];
   document.getElementById("guidedScenario").textContent = scenarioLabel;
   document.getElementById("scenarioStatus").textContent = selectedScenario === "custom"
@@ -1374,6 +1992,7 @@ document.querySelectorAll("[data-scenario][data-sample]").forEach(btn => {
 
 document.getElementById("safeDemoBtn").addEventListener("click", () => {
   selectedScenario = "hr";
+  document.body.dataset.privateInput = "false";
   editor.value = SAFE_AI_DEMO_TEXT;
   handleInputChange({preserveScenario: true});
   document.getElementById("safeElapsed").textContent = "ตัวอย่างสังเคราะห์พร้อมแล้ว กดปกป้องและส่งให้ Safe AI เพื่อเรียก API จริง";
@@ -1397,20 +2016,86 @@ function resetAllDemoState() {
 document.getElementById("resetDemo").addEventListener("click", resetAllDemoState);
 document.getElementById("guidedReset").addEventListener("click", resetAllDemoState);
 
-document.getElementById("mode").addEventListener("change", event => {
-  const mode = normalizeProtectionMode(event.target.value);
-  event.target.value = mode;
+function applyProtectionMode(value) {
+  const mode = normalizeProtectionMode(value);
+  document.getElementById("mode").value = mode;
   const detail = MODE_DETAILS[mode];
   document.getElementById("modeDescription").textContent = `${detail.label}${mode === "token" ? " — แนะนำ" : ""}: ${detail.description}`;
   document.getElementById("safeMode").textContent = detail.label;
   document.getElementById("guidedMode").textContent = detail.label;
   document.getElementById("systemMode").textContent = detail.label;
+  syncModeCards(mode);
   roundtripGeneration += 1;
   guidedGeneration += 1;
   resetSafePresentation("เปลี่ยนรูปแบบการปกป้องแล้ว พร้อมเริ่มคำขอใหม่");
   resetGuidedPresentation(authenticated ? "เลือกรูปแบบแล้ว พร้อมเริ่ม Guided Demo" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
   syncBusinessControls();
+}
+
+document.getElementById("mode").addEventListener("change", event => {
+  applyProtectionMode(event.target.value);
 });
+
+for (const card of document.querySelectorAll("[data-mode-card]")) {
+  card.addEventListener("click", () => applyProtectionMode(card.dataset.modeCard || card.dataset.mode));
+}
+
+document.getElementById("presenterModeBtn").addEventListener("click", () => {
+  const stage = document.getElementById("presentationStage");
+  if (stage.hidden) return;
+  const active = document.body.classList.toggle("presenter-mode");
+  const button = document.getElementById("presenterModeBtn");
+  button.setAttribute("aria-pressed", active ? "true" : "false");
+  button.textContent = active ? "ออกจากโหมดนำเสนอ" : "โหมดนำเสนอ";
+  syncRawPresentationPrivacy();
+  announce(active ? "เปิดโหมดนำเสนอแล้ว" : "ออกจากโหมดนำเสนอแล้ว");
+  if (active) {
+    const focusEvidence = () => {
+      stage.focus({preventScroll: true});
+      stage.scrollIntoView({block: "start", behavior: "auto"});
+    };
+    if (typeof window.requestAnimationFrame === "function") window.requestAnimationFrame(focusEvidence);
+    else setTimeout(focusEvidence, 0);
+  }
+});
+
+document.getElementById("fullscreenBtn").addEventListener("click", async () => {
+  const stage = document.getElementById("presentationStage");
+  const button = document.getElementById("fullscreenBtn");
+  if (stage.hidden) return;
+  try {
+    if (document.fullscreenElement === stage) {
+      await document.exitFullscreen();
+    } else if (document.fullscreenEnabled !== false && typeof stage.requestFullscreen === "function") {
+      // Remove custom raw/restored values from the DOM before the browser
+      // begins its fullscreen transition; a CSS cover alone is not sufficient.
+      syncRawPresentationPrivacy(true);
+      fullscreenReturnFocus = button;
+      await stage.requestFullscreen();
+    } else {
+      throw new Error("fullscreen unavailable");
+    }
+  } catch {
+    fullscreenReturnFocus = null;
+    syncRawPresentationPrivacy();
+    announce("เบราว์เซอร์ไม่อนุญาตให้แสดงเต็มจอ ใช้โหมดนำเสนอแทนได้");
+    button.focus();
+  }
+});
+
+document.getElementById("fullscreenExitBtn").addEventListener("click", async () => {
+  if (document.fullscreenElement && typeof document.exitFullscreen === "function") {
+    try { await document.exitFullscreen(); } catch { announce("ออกจากเต็มจอไม่สำเร็จ กรุณากด Escape"); }
+  }
+});
+
+document.getElementById("presenterLogoutBtn").addEventListener("click", () => logoutBtn.click());
+
+document.addEventListener("fullscreenchange", syncFullscreenState);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) enforceSessionDeadline();
+});
+if (typeof window.addEventListener === "function") window.addEventListener("focus", enforceSessionDeadline);
 
 /* ── demo: send roundtrip (provider hard-coded to tokenmind) ── */
 function warningLabel(w) {
@@ -1439,6 +2124,7 @@ function roundtripIsSafe(body) {
     && body.entity_type_counts
     && typeof body.entity_type_counts === "object"
     && Array.isArray(body.section26_categories)
+    && Array.isArray(body.guard_findings)
     && body.safety
     && body.safety.status === "pass"
     && body.safety.residual_count === 0
@@ -1535,6 +2221,13 @@ async function runSafeAI() {
     return false;
   }
   if (!authenticated) return false;
+  if (providerLaneActive) {
+    safeElapsed.textContent = "Safe AI มีคำขอก่อนหน้าที่ยังไม่ยืนยันว่าจบแล้ว กรุณารอเพื่อป้องกันการส่งซ้ำ";
+    safeElapsed.dataset.tone = "caution";
+    announce("ยังเริ่ม Safe AI ซ้ำไม่ได้ กรุณารอคำขอก่อนหน้า");
+    return false;
+  }
+  if (!acquireProviderLane()) return false;
   const generation = ++roundtripGeneration;
   const startedAt = monotonicNow();
   const requestedMode = selectedProtectionMode();
@@ -1628,6 +2321,10 @@ async function runSafeAI() {
     restored.dataset.tone = "";
     document.getElementById("safeRestoration").textContent = "สมบูรณ์";
     fillEvidence(body);
+    const duration = formatElapsed(startedAt);
+    const guardFindings = Array.isArray(body.guard_findings)
+      ? body.guard_findings.map(item => ({category: item.category, severity: item.severity}))
+      : [];
     lastRoundtrip = {
       text,
       mode: requestedMode,
@@ -1635,7 +2332,26 @@ async function runSafeAI() {
       section26Categories: [...(body.section26_categories || [])],
       detectedEntityCount: body.detected_entity_count,
       entityTypeCounts: {...(body.entity_type_counts || {})},
+      residualCount: body.safety.residual_count,
+      leftoverCount: body.restoration.leftover_count,
+      sanitizedText: body.sanitized_text,
+      duration,
+      guardFindings,
     };
+    lastGuard = {text, available: true, findings: guardFindings};
+    renderSensitiveDataMap(
+      text,
+      lastRoundtrip.entityTypeCounts,
+      lastDetection && lastDetection.text === text ? lastDetection.highlights : [],
+    );
+    renderGuardRisk(guardFindings, true);
+    renderRawProtectedComparison(text, body.sanitized_text, browserProof);
+    renderProtectionReceipt(lastRoundtrip);
+    presentationRestoredText = body.restored_text;
+    document.getElementById("executiveRestored").textContent = presentationRestoredText;
+    document.getElementById("executiveRestoredCard").hidden = false;
+    syncRawPresentationPrivacy();
+    updateExecutiveSummary();
     const section26 = (body.section26_categories || []).length
       ? ` · หมวดข้อมูลอ่อนไหวตามมาตรา 26: ${body.section26_categories.map(labelFor).join(", ")}`
       : " · ไม่พบหมวดข้อมูลอ่อนไหวตามมาตรา 26";
@@ -1670,14 +2386,15 @@ async function runSafeAI() {
     document.getElementById("proofCallout").dataset.tone = "error";
     document.getElementById("evidenceSanitized").textContent = "ยังไม่มีข้อมูล";
     document.getElementById("evidenceWarnings").textContent = "คำขอไม่สำเร็จโดยไม่แสดงข้อมูลภายใน";
-    safeElapsed.textContent = `เชื่อมต่อแพลตฟอร์มไม่ได้ กรุณาลองใหม่ · ${formatElapsed(startedAt)}`;
+    safeElapsed.textContent = providerLaneActive
+      ? `การเชื่อมต่อขาดหายและคำขอก่อนหน้าอาจยังทำงานอยู่ · ระบบพักการส่งซ้ำชั่วคราว · ${formatElapsed(startedAt)}`
+      : `เชื่อมต่อแพลตฟอร์มไม่ได้ กรุณาลองใหม่ · ${formatElapsed(startedAt)}`;
     safeElapsed.dataset.tone = "error";
     document.getElementById("safeAnnouncement").textContent = "Safe AI เชื่อมต่อแพลตฟอร์มไม่สำเร็จ";
     return false;
   } finally {
     if (generation === roundtripGeneration) {
-      btn.disabled = !authenticated || guidedRunning;
-      document.getElementById("mode").disabled = guidedRunning;
+      syncBusinessControls();
     }
   }
 }
@@ -1686,8 +2403,13 @@ document.getElementById("send").addEventListener("click", runSafeAI);
 
 async function runGuidedDemo() {
   if (!authenticated || guidedRunning) return false;
-  // A Guided run owns the business-request lane. Abort any direct request
-  // before starting so two provider-bound roundtrips cannot overlap.
+  if (providerLaneActive) {
+    document.getElementById("guidedStatus").textContent = "ยังเริ่ม Guided Demo ไม่ได้ เพราะ Safe AI คำขอก่อนหน้ายังไม่ยืนยันว่าจบแล้ว";
+    document.getElementById("guidedStatus").dataset.tone = "caution";
+    return false;
+  }
+  // Guided owns local-only request state. A provider-bound request is never
+  // aborted-and-replaced because browser cancellation cannot prove server stop.
   invalidateBusinessRequests();
   if (!editor.value.trim()) {
     selectedScenario = "hr";
@@ -1712,9 +2434,15 @@ async function runGuidedDemo() {
     const scanPassed = await detectNow();
     if (generation !== guidedGeneration || !guidedRunning) return false;
     if (!scanPassed) {
-      setGuidedStep("scan", "error", "ไม่สำเร็จ");
+      const scanActuallyPassed = lastDetection && lastDetection.text === editor.value;
+      setGuidedStep("scan", scanActuallyPassed ? "done" : "error", scanActuallyPassed ? "สแกนผ่าน" : "ไม่สำเร็จ");
+      if (scanActuallyPassed && lastGuard && !lastGuard.available) {
+        setGuidedStep("safe", "error", "Guard ไม่พร้อม");
+      }
       document.getElementById("guidedSafety").textContent = "หยุดอย่างปลอดภัย";
-      document.getElementById("guidedStatus").textContent = "Guided Demo หยุดที่ Privacy Scan · แก้ไขตามข้อความแจ้งเตือนแล้วกดลองใหม่";
+      document.getElementById("guidedStatus").textContent = scanActuallyPassed
+        ? "Privacy Scan ผ่าน แต่ Guard ไม่พร้อม · หยุดก่อนเรียก Safe AI โดยไม่สร้างผลสำเร็จจำลอง"
+        : "Guided Demo หยุดที่ Privacy Scan · แก้ไขตามข้อความแจ้งเตือนแล้วกดลองใหม่";
       document.getElementById("guidedStatus").dataset.tone = "error";
       return false;
     }
@@ -1834,6 +2562,7 @@ async function generateReport() {
     document.getElementById("reportGrade").textContent = String(report.overall_grade);
     document.getElementById("reportScope").textContent = "พร้อม";
     preparedReport = report.report_pdf_b64;
+    lastReport = {text, score: report.overall_score, grade: report.overall_grade};
     document.getElementById("reportDownloadBtn").hidden = false;
     if (lastDetection && lastDetection.text === text) {
       const labels = Object.keys(lastDetection.entityTypeCounts).map(labelFor);
@@ -1846,6 +2575,7 @@ async function generateReport() {
     reportMeta.textContent = `รายงานพร้อมดาวน์โหลด · คะแนน ${report.overall_score} · เกรด ${report.overall_grade}`;
     reportMeta.dataset.tone = "safe";
     document.getElementById("reportTiming").textContent = `PDPA Report /analyze-report · เวลารวมที่วัดในเบราว์เซอร์ ${formatElapsed(startedAt)}`;
+    updateExecutiveSummary();
     return true;
   } catch (err) {
     if (isStaleBusinessError(err)) return false;
@@ -1888,6 +2618,8 @@ async function checkServiceHealth() {
   version.textContent = "—";
 }
 
+syncModeCards("token");
+syncFullscreenState();
 setAuthState(false, "กำลังตรวจสอบสิทธิ์...");
 checkAuthSession();
 checkServiceHealth();

@@ -636,6 +636,15 @@ def check_fixed_proxy_failures_and_timeout_policy(failures: list[str]) -> None:
     if config.count("proxy_read_timeout 200s;") != 2:
         failures.append("timeout: provider deadline was widened beyond two roundtrip aliases")
 
+    frontend = (REPO / "web" / "index.html").read_text(encoding="utf-8")
+    uncertain_lock = re.search(
+        r"const\s+PROVIDER_UNCERTAIN_LOCK_MS\s*=\s*(\d+)\s*;", frontend
+    )
+    if uncertain_lock is None or int(uncertain_lock.group(1)) < 200_000:
+        failures.append(
+            "timeout: browser uncertain-request lock is shorter than nginx's 200s roundtrip boundary"
+        )
+
 
 def main() -> int:
     failures: list[str] = []
