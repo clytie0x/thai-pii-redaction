@@ -8,6 +8,8 @@ FROM nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e591939
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY default.conf.template /etc/nginx/templates/default.conf.template
+COPY healthcheck.sh /usr/local/bin/aift-healthcheck
+RUN chmod 0555 /usr/local/bin/aift-healthcheck
 ARG AIFT_BUILD_COMMIT=local-working-tree
 LABEL org.opencontainers.image.revision="${AIFT_BUILD_COMMIT}"
 EXPOSE 8000

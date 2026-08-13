@@ -19,14 +19,23 @@ services:
       args:
         AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped
+    stop_signal: SIGQUIT
+    stop_grace_period: 210s
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     logging: *logging
+    tmpfs:
+      - /var/cache/nginx:size=32m
+      - /var/run:size=4m
+      - /tmp:size=4m
     ports:
       - "127.0.0.1:20070:3000"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      test: ["CMD", "/usr/local/bin/aift-healthcheck"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -35,6 +44,7 @@ services:
         limits:
           memory: 256M
           cpus: "0.5"
+          pids: 128
 
   api:
     build:
@@ -42,9 +52,17 @@ services:
       args:
         AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped
+    stop_signal: SIGQUIT
+    stop_grace_period: 210s
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     logging: *logging
     tmpfs:
       - /var/cache/nginx:size=64m
+      - /var/run:size=4m
+      - /tmp:size=4m
+      - /etc/nginx/conf.d:size=4m
     ports:
       - "127.0.0.1:20071:8000"
     environment:
@@ -57,7 +75,7 @@ services:
         condition: service_healthy
     healthcheck:
       # probes THROUGH nginx into core — a green api means the whole chain answers
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8000/health"]
+      test: ["CMD", "/usr/local/bin/aift-healthcheck"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -67,6 +85,7 @@ services:
         limits:
           memory: 256M
           cpus: "0.5"
+          pids: 128
 
   core:
     build:
@@ -74,12 +93,17 @@ services:
       args:
         AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped
+    stop_grace_period: 210s
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     logging: *logging
-    # UploadFile spooling, the handler copy, and raster output stay volatile.
-    # 1 GiB leaves headroom for two allowed near-cap requests and is discarded
-    # with the container, including after a crash/restart.
+    # Public PDF/OCR is disabled.  The text product needs only bounded volatile
+    # Python/health state, discarded on every crash or restart.
     tmpfs:
-      - /tmp:size=1g,mode=1777
+      - /tmp:size=128m,mode=1777
     # not published — only reachable from api/web on the compose network
     environment:
       PYTHONUTF8: "1"
@@ -94,18 +118,10 @@ services:
       AIGUARD_ALLOWED_HOSTS: "team08.aiforthai.in.th,localhost,127.0.0.1"
       AIGUARD_PROVIDERS: "tokenmind"
       AIGUARD_AUDIT_STDOUT: "1"
-      AIGUARD_PDF_MAX_PAGES: "20"
       AIGUARD_MAX_TEXT_CHARS: "20000"
       UVICORN_WORKERS: "1"
     healthcheck:
-      # python+httpx: this image has no curl (httpx is a core dependency)
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import httpx; httpx.get('http://127.0.0.1:8000/api/health', timeout=2).raise_for_status()",
-        ]
+      test: ["CMD", "python", "/app/healthcheck.py"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -113,5 +129,6 @@ services:
     deploy:
       resources:
         limits:
-          memory: 6G
+          memory: 2G
           cpus: "2.0"
+          pids: 256

@@ -65,10 +65,13 @@ def _check_report(client: httpx.Client, headers: dict[str, str]) -> float:
 
 def main() -> int:
     try:
-        with httpx.Client(base_url=API, timeout=90) as client:
+        with httpx.Client(base_url=API, timeout=90, trust_env=False) as client:
             cookie = _cookie_header(client)
             headers = {"Host": PUBLIC_HOST, "Cookie": cookie}
             report_seconds = _check_report(client, headers)
+            response = client.post("/auth/logout", headers=headers)
+            if response.status_code != 204:
+                raise ProbeFailure("caller logout failed")
         print(f"runner route probe passed: report_seconds={report_seconds:.1f}")
         return 0
     except ProbeFailure as error:

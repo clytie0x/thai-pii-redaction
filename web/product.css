@@ -1,0 +1,21 @@
+:root{color-scheme:light;--canvas:#f4f7fb;--surface:#fff;--text:#10243e;--muted:#53657a;--line:#d9e3ef;--blue:#1463df;--safe:#087a5b;--soft:#eef5ff;--warn:#8b5208}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--canvas);color:var(--text);font:16px/1.75 "Sarabun","Leelawadee UI",system-ui,sans-serif}
+a{color:#0f5fc7}
+.top{background:#fff;border-bottom:1px solid var(--line)}
+.nav,.wrap{max-width:920px;margin:auto;padding:0 22px}
+.nav{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{font-size:20px;font-weight:850;text-decoration:none;color:var(--text)}
+.brand span{color:var(--blue)}
+.links{display:flex;gap:16px;flex-wrap:wrap}.links a{text-decoration:none;color:var(--muted)}
+main.wrap{padding-top:54px;padding-bottom:72px}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.25;margin:0 0 14px}h2{font-size:24px;margin:42px 0 10px}h3{font-size:18px;margin:0 0 7px}
+.lede{font-size:19px;color:var(--muted);max-width:760px}.notice{margin:26px 0;padding:18px 20px;background:#fff8e9;border:1px solid #edcf98;border-radius:14px;color:#67400c}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}.card p,.muted{color:var(--muted)}
+.status{display:inline-flex;padding:4px 9px;border-radius:8px;background:var(--soft);color:var(--blue);font-size:13px;font-weight:750}.status.closed{background:#f2f4f7;color:#5f7188}
+ul{padding-left:22px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}.button{display:inline-flex;min-height:46px;align-items:center;padding:9px 16px;border-radius:10px;background:var(--blue);color:#fff;text-decoration:none;font-weight:750}.button.secondary{background:#fff;color:var(--blue);border:1px solid #9ec5ff}
+footer{border-top:1px solid var(--line);background:#0d2947;color:#d8e7f5;padding:30px 0}.footer{max-width:920px;margin:auto;padding:0 22px}.footer a{color:#fff}
+:focus-visible{outline:3px solid #0b4fae;outline-offset:3px}
+@media(max-width:680px){.nav{align-items:flex-start;flex-direction:column;padding-top:14px;padding-bottom:14px}.grid{grid-template-columns:1fr}main.wrap{padding-top:38px}.links{gap:11px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

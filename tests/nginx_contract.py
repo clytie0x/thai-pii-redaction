@@ -67,7 +67,7 @@ CONNECT_HOST = os.environ.get("AIFT_CONTRACT_CONNECT_HOST", "127.0.0.1")
 TEST_KEY = "contract-test-key-not-a-real-secret"
 REQUEST_TARGET_MARKER = "SECRET_MARKER_9f3a1c"
 
-# The proxy rate-limits at 10r/s with burst 10. Pacing below that keeps a
+# The proxy uses independent public/work/provider lanes. Pacing keeps a
 # failure here meaning "the contract is wrong", never "the test was too fast".
 PACE_SECONDS = 0.15
 
@@ -164,7 +164,9 @@ def get(
 ) -> tuple[int, dict[str, str], str]:
     """GET `path`, returning (status, headers, body) for 404s as well as 200s."""
     time.sleep(PACE_SECONDS)
-    request = urllib.request.Request(BASE + path, headers=headers or {}, method="GET")
+    request_headers = {"Host": "team08.aiforthai.in.th"}
+    request_headers.update(headers or {})
+    request = urllib.request.Request(BASE + path, headers=request_headers, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             return (
@@ -177,12 +179,35 @@ def get(
 
 
 def web_response(path: str) -> tuple[int, dict[str, str], str]:
-    request = urllib.request.Request(WEB_BASE + path, method="GET")
+    request = urllib.request.Request(
+        WEB_BASE + path,
+        headers={"Host": "team08.aiforthai.in.th"},
+        method="GET",
+    )
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             return response.status, dict(response.headers), response.read().decode("utf-8")
     except urllib.error.HTTPError as error:
         return error.code, dict(error.headers), error.read().decode("utf-8", "replace")
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def no_redirect_response(
+    base: str, path: str, headers: dict[str, str]
+) -> tuple[int, dict[str, str]]:
+    request_headers = {"Host": "team08.aiforthai.in.th"}
+    request_headers.update(headers)
+    request = urllib.request.Request(base + path, headers=request_headers, method="GET")
+    opener = urllib.request.build_opener(_NoRedirect())
+    try:
+        with opener.open(request, timeout=15) as response:
+            return response.status, dict(response.headers)
+    except urllib.error.HTTPError as error:
+        return error.code, dict(error.headers)
 
 
 def web_get(path: str) -> tuple[int, str]:
@@ -307,8 +332,8 @@ def setup() -> None:
 def check_frontend_static_boundary(failures: list[str]) -> None:
     config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
     safe_log_format = (
-        """log_format private '$remote_addr $status $body_bytes_sent """
-        """"$request_method"';"""
+        "log_format private 'surface=web status=$status bytes=$body_bytes_sent "
+        "method=$request_method rt=$request_time';"
     )
     if (
         "access_log /var/log/nginx/access.log private;" not in config
@@ -349,9 +374,9 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
                 f"hosted wording: required disclosure missing: {boundary!r}"
             )
     required_auth_claims = (
-        "business API ทุกเส้นต้อง login",
+        "การประมวลผลข้อความทุกเส้นต้องเข้าสู่ระบบ",
         "HttpOnly",
-        "ไม่บันทึก access code ลงพื้นที่จัดเก็บของเบราว์เซอร์",
+        "ไม่บันทึกรหัสเชิญลงพื้นที่จัดเก็บของเบราว์เซอร์",
     )
     for claim in required_auth_claims:
         if claim not in page + readme:
@@ -438,7 +463,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         failures.append("volatile storage: api still buffers response bodies")
     for mount in (
         "/var/cache/nginx:size=64m",
-        "/tmp:size=1g,mode=1777",
+        "/tmp:size=128m,mode=1777",
     ):
         if mount not in compose:
             failures.append(f"volatile storage: compose tmpfs mount missing: {mount}")
@@ -448,8 +473,8 @@ def check_web_request_target_stays_out_of_log(failures: list[str]) -> None:
     before = run("docker", "logs", WEB).count("\n")
     status, _body = web_get(f"/{REQUEST_TARGET_MARKER}?q={REQUEST_TARGET_MARKER}")
     logs = run("docker", "logs", WEB)
-    if status != 200:
-        failures.append(f"web log hygiene: frontend returned {status}, expected 200")
+    if status != 404:
+        failures.append(f"web routing: unknown path returned {status}, expected 404")
     if REQUEST_TARGET_MARKER in logs:
         failures.append(
             "web log hygiene: attacker-controlled request target reached the runtime log"
@@ -476,6 +501,10 @@ def check_frontend_security_headers(failures: list[str]) -> None:
         "X-Frame-Options": "DENY",
         "Referrer-Policy": "no-referrer",
         "Cache-Control": "no-store",
+        "Strict-Transport-Security": "max-age=31536000",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Resource-Policy": "same-origin",
     }
     for name, value in expected.items():
         if headers.get(name) != value:
@@ -490,6 +519,136 @@ def check_frontend_security_headers(failures: list[str]) -> None:
     ):
         if directive not in csp:
             failures.append(f"frontend header: CSP missing {directive!r}")
+
+
+def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
+    expected_pages = {
+        "/privacy": "ความเป็นส่วนตัวและความปลอดภัย",
+        "/terms": "ข้อกำหนดและการใช้งานที่ยอมรับได้",
+        "/help": "ช่วยเหลือและคำถามที่พบบ่อย",
+        "/downloads": "AI Guard บนอุปกรณ์ของคุณ",
+        "/robots.txt": "Disallow: /api/",
+        "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
+    }
+    for path, marker in expected_pages.items():
+        status, body = web_get(path)
+        if status != 200 or marker not in body:
+            failures.append(f"product page: {path} was not the expected static surface")
+    for base, path, location in (
+        (WEB_BASE, "/private?q=must-not-reflect", "https://team08.aiforthai.in.th/private"),
+        (BASE, "/health?q=must-not-reflect", "https://team08.aiforthai.in.th/api/health"),
+    ):
+        status, headers = no_redirect_response(
+            base, path, {"X-Forwarded-Proto": "http"}
+        )
+        if status != 308 or headers.get("Location") != location:
+            failures.append(
+                f"https enforcement: {path} returned {status}/{headers.get('Location')!r}"
+            )
+
+
+def check_rate_and_log_policy(failures: list[str]) -> None:
+    config = (REPO / "api" / "default.conf.template").read_text(encoding="utf-8")
+    web_config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
+    if "$remote_addr" in config or "$remote_addr" in web_config:
+        failures.append("log privacy: client IP remains in an application log format")
+    for required in (
+        '"~(?:^|;[[:space:]]*)__Host-aift_session=v1\\.[0-9]{1,12}\\.([A-Za-z0-9_-]{22})\\.[A-Za-z0-9_-]{43}(?:;|$)" $1;',
+        "$aift_duplicate_session_cookie",
+        "zone=public_global:1m rate=30r/s",
+        "zone=auth_global:1m rate=2r/s",
+        "zone=provider_global:1m rate=6r/m",
+        "zone=provider_caller:4m rate=2r/m",
+        "limit_conn provider_global_conn 2;",
+        "limit_conn provider_caller_conn 1;",
+        "listen 127.0.0.1:8001;",
+        "location /internal-health",
+    ):
+        if required not in config:
+            failures.append(f"abuse control: missing {required!r}")
+    for location in ("/health", "/v1/health", "/auth/session", "/v1/auth/session"):
+        match = re.search(
+            rf"location = {re.escape(location)} \{{(?P<body>.*?)\n  \}}",
+            config,
+            re.DOTALL,
+        )
+        if match is None or "limit_req zone=public_global" not in match.group("body"):
+            failures.append(f"abuse control: {location} lacks public control-plane limit")
+    for location in ("/roundtrip", "/v1/roundtrip"):
+        match = re.search(
+            rf"location = {re.escape(location)} \{{(?P<body>.*?)\n  \}}",
+            config,
+            re.DOTALL,
+        )
+        body = match.group("body") if match else ""
+        if "limit_req zone=provider_global" not in body or "limit_req zone=provider_caller" not in body:
+            failures.append(f"abuse control: {location} lacks provider request lanes")
+
+    # Exercise the real v1 cookie shape.  Six requests fit one caller's
+    # work-lane capacity (base request + burst 5); the seventh is rejected,
+    # while a different session nonce retains its own allowance.  This pins
+    # the fairness key to the AuthGateway token grammar instead of a regex
+    # that can silently fall back to one proxy/client address.
+    def shaped_cookie(nonce: str) -> str:
+        return "__Host-aift_session=v1.1800001800." + nonce + "." + "s" * 43
+
+    first_headers = {"Cookie": shaped_cookie("callerA".ljust(22, "a"))}
+    statuses = [get("/guard", headers=first_headers)[0] for _ in range(7)]
+    if statuses[:6] != [200] * 6 or statuses[6] != 429:
+        failures.append(f"abuse control: caller work lane was not 6 then 429: {statuses!r}")
+    second_status, _headers, _body = get(
+        "/guard",
+        headers={"Cookie": shaped_cookie("callerB".ljust(22, "b"))},
+    )
+    if second_status != 200:
+        failures.append("abuse control: a distinct valid session nonce shared the first caller lane")
+    shadow_status, _headers, _body = get(
+        "/guard",
+        headers={
+            "Cookie": "shadow="
+            + shaped_cookie("callerA".ljust(22, "a"))
+            + "; "
+            + shaped_cookie("shadowSafe".ljust(22, "s"))
+        },
+    )
+    if shadow_status != 200:
+        failures.append("abuse control: cookie-name text embedded in a value selected the rate key")
+    duplicate_status, _headers, _body = get(
+        "/guard",
+        headers={
+            "Cookie": shaped_cookie("rotated".ljust(22, "r"))
+            + "; "
+            + shaped_cookie("authenticated".ljust(22, "a"))
+        },
+    )
+    if duplicate_status != 400:
+        failures.append("abuse control: duplicate session authorities were not rejected")
+
+    # Exhaust the public control-plane bucket, then prove container liveness
+    # uses the unexported listener and cannot be forced into a restart loop.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=48) as executor:
+        public_statuses = list(executor.map(lambda _: get("/health")[0], range(96)))
+    if 429 not in public_statuses:
+        failures.append("abuse control: public health saturation did not reach its bound")
+    probe = subprocess.run(
+        [
+            "docker",
+            "exec",
+            PROXY,
+            "wget",
+            "-q",
+            "-T",
+            "2",
+            "-t",
+            "1",
+            "-O",
+            "/dev/null",
+            "http://127.0.0.1:8001/internal-health",
+        ],
+        capture_output=True,
+    )
+    if probe.returncode != 0:
+        failures.append("health isolation: public saturation broke private liveness")
 
 
 def check_prefix_is_re_added(failures: list[str]) -> None:
@@ -595,7 +754,16 @@ def check_fixed_proxy_failures_and_timeout_policy(failures: list[str]) -> None:
     }
     for status_code, (code, category, retryable) in expected.items():
         status, headers, body = get(
-            "/detect", headers={"X-Contract-Failure": str(status_code)}
+            "/detect",
+            headers={
+                "X-Contract-Failure": str(status_code),
+                "Cookie": (
+                    "__Host-aift_session=v1.1800001800."
+                    + f"contract{status_code}".ljust(22, "x")
+                    + "."
+                    + "s" * 43
+                ),
+            },
         )
         if status != status_code:
             failures.append(
@@ -659,8 +827,10 @@ def main() -> int:
         check_web_request_target_stays_out_of_log(failures)
         check_web_api_does_not_fall_back_to_spa(failures)
         check_frontend_security_headers(failures)
+        check_product_pages_and_https_enforcement(failures)
         check_responses_are_not_cacheable(failures)
         check_fixed_proxy_failures_and_timeout_policy(failures)
+        check_rate_and_log_policy(failures)
     except ContractFailure as e:
         print(f"nginx contract: could not run — {e}", file=sys.stderr)
         return 2

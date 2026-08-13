@@ -43,6 +43,13 @@ class Response:
 
 def main() -> int:
     acceptance = load_acceptance()
+    acceptance_source = (ROOT / "tests" / "platform_acceptance.py").read_text(
+        encoding="utf-8"
+    )
+    if '_run("docker", "inspect", f"{TEAM}-' in acceptance_source:
+        raise AssertionError("production acceptance can perform a full secret-bearing inspect")
+    if "{{json .HostConfig}}" not in acceptance_source or "{{.Config.StopTimeout}}" not in acceptance_source:
+        raise AssertionError("production acceptance lacks narrow runtime-policy projections")
     proxy_handlers = [
         handler
         for handler in acceptance.DIRECT_OPENER.handlers

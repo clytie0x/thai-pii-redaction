@@ -1,4 +1,46 @@
-# สถานะงาน (10 ส.ค. 2569 — Competition Sprint 3: Thai PII Evaluation)
+# สถานะงาน (13 ส.ค. 2569 — Hosted Production Web Launch)
+
+## Current productionization candidate
+
+- เริ่มจาก evaluation/main exact
+  `c02ec1c82e22d0e200fbfad68556c169eba68007`; known-good deployed runtime
+  ยังเป็น `72e18bbe723adaf54c847e4b17c2177dfa60dd68` จาก Pipeline #35744 จนกว่า
+  descendant นี้จะผ่าน feature CI, independent review และ protected-main
+  `check → deploy → acceptance` จริง
+- branch ทำงานคือ `codex/aift-production-web-launch`; VERSION ยัง `2.5.0`
+  และต้องคง 16 routes, public `/redact-pdf` + `/v1/redact-pdf` fixed 404,
+  Tokenmind provider เดียว, no mapping และ no browser persistence
+- live baseline เมื่อ 13 ส.ค. พบ P0 ว่า plain HTTP ยังคืน app/API 200 และ HTTPS
+  ไม่มี HSTS Candidate จึงเพิ่ม fixed-host 308 จาก forwarded original scheme +
+  HSTS ทั้ง web/api และเพิ่ม public-edge acceptance จริง หาก organizer edge ไม่ส่ง
+  scheme เดิม/ไม่ redirect นี่คือ external launch blocker ไม่ใช่เหตุให้ลด security
+- product surface เปลี่ยนจาก judge-first เป็น Web App Private Beta: CTA หลักเข้า
+  เว็บแอป, ขอบเขต server/provider อยู่ก่อน input, Quick Start เป็น optional
+  disclosure และมี static `/privacy`, `/terms`, `/help`, `/downloads`, robots,
+  sitemap, truthful Desktop/Extension unavailable state ไม่มี dead/store link
+- invite gate ยังอยู่เพื่อคุม provider cost โดยไม่สร้าง account/database Session
+  เก็บเฉพาะ SHA-256 token fingerprint+expiry สูงสุด 256 ค่าใน process, logout
+  revoke replay และ restart invalidate session เดิม cookie ยังคง Secure/HttpOnly/
+  SameSite=Strict/30 นาที
+- nginx แยก global/public/work/provider request+connection lanes, ลด body cap เป็น
+  128 KiB (login 8 KiB), ไม่ส่ง client IP เข้า core และ application log เหลือ
+  fixed operation/surface, method, status, bytes, duration โดยไม่เก็บ IP/target/
+  query/body/cookie
+- hosted image ไม่ติดตั้ง/prewarm Paddle OCR ที่ public ใช้ไม่ได้แล้ว และ verify
+  offline thainer asset tree กับ Sprint 3 digest ระหว่าง build Container เป็น
+  read-only/no-new-privileges/PID bounded; core cap-drop all, tmpfs 128 MiB และ
+  memory 2 GiB ต้องผ่าน exact-image resource acceptance ก่อน deploy
+- healthcheck ใหม่ exit service หลัง local failure ต่อเนื่อง 3 ครั้งเพื่อให้
+  `restart: unless-stopped` ฟื้น process; graceful stop 210 วินาที Deploy helper
+  เก็บ previous image IDs + historical Compose และ rollback exact prior revision
+  เมื่อ post-mutation health/stale gate ล้ม
+- Section 26 report wording ถูก project ผ่าน port-owned hosted adapter เป็น
+  heuristic review signal ที่ต้องประเมินบริบท ไม่แก้ vendored detector/core
+  75 ไฟล์จาก `44ef30b`
+- รายการ P0/P1/P2 และ platform evidence ที่ไม่ควรอ้างอยู่ที่
+  `docs/PRODUCTION-READINESS.md` งานนี้เปลี่ยน runtime จึงต้อง deploy exact SHA;
+  ห้ามอ้าง candidate ว่า public-ready ก่อน HTTP redirect, protected acceptance,
+  live provider, log/resource/restart และ browser QA ผ่านครบ
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 remote `main` protected และ known-good production Pipeline #35744 ที่ exact

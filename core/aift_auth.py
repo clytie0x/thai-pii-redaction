@@ -33,6 +33,7 @@ _MIN_SIGNING_KEY_BYTES = 32
 _MIN_CORE_API_KEY_BYTES = 16
 _MIN_TTL_SECONDS = 300
 _MAX_TTL_SECONDS = 3600
+_MAX_ACTIVE_SESSIONS = 256
 _TOKEN_PATTERN = re.compile(
     r"^v1\.(?P<expiry>[0-9]{1,12})\."
     r"(?P<nonce>[A-Za-z0-9_-]{22})\."
@@ -144,6 +145,12 @@ class AuthGateway:
             b"aift-session-v1\x00" + self._access_code,
             hashlib.sha256,
         ).digest()
+        # Hosted sessions are intentionally process-local.  Keeping only a
+        # SHA-256 fingerprint makes logout revoke a captured cookie without
+        # persisting session authority or introducing a user database.  A
+        # process restart invalidates every prior session, which is the safe
+        # recovery behavior for this single-worker invite beta.
+        self._active_sessions: dict[bytes, int] = {}
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") != "http":
@@ -246,6 +253,9 @@ class AuthGateway:
             return
 
         token = self._mint_token()
+        if token is None:
+            await self._error(send, 429, "rate_limited")
+            return
         await self._response(
             send,
             204,
@@ -260,6 +270,9 @@ class AuthGateway:
         if not self._browser_context_allowed(scope):
             await self._error(send, 403, "cross_site_forbidden")
             return
+        token = self._cookie_token(scope)
+        if token is not None:
+            self._active_sessions.pop(self._token_fingerprint(token), None)
         await self._response(send, 204, b"", extra_headers=[self._clear_cookie()])
 
     async def _session(self, scope, send) -> None:
@@ -287,7 +300,10 @@ class AuthGateway:
             {"authenticated": True, "expires_in": expires_in},
         )
 
-    def _mint_token(self) -> str:
+    def _mint_token(self) -> str | None:
+        self._prune_sessions()
+        if len(self._active_sessions) >= _MAX_ACTIVE_SESSIONS:
+            return None
         expiry = int(self._now()) + self._ttl
         nonce = self._nonce_bytes(16)
         if not isinstance(nonce, bytes) or len(nonce) != 16:
@@ -298,7 +314,9 @@ class AuthGateway:
             payload.encode("ascii"),
             hashlib.sha256,
         ).digest()
-        return f"{payload}.{_b64url(signature)}"
+        token = f"{payload}.{_b64url(signature)}"
+        self._active_sessions[self._token_fingerprint(token)] = expiry
+        return token
 
     def _verify_token(self, token: str | None) -> int | None:
         if token is None or len(token) > 160:
@@ -327,7 +345,26 @@ class AuthGateway:
         now = int(self._now())
         if expiry <= now or expiry > now + self._ttl:
             return None
+        self._prune_sessions(now)
+        if self._active_sessions.get(self._token_fingerprint(token)) != expiry:
+            return None
         return expiry
+
+    @staticmethod
+    def _token_fingerprint(token: str) -> bytes:
+        # Cookie parsing tolerates arbitrary client bytes.  A malformed cookie
+        # must fail authentication, never turn logout into a server error.
+        return hashlib.sha256(token.encode("utf-8", "surrogatepass")).digest()
+
+    def _prune_sessions(self, now: int | None = None) -> None:
+        current = int(self._now()) if now is None else now
+        expired = [
+            fingerprint
+            for fingerprint, expiry in self._active_sessions.items()
+            if expiry <= current
+        ]
+        for fingerprint in expired:
+            self._active_sessions.pop(fingerprint, None)
 
     def _browser_context_allowed(self, scope) -> bool:
         fetch_sites = self._header_values(scope, b"sec-fetch-site")

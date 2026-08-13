@@ -141,9 +141,9 @@ def login() -> str:
 
 def verify_runtime(revision: str) -> dict:
     expected = {
-        f"{TEAM}-web-1": {"memory": 256 * 1024**2, "nano_cpus": 500_000_000},
-        f"{TEAM}-api-1": {"memory": 256 * 1024**2, "nano_cpus": 500_000_000},
-        f"{TEAM}-core-1": {"memory": 6 * 1024**3, "nano_cpus": 2_000_000_000},
+        f"{TEAM}-web-1": {"memory": 256 * 1024**2, "nano_cpus": 500_000_000, "pids": 128},
+        f"{TEAM}-api-1": {"memory": 256 * 1024**2, "nano_cpus": 500_000_000, "pids": 128},
+        f"{TEAM}-core-1": {"memory": 2 * 1024**3, "nano_cpus": 2_000_000_000, "pids": 256},
     }
     image_ids = {}
     for name, limits in expected.items():
@@ -155,6 +155,14 @@ def verify_runtime(revision: str) -> dict:
         host = item["HostConfig"]
         if host["Memory"] != limits["memory"] or host["NanoCpus"] != limits["nano_cpus"]:
             raise AcceptanceFailure("running resource limit mismatch")
+        if host["PidsLimit"] != limits["pids"]:
+            raise AcceptanceFailure("running process limit mismatch")
+        if not host["ReadonlyRootfs"]:
+            raise AcceptanceFailure("running root filesystem is writable")
+        if "no-new-privileges:true" not in host.get("SecurityOpt", []):
+            raise AcceptanceFailure("running no-new-privileges policy missing")
+        if item["Config"].get("StopTimeout") != 210:
+            raise AcceptanceFailure("running graceful stop window mismatch")
         if host["RestartPolicy"]["Name"] != "unless-stopped":
             raise AcceptanceFailure("running restart policy mismatch")
         if host["LogConfig"] != {
@@ -180,10 +188,23 @@ def verify_runtime(revision: str) -> dict:
                 actual_ports.add((binding["HostIp"], binding["HostPort"], target))
     if actual_ports != expected_ports:
         raise AcceptanceFailure("host port publication mismatch")
-    if core["HostConfig"]["Tmpfs"] != {"/tmp": "size=1g,mode=1777"}:
+    if core["HostConfig"]["Tmpfs"] != {"/tmp": "size=128m,mode=1777"}:
         raise AcceptanceFailure("core tmpfs mismatch")
-    if api["HostConfig"]["Tmpfs"] != {"/var/cache/nginx": "size=64m"}:
+    if set(core["HostConfig"].get("CapDrop") or []) != {"ALL"}:
+        raise AcceptanceFailure("core capability drop mismatch")
+    if api["HostConfig"]["Tmpfs"] != {
+        "/var/cache/nginx": "size=64m",
+        "/var/run": "size=4m",
+        "/tmp": "size=4m",
+        "/etc/nginx/conf.d": "size=4m",
+    }:
         raise AcceptanceFailure("api tmpfs mismatch")
+    if web["HostConfig"]["Tmpfs"] != {
+        "/var/cache/nginx": "size=32m",
+        "/var/run": "size=4m",
+        "/tmp": "size=4m",
+    }:
+        raise AcceptanceFailure("web tmpfs mismatch")
     return image_ids
 
 
@@ -405,9 +426,19 @@ def scan_logs(cookie: str) -> None:
 
 
 def restart_and_verify(revision: str) -> None:
+    prior_cookie = login()
     run("docker", "restart", *CONTAINERS)
     wait_healthy()
     verify_runtime(revision)
+    status, _headers, _raw = request(
+        API,
+        "/detect",
+        method="POST",
+        payload={"text": "synthetic expired restart probe"},
+        cookie=prior_cookie,
+    )
+    if status != 401:
+        raise AcceptanceFailure("restart revived prior session authority")
     cookie = login()
     status, _headers, raw = request(
         API,
@@ -417,7 +448,7 @@ def restart_and_verify(revision: str) -> None:
         cookie=cookie,
     )
     if status != 200 or "detected_entity_count" not in payload(raw):
-        raise AcceptanceFailure("post-restart stateless request failed")
+        raise AcceptanceFailure("post-restart fresh session request failed")
 
 
 def main() -> int:

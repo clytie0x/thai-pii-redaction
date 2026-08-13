@@ -1,5 +1,47 @@
 # วันที่ deploy ต้องทำอะไรบ้าง
 
+## Production Web Launch gate (13 ส.ค. 2569)
+
+ส่วนนี้มีผลเหนือ competition demo checklist ด้านล่างสำหรับ descendant ที่เปลี่ยน
+runtime/web/proxy:
+
+1. เริ่มจาก `c02ec1c82e22d0e200fbfad68556c169eba68007`; deployed rollback ที่ต้อง
+   รักษาคือ `72e18bbe723adaf54c847e4b17c2177dfa60dd68` / Pipeline #35744
+2. ตรวจ `docs/PRODUCTION-READINESS.md`: P0/P1 repository-owned ต้องเป็นศูนย์,
+   exact branch clean, VERSION `2.5.0`, 16 routes และ public PDF/OCR redaction
+   สอง alias fixed 404
+3. รัน affected contracts + exact fake-provider local acceptance แล้ว push
+   `codex/aift-production-web-launch`; feature pipeline ต้อง `check` อย่างเดียว
+   ไม่มี environment, protected secrets หรือ production mutation
+4. independent Security/Privacy, Reliability/Ops และ Product/Public UX reviewers
+   ต้อง review exact candidate แบบ read-only และไม่มี open P0/P1
+5. fast-forward reviewed tree เข้า protected `main`, push ปกติ และรอ main
+   check-only pipeline เขียว จากนั้นสร้าง **web pipeline ใหม่** ที่ exact SHA
+   โดยไม่ใส่ temporary variables
+6. deploy helper ต้อง snapshot previous exact image/Compose set, build/recheck
+   remote, mutate ครั้งเดียว, รอ core/api/web healthy+revision ตรง และ rollback
+   previous revision อัตโนมัติหาก post-mutation gate ล้ม
+7. acceptance ต้องผ่านทั้ง `tests/platform_acceptance.py` (synthetic auth/scan/
+   one live Safe AI/report/routes/logs) และ `tests/public_web_acceptance.py`
+   บน public edge จริง
+8. **hard launch gate:** `http://team08.aiforthai.in.th/` และ `/api/health`
+   ต้อง 308 ไป fixed HTTPS path โดยไม่สะท้อน query; HTTPS ต้องมี HSTS หากยัง
+   200 plain HTTP ให้หยุด public launch และขอ organizer edge redirect—ห้ามแก้ด้วย
+   client-side JavaScript หรือซ่อน access form เท่านั้น
+9. browser QA จริงต้องครอบ `/`, `/privacy`, `/terms`, `/help`, `/downloads`,
+   invite login/session/refresh/logout/replay denial, Privacy Scan, Safe AI,
+   PDPA Report, 429/fixed error, mobile 390px + desktop 1440px, console/mixed
+   content และ accessibility/focus
+10. ตรวจ application logs ว่ามีเฉพาะ fixed operation/surface, method, status,
+    bytes, duration และไม่มี synthetic sentinel/IP/target/query/body/prompt/
+    response/mapping/cookie/credential จากนั้นตรวจ limits 256M/256M/2G,
+    PID caps, read-only/no-new-privileges, restart/watchdog, exact revision และ
+    recoverable previous images
+
+หาก deploy เขียวแต่ public-edge/acceptance แดง candidate อาจกำลังรันอยู่แต่
+**ยังไม่พร้อมให้สาธารณะใช้** ให้รักษาสภาพ exact SHA และรายงาน external gate
+แทนการลด auth, rate, privacy, provider หรือ route control
+
 ทุกอย่างในไฟล์นี้เป็นงานที่เจ้าของทำเองหรือมอบอำนาจให้ operator อย่างชัดเจน
 เพราะออกนอกเครื่องทั้งหมด
 ไฟล์นี้ใช้ได้ต่อเมื่อ preflight ใน `STATE.md` ผ่านครบ Production known-good

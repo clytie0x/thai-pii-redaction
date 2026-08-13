@@ -184,26 +184,57 @@ def main() -> int:
     )
 
     deploy_commands = "\n".join(pipeline["deploy"]["script"])
+    deploy_helper = (ROOT / "scripts" / "deploy_production.sh").read_text(
+        encoding="utf-8"
+    )
     for name in APP_VARIABLES:
         assert name in deploy_commands, name
     validation = deploy_commands.index("required protected application variables")
-    build = deploy_commands.index(
+    invocation = deploy_commands.index("bash scripts/deploy_production.sh")
+    assert validation < invocation
+    build = deploy_helper.index(
         'docker compose --env-file "$ENV_FILE" -p "$TEAM" build'
     )
-    mutation = deploy_commands.index(
+    mutation = deploy_helper.index(
         'docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --no-build'
     )
-    assert validation < build < mutation
-    assert deploy_commands.count("require_latest_main") >= 3
-    assert 'http://127.0.0.1:${BASE_1}' not in deploy_commands
-    assert 'http://127.0.0.1:${BASE}' not in deploy_commands
-    assert 'docker exec "${TEAM}-api-1"' in deploy_commands
-    assert 'docker exec "${TEAM}-web-1"' in deploy_commands
+    assert build < mutation
+    assert deploy_helper.count("require_latest_main") >= 4  # definition + 3 gates
+    assert 'http://127.0.0.1:${BASE_1}' not in deploy_helper
+    assert 'http://127.0.0.1:${BASE}' not in deploy_helper
+    assert 'docker exec "${TEAM}-api-1"' in deploy_helper
+    assert 'docker exec "${TEAM}-web-1"' in deploy_helper
+    for rollback_gate in (
+        "snapshot_previous",
+        "rollback_previous",
+        "recoverable previous revision prepared",
+        "wait_healthy \"$OLD_REVISION\"",
+        'git show "${OLD_REVISION}:docker-compose.yml"',
+        '"${TEAM}-rollback-${service}:previous"',
+        '[[ "$ROLLBACK_READY" == 1 ]]',
+        "refusing production mutation without a recoverable exact prior stack",
+        "trap cleanup EXIT",
+    ):
+        assert rollback_gate in deploy_helper, rollback_gate
+    assert "APP_TOKENMIND_API_KEY" in deploy_helper
+    assert "set -Eeuo pipefail" in deploy_helper
 
     raw = CI.read_text(encoding="utf-8")
-    assert "docker compose --env-file \"$ENV_FILE\"" in raw
+    assert "bash scripts/deploy_production.sh" in raw
     assert 'LATEST_MAIN=$(git ls-remote origin refs/heads/main' in raw
     assert "tests/platform_acceptance.py" in raw
+    assert "tests/public_web_acceptance.py" in raw
+    assert "bash scripts/rollback_production.sh" in raw
+    assert "mandatory acceptance failed; restoring previous exact release" in raw
+    acceptance_commands = "\n".join(pipeline["acceptance"]["script"])
+    assert "trap rollback_on_error ERR" in acceptance_commands
+    assert acceptance_commands.index("trap rollback_on_error ERR") < acceptance_commands.index(
+        "refusing outdated acceptance"
+    )
+    assert acceptance_commands.index("refusing outdated acceptance") < acceptance_commands.index(
+        "tests/platform_acceptance.py"
+    )
+    assert acceptance_commands.count("trap - ERR") >= 2  # failure handler + success
     assert "python3 tests/platform_acceptance_contract.py" in raw
     assert "include:" not in raw
     assert "AUTO_DEVOPS" not in raw.upper()

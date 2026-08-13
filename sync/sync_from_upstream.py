@@ -162,8 +162,13 @@ PORT_OWNED = {
     "prewarm_ocr.py",
     "aift_auth.py",
     "aift_gateway.py",
+    "aift_report_policy.py",
+    "healthcheck.py",
     "requirements-aift-ocr.in",
     "requirements-aift.lock",
+    "requirements-aift-security.in",
+    "requirements-aift-security.lock",
+    "verify_thainer_assets.py",
 }
 
 

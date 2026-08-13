@@ -128,7 +128,10 @@ assert.ok(
 );
 assert.ok(!page.includes("body.ai_response_masked"), "masked provider response leaked into the frontend");
 assert.ok(!/localStorage|sessionStorage/.test(page), "frontend persists sensitive state in browser storage");
-assert.ok(!/<script[^>]+src=|<link[^>]+href=["']https?:/i.test(page), "third-party frontend dependency was added");
+assert.ok(
+  !/<script[^>]+src=["']https?:|<link[^>]+rel=["']stylesheet["'][^>]+href=["']https?:|<link[^>]+href=["']https?:[^>]+rel=["']stylesheet["']/i.test(page),
+  "third-party executable/style dependency was added",
+);
 const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 assert.ok(
   scripts.some(script => script.includes("same-origin caller authentication")),

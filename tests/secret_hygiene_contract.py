@@ -13,6 +13,10 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 CI = (ROOT / ".gitlab-ci.yml").read_text(encoding="utf-8")
+DEPLOY = "\n".join(
+    (ROOT / "scripts" / name).read_text(encoding="utf-8")
+    for name in ("deploy_production.sh", "rollback_production.sh")
+)
 FRONTEND = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
 INTENDED = {
     "APP_AIGUARD_API_KEY",
@@ -73,7 +77,7 @@ def main() -> int:
         if failure_path is None or failure_path.exists():
             raise AssertionError("temporary env file survived failure cleanup")
 
-    materialized = set(re.findall(r"printf '([A-Z0-9_]+)=%s\\n'", CI))
+    materialized = set(re.findall(r"printf '([A-Z0-9_]+)=%s\\n'", CI + DEPLOY))
     if materialized != INTENDED:
         raise AssertionError(f"deploy materializes unexpected variable names: {materialized}")
     for forbidden in (
@@ -82,7 +86,7 @@ def main() -> int:
         '-H "Cookie: $COOKIE"',
         'grep -Fq -e "$APP_',
     ):
-        if forbidden in CI:
+        if forbidden in CI + DEPLOY:
             raise AssertionError(f"credential-bearing CI argv pattern remains: {forbidden}")
     for server_name in (*INTENDED, "AIGUARD_API_KEY", "TOKENMIND_API_KEY"):
         if server_name in FRONTEND:

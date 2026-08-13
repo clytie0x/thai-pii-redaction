@@ -55,8 +55,10 @@ baseline as evidence for changed frontend code.
 
 The production path:
 
-- separates Compose build from `up`, rechecks current remote main immediately
-  before mutation, and uses `up --no-build`;
+- calls the reviewed `scripts/deploy_production.sh`, which retains one exact
+  previous image/Compose set, separates build from `up`, rechecks current remote
+  main before and after mutation, health/revision-gates all three services, and
+  restores the previous stack if a post-mutation gate fails;
 - probes health from inside the api/web containers rather than assuming runner
   job loopback reaches host-published ports;
 - resolves the acceptance build container and Compose default network by exact
@@ -68,11 +70,38 @@ The production path:
 - declares environment `team08` only on deploy and acceptance. Manual ops use
   direct Docker commands and declare no environment, so the four scoped
   application variables are not intentionally injected there.
+- runs credential-free public-edge acceptance after internal platform
+  acceptance. Plain HTTP must return fixed-host 308 (without reflected query),
+  HTTPS must emit HSTS, product/docs pages must resolve, unknown/PDF/OCR/internal
+  paths must remain 404, and public health must report VERSION 2.5.0.
 
 `resource_group: team08-production` and exact-remote-SHA checks remain the
 repository's serialization/stale-deployment controls. `newest_first`, automatic
 rollback, Protected runners, and Protected Environments are not Participant
-Guide requirements.
+Guide requirements. Automatic rollback is now AI Guard repository hardening;
+it must not be described as an organizer feature or as proof of host recovery.
+
+## Production Web Launch delta
+
+- Starting evaluation/main is
+  `c02ec1c82e22d0e200fbfad68556c169eba68007`; deployed rollback evidence remains
+  `72e18bbe723adaf54c847e4b17c2177dfa60dd68` / Pipeline #35744 until a new exact
+  protected-main acceptance completes.
+- Web access remains an invite-only Private Beta: no anonymous provider use,
+  user accounts or database. Session fingerprints are bounded in core process
+  memory, logout revokes replay and restart invalidates prior cookies.
+- API request/cost controls are global plus signed-session keyed; provider lanes
+  are stricter than ordinary text work. Application logs no longer include
+  client IP or request target.
+- The hosted image removes disabled Paddle OCR dependencies, verifies the exact
+  Sprint 3 thainer tree hash, and keeps `/redact-pdf` + `/v1/redact-pdf` at
+  proxy-level 404. This is a runtime change and therefore requires a new
+  protected-main deployment rather than docs-only integration.
+- A live baseline check on 13 Aug found HTTP root/API served 200 and HTTPS lacked
+  HSTS. The repository candidate fixes forwarded-scheme requests, but public
+  launch remains blocked if the organizer edge does not preserve that header or
+  perform its own redirect. `tests/public_web_acceptance.py` is the executable
+  gate; do not bypass it.
 
 ## Competition-enhancement procedure
 

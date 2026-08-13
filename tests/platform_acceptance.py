@@ -188,16 +188,87 @@ def _login() -> str:
 
 
 def _verify_revisions() -> None:
+    expected = {
+        "web": (
+            256 * 1024**2,
+            500_000_000,
+            128,
+            {"/var/cache/nginx": "size=32m", "/var/run": "size=4m", "/tmp": "size=4m"},
+        ),
+        "api": (
+            256 * 1024**2,
+            500_000_000,
+            128,
+            {
+                "/var/cache/nginx": "size=64m",
+                "/var/run": "size=4m",
+                "/tmp": "size=4m",
+                "/etc/nginx/conf.d": "size=4m",
+            },
+        ),
+        "core": (2 * 1024**3, 2_000_000_000, 256, {"/tmp": "size=128m,mode=1777"}),
+    }
     for service in ("web", "api", "core"):
+        container = f"{TEAM}-{service}-1"
+        # Narrow projections only. A full Docker inspect includes Config.Env
+        # and would unnecessarily retrieve production credential values.
         actual = _run(
             "docker",
             "inspect",
             "-f",
             '{{ index .Config.Labels "org.opencontainers.image.revision" }}',
-            f"{TEAM}-{service}-1",
-        ).decode("utf-8", "replace").strip()
+            container,
+        ).decode("ascii", "replace").strip()
         if actual != EXPECTED_REVISION:
             raise AcceptanceFailure("running image revision mismatch")
+        host = json.loads(
+            _run("docker", "inspect", "-f", "{{json .HostConfig}}", container)
+        )
+        stop_timeout = int(
+            _run("docker", "inspect", "-f", "{{.Config.StopTimeout}}", container)
+            .decode("ascii", "replace")
+            .strip()
+        )
+        memory, nano_cpus, pids, tmpfs = expected[service]
+        if (host["Memory"], host["NanoCpus"], host["PidsLimit"]) != (
+            memory,
+            nano_cpus,
+            pids,
+        ):
+            raise AcceptanceFailure("running resource limit mismatch")
+        if (
+            not host["ReadonlyRootfs"]
+            or "no-new-privileges:true" not in host.get("SecurityOpt", [])
+            or stop_timeout != 210
+            or host["RestartPolicy"]["Name"] != "unless-stopped"
+        ):
+            raise AcceptanceFailure("running isolation/recovery policy mismatch")
+        if host["LogConfig"] != {
+            "Type": "json-file",
+            "Config": {"max-file": "3", "max-size": "50m"},
+        }:
+            raise AcceptanceFailure("running log rotation mismatch")
+        if host.get("Tmpfs") != tmpfs:
+            raise AcceptanceFailure("running volatile-storage policy mismatch")
+        bindings = host.get("PortBindings") or {}
+        expected_binding = {
+            "web": {"3000/tcp": [{"HostIp": "127.0.0.1", "HostPort": "20070"}]},
+            "api": {"8000/tcp": [{"HostIp": "127.0.0.1", "HostPort": "20071"}]},
+            "core": {},
+        }[service]
+        if bindings != expected_binding:
+            raise AcceptanceFailure("running public-port boundary mismatch")
+    core_host = json.loads(
+        _run(
+            "docker",
+            "inspect",
+            "-f",
+            "{{json .HostConfig}}",
+            f"{TEAM}-core-1",
+        )
+    )
+    if set(core_host.get("CapDrop") or []) != {"ALL"}:
+        raise AcceptanceFailure("running core capability policy mismatch")
 
 
 def _verify_public_contract(cookie: str) -> None:
@@ -313,6 +384,14 @@ def main() -> int:
             )
             if status != 204:
                 raise AcceptanceFailure("caller logout failed")
+            status, _headers, _body = _request(
+                "/detect",
+                method="POST",
+                payload={"text": "synthetic revoked-session probe"},
+                cookie=cookie,
+            )
+            if status != 401:
+                raise AcceptanceFailure("logged-out caller cookie remained usable")
             cookie = ""
         print("platform acceptance passed: auth, allowlist, live roundtrip, report, logs")
         return 0

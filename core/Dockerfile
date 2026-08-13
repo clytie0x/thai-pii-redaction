@@ -1,6 +1,7 @@
 # AI Guard core (FastAPI) — AIFT team08 port. Vendored slice of
 # github.com/Teerapat-Vatpitak/thai-pii-redaction (commit in
-# ../sync/PORT_MANIFEST.json) + the OCR layer the upstream image excludes.
+# ../sync/PORT_MANIFEST.json). Public PDF redaction/OCR is intentionally
+# unsupported in this hosted deployment, so OCR-only packages are excluded.
 # Same digest-pinned base as upstream.
 FROM python:3.13-slim@sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91
 
@@ -9,31 +10,28 @@ WORKDIR /app
 ENV PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 # PyThaiNLP model home (runtime user has no home dir)
 ENV PYTHAINLP_DATA=/opt/pythainlp-data
-# Every ~-relative cache (PaddleX/PaddleOCR models) lands here; baked as root
-# at build time, chowned to appuser below. Proven by the E0 spike 2026-07-28.
-ENV HOME=/opt/ocr-home
+ENV HOME=/tmp
 
-# fonts-thai-tlwg: Thai glyphs for the PDPA report PDFs.
-# libgl1/libglib2.0-0/libgomp1: PaddleX's OpenCV runtime on slim.
+# fonts-thai-tlwg supplies Thai glyphs for the bounded PDPA report.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    fonts-thai-tlwg libgl1 libglib2.0-0 libgomp1 \
+    fonts-thai-tlwg \
     && rm -rf /var/lib/apt/lists/*
 
 # Dependency layers before code so rebuilds hit cache (20-min runner budget).
-# The upstream graph and the AIFT OCR additions are independently exact and
-# hash-locked. OCR installs with --no-deps so it cannot upgrade the core graph.
-COPY requirements.lock requirements-aift.lock ./
+# The upstream runtime graph is exact and hash-locked. The hosted-only overlay
+# closes published runtime advisories without altering the vendored lock.
+COPY requirements.lock requirements-aift-security.lock ./
 RUN python -m pip install --no-cache-dir pip==26.1.2 \
     && python -m pip install --no-cache-dir --require-hashes -r requirements.lock \
-    && python -m pip install --no-cache-dir --no-deps --require-hashes -r requirements-aift.lock \
+    && python -m pip install --no-cache-dir --no-deps --require-hashes -r requirements-aift-security.lock \
     && python -m pip check
 
-# Bake the Thai NER model, then the Thai OCR models. Both BEFORE offline mode:
-# these steps ARE the downloads.
+# Bake the Thai NER model while egress is available, then verify the complete
+# deterministic asset tree against the digest certified by Sprint 3.
+COPY verify_thainer_assets.py ./
 RUN mkdir -p "$PYTHAINLP_DATA" \
-    && python -c "from pythainlp.tag import NER; NER(engine='thainer')"
-COPY prewarm_ocr.py ./
-RUN mkdir -p "$HOME" && python prewarm_ocr.py
+    && python -c "from pythainlp.tag import NER; NER(engine='thainer')" \
+    && python verify_thainer_assets.py
 
 # From here the container must behave identically with or without egress.
 ENV PYTHAINLP_OFFLINE=1
@@ -43,11 +41,11 @@ ENV PYTHAINLP_OFFLINE=1
 COPY app ./app
 COPY pii_redactor ./pii_redactor
 COPY demo ./demo
-COPY aift_auth.py aift_gateway.py VERSION LICENSE NOTICE ./
+COPY aift_auth.py aift_gateway.py aift_report_policy.py healthcheck.py VERSION LICENSE NOTICE ./
 COPY licenses ./licenses
 
 RUN useradd --no-create-home --shell /bin/false appuser \
-    && chown -R appuser /app "$PYTHAINLP_DATA" "$HOME"
+    && chown -R appuser /app "$PYTHAINLP_DATA"
 
 # Commit identity is metadata-only and intentionally comes after every costly
 # dependency/model layer so a new SHA does not invalidate the build cache.

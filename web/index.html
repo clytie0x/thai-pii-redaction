@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Guard ปกป้องข้อมูลส่วนบุคคลก่อนส่งเข้า AI</title>
 <meta name="description" content="AI Guard รับข้อความบนเซิร์ฟเวอร์ของทีม ตรวจจับและปกปิดก่อนส่งเข้าโมเดลภาษา แล้วกู้คืนคำตอบภายในคำขอเดียว">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="th_TH">
+<meta property="og:title" content="AI Guard — ปกป้องข้อมูลส่วนบุคคลก่อนส่งเข้า AI">
+<meta property="og:description" content="เว็บแอปสำหรับตรวจจับและปกป้อง Thai PII ก่อนส่งข้อความที่ปกป้องแล้วต่อให้ AI ปลายทาง">
+<meta property="og:url" content="https://team08.aiforthai.in.th/">
+<link rel="canonical" href="https://team08.aiforthai.in.th/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M32 10 50 18v14c0 14-8 22-18 26-10-4-18-12-18-26V18z' fill='%232563eb'/%3E%3Cpath d='M24 32l6 6 12-14' stroke='%23e2e8f0' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
   :root{
@@ -204,9 +211,20 @@
   .auth-controls #logoutBtn{grid-column:1/-1;justify-self:start}
   .workflow-nav{margin-top:34px}
   .workflow-card.flagship{border-color:#9ec5ff;background:#f7fbff;position:relative}
-  .workflow-card.flagship::after{content:"FLAGSHIP";position:absolute;right:14px;top:14px;font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--action);background:#e8f2ff;padding:4px 7px;border-radius:6px}
-  .guided-section{padding:54px 0;background:#edf6ff}
+  .workflow-card.flagship::after{content:"แนะนำ";position:absolute;right:14px;top:14px;font-size:11px;font-weight:900;color:var(--action);background:#e8f2ff;padding:4px 7px;border-radius:6px}
+  .product-boundary{margin-top:18px;padding:13px 15px;border:1px solid #cbddef;border-radius:12px;background:#f7fbff;color:var(--text-secondary);font-size:14px;line-height:1.65}
+  .product-boundary strong{color:var(--text-primary)}
+  .product-boundary a{font-weight:750}
+  .guided-section{padding:34px 0;background:#edf6ff}
   .guided-shell{background:var(--surface);border:1px solid #bcd8fa;border-radius:26px;padding:28px;box-shadow:var(--shadow-md)}
+  .guided-shell>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .guided-shell>summary::-webkit-details-marker{display:none}
+  .guided-disclosure-copy{display:grid;gap:3px}
+  .guided-disclosure-copy small{color:var(--action);font-size:12px;font-weight:850;letter-spacing:.04em}
+  .guided-disclosure-copy b{font-size:20px;line-height:1.4}
+  .guided-disclosure-copy span{color:var(--text-secondary);font-size:14px}
+  .guided-disclosure-action{color:var(--action);font-size:14px;white-space:nowrap}
+  .guided-shell[open]>summary{padding-bottom:22px;border-bottom:1px solid var(--line-soft);margin-bottom:24px}
   .guided-top{display:flex;justify-content:space-between;gap:28px;align-items:flex-start;margin-bottom:24px}
   .guided-top h2{font-size:clamp(24px,3vw,32px);line-height:1.35;margin:5px 0 8px}
   .guided-top p{color:var(--text-secondary);max-width:690px}
@@ -349,10 +367,22 @@
   .trust-diagram{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 16px}
   .trust-diagram b{background:var(--surface-soft);color:var(--text-primary);padding:7px 10px;border-radius:8px}
   .trust-diagram span{color:var(--action)}
+  .product-links-section{padding:56px 0;background:#fff}
+  .product-links-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px}
+  .product-link-card{display:flex;flex-direction:column;min-height:184px;padding:20px;border:1px solid var(--border);border-radius:16px;background:#fff;text-decoration:none;color:var(--text-primary);box-shadow:var(--shadow-sm)}
+  .product-link-card[href]:hover{border-color:#9ec5ff;transform:translateY(-1px)}
+  .product-link-card small{color:var(--action);font-weight:850;font-size:12px}
+  .product-link-card h3{font-size:18px;margin:7px 0}
+  .product-link-card p{color:var(--text-secondary);font-size:14px;line-height:1.65}
+  .product-link-card .availability{margin-top:auto;font-size:13px;font-weight:800;color:var(--safe)}
+  .product-link-card .availability.pending{color:#5f7188}
 
   /* ── Sprint 2: judge-facing evidence and presentation layer ── */
   .presentation-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
   .presentation-actions button{background:#fff;font-weight:750}
+  .presentation-tools{align-self:flex-start;text-align:right}
+  .presentation-tools>summary{cursor:pointer;color:var(--text-secondary);font-size:13.5px;font-weight:750;min-height:44px;display:flex;align-items:center;justify-content:flex-end}
+  .presentation-tools .presentation-actions{margin-top:8px}
   .mode-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
   .mode-card{text-align:left;background:#fff!important;border:1px solid var(--border)!important;border-radius:14px!important;padding:14px 16px!important;min-height:98px;box-shadow:none!important}
   .mode-card[aria-pressed="true"]{border-color:var(--action)!important;background:#f1f7ff!important;box-shadow:0 0 0 2px rgba(20,99,223,.09)!important}
@@ -458,9 +488,9 @@
   [hidden]{display:none!important}
   .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
   @media(max-width:1100px){.enterprise-grid{grid-template-columns:repeat(3,1fr)}.system-evidence{grid-template-columns:repeat(3,1fr)}.system-evidence-intro{grid-column:1/-1}}
-  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid,.executive-metrics,.receipt-grid{grid-template-columns:1fr 1fr}.evidence-duo{grid-template-columns:1fr}.nav-proof{display:none}}
+  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid,.executive-metrics,.receipt-grid{grid-template-columns:1fr 1fr}.evidence-duo{grid-template-columns:1fr}.nav-proof{display:none}.product-links-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head,.guided-top,.presentation-stage-head{align-items:flex-start;flex-direction:column}.presentation-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;justify-content:stretch}.presentation-actions .demo-label{grid-column:1/-1;justify-self:start}.presentation-actions button{width:100%;font-size:14px}.demo-studio,.safe-hero,.guided-shell{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics,.guided-summary{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.workflow-nav{grid-template-columns:1fr}.scenario-gallery,.enterprise-grid{grid-template-columns:1fr 1fr}.system-evidence{grid-template-columns:1fr 1fr}.raw-protected-grid,.mode-choice-grid{grid-template-columns:1fr}.comparison-proof{grid-column:1}.data-map-row{grid-template-columns:minmax(100px,.8fr) minmax(60px,1.2fr) auto}.glossary-grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence,.executive-metrics,.receipt-grid,.glossary-grid{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}.presentation-stage{padding:15px}.presentation-actions{width:100%}.presentation-actions button{flex:1}.receipt-head{flex-direction:column}.comparison-text{font-size:16px}}
+  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence,.executive-metrics,.receipt-grid,.glossary-grid,.product-links-grid{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}.guided-shell>summary{align-items:flex-start;flex-direction:column}.guided-disclosure-action{white-space:normal}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}.presentation-stage{padding:15px}.presentation-actions{width:100%}.presentation-actions button{flex:1}.receipt-head{flex-direction:column}.comparison-text{font-size:16px}}
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.pipeline-card.provider-evidence{transform:none}}
 </style>
 </head>
@@ -470,10 +500,12 @@
 <header class="topnav">
   <div class="topnav-inner">
     <a class="brand" href="#top" aria-label="AI Guard หน้าแรก"><span class="brand-mark" aria-hidden="true">✓</span>AI <span>Guard</span></a>
-    <nav class="navlinks" aria-label="เวิร์กโฟลว์หลัก">
-      <a href="#privacy-scan">Privacy Scan</a>
-      <a href="#safe-ai">Safe AI</a>
-      <a href="#pdpa-report">PDPA Report</a>
+    <nav class="navlinks" aria-label="เมนูผลิตภัณฑ์">
+      <a href="#top">หน้าแรก</a>
+      <a href="#web-access">เว็บแอป</a>
+      <a href="/privacy">ความเป็นส่วนตัว</a>
+      <a href="/downloads">ดาวน์โหลด</a>
+      <a href="/help">ช่วยเหลือ</a>
     </nav>
     <span class="nav-proof">Thai PII · PDPA</span>
   </div>
@@ -498,46 +530,52 @@
           <span class="trust-item">ไม่บันทึกเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
         </div>
         <div class="hero-actions">
-          <a class="hero-cta" href="#guided-demo">ดูเดโมครบ 3 ขั้นตอน</a>
-          <span>ใช้ข้อมูลสังเคราะห์ · ส่ง Safe AI API เพียง 1 ครั้งต่อรอบ</span>
+          <a class="hero-cta" href="#web-access">ใช้ AI Guard บนเว็บ</a>
+          <a href="#how-it-works">ดูวิธีการทำงาน</a>
         </div>
+        <p class="product-boundary"><strong>ขอบเขตข้อมูล:</strong> ข้อความต้นฉบับเดินทางมายังเซิร์ฟเวอร์ AI Guard เพื่อการตรวจจับ จากนั้นเฉพาะข้อความที่ระบบปกป้องและตรวจซ้ำแล้วจึงถูกส่งต่อให้ AI ปลายทาง การตรวจจับอัตโนมัติอาจพลาดได้ <a href="/privacy">อ่านรายละเอียดก่อนใช้ข้อมูลจริง</a></p>
       </div>
 
       <aside class="auth-card" id="authCard" aria-labelledby="accessTitle" tabindex="-1">
+        <span id="web-access"></span>
         <div class="auth-brand">
           <span class="brand-mark" aria-hidden="true">✓</span>
           <div>
-            <h2 id="accessTitle">เข้าสู่ AI Guard</h2>
-            <p>กรอกรหัสเข้าใช้งานสำหรับเดโมที่ได้รับจากทีม</p>
+            <h2 id="accessTitle">เข้าสู่ AI Guard Private Beta</h2>
+            <p>ใช้รหัสเชิญที่ได้รับจากผู้ดูแลบริการ</p>
           </div>
         </div>
         <div class="auth-controls">
-          <label class="visually-hidden" for="accessCode">รหัสเข้าใช้งาน</label>
-          <input id="accessCode" type="password" maxlength="128" autocomplete="off" inputmode="text" placeholder="รหัสเข้าใช้งาน">
+          <label class="visually-hidden" for="accessCode">รหัสเชิญ</label>
+          <input id="accessCode" type="password" maxlength="128" autocomplete="off" inputmode="text" placeholder="รหัสเชิญ Private Beta">
           <button id="loginBtn" class="primary primary-action" type="button">เข้าสู่ระบบ</button>
           <button id="logoutBtn" class="secondary-action" type="button" hidden>ออกจากระบบและล้างข้อมูล</button>
           <span id="authStatus" role="status" aria-live="polite">กำลังตรวจสอบสิทธิ์...</span>
         </div>
-        <p>ระบบใช้ session cookie อายุไม่เกิน 30 นาทีแบบ Secure และ HttpOnly โดยไม่บันทึก access code ลงพื้นที่จัดเก็บของเบราว์เซอร์</p>
+        <p>ระบบใช้ session cookie อายุไม่เกิน 30 นาทีแบบ Secure, HttpOnly และ SameSite=Strict ไม่บันทึกรหัสเชิญลงพื้นที่จัดเก็บของเบราว์เซอร์ ดู <a href="/help">วิธีขอความช่วยเหลือ</a></p>
       </aside>
     </div>
 
-    <nav class="workflow-nav" aria-label="สามเวิร์กโฟลว์สาธารณะ">
+    <nav class="workflow-nav" id="how-it-works" aria-label="สามเวิร์กโฟลว์สาธารณะ">
       <a class="workflow-card" href="#privacy-scan"><span class="step">WORKFLOW 01</span><strong>Privacy Scan</strong><span>เห็น PII ภาษาไทยในข้อความ พร้อมจำนวนและประเภทที่ตรวจพบ</span></a>
-      <a class="workflow-card flagship" href="#safe-ai"><span class="step">WORKFLOW 02</span><strong>Safe AI</strong><span>พิสูจน์ให้เห็นว่าข้อความใดถูกส่งให้ thaillm-8b จริง ก่อนกู้คืนผลลัพธ์</span></a>
+      <a class="workflow-card flagship" href="#safe-ai"><span class="step">WORKFLOW 02</span><strong>Safe AI</strong><span>เห็นข้อความที่ถูกปกป้องก่อนส่งต่อให้ AI แล้วกู้คืนผลลัพธ์เมื่อผ่านการตรวจครบ</span></a>
       <a class="workflow-card" href="#pdpa-report"><span class="step">WORKFLOW 03</span><strong>PDPA Report</strong><span>ดูคะแนนและเกรดก่อนดาวน์โหลดรายงานภาษาไทยที่ลดการเปิดเผยข้อมูล</span></a>
     </nav>
   </div>
 </section>
 
-<!-- Guided Demo coordinates the three existing workflows; it adds no API route. -->
+<!-- Optional quick start coordinates the existing workflows; it adds no API route. -->
 <section class="guided-section" id="guided-demo" aria-labelledby="guidedTitle">
   <div class="container">
-    <div class="guided-shell">
+    <details class="guided-shell">
+      <summary id="guidedTitle">
+        <span class="guided-disclosure-copy"><small>QUICK START · ข้อมูลสังเคราะห์</small><b>ทดลองเส้นทางครบ 3 ขั้นตอนแบบแนะนำ</b><span>ตัวเลือกเสริมสำหรับผู้ใช้ใหม่ — จะไม่ส่งข้อมูลจนกว่าคุณกดเริ่ม</span></span>
+        <span class="guided-disclosure-action">เปิด Quick Start ↓</span>
+      </summary>
       <div class="guided-top">
         <div>
-          <p class="workflow-number">Guided Demo · เส้นทางแนะนำสำหรับกรรมการ</p>
-          <h2 id="guidedTitle">เห็นคุณค่าครบทั้ง 3 เวิร์กโฟลว์ในครั้งเดียว</h2>
+          <p class="workflow-number">Quick Start · เส้นทางแนะนำ</p>
+          <h2>เรียนรู้ครบทั้ง 3 เวิร์กโฟลว์ในครั้งเดียว</h2>
           <p>กดครั้งเดียวเพื่อใช้ตัวอย่างสังเคราะห์ แล้วเรียก Privacy Scan → Safe AI → PDPA Report ตามลำดับจริง ระบบจะหยุดอย่างปลอดภัยหากขั้นใดไม่ผ่าน และไม่สร้างผลสำเร็จจำลอง</p>
         </div>
         <span class="guided-badge">เรียก SAFE AI 1 ครั้งต่อรอบ</span>
@@ -552,14 +590,14 @@
             <b id="guidedScenario">สมัครงาน / HR · ข้อมูลสังเคราะห์</b>
           </div>
           <div class="guided-actions">
-            <button id="guidedStart" class="primary primary-action" type="button">เริ่ม Guided Demo</button>
+            <button id="guidedStart" class="primary primary-action" type="button">เริ่ม Quick Start</button>
             <button id="guidedReset" class="secondary-action" type="button">หยุดและเริ่มใหม่</button>
           </div>
           <div class="guided-status" id="guidedStatus" role="status" aria-live="polite">เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง</div>
           <a class="guided-proof-link" id="guidedProofLink" href="#providerEvidenceCard" hidden>ดู “ข้อความที่ส่งให้ AI จริง” ↓</a>
         </div>
 
-        <ol class="guided-steps" aria-label="สถานะ Guided Demo">
+        <ol class="guided-steps" aria-label="สถานะ Quick Start">
           <li class="guided-step" id="guidedStepScan" data-state="idle">
             <span class="guided-step-index" aria-hidden="true">01</span>
             <div><strong>Privacy Scan</strong><span>ตรวจจับและไฮไลต์ PII พร้อมสรุปประเภท</span></div>
@@ -567,7 +605,7 @@
           </li>
           <li class="guided-step" id="guidedStepSafe" data-state="idle">
             <span class="guided-step-index" aria-hidden="true">02</span>
-            <div><strong>Safe AI</strong><span>ส่งข้อความที่ปกป้องแล้วให้ Pathumma และหยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span></div>
+            <div><strong>Safe AI</strong><span>ส่งเฉพาะข้อความที่ปกป้องแล้วให้ AI ปลายทาง และหยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span></div>
             <span class="guided-step-state" id="guidedStateSafe">รอเริ่ม</span>
           </li>
           <li class="guided-step" id="guidedStepReport" data-state="idle">
@@ -584,12 +622,13 @@
         <div class="metric-card"><b id="guidedSafety">รอผล</b><span>ความปลอดภัยและการกู้คืน</span></div>
         <div class="metric-card"><b id="guidedTiming">—</b><span>เวลารวมที่วัดในเบราว์เซอร์</span></div>
       </div>
-    </div>
+    </details>
   </div>
 </section>
 
 <!-- Workflow 01: explicit scan action and truthful result fields -->
 <section class="section-shell" id="privacy-scan" aria-labelledby="privacyTitle">
+  <span id="web-app"></span>
   <div class="container">
     <div class="section-head">
       <div>
@@ -597,11 +636,11 @@
         <h2 class="section-title" id="privacyTitle">Privacy Scan</h2>
         <p class="section-sub">เลือกสถานการณ์สังเคราะห์หรือพิมพ์ข้อความ แล้วกดสแกนเพื่อเห็น PII ภาษาไทยที่ระบบตรวจพบจริง</p>
       </div>
-      <span class="demo-label">● DEMO EXAMPLES · ข้อมูลสังเคราะห์</span>
+      <span class="demo-label">● ตัวอย่างเพื่อทดลอง · ข้อมูลสังเคราะห์</span>
     </div>
 
     <div class="demo-studio">
-      <div class="scenario-gallery" aria-label="ตัวอย่างสังเคราะห์สำหรับเดโม">
+      <div class="scenario-gallery" aria-label="ตัวอย่างสังเคราะห์สำหรับทดลองใช้งาน">
         <button class="scenario-card" type="button" data-scenario="hr" aria-pressed="false" data-sample="ใบสมัครงานสังเคราะห์: นางสาวอรุณี ตัวอย่าง สมัครตำแหน่งนักวิเคราะห์ ติดต่อ 081-000-1020 หรือ arunee@example.invalid ที่อยู่ 88/8 ถนนตัวอย่าง เขตบางรัก กรุงเทพมหานคร กรุณาสรุปผู้สมัคร 2 ประโยค โดยระบุชื่อ ตำแหน่ง เบอร์โทรศัพท์ และอีเมล">
           <small>HR</small><b>สมัครงาน</b><span>คาดว่าอาจพบ: ชื่อ · โทรศัพท์ · อีเมล · ที่อยู่</span><span>ความเสี่ยง: ส่ง CV เข้า AI ภายนอก</span><span class="scenario-proof">จุดสาธิต: ปกป้องก่อนคัดกรอง</span>
         </button>
@@ -620,12 +659,13 @@
       </div>
       <p class="scenario-scroll-hint">เลื่อนเพื่อดูสถานการณ์เพิ่มเติม แล้วแตะเพื่อเลือกโดยยังไม่ส่งข้อมูล</p>
       <div class="scenario-toolbar">
-        <span id="scenarioStatus">ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น</span>
+        <span id="scenarioStatus">ยังไม่ใส่ข้อความ · Quick Start จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น</span>
         <button type="button" data-action="reset" id="resetDemo">↺ ล้างผลและเริ่มใหม่</button>
       </div>
 
       <label class="input-label" for="editor">ข้อความสำหรับทั้ง 3 เวิร์กโฟลว์ <span id="characterCount">0 / 20,000 ตัวอักษร</span></label>
       <textarea id="editor" maxlength="20000" spellcheck="false" placeholder="วางข้อความภาษาไทยที่ต้องการตรวจสอบ หรือเลือกตัวอย่างด้านบน"></textarea>
+      <p class="product-boundary"><strong>ก่อนส่ง:</strong> ข้อความนี้จะเข้าสู่เซิร์ฟเวอร์ AI Guard การสแกนอัตโนมัติไม่รับประกันการตรวจพบทุกกรณี หลีกเลี่ยงข้อมูลจริงที่มีความเสี่ยงสูงและตรวจทานผลเสมอ</p>
       <div class="action-row">
         <button id="scanBtn" class="primary primary-action" type="button">สแกนข้อมูลส่วนบุคคล</button>
         <span class="status-line" id="meta" role="status" aria-live="polite">เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น</span>
@@ -647,26 +687,29 @@
         <div class="summary-detail" id="piiTypes">ยังไม่มีข้อมูลให้วิเคราะห์</div>
         <div class="legend" id="legend"></div>
         <div id="guardBar"></div>
-        <p class="summary-detail">Privacy Scan แสดงเฉพาะจำนวน ประเภท และตำแหน่งที่ API ส่งกลับ โดยไม่สร้างคะแนนหรือความเสี่ยงเพิ่มเติมเอง</p>
+        <p class="summary-detail">Privacy Scan แสดงเฉพาะจำนวน ประเภท และตำแหน่งจากผลการตรวจจริง โดยไม่สร้างคะแนนหรือความเสี่ยงเพิ่มเติมเอง</p>
       </aside>
     </div>
   </div>
 </section>
 
-<!-- Workflow 02: the competition's memorable proof moment -->
+<!-- Workflow 02: the primary protected-AI product path. -->
 <section class="section-shell alt" id="safe-ai" aria-labelledby="safeTitle" tabindex="-1">
   <div class="container">
     <div class="section-head">
       <div>
-        <p class="workflow-number">Workflow 02 · Flagship</p>
+        <p class="workflow-number">Workflow 02 · เส้นทางหลัก</p>
         <h2 class="section-title" id="safeTitle">Safe AI</h2>
         <p class="section-sub">เห็นการเปลี่ยนผ่านตั้งแต่ข้อความต้นฉบับ จนถึงข้อความที่ AI ได้รับจริง และแสดงผลสุดท้ายเฉพาะเมื่อการตรวจความปลอดภัยผ่านครบ</p>
       </div>
-      <div class="presentation-actions" aria-label="เครื่องมือสำหรับการนำเสนอ">
-        <span class="demo-label">PROTECTED BEFORE AI</span>
-        <button id="presenterModeBtn" type="button" aria-pressed="false" disabled>โหมดนำเสนอ</button>
-        <button id="fullscreenBtn" type="button" aria-pressed="false" disabled>แสดงหลักฐานเต็มจอ</button>
-      </div>
+      <details class="presentation-tools">
+        <summary>เครื่องมือนำเสนอและหลักฐานขั้นสูง</summary>
+        <div class="presentation-actions" aria-label="เครื่องมือสำหรับการนำเสนอ">
+          <span class="demo-label">PROTECTED BEFORE AI</span>
+          <button id="presenterModeBtn" type="button" aria-pressed="false" disabled>โหมดนำเสนอ</button>
+          <button id="fullscreenBtn" type="button" aria-pressed="false" disabled>แสดงหลักฐานเต็มจอ</button>
+        </div>
+      </details>
     </div>
 
     <div class="safe-hero">
@@ -674,7 +717,7 @@
         <button class="mode-card" id="modeTokenCard" type="button" data-mode-card="token" aria-pressed="true">
           <strong>Token · ตรวจสอบง่าย</strong>
           <span>placeholder แบบวงเล็บที่บอกประเภทข้อมูล แต่ไม่เปิดเผยค่าจริง</span>
-          <small>แนะนำสำหรับเดโมและงานที่ต้องเห็นหลักฐานชัด</small>
+          <small>แนะนำเมื่อต้องการตรวจสอบ placeholder ได้ชัดเจน</small>
         </button>
         <button class="mode-card" id="modeSurrogateCard" type="button" data-mode-card="surrogate" aria-pressed="false">
           <strong>Surrogate · อ่านเป็นธรรมชาติ</strong>
@@ -690,7 +733,7 @@
           </select>
         </label>
         <div class="mode-help" id="modeDescription"><b>Token — แนะนำ:</b> placeholder แบบวงเล็บบอกประเภท แต่ไม่เปิดเผยค่าจริง เหมาะกับการกู้คืนภายในคำขอเดียว</div>
-        <span class="dest-badge">โมเดลปลายทาง <b>Pathumma · thaillm-8b</b></span>
+        <span class="dest-badge">AI ปลายทาง <b>การเชื่อมต่อที่ได้รับอนุมัติ</b></span>
         <button id="safeDemoBtn" class="secondary-action" type="button">ใช้ตัวอย่างสังเคราะห์</button>
         <button id="send" class="primary primary-action" type="button">ปกป้องและส่งให้ Safe AI</button>
       </div>
@@ -711,7 +754,7 @@
 
       <div class="pipeline" aria-label="เส้นทาง Safe AI สามขั้น">
         <article class="pipeline-card">
-          <div class="pipeline-label"><small>01 · ORIGINAL</small><strong>ข้อความต้นฉบับ</strong><span>ข้อความที่เลือกสำหรับเดโม</span></div>
+          <div class="pipeline-label"><small>01 · ORIGINAL</small><strong>ข้อความต้นฉบับ</strong><span>ข้อความที่ใช้กับคำขอนี้</span></div>
           <div class="pipeline-body pipeline-empty" id="safeOriginal">กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที</div>
         </article>
         <article class="pipeline-card provider-evidence" id="providerEvidenceCard">
@@ -739,9 +782,9 @@
       <section class="presentation-stage" id="presentationStage" aria-labelledby="presentationTitle" tabindex="-1" hidden>
         <div class="presentation-stage-head">
           <div>
-            <p class="workflow-number">Competition Evidence</p>
+            <p class="workflow-number">สรุปการปกป้องสำหรับคำขอนี้</p>
             <h3 id="presentationTitle">สรุปหลักฐานจากคำขอนี้</h3>
-            <p>รวมผลจริงจาก Privacy Scan, Guard, Safe AI และ PDPA Report โดยไม่เพิ่ม provider call หรือสร้างข้อสรุปแทน API</p>
+            <p>รวมผลการตรวจ การปกป้อง ความเสี่ยงของคำสั่ง และรายงานจากข้อความชุดเดียวกัน โดยไม่ส่งคำขอ AI เพิ่ม</p>
           </div>
           <div>
             <span class="demo-label" id="presentationScenario">ข้อมูลชุดปัจจุบัน</span>
@@ -860,7 +903,7 @@
     </details>
 
     <details class="trust-details entity-glossary" id="entityGlossary">
-      <summary>อภิธานศัพท์สำหรับกรรมการ · Entity & Protection Glossary</summary>
+      <summary>อภิธานศัพท์ข้อมูลและการปกป้อง</summary>
       <div class="trust-details-content">
         <div class="glossary-grid">
           <div class="glossary-item"><b>PII</b><span>ข้อมูลที่อาจระบุหรือเชื่อมโยงถึงบุคคลได้</span></div>
@@ -922,10 +965,28 @@
     <details class="trust-details">
       <summary>ขอบเขตความเป็นส่วนตัวและข้อจำกัดที่ควรรู้</summary>
       <div class="trust-details-content">
-        <p>หน้าเว็บและ health เปิดอ่านได้ แต่ business API ทุกเส้นต้อง login ผ่าน cookie แบบ HttpOnly ข้อมูลต้นฉบับวิ่งผ่าน reverse proxy และเซิร์ฟเวอร์ของทีมก่อนถูกปกปิด ไม่มีฐานข้อมูลผู้ใช้ และโค้ดหน้านี้ไม่ใช้พื้นที่จัดเก็บถาวรสำหรับเนื้อหาผู้ใช้ในเบราว์เซอร์</p>
-        <p>AI Guard เน้น recall แต่ไม่รับประกันการตรวจพบ 100% หมวดอ่อนไหวตามมาตรา 26 ที่ API รองรับจะแสดงเป็นคำเตือนตามผลจริง และไม่ถูกปกปิดอัตโนมัติเพียงเพราะอยู่ในหมวดดังกล่าว</p>
+        <p>หน้าเว็บและการตรวจสถานะเปิดอ่านได้ แต่การประมวลผลข้อความทุกเส้นต้องเข้าสู่ระบบผ่าน cookie แบบ HttpOnly ข้อมูลต้นฉบับวิ่งผ่าน reverse proxy และเซิร์ฟเวอร์ AI Guard ก่อนถูกปกปิด ไม่มีฐานข้อมูลผู้ใช้ และโค้ดหน้านี้ไม่ใช้พื้นที่จัดเก็บถาวรสำหรับเนื้อหาผู้ใช้ในเบราว์เซอร์</p>
+        <p>AI Guard ไม่รับประกันการตรวจพบ 100% หมวดอ่อนไหวตามมาตรา 26 ที่ระบบรองรับจะแสดงเป็น heuristic review signal ตามผลจริง ไม่ใช่คำตัดสินทางกฎหมาย และไม่ถูกปกปิดอัตโนมัติเพียงเพราะอยู่ในหมวดดังกล่าว</p>
       </div>
     </details>
+  </div>
+</section>
+
+<section class="product-links-section" id="product" aria-labelledby="productTitle">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="workflow-number">AI Guard Product</p>
+        <h2 class="section-title" id="productTitle">ใช้งานอย่างปลอดภัยในช่องทางที่พร้อมจริง</h2>
+        <p class="section-sub">เว็บแอปนี้เปิดเป็น Private Beta ส่วน Desktop และ Browser Extension จะแสดงลิงก์เมื่อมีไฟล์หรือ Store listing ที่เผยแพร่และตรวจสอบแล้วเท่านั้น</p>
+      </div>
+    </div>
+    <div class="product-links-grid">
+      <a class="product-link-card" href="#web-access"><small>พร้อมใช้งาน</small><h3>Web App</h3><p>สแกนข้อความ ปกป้องก่อนส่งให้ AI และสร้างรายงานด้วย session ที่มีอายุจำกัด</p><span class="availability">Private Beta · ใช้รหัสเชิญ</span></a>
+      <article class="product-link-card"><small>DESKTOP</small><h3>AI Guard Desktop</h3><p>ยังไม่มี installer สาธารณะที่ตรวจสอบแล้วจากเว็บไซต์นี้</p><span class="availability pending">ยังไม่เปิดดาวน์โหลด</span></article>
+      <article class="product-link-card"><small>BROWSER EXTENSION</small><h3>Chrome Extension</h3><p>ยังไม่มี Chrome Web Store listing และเว็บไซต์จะไม่ส่งผู้ใช้ไปยังลิงก์ที่ไม่มีอยู่</p><span class="availability pending">ยังไม่เปิดติดตั้ง</span></article>
+      <a class="product-link-card" href="/privacy"><small>DOCS &amp; SUPPORT</small><h3>Privacy &amp; Help</h3><p>อ่านเส้นทางข้อมูล ข้อจำกัด คุกกี้ การเก็บ log และวิธีขอความช่วยเหลือโดยไม่ส่งข้อมูลลับ</p><span class="availability">อ่านเอกสารผลิตภัณฑ์</span></a>
+    </div>
   </div>
 </section>
 
@@ -935,9 +996,9 @@
       <div>
         <p class="workflow-number">สำหรับองค์กร · For Organizations</p>
         <h2 class="section-title" id="enterpriseTitle">ชั้นปกป้องข้อมูลก่อนองค์กรใช้ AI</h2>
-        <p class="section-sub">ใช้หลักการเดียวกันกับงานที่มีข้อมูลบุคคลหลายบริบท โดยคง provider credential และการกู้คืนไว้ฝั่งเซิร์ฟเวอร์</p>
+        <p class="section-sub">ใช้หลักการเดียวกันกับงานที่มีข้อมูลบุคคลหลายบริบท โดยคงข้อมูลรับรองของ AI ปลายทางและการกู้คืนไว้ฝั่งเซิร์ฟเวอร์</p>
       </div>
-      <span class="demo-label">ภาษาไทยเป็นหลัก · เว็บไซต์เดียวกัน</span>
+      <span class="demo-label">ภาษาไทยเป็นหลัก · ใช้ผ่านเว็บ</span>
     </div>
     <div class="enterprise-grid">
       <article class="enterprise-card"><small>HR</small><h3>คัดกรองใบสมัคร</h3><p>ลดการเปิดเผยชื่อ ช่องทางติดต่อ และที่อยู่ ก่อนส่งบริบทให้ AI ช่วยสรุป</p></article>
@@ -947,12 +1008,12 @@
       <article class="enterprise-card"><small>Government</small><h3>งานเอกสารภาครัฐ</h3><p>เพิ่มหลักฐานการปกป้องและสรุป PDPA สำหรับกระบวนงานเอกสารภาษาไทย</p></article>
     </div>
 
-    <div class="system-evidence" id="systemEvidence" aria-label="หลักฐานสถานะระบบ">
-      <div class="system-evidence-intro"><h3>หลักฐานสถานะระบบ · System Evidence</h3><p>ตรวจสถานะบริการครั้งเดียวเมื่อเปิดหน้า ไม่ตรวจซ้ำต่อเนื่องและไม่แสดงข้อมูลภายใน</p></div>
+    <div class="system-evidence" id="systemEvidence" aria-label="สถานะบริการ">
+      <div class="system-evidence-intro"><h3>สถานะบริการ</h3><p>เป็นการตรวจ liveness ครั้งเดียวเมื่อเปิดหน้า ไม่ใช่การรับรองว่า AI ปลายทางพร้อมใช้งาน</p></div>
       <div class="system-evidence-item"><span>สถานะบริการ</span><b id="serviceStatus">กำลังตรวจสอบ</b></div>
       <div class="system-evidence-item"><span>เวอร์ชันผลิตภัณฑ์</span><b id="serviceVersion">—</b></div>
       <div class="system-evidence-item"><span>รูปแบบการปกป้อง</span><b id="systemMode">Token</b></div>
-      <div class="system-evidence-item"><span>โมเดลปลายทาง</span><b>Pathumma · thaillm-8b</b></div>
+      <div class="system-evidence-item"><span>AI ปลายทาง</span><b>การเชื่อมต่อที่ได้รับอนุมัติ</b></div>
       <div class="system-evidence-item"><span>ขอบเขตเวอร์ชัน Hosted</span><b>การลบ PII ใน PDF/OCR แบบสาธารณะ: ปิด</b></div>
     </div>
   </div>
@@ -962,8 +1023,8 @@
 
 <footer>
   <div class="container">
-    <strong>AI Guard</strong> · Thai PII protection for responsible AI
-    <br>Hosted demo · ปกป้องข้อมูลภายในคำขอเดียว · Apache-2.0
+    <strong>AI Guard Hosted</strong> · Private Beta · VERSION 2.5.0
+    <br><a href="/privacy">ความเป็นส่วนตัวและความปลอดภัย</a> · <a href="/terms">ข้อกำหนด</a> · <a href="/help">ช่วยเหลือ/FAQ</a> · <a href="/downloads">Desktop และ Extension</a>
   </div>
 </footer>
 
@@ -1596,7 +1657,7 @@ function clearSensitiveState() {
   selectedScenario = "hr";
   document.body.dataset.privateInput = "false";
   document.getElementById("guidedScenario").textContent = SCENARIO_LABELS.hr;
-  document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
+  document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Quick Start จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
   for (const button of document.querySelectorAll("[data-scenario]")) {
     button.setAttribute("aria-pressed", "false");
   }
@@ -1621,7 +1682,7 @@ function setAuthState(value, message) {
     meta.textContent = "เลือกตัวอย่างสังเคราะห์หรือพิมพ์ข้อความเพื่อเริ่มต้น";
     highlight.textContent = "ผลการไฮไลต์จะแสดงที่นี่หลังสแกน";
     document.getElementById("safeElapsed").textContent = "กด “ใช้ตัวอย่างสังเคราะห์” หรือเลือกข้อความจาก Privacy Scan";
-    document.getElementById("guidedStatus").textContent = "พร้อมเริ่ม Guided Demo ด้วยข้อมูลสังเคราะห์";
+    document.getElementById("guidedStatus").textContent = "พร้อมเริ่ม Quick Start ด้วยข้อมูลสังเคราะห์";
   }
   syncBusinessControls();
 }
@@ -1661,7 +1722,7 @@ async function checkAuthSession() {
       && Number.isInteger(body.expires_in)
       && body.expires_in >= 0
       && body.expires_in <= 1800;
-    setAuthState(valid, valid ? "เข้าสู่ระบบแล้ว — session อายุไม่เกิน 30 นาที" : "กรุณาใส่ access code");
+    setAuthState(valid, valid ? "เข้าสู่ระบบแล้ว — session อายุไม่เกิน 30 นาที" : "กรุณาใส่รหัสเชิญ");
     if (valid) scheduleSessionExpiry(body.expires_in);
   } catch (err) {
     if (generation !== authCheckGeneration || (err && err.name === "AbortError")) return;
@@ -1914,7 +1975,7 @@ async function detectNow() {
       if (!gr.ok || !validGuardPayload(gb)) {
         lastGuard = {text, available: false, findings: []};
         renderGuardRisk([], false);
-        bar.textContent = "การตรวจเตือนคำสั่งไม่พร้อม · Privacy Scan ผ่าน แต่ Guided Demo จะหยุดก่อนเรียก Safe AI";
+        bar.textContent = "การตรวจเตือนคำสั่งไม่พร้อม · Privacy Scan ผ่าน แต่ Quick Start จะหยุดก่อนเรียก Safe AI";
         return false;
       }
       const findings = Array.isArray(gb.guard_findings) ? gb.guard_findings : [];
@@ -1929,7 +1990,7 @@ async function detectNow() {
       if (generation !== detectGeneration || text !== editor.value) return false;
       lastGuard = {text, available: false, findings: []};
       renderGuardRisk([], false);
-      document.getElementById("guardBar").textContent = "เชื่อมต่อการตรวจเตือนคำสั่งไม่ได้ · Privacy Scan ผ่าน แต่ Guided Demo จะหยุดก่อนเรียก Safe AI";
+      document.getElementById("guardBar").textContent = "เชื่อมต่อการตรวจเตือนคำสั่งไม่ได้ · Privacy Scan ผ่าน แต่ Quick Start จะหยุดก่อนเรียก Safe AI";
       return false;
     }
     return true;
@@ -1968,12 +2029,12 @@ function handleInputChange({preserveScenario = false} = {}) {
   const scenarioLabel = SCENARIO_LABELS[selectedScenario];
   document.getElementById("guidedScenario").textContent = scenarioLabel;
   document.getElementById("scenarioStatus").textContent = selectedScenario === "custom"
-    ? "ข้อความที่ผู้ใช้กรอกเอง · ตรวจสอบว่าไม่มีข้อมูลจริงก่อนเดโม"
+    ? "ข้อความที่ผู้ใช้กรอกเอง · ตรวจสอบว่าไม่มีข้อมูลจริงที่มีความเสี่ยงสูง"
     : `เลือกแล้ว: ${scenarioLabel}`;
   for (const button of document.querySelectorAll("[data-scenario]")) {
     button.setAttribute("aria-pressed", editor.value.trim() && button.dataset.scenario === selectedScenario ? "true" : "false");
   }
-  resetGuidedPresentation(authenticated ? "พร้อมเริ่ม Guided Demo ด้วยข้อมูลชุดนี้" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  resetGuidedPresentation(authenticated ? "พร้อมเริ่ม Quick Start ด้วยข้อมูลชุดนี้" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
   clearTimeout(debounceTimer);
   syncBusinessControls();
 }
@@ -2007,8 +2068,8 @@ function resetAllDemoState() {
   editor.value = "";
   handleInputChange({preserveScenario: true});
   document.getElementById("guidedScenario").textContent = SCENARIO_LABELS.hr;
-  document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Guided Demo จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
-  resetGuidedPresentation(authenticated ? "ล้างผลทั้งหมดแล้ว พร้อมเริ่ม Guided Demo ใหม่" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  document.getElementById("scenarioStatus").textContent = "ยังไม่ใส่ข้อความ · Quick Start จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น";
+  resetGuidedPresentation(authenticated ? "ล้างผลทั้งหมดแล้ว พร้อมเริ่ม Quick Start ใหม่" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
   syncBusinessControls();
   if (typeof editor.focus === "function") editor.focus();
 }
@@ -2028,7 +2089,7 @@ function applyProtectionMode(value) {
   roundtripGeneration += 1;
   guidedGeneration += 1;
   resetSafePresentation("เปลี่ยนรูปแบบการปกป้องแล้ว พร้อมเริ่มคำขอใหม่");
-  resetGuidedPresentation(authenticated ? "เลือกรูปแบบแล้ว พร้อมเริ่ม Guided Demo" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
+  resetGuidedPresentation(authenticated ? "เลือกรูปแบบแล้ว พร้อมเริ่ม Quick Start" : "เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง");
   syncBusinessControls();
 }
 
@@ -2170,7 +2231,7 @@ function renderProtectionEvidence(body, text, startedAt, requestedMode) {
     document.getElementById("proofCallout").dataset.tone = "error";
   } else {
     document.getElementById("proofStatus").textContent = "แสดงข้อความปกป้องที่ API ส่งต่อให้ provider แล้ว";
-    document.getElementById("proofMethod").textContent = "รัน Privacy Scan ก่อน Safe AI หรือใช้ Guided Demo เพื่อเพิ่มการตรวจเทียบค่าที่ตรวจจับในเบราว์เซอร์";
+    document.getElementById("proofMethod").textContent = "รัน Privacy Scan ก่อน Safe AI หรือใช้ Quick Start เพื่อเพิ่มการตรวจเทียบค่าที่ตรวจจับในเบราว์เซอร์";
     document.getElementById("proofCallout").dataset.tone = "safe";
   }
   return proof;
@@ -2404,7 +2465,7 @@ document.getElementById("send").addEventListener("click", runSafeAI);
 async function runGuidedDemo() {
   if (!authenticated || guidedRunning) return false;
   if (providerLaneActive) {
-    document.getElementById("guidedStatus").textContent = "ยังเริ่ม Guided Demo ไม่ได้ เพราะ Safe AI คำขอก่อนหน้ายังไม่ยืนยันว่าจบแล้ว";
+    document.getElementById("guidedStatus").textContent = "ยังเริ่ม Quick Start ไม่ได้ เพราะ Safe AI คำขอก่อนหน้ายังไม่ยืนยันว่าจบแล้ว";
     document.getElementById("guidedStatus").dataset.tone = "caution";
     return false;
   }
@@ -2442,7 +2503,7 @@ async function runGuidedDemo() {
       document.getElementById("guidedSafety").textContent = "หยุดอย่างปลอดภัย";
       document.getElementById("guidedStatus").textContent = scanActuallyPassed
         ? "Privacy Scan ผ่าน แต่ Guard ไม่พร้อม · หยุดก่อนเรียก Safe AI โดยไม่สร้างผลสำเร็จจำลอง"
-        : "Guided Demo หยุดที่ Privacy Scan · แก้ไขตามข้อความแจ้งเตือนแล้วกดลองใหม่";
+        : "Quick Start หยุดที่ Privacy Scan · แก้ไขตามข้อความแจ้งเตือนแล้วกดลองใหม่";
       document.getElementById("guidedStatus").dataset.tone = "error";
       return false;
     }
@@ -2456,7 +2517,7 @@ async function runGuidedDemo() {
     if (!safePassed) {
       setGuidedStep("safe", "error", "ถูกระงับ");
       document.getElementById("guidedSafety").textContent = "หยุดอย่างปลอดภัย";
-      document.getElementById("guidedStatus").textContent = "Guided Demo หยุดที่ Safe AI · ระบบไม่แสดงขั้นรายงานเป็นความสำเร็จ";
+      document.getElementById("guidedStatus").textContent = "Quick Start หยุดที่ Safe AI · ระบบไม่แสดงขั้นรายงานเป็นความสำเร็จ";
       document.getElementById("guidedStatus").dataset.tone = "error";
       return false;
     }
@@ -2477,14 +2538,14 @@ async function runGuidedDemo() {
 
     setGuidedStep("report", "done", "พร้อม");
     document.getElementById("guidedTiming").textContent = formatElapsed(startedAt);
-    document.getElementById("guidedStatus").textContent = "Guided Demo สำเร็จครบ 3 เวิร์กโฟลว์ · เลื่อนดูข้อความที่ส่งให้ AI จริงและสรุปรายงานได้เลย";
+    document.getElementById("guidedStatus").textContent = "Quick Start สำเร็จครบ 3 เวิร์กโฟลว์ · เลื่อนดูข้อความที่ส่งให้ AI จริงและสรุปรายงานได้เลย";
     document.getElementById("guidedStatus").dataset.tone = "safe";
     document.getElementById("guidedProofLink").hidden = false;
     completed = true;
     return true;
   } catch {
     if (generation !== guidedGeneration) return false;
-    document.getElementById("guidedStatus").textContent = "Guided Demo หยุดอย่างปลอดภัยจากปัญหาการเชื่อมต่อ กรุณาลองใหม่";
+    document.getElementById("guidedStatus").textContent = "Quick Start หยุดอย่างปลอดภัยจากปัญหาการเชื่อมต่อ กรุณาลองใหม่";
     document.getElementById("guidedStatus").dataset.tone = "error";
     return false;
   } finally {

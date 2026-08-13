@@ -76,46 +76,7 @@ deploy:
         && [ "$APP_AIFT_ACCESS_CODE" != "$APP_TOKENMIND_API_KEY" ] \
         && [ "$APP_AIFT_COOKIE_SIGNING_KEY" != "$APP_TOKENMIND_API_KEY" ] \
         || { echo "protected application variables must be distinct"; exit 1; }
-      require_latest_main() {
-        if [ -n "${CI_SERVER_HOST:-}" ]; then
-          LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
-          [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
-            || { echo "refusing an outdated main deployment"; exit 1; }
-        fi
-      }
-      require_latest_main
-      umask 077
-      ENV_FILE=$(mktemp)
-      cleanup_deploy() { rm -f "$ENV_FILE"; }
-      trap cleanup_deploy EXIT
-      {
-        printf 'APP_AIGUARD_API_KEY=%s\n' "${APP_AIGUARD_API_KEY:-}"
-        printf 'APP_AIFT_ACCESS_CODE=%s\n' "${APP_AIFT_ACCESS_CODE:-}"
-        printf 'APP_AIFT_COOKIE_SIGNING_KEY=%s\n' "${APP_AIFT_COOKIE_SIGNING_KEY:-}"
-        printf 'APP_TOKENMIND_API_KEY=%s\n' "${APP_TOKENMIND_API_KEY:-}"
-      } > "$ENV_FILE"
-      docker compose --env-file "$ENV_FILE" -p "$TEAM" build
-      # A build can take minutes. Recheck the remote immediately before the
-      # first container mutation, then use only the images just built.
-      require_latest_main
-      docker compose --env-file "$ENV_FILE" -p "$TEAM" up -d --no-build --remove-orphans
-    - |
-      echo "waiting for healthcheck..."
-      for i in $(seq 1 40); do
-        st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-api-1" 2>/dev/null || echo none)
-        web_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-web-1" 2>/dev/null || echo none)
-        [ "$st" = "healthy" ] && [ "$web_st" = "healthy" ] \
-          && { echo "api and web healthy"; break; }
-        sleep 5
-      done
-      [ "$st" = "healthy" ] && [ "$web_st" = "healthy" ] \
-        || { echo "deployment healthcheck timed out"; exit 1; }
-      docker compose -p "$TEAM" ps
-    # Runner #227 uses a Docker executor: job-container loopback is not the
-    # Docker host where 20070/20071 are published. Probe inside each already
-    # healthy service container instead of assuming host-network reachability.
-    - docker exec "${TEAM}-api-1" wget -q -O /dev/null "http://127.0.0.1:8000/health" && echo "api /health OK"
-    - docker exec "${TEAM}-web-1" wget -q -O /dev/null "http://127.0.0.1:3000/" && echo "web root OK"
+    - bash scripts/deploy_production.sh
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 
@@ -131,13 +92,25 @@ acceptance:
     action: verify
   script:
     - |
-      set -e
+      set -Ee
+      rollback_on_error() {
+        acceptance_status=$?
+        trap - ERR
+        echo "mandatory acceptance failed; restoring previous exact release"
+        bash scripts/rollback_production.sh
+        exit "$acceptance_status"
+      }
+      # From the first post-deploy gate onward, every error—including a main
+      # advance—must restore the retained exact release before this job exits.
+      trap rollback_on_error ERR
       if [ -n "${CI_SERVER_HOST:-}" ]; then
         LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
         [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
-          || { echo "refusing outdated acceptance"; exit 1; }
+          || { echo "refusing outdated acceptance"; false; }
       fi
       python3 tests/platform_acceptance.py
+      python3 tests/public_web_acceptance.py
+      trap - ERR
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
 

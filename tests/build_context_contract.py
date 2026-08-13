@@ -65,13 +65,55 @@ def main() -> int:
 
     core_dockerfile = (ROOT / "core" / "Dockerfile").read_text(encoding="utf-8")
     for required in (
+        "COPY requirements.lock requirements-aift-security.lock ./",
+        "--no-deps --require-hashes -r requirements-aift-security.lock",
         "COPY app ./app",
         "COPY pii_redactor ./pii_redactor",
-        "COPY aift_auth.py aift_gateway.py VERSION LICENSE NOTICE ./",
+        "COPY verify_thainer_assets.py ./",
+        "python verify_thainer_assets.py",
+        "COPY aift_auth.py aift_gateway.py aift_report_policy.py healthcheck.py VERSION LICENSE NOTICE ./",
         "COPY licenses ./licenses",
     ):
         if required not in core_dockerfile:
             raise AssertionError(f"core runtime copy allowlist missing: {required}")
+    for excluded in (
+        "prewarm_ocr.py",
+        "requirements.lock requirements-aift.lock",
+        "libgl1",
+        "libglib2.0-0",
+        "libgomp1",
+    ):
+        if excluded in core_dockerfile:
+            raise AssertionError(f"disabled OCR runtime leaked into hosted image: {excluded}")
+
+    security_overlay = (ROOT / "core" / "requirements-aift-security.lock").read_text(
+        encoding="utf-8"
+    )
+    if "cryptography==50.0.0" not in security_overlay or "cryptography==49.0.0" in security_overlay:
+        raise AssertionError("hosted security overlay does not close PYSEC-2026-3552")
+
+    model_verifier = (ROOT / "core" / "verify_thainer_assets.py").read_text(
+        encoding="utf-8"
+    )
+    evaluation = (
+        ROOT / "evaluation" / "thai_pii" / "baseline.72e18bbe.json"
+    ).read_text(encoding="utf-8")
+    expected_model_hash = (
+        "bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315"
+    )
+    if expected_model_hash not in model_verifier or expected_model_hash not in evaluation:
+        raise AssertionError("hosted NER model digest is not bound to certified evidence")
+
+    web_dockerfile = (ROOT / "web" / "Dockerfile").read_text(encoding="utf-8")
+    api_dockerfile = (ROOT / "api" / "Dockerfile").read_text(encoding="utf-8")
+    for required in (
+        "product.css privacy.html terms.html help.html downloads.html robots.txt sitemap.xml",
+        "COPY healthcheck.sh /usr/local/bin/aift-healthcheck",
+    ):
+        if required not in web_dockerfile:
+            raise AssertionError(f"web product image is incomplete: {required}")
+    if "COPY healthcheck.sh /usr/local/bin/aift-healthcheck" not in api_dockerfile:
+        raise AssertionError("api image lacks its bounded recovery probe")
     print("build context contract ok: env, credential, VCS, output, cache, and editor sentinels excluded")
     return 0
 

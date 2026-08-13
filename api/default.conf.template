@@ -13,13 +13,73 @@
 #   /health /detect /guard /roundtrip /analyze-report
 #   /v1/<same>  — versioned aliases, the documented public contract
 
-limit_req_zone  $server_name zone=cap:1m rate=10r/s;
-limit_req_zone  $binary_remote_addr zone=auth_ip:1m rate=5r/m;
-limit_conn_zone $server_name zone=conc:1m;
+# Bounded invite-beta controls.  The global zones remain effective even when
+# the organizer proxy collapses client addresses.  A valid signed session
+# supplies its random nonce as a fairness key.  The signed cookie itself
+# is not retained as a zone key and neither value is written to logs.
+map $http_cookie $aift_caller_key {
+  default $binary_remote_addr;
+  "~(?:^|;[[:space:]]*)__Host-aift_session=v1\.[0-9]{1,12}\.([A-Za-z0-9_-]{22})\.[A-Za-z0-9_-]{43}(?:;|$)" $1;
+}
+map $http_cookie $aift_duplicate_session_cookie {
+  default 0;
+  "~(?:^|;[[:space:]]*)__Host-aift_session=[^;]*(?:;[^;]*)*;[[:space:]]*__Host-aift_session=" 1;
+}
+map $uri $aift_operation {
+  default denied;
+  /health health;
+  /v1/health health;
+  /auth/login auth_login;
+  /v1/auth/login auth_login;
+  /auth/logout auth_logout;
+  /v1/auth/logout auth_logout;
+  /auth/session auth_session;
+  /v1/auth/session auth_session;
+  /detect detect;
+  /v1/detect detect;
+  /guard guard;
+  /v1/guard guard;
+  /roundtrip roundtrip;
+  /v1/roundtrip roundtrip;
+  /analyze-report analyze_report;
+  /v1/analyze-report analyze_report;
+}
+
+limit_req_zone  $server_name zone=public_global:1m rate=30r/s;
+limit_req_zone  $server_name zone=auth_global:1m rate=2r/s;
+limit_req_zone  $server_name zone=work_global:1m rate=20r/s;
+limit_req_zone  $aift_caller_key zone=work_caller:4m rate=30r/m;
+limit_req_zone  $server_name zone=provider_global:1m rate=6r/m;
+limit_req_zone  $aift_caller_key zone=provider_caller:4m rate=2r/m;
+limit_conn_zone $server_name zone=work_global_conn:1m;
+limit_conn_zone $aift_caller_key zone=work_caller_conn:4m;
+limit_conn_zone $server_name zone=provider_global_conn:1m;
+limit_conn_zone $aift_caller_key zone=provider_caller_conn:4m;
 limit_req_status 429;
 limit_conn_status 429;
 
-log_format private '$remote_addr $status $body_bytes_sent "$request_method"';
+log_format private 'op=$aift_operation status=$status bytes=$body_bytes_sent method=$request_method rt=$request_time';
+
+# Container-local liveness has a private listener. It cannot be consumed by
+# the public rate zone and Compose does not publish this port.
+server {
+  listen 127.0.0.1:8001;
+  server_name localhost;
+  access_log off;
+  error_log /dev/stderr crit;
+  proxy_set_header Host team08.aiforthai.in.th;
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header X-Forwarded-For "";
+  proxy_set_header X-AIGuard-Key "${AIGUARD_API_KEY}";
+  proxy_set_header X-AIGuard-Contract-Version "2";
+  proxy_connect_timeout 2s;
+  proxy_read_timeout 2s;
+  proxy_send_timeout 2s;
+  location /internal-health {
+    proxy_pass http://core:8000/api/health;
+  }
+  location / { return 404; }
+}
 
 server {
   listen 8000;
@@ -33,14 +93,35 @@ server {
   error_log /dev/stderr crit;
   access_log /var/log/nginx/access.log private;
 
+  # The edge owns TLS and forwards the original scheme.  Keep the external
+  # /api prefix in the fixed redirect even though the organizer strips it
+  # before this container.  $uri excludes query values.
+  if ($http_x_forwarded_proto = "http") {
+    return 308 https://team08.aiforthai.in.th/api$uri;
+  }
+  if ($host !~ "^(team08\.aiforthai\.in\.th|localhost|127\.0\.0\.1)$") {
+    return 400;
+  }
+  # Core accepts one cookie authority. Reject duplicate authorities before
+  # rate-key selection so an authenticated caller cannot rotate an unsigned
+  # first nonce while placing the valid cookie later in the header.
+  if ($aift_duplicate_session_cookie = 1) {
+    return 400;
+  }
+
   # The first hosted release accepts JSON/text requests only. Internal PDF
   # code remains in core but is intentionally unreachable through this proxy.
-  client_max_body_size 1m;
+  client_max_body_size 128k;
   client_body_timeout 60s;
   client_header_timeout 15s;
 
   # Responses can carry restored PII — never cache anywhere.
   add_header Cache-Control "no-store" always;
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "DENY" always;
+  add_header Referrer-Policy "no-referrer" always;
+  add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
 
   # Collapse nginx/upstream infrastructure failures to fixed HTTP-v2-shaped
   # JSON. Never relay an upstream gateway body or a request-derived value.
@@ -49,9 +130,9 @@ server {
   error_page 502 = @error_502;
   error_page 504 = @error_504;
 
-  proxy_set_header Host              $http_host;
+  proxy_set_header Host              team08.aiforthai.in.th;
   proxy_set_header X-Forwarded-Proto https;
-  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-For   "";
   proxy_set_header X-AIGuard-Key     "${AIGUARD_API_KEY}";
   # The port keeps its /v1 aliases while the shared core is strict HTTP v2.
   # The browser never supplies either internal header.
@@ -66,87 +147,111 @@ server {
 
   # ── unversioned (platform CI healthcheck + same-origin web page) ──────
   location = /health {
+    limit_req zone=public_global burst=30 nodelay;
     proxy_pass http://core:8000/api/health;
   }
   location = /auth/login {
-    limit_req zone=auth_ip burst=3 nodelay;
+    client_max_body_size 8k;
+    limit_req zone=auth_global burst=10 nodelay;
     proxy_set_header X-AIGuard-Key "";
     proxy_set_header X-AIGuard-Contract-Version "";
     proxy_pass http://core:8000/aift/auth/login;
   }
   location = /auth/logout {
+    limit_req zone=public_global burst=30 nodelay;
     proxy_set_header X-AIGuard-Key "";
     proxy_set_header X-AIGuard-Contract-Version "";
     proxy_pass http://core:8000/aift/auth/logout;
   }
   location = /auth/session {
+    limit_req zone=public_global burst=30 nodelay;
     proxy_set_header X-AIGuard-Key "";
     proxy_set_header X-AIGuard-Contract-Version "";
     proxy_pass http://core:8000/aift/auth/session;
   }
   location = /detect {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
     proxy_pass http://core:8000/api/detect;
   }
   location = /guard {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
     proxy_pass http://core:8000/api/guard;
   }
   location = /roundtrip {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=provider_global burst=2 nodelay;
+    limit_req zone=provider_caller burst=1 nodelay;
+    limit_conn provider_global_conn 2;
+    limit_conn provider_caller_conn 1;
     # Shared core owns at most 3x60s calls plus 1s/2s backoff. Leave bounded
     # processing headroom without widening timeouts on non-provider routes.
     proxy_read_timeout 200s;
     proxy_pass http://core:8000/api/roundtrip;
   }
   location = /analyze-report {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
     proxy_pass http://core:8000/api/analyze-report;
   }
 
   # ── /v1 versioned aliases (documented public API) ─────────────────────
   location = /v1/health {
+    limit_req zone=public_global burst=30 nodelay;
     proxy_pass http://core:8000/api/health;
   }
   location = /v1/auth/login {
-    limit_req zone=auth_ip burst=3 nodelay;
+    client_max_body_size 8k;
+    limit_req zone=auth_global burst=10 nodelay;
     proxy_set_header X-AIGuard-Key "";
     proxy_set_header X-AIGuard-Contract-Version "";
     proxy_pass http://core:8000/aift/auth/login;
   }
   location = /v1/auth/logout {
+    limit_req zone=public_global burst=30 nodelay;
     proxy_set_header X-AIGuard-Key "";
     proxy_set_header X-AIGuard-Contract-Version "";
     proxy_pass http://core:8000/aift/auth/logout;
   }
   location = /v1/auth/session {
+    limit_req zone=public_global burst=30 nodelay;
     proxy_set_header X-AIGuard-Key "";
     proxy_set_header X-AIGuard-Contract-Version "";
     proxy_pass http://core:8000/aift/auth/session;
   }
   location = /v1/detect {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
     proxy_pass http://core:8000/api/detect;
   }
   location = /v1/guard {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
     proxy_pass http://core:8000/api/guard;
   }
   location = /v1/roundtrip {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=provider_global burst=2 nodelay;
+    limit_req zone=provider_caller burst=1 nodelay;
+    limit_conn provider_global_conn 2;
+    limit_conn provider_caller_conn 1;
     proxy_read_timeout 200s;
     proxy_pass http://core:8000/api/roundtrip;
   }
   location = /v1/analyze-report {
-    limit_req zone=cap burst=10;
-    limit_conn conc 8;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
     proxy_pass http://core:8000/api/analyze-report;
   }
 

@@ -101,6 +101,10 @@ def check_common(name: str, service: dict) -> None:
     assert not service.get("privileged", False), name
     assert not service.get("devices"), name
     assert service.get("network_mode") != "host", name
+    assert service.get("read_only") is True, name
+    assert "no-new-privileges:true" in (service.get("security_opt") or []), name
+    assert limits.get("pids") in {128, 256}, name
+    assert service.get("stop_grace_period") == "3m30s", name
     for mount in service.get("volumes") or []:
         assert mount.get("type") != "bind", name
         assert mount.get("source") != "/var/run/docker.sock", name
@@ -119,8 +123,32 @@ def main() -> int:
         check_port(services["web"], published="20070", target=3000)
         check_port(services["api"], published="20071", target=8000)
         assert not services["core"].get("ports")
-        assert services["api"].get("tmpfs") == ["/var/cache/nginx:size=64m"]
-        assert services["core"].get("tmpfs") == ["/tmp:size=1g,mode=1777"]
+        assert services["web"].get("tmpfs") == [
+            "/var/cache/nginx:size=32m",
+            "/var/run:size=4m",
+            "/tmp:size=4m",
+        ]
+        assert services["api"].get("tmpfs") == [
+            "/var/cache/nginx:size=64m",
+            "/var/run:size=4m",
+            "/tmp:size=4m",
+            "/etc/nginx/conf.d:size=4m",
+        ]
+        assert services["core"].get("tmpfs") == ["/tmp:size=128m,mode=1777"]
+        assert services["core"].get("cap_drop") == ["ALL"]
+        assert services["web"]["healthcheck"]["test"] == [
+            "CMD",
+            "/usr/local/bin/aift-healthcheck",
+        ]
+        assert services["api"]["healthcheck"]["test"] == [
+            "CMD",
+            "/usr/local/bin/aift-healthcheck",
+        ]
+        assert services["core"]["healthcheck"]["test"] == [
+            "CMD",
+            "python",
+            "/app/healthcheck.py",
+        ]
 
         api_environment = services["api"].get("environment", {})
         core_environment = services["core"].get("environment", {})
@@ -139,6 +167,18 @@ def main() -> int:
             core_environment.get("AIFT_COOKIE_SIGNING_KEY")
             == SAFE_ENV["APP_AIFT_COOKIE_SIGNING_KEY"]
         )
+        assert "AIGUARD_PDF_MAX_PAGES" not in core_environment
+        assert services["core"]["deploy"]["resources"]["limits"]["memory"] == str(
+            2 * 1024 * 1024 * 1024
+        )
+        for relative, signal in (
+            ("web/healthcheck.sh", "kill -QUIT 1"),
+            ("api/healthcheck.sh", "kill -TERM 1"),
+            ("core/healthcheck.py", "os.kill(1, 15)"),
+        ):
+            source = (REPO / relative).read_text(encoding="utf-8")
+            assert signal in source, relative
+            assert "3" in source, relative
     except (
         AssertionError,
         KeyError,

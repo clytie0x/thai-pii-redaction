@@ -7,6 +7,7 @@ import asyncio
 import importlib.util
 import json
 import sys
+import types
 import unittest
 from pathlib import Path
 
@@ -360,7 +361,7 @@ class AuthContractTests(unittest.TestCase):
             )
         self.assertEqual(self.downstream.scopes, [])
 
-    def test_session_and_logout_do_not_create_server_state(self):
+    def test_session_logout_revokes_replay_and_restart_fails_closed(self):
         cookie = self.login()
         status, _headers, body = self.call(
             "/aift/auth/session",
@@ -380,6 +381,55 @@ class AuthContractTests(unittest.TestCase):
         self.assertEqual(status, 204)
         self.assertEqual(body, b"")
         self.assertIn("Max-Age=0", headers["set-cookie"][0])
+
+        status, headers, body = self.call(
+            "/api/detect",
+            method="POST",
+            headers=[header("cookie", cookie)],
+        )
+        self.assertEqual(status, 401)
+        self.assertIn("Max-Age=0", headers["set-cookie"][0])
+        self.assertEqual(json.loads(body), {"error": {"code": "authentication_required"}})
+
+        status, _headers, body = self.call(
+            "/aift/auth/logout",
+            method="POST",
+            headers=[header("cookie", "__Host-aift_session=\xff")],
+        )
+        self.assertEqual((status, body), (204, b""))
+
+        fresh_cookie = self.login()
+        restarted_gateway = self.auth.AuthGateway(
+            DummyApp(),
+            environ=self.environment,
+            now=lambda: self.now_value,
+            nonce_bytes=lambda size: b"R" * size,
+        )
+        status, _headers, _body = asyncio.run(
+            request(
+                restarted_gateway,
+                "/api/detect",
+                method="POST",
+                headers=[header("cookie", fresh_cookie)],
+            )
+        )
+        self.assertEqual(status, 401)
+
+    def test_active_session_capacity_fails_closed_without_echo(self):
+        self.gateway._active_sessions = {
+            index.to_bytes(32, "big"): self.now_value + 1800
+            for index in range(self.auth._MAX_ACTIVE_SESSIONS)
+        }
+        status, headers, body = self.call(
+            "/aift/auth/login",
+            method="POST",
+            headers=[header("content-type", "application/json")],
+            body=b'{"access_code":"entry-code-for-contract-tests"}',
+        )
+        self.assertEqual(status, 429)
+        self.assertEqual(headers["cache-control"], ["no-store"])
+        self.assertEqual(json.loads(body), {"error": {"code": "rate_limited"}})
+        self.assertNotIn(b"entry-code", body)
 
     def test_login_schema_and_body_size_fail_without_echo(self):
         cases = (
@@ -403,9 +453,62 @@ class AuthContractTests(unittest.TestCase):
     def test_gateway_installs_access_filter_before_core_import(self):
         source = (REPO / "core" / "aift_gateway.py").read_text(encoding="utf-8")
         install = source.find("install_uvicorn_access_log_filter()")
+        report_policy = source.find("install_hosted_report_policy()")
         core_import = source.find("from app.server import")
         self.assertGreaterEqual(install, 0)
+        self.assertGreater(report_policy, install)
         self.assertGreater(core_import, install)
+        self.assertGreater(core_import, report_policy)
+
+    def test_hosted_report_policy_projects_section26_as_heuristic(self):
+        policy_path = REPO / "core" / "aift_report_policy.py"
+        fake_report = types.ModuleType("pii_redactor.report")
+        calls: list[str] = []
+
+        def analyze_text(text: str) -> dict:
+            calls.append(text)
+            return {
+                "recommendations": [
+                    {
+                        "level": "high",
+                        "title": "Section 26 sensitive data found (HEALTH)",
+                        "desc": "unsafe legal overclaim",
+                    },
+                    {"level": "info", "title": "Other", "desc": "unchanged"},
+                ]
+            }
+
+        fake_report.analyze_text = analyze_text
+        fake_package = types.ModuleType("pii_redactor")
+        fake_package.report = fake_report
+        previous_package = sys.modules.get("pii_redactor")
+        previous_report = sys.modules.get("pii_redactor.report")
+        try:
+            sys.modules["pii_redactor"] = fake_package
+            sys.modules["pii_redactor.report"] = fake_report
+            spec = importlib.util.spec_from_file_location(
+                "aift_report_policy_under_test", policy_path
+            )
+            self.assertIsNotNone(spec)
+            self.assertIsNotNone(spec.loader)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            module.install_hosted_report_policy()
+            result = fake_report.analyze_text("synthetic")
+        finally:
+            if previous_package is None:
+                sys.modules.pop("pii_redactor", None)
+            else:
+                sys.modules["pii_redactor"] = previous_package
+            if previous_report is None:
+                sys.modules.pop("pii_redactor.report", None)
+            else:
+                sys.modules["pii_redactor.report"] = previous_report
+
+        self.assertEqual(calls, ["synthetic"])
+        self.assertIn("heuristic", result["recommendations"][0]["desc"])
+        self.assertNotIn("ต้องได้รับความยินยอม", result["recommendations"][0]["desc"])
+        self.assertEqual(result["recommendations"][1]["desc"], "unchanged")
 
 
 if __name__ == "__main__":
