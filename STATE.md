@@ -7,7 +7,9 @@
   ยังเป็น `72e18bbe723adaf54c847e4b17c2177dfa60dd68` จาก Pipeline #35744 จนกว่า
   descendant นี้จะผ่าน feature CI, independent review และ protected-main
   `check → deploy → acceptance` จริง
-- branch ทำงานคือ `codex/aift-production-web-launch`; VERSION ยัง `2.5.0`
+- production web tree ถูก fast-forward เข้า protected `main` แล้ว; corrective branch
+  `codex/aift-production-acceptance-fix` แก้เฉพาะ acceptance transport หลัง
+  Pipeline #36033 และ VERSION ยัง `2.5.0`
   และต้องคง 16 routes, public `/redact-pdf` + `/v1/redact-pdf` fixed 404,
   Tokenmind provider เดียว, no mapping และ no browser persistence
 - live baseline เมื่อ 13 ส.ค. พบ P0 ว่า plain HTTP ยังคืน app/API 200 และ HTTPS
@@ -37,6 +39,12 @@
 - Section 26 report wording ถูก project ผ่าน port-owned hosted adapter เป็น
   heuristic review signal ที่ต้องประเมินบริบท ไม่แก้ vendored detector/core
   75 ไฟล์จาก `44ef30b`
+- protected-main Pipeline #36033 ที่ exact `0c10f7ed222a7840cc6af8db2fbd455be7f8c53b`
+  ผ่าน check+deploy แต่ acceptance พบว่า route probe เดิมพยายาม copy เข้า
+  read-only `/app`; acceptance trap จึงคืน exact runtime
+  `72e18bbe723adaf54c847e4b17c2177dfa60dd68` healthy ตามนโยบาย ไม่ปล่อย
+  candidate ที่ยังไม่ accepted ค้างอยู่ การแก้ใช้ stdin เข้า `python -` ภายใน
+  container และผ่าน local read-only report probe โดยไม่อ่าน secret ออกมา
 - รายการ P0/P1/P2 และ platform evidence ที่ไม่ควรอ้างอยู่ที่
   `docs/PRODUCTION-READINESS.md` งานนี้เปลี่ยน runtime จึงต้อง deploy exact SHA;
   ห้ามอ้าง candidate ว่า public-ready ก่อน HTTP redirect, protected acceptance,

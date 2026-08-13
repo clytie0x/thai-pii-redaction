@@ -48,6 +48,11 @@ def main() -> int:
     )
     if '_run("docker", "inspect", f"{TEAM}-' in acceptance_source:
         raise AssertionError("production acceptance can perform a full secret-bearing inspect")
+    if '"docker", "cp"' in acceptance_source:
+        raise AssertionError("production acceptance writes a probe into the read-only core")
+    for marker in ('"docker", "exec", "-i"', 'container, "python", "-"', "input=probe"):
+        if marker not in acceptance_source:
+            raise AssertionError("production report probe is not streamed over stdin")
     if "{{json .HostConfig}}" not in acceptance_source or "{{.Config.StopTimeout}}" not in acceptance_source:
         raise AssertionError("production acceptance lacks narrow runtime-policy projections")
     proxy_handlers = [

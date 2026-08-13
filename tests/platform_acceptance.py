@@ -11,6 +11,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import urllib.error
@@ -337,23 +338,19 @@ def _verify_live_roundtrip(cookie: str) -> None:
 
 def _verify_report_probe() -> None:
     container = f"{TEAM}-core-1"
-    try:
-        _run("docker", "cp", "tests/runner_route_probe.py", f"{container}:/app/runner_route_probe.py")
-        _run(
-            "docker",
-            "exec",
-            "-e",
-            "AIFT_PROBE_API=http://api:8000",
-            container,
-            "python",
-            "/app/runner_route_probe.py",
-        )
-    finally:
-        subprocess.run(
-            ["docker", "exec", container, "rm", "-f", "/app/runner_route_probe.py"],
-            capture_output=True,
-            env=_value_free_child_environment(),
-        )
+    # The production core has a read-only root filesystem. Stream this fixed,
+    # tracked probe over stdin instead of copying it into /app. The probe then
+    # reads its already-scoped caller configuration only inside the container;
+    # no credential value enters child argv, output, or the acceptance process.
+    probe = (Path(__file__).resolve().parent / "runner_route_probe.py").read_bytes()
+    result = subprocess.run(
+        ["docker", "exec", "-i", container, "python", "-"],
+        input=probe,
+        capture_output=True,
+        env=_value_free_child_environment(),
+    )
+    if result.returncode:
+        raise AcceptanceFailure("PDPA report route probe failed")
 
 
 def _verify_logs(cookie: str) -> None:
