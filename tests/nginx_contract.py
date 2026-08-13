@@ -534,6 +534,12 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
         status, body = web_get(path)
         if status != 200 or marker not in body:
             failures.append(f"product page: {path} was not the expected static surface")
+        if path in {"/privacy", "/terms", "/help", "/downloads"} and (
+            'href="/#web-access">เว็บแอป</a>' not in body
+        ):
+            failures.append(
+                f"product page: {path} Web App navigation bypassed invite access"
+            )
     for base, path, location in (
         (WEB_BASE, "/private?q=must-not-reflect", "https://team08.aiforthai.in.th/private"),
         (BASE, "/health?q=must-not-reflect", "https://team08.aiforthai.in.th/api/health"),
