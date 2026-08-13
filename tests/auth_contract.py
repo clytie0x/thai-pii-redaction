@@ -454,11 +454,13 @@ class AuthContractTests(unittest.TestCase):
         source = (REPO / "core" / "aift_gateway.py").read_text(encoding="utf-8")
         install = source.find("install_uvicorn_access_log_filter()")
         report_policy = source.find("install_hosted_report_policy()")
-        core_import = source.find("from app.server import")
+        core_import = source.find("from app import server as _server")
         self.assertGreaterEqual(install, 0)
         self.assertGreater(report_policy, install)
         self.assertGreater(core_import, install)
         self.assertGreater(core_import, report_policy)
+        self.assertIn('os.environ.get("AIGUARD_AUDIT_STDOUT") == "1"', source)
+        self.assertIn('_server._get_audit_log_dir = lambda: "/tmp"', source)
 
     def test_hosted_report_policy_projects_section26_as_heuristic(self):
         policy_path = REPO / "core" / "aift_report_policy.py"
