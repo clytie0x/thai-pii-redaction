@@ -1,4 +1,4 @@
-# สถานะงาน (13 ส.ค. 2569 — Hosted Production Web Launch)
+# สถานะงาน (14 ส.ค. 2569 — Hosted Production Web Launch)
 
 ## Current productionization candidate
 
@@ -19,7 +19,18 @@
 - product surface เปลี่ยนจาก judge-first เป็น Web App Private Beta: CTA หลักเข้า
   เว็บแอป, ขอบเขต server/provider อยู่ก่อน input, Quick Start เป็น optional
   disclosure และมี static `/privacy`, `/terms`, `/help`, `/downloads`, robots,
-  sitemap, truthful Desktop/Extension unavailable state ไม่มี dead/store link
+  sitemap หน้า download ชี้ Release v3.0.0 ที่ตรวจ HTTP 200 แล้วสำหรับ Desktop
+  Windows/Linux/macOS และ manual Extension ZIP โดยไม่สร้าง Store link ที่ยังไม่มี
+  และ pin SHA-256/ขนาด/asset identity, SHA256SUMS กับ GitHub provenance Source
+  contract จะ fail หาก redirect ออกจาก release-assets.githubusercontent.com,
+  asset ถูกแทนที่ หรือ checksum/size ของ artifact ที่ประกาศเปลี่ยน
+- Chrome Web Store Developer Dashboard ที่ตรวจแบบ read-only เมื่อ 14 ส.ค. แสดง
+  AI Guard 3.0.0 เป็น Draft, ปุ่มส่งตรวจสอบยัง disabled และยังไม่เผยแพร่ หน้าเว็บจึง
+  ระบุว่า “เตรียมส่งตรวจสอบ · ยังไม่เผยแพร่” พร้อมบอกว่า manual ZIP ต้องใช้
+  Desktop 3.0.0 สำหรับ Native Messaging, แตกไฟล์แล้ว Load unpacked และคำเตือน
+  ความน่าเชื่อถือของ OS อาจปรากฏเพราะเลื่อน code signing โดยไม่ชี้ให้ข้ามคำเตือน
+  พร้อมเตือนว่า In-page Mask เริ่มหลัง raw text เข้า provider-controlled DOM แล้ว
+  และ Side Panel เป็น raw-entry boundary ที่แข็งแรงกว่า
 - invite gate ยังอยู่เพื่อคุม provider cost โดยไม่สร้าง account/database Session
   เก็บเฉพาะ SHA-256 token fingerprint+expiry สูงสุด 256 ค่าใน process, logout
   revoke replay และ restart invalidate session เดิม cookie ยังคง Secure/HttpOnly/

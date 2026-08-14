@@ -23,8 +23,25 @@ as the primary user journey.
 - **Web App:** invite-only private beta.  A shared invite gate is retained to
   bound abuse and downstream-provider cost without introducing accounts or a
   user database.
-- **Desktop:** no verified public installer is linked from this deployment.
-- **Browser Extension:** no Chrome Web Store listing is claimed or linked.
+- **Desktop:** [AI Guard 3.0.0 is published on GitHub Releases](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0), with verified links for
+  [Windows x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe),
+  [Linux Debian x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb),
+  [Linux AppImage x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.AppImage), and
+  [macOS Apple silicon](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_aarch64.dmg).
+  OS trust warnings may appear because code signing is deferred; users should
+  compare the pinned hashes against
+  [SHA256SUMS](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS)
+  and verify GitHub provenance before proceeding.  The release is mutable, so
+  a filename or tag alone is not an integrity check.
+- **Browser Extension:** the Chrome Web Store item is still a draft preparing
+  for review and is not published, so no Store link is claimed.  The
+  [3.0.0 ZIP](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip)
+  is labelled Manual / Developer installation; it requires AI Guard Desktop
+  3.0.0 for Native Messaging, followed by extract + Load unpacked.  In-page
+  Mask starts only after raw text enters the provider-controlled page DOM,
+  where page code may already observe or transmit it; the Side Panel is the
+  stronger raw-entry boundary.  The separately certified ZIP SHA-256 is
+  `feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670`.
 - **Public PDF redaction/OCR:** intentionally unsupported.  Both
   `/redact-pdf` and `/v1/redact-pdf` return a fixed proxy-level 404 and there is
   no upload UI.  This is not a blocker for the production-ready text Web App;

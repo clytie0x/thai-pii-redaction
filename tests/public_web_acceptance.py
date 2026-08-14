@@ -10,6 +10,26 @@ import urllib.request
 
 HTTPS = "https://team08.aiforthai.in.th"
 HTTP = "http://team08.aiforthai.in.th"
+RELEASE_PAGE = (
+    "https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0"
+)
+RELEASE_ASSET_BASE = (
+    "https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/"
+)
+RELEASE_ASSETS = (
+    "AI.Guard_3.0.0_x64-setup.exe",
+    "AI.Guard_3.0.0_amd64.deb",
+    "AI.Guard_3.0.0_amd64.AppImage",
+    "AI.Guard_3.0.0_aarch64.dmg",
+    "aiguard-extension-3.0.0.zip",
+)
+RELEASE_ASSET_SHA256 = (
+    "1d170bf792923564dcc599b849de9f72a19b89f18e0be82e43849cdad75880ef",
+    "7b5fbdc0cf9019254e89c006870ae244a31fbf5db038ae699e4b0c3a91d6b9e8",
+    "f0178a8b171bea1f28868563f52a05e0ad09008e93bdc6581a160d5bda486a34",
+    "663fff430671ff0210044a1c1b64675b2918597db27ebae16103a9dd5988a356",
+    "feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670",
+)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -50,7 +70,7 @@ def main() -> int:
         "/privacy": "ความเป็นส่วนตัวและความปลอดภัย",
         "/terms": "ข้อกำหนดและการใช้งานที่ยอมรับได้",
         "/help": "ช่วยเหลือและคำถามที่พบบ่อย",
-        "/downloads": "ยังไม่มี Store listing",
+        "/downloads": "Manual / Developer installation",
         "/robots.txt": "Disallow: /api/",
     }
     for path, marker in pages.items():
@@ -63,6 +83,22 @@ def main() -> int:
         assert headers.get("X-Frame-Options") == "DENY", path
         assert headers.get("Referrer-Policy") == "no-referrer", path
         assert "http://" not in text, path
+        if path == "/downloads":
+            for link in (
+                RELEASE_PAGE,
+                *(RELEASE_ASSET_BASE + name for name in RELEASE_ASSETS),
+            ):
+                assert f'href="{link}"' in text, link
+            assert "เตรียมส่งตรวจสอบ" in text
+            assert "ยังไม่เผยแพร่" in text
+            assert "SHA256SUMS" in text
+            assert "gh attestation verify" in text
+            for digest in RELEASE_ASSET_SHA256:
+                assert digest in text
+            assert "ข้อความดิบเข้า DOM ของเว็บไซต์ AI" in text
+            assert "Side Panel เป็นขอบเขตที่แข็งแรงกว่า" in text
+            assert "chrome.google.com/webstore/detail" not in text
+            assert "chromewebstore.google.com/detail" not in text
 
     status, headers, body = fetch(HTTPS + "/api/health")
     assert status == 200

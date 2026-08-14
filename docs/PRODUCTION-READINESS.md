@@ -1,6 +1,6 @@
 # AI Guard hosted production-readiness ledger
 
-Status date: 2026-08-13
+Status date: 2026-08-14
 
 Starting source: `c02ec1c82e22d0e200fbfad68556c169eba68007`
 
@@ -43,7 +43,7 @@ claim about organizer infrastructure that this repository cannot inspect.
 | WEB-013 | P2 | Platform certificate renewal, Docker-daemon isolation, disk cleanup, central alerting, and edge retention are not observable from project source. | Organizer confirmation remains desirable operational evidence.  Do not claim these controls. |
 | WEB-014 | P2 | Runtime has no anonymous public quota ledger or user accounts. | Intentional.  Launch remains an invite-only private beta with bounded in-process sessions and server-side request lanes. |
 | WEB-015 | unsupported | Public PDF redaction/OCR exceeds this deployment envelope. | Keep `/redact-pdf` and `/v1/redact-pdf` at 404, remove OCR weight from the hosted runtime, and state the limitation in product documentation.  PDPA text-report generation remains separate. |
-| WEB-016 | external | Desktop and Browser Extension releases are owned by another repository and are not published here. | Show truthful “not yet available” status; provide no dead installer/store links and make no 3.0.0 claim. |
+| WEB-016 | external | Desktop and Browser Extension releases are owned by another repository; v3.0.0 GitHub assets now exist, while the Chrome Web Store Dashboard shows the item as Draft with submission disabled and no published listing. The GitHub Release is mutable and in-page Mask begins only after raw text reaches provider-controlled DOM. | Link the exact v3.0.0 assets with pinned SHA-256, size, release-asset identity, SHA256SUMS and Desktop provenance; disclose the Side Panel as the stronger raw-entry boundary. Label the ZIP Manual / Developer installation, require Desktop 3.0.0 for Native Messaging, and show “preparing for review / not published” without inventing a Store link. |
 | WEB-017 | P2 | The vendored dependency graph pins `cryptography 49.0.0`, reported as `PYSEC-2026-3552`. | Supersede it at image build time with a hash-locked hosted-only `50.0.0` overlay. Keep the shared detector lock byte-identical to its recorded upstream source. |
 
 ## Non-negotiable release invariants

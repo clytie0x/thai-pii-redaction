@@ -1,6 +1,71 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ดาวน์โหลดและส่วนขยาย — AI Guard</title><meta name="description" content="สถานะ AI Guard Desktop และ Browser Extension"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M32 10 50 18v14c0 14-8 22-18 26-10-4-18-12-18-26V18z' fill='%232563eb'/%3E%3Cpath d='M24 32l6 6 12-14' stroke='%23e2e8f0' stroke-width='4' fill='none'/%3E%3C/svg%3E"><link rel="stylesheet" href="/product.css"></head><body>
-<header class="top"><nav class="nav" aria-label="เมนูผลิตภัณฑ์"><a class="brand" href="/">AI <span>Guard</span></a><div class="links"><a href="/#web-access">เว็บแอป</a><a href="/privacy">ความเป็นส่วนตัว</a><a href="/help">ช่วยเหลือ</a></div></nav></header>
-<main class="wrap"><h1>AI Guard บนอุปกรณ์ของคุณ</h1><p class="lede">AI Guard มีแผนสำหรับ Desktop และ Browser Extension แต่เว็บไซต์นี้จะแสดงลิงก์เฉพาะเมื่อมี artifact หรือ store listing ที่เผยแพร่และตรวจสอบแล้ว</p>
-<div class="grid"><section class="card" data-product="desktop" data-status="unavailable"><span class="status closed">ยังไม่เปิดดาวน์โหลด</span><h2>AI Guard Desktop</h2><p>กำลังเตรียมช่องทางเผยแพร่แยกต่างหาก ขณะนี้ไม่มี installer สาธารณะที่ตรวจสอบแล้วจากหน้านี้</p></section><section class="card" data-product="browser-extension" data-status="unavailable"><span class="status closed">ยังไม่มี Store listing</span><h2>Chrome Extension</h2><p>ยังไม่อ้างว่าเผยแพร่บน Chrome Web Store และไม่มีปุ่มติดตั้งที่นำไปยัง artifact ที่ไม่มีอยู่</p></section></div>
-<div class="notice">ระหว่างนี้ใช้ <a href="/#web-access">AI Guard Web App</a> ได้ด้วยรหัสเชิญ private beta โปรดอย่าดาวน์โหลดไฟล์ที่อ้างชื่อ AI Guard จากแหล่งที่ไม่ยืนยัน</div><div class="actions"><a class="button" href="/#web-access">ใช้ AI Guard บนเว็บ</a><a class="button secondary" href="/help">ติดตามสถานะ/ขอความช่วยเหลือ</a></div></main>
-<footer><div class="footer">AI Guard Hosted · ไม่มีการเผยแพร่ Desktop/Extension จากงานนี้</div></footer></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ดาวน์โหลดและส่วนขยาย — AI Guard</title>
+  <meta name="description" content="ดาวน์โหลด AI Guard Desktop 3.0.0 และติดตั้ง Browser Extension แบบ Manual / Developer installation">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M32 10 50 18v14c0 14-8 22-18 26-10-4-18-12-18-26V18z' fill='%232563eb'/%3E%3Cpath d='M24 32l6 6 12-14' stroke='%23e2e8f0' stroke-width='4' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/product.css">
+</head>
+<body>
+<header class="top">
+  <nav class="nav" aria-label="เมนูผลิตภัณฑ์">
+    <a class="brand" href="/">AI <span>Guard</span></a>
+    <div class="links"><a href="/#web-access">เว็บแอป</a><a href="/privacy">ความเป็นส่วนตัว</a><a href="/help">ช่วยเหลือ</a></div>
+  </nav>
+</header>
+<main class="wrap">
+  <p class="status">RELEASE v3.0.0</p>
+  <h1>AI Guard บนอุปกรณ์ของคุณ</h1>
+  <p class="lede">ดาวน์โหลด Desktop สำหรับระบบปฏิบัติการของคุณ หรือใช้ Browser Extension แบบติดตั้งด้วยตนเองจาก GitHub Release ทางการ</p>
+
+  <section class="card release-card" id="desktop" data-product="desktop" data-status="published" aria-labelledby="desktop-title">
+    <span class="status">พร้อมดาวน์โหลด</span>
+    <h2 id="desktop-title">AI Guard Desktop 3.0.0</h2>
+    <p>เลือกไฟล์ให้ตรงกับระบบปฏิบัติการและสถาปัตยกรรมของเครื่อง ปุ่มด้านล่างชี้ไปยัง artifact ของ Release v3.0.0 โดยตรง</p>
+    <div class="download-list" aria-label="ไฟล์ติดตั้ง AI Guard Desktop 3.0.0">
+      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe">Windows x64 · Setup .exe</a><code class="digest">SHA-256 1d170bf792923564dcc599b849de9f72a19b89f18e0be82e43849cdad75880ef</code></div>
+      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb">Linux x64 · Debian .deb</a><code class="digest">SHA-256 7b5fbdc0cf9019254e89c006870ae244a31fbf5db038ae699e4b0c3a91d6b9e8</code></div>
+      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.AppImage">Linux x64 · AppImage</a><code class="digest">SHA-256 f0178a8b171bea1f28868563f52a05e0ad09008e93bdc6581a160d5bda486a34</code></div>
+      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_aarch64.dmg">macOS Apple silicon · .dmg</a><code class="digest">SHA-256 663fff430671ff0210044a1c1b64675b2918597db27ebae16103a9dd5988a356</code></div>
+    </div>
+    <p class="muted trust-note"><strong>สถานะการเซ็น:</strong> installer ของ Windows ยังไม่มี publisher signature และแพ็กเกจ macOS ยังไม่ได้เซ็นหรือ notarize ระบบจึงอาจแสดงคำเตือนความน่าเชื่อถือ เพราะการเซ็นโค้ดยังเลื่อนไว้ โปรดตรวจสอบไฟล์ตามหลักฐานด้านล่างก่อนตัดสินใจดำเนินการ</p>
+    <div class="verification" aria-labelledby="verification-title">
+      <h3 id="verification-title">ตรวจสอบไฟล์ก่อนเปิด</h3>
+      <p>GitHub Release นี้ยังแก้ไข asset ได้ หากค่า SHA-256 ไม่ตรงกับค่าที่แสดงในหน้านี้ ให้หยุดและไม่เปิดไฟล์</p>
+      <ul>
+        <li>ดาวน์โหลด <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS">SHA256SUMS</a> (SHA-256 <code>ff3a8c68f7110d362d772f665cbe940b58bc5bfd4ad6e9a2f6c25e19529ed518</code>) แล้วเปรียบเทียบบรรทัดของไฟล์ Desktop</li>
+        <li>ตรวจ provenance ของ Desktop ด้วย <code>gh attestation verify &lt;file&gt; -R Teerapat-Vatpitak/thai-pii-redaction</code></li>
+        <li>อ่าน <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/v3.0.0/SECURITY.md#supply-chain-and-distribution-model">โมเดลความน่าเชื่อถือของ Release v3.0.0</a> ซึ่งแยกการตรวจ origin/integrity ออกจาก OS code signing</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card release-card" id="extension" data-product="browser-extension" data-status="not-published" aria-labelledby="extension-title">
+    <span class="status closed">Store: เตรียมส่งตรวจสอบ · ยังไม่เผยแพร่</span>
+    <h2 id="extension-title">Chrome Extension 3.0.0</h2>
+    <p>Chrome Web Store ยังไม่มีหน้ารายการที่เผยแพร่ ขณะนี้ใช้ได้เฉพาะ <strong>Manual / Developer installation</strong> จาก ZIP ทางการ โดยต้องติดตั้งและเปิด AI Guard Desktop 3.0.0 ก่อนเพื่อให้ Native Messaging ทำงาน</p>
+    <ol class="install-steps">
+      <li>ดาวน์โหลดไฟล์ ZIP แล้วแตกไฟล์ ZIP ไปยังโฟลเดอร์ที่เก็บถาวร</li>
+      <li>เปิด <code>chrome://extensions</code> แล้วเปิด Developer mode</li>
+      <li>เลือก <strong>Load unpacked</strong> และเลือกโฟลเดอร์ที่แตกไว้</li>
+      <li>เปิด AI Guard Desktop 3.0.0 ก่อนทดสอบการเชื่อมต่อจากส่วนขยาย</li>
+    </ol>
+    <div class="privacy-warning"><strong>ขอบเขตข้อมูลดิบ:</strong> การใช้ In-page Mask เริ่มหลังข้อความดิบเข้า DOM ของเว็บไซต์ AI แล้ว โค้ดของเว็บไซต์อาจเห็นหรือส่งข้อความนั้นได้ก่อนการปกปิด หากต้องการแยกข้อมูลดิบให้มากขึ้น ให้กรอกใน AI Guard Side Panel แล้วนำเฉพาะข้อความที่ปกปิดและตรวจทานแล้วไปวาง — Side Panel เป็นขอบเขตที่แข็งแรงกว่า อ่าน <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/v3.0.0/SECURITY.md#local-desktop-and-extension">ขอบเขตความปลอดภัยของ Desktop และ Extension</a></div>
+    <div class="actions">
+      <a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip">ดาวน์โหลด ZIP · Manual / Developer installation</a>
+    </div>
+    <p class="muted">Extension ZIP ขนาด 295,228 ไบต์ แยกจากชุด Desktop SHA256SUMS/provenance — ตรวจ SHA-256 ให้ตรงกับ <code class="digest inline">feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670</code></p>
+  </section>
+
+  <div class="notice">AI Guard Web App บน deployment นี้ยังเป็น invite-only Private Beta การดาวน์โหลด Desktop หรือ Extension ไม่เปลี่ยนขอบเขตการเข้าถึง การเก็บข้อมูล หรือข้อจำกัดของ Web App</div>
+  <div class="actions">
+    <a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0">ดู Release v3.0.0 และรายละเอียดไฟล์</a>
+    <a class="button secondary" href="/#web-access">ใช้ AI Guard บนเว็บ</a>
+    <a class="button secondary" href="/help">ขอความช่วยเหลือ</a>
+  </div>
+</main>
+<footer><div class="footer">AI Guard Hosted · Private Beta · Desktop/Extension Release v3.0.0</div></footer>
+</body>
+</html>
