@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Guard ปกป้องข้อมูลส่วนบุคคลก่อนส่งเข้า AI</title>
-<meta name="description" content="AI Guard รับข้อความบนเซิร์ฟเวอร์ของทีม ตรวจจับและปกปิดก่อนส่งเข้าโมเดลภาษา แล้วกู้คืนคำตอบภายในคำขอเดียว">
+<title>AI Guard Desktop — ปกป้องข้อมูลส่วนบุคคลไทยก่อนใช้ AI</title>
+<meta name="description" content="AI Guard Desktop ตรวจจับ ปกปิด กู้คืน และสร้างรายงานบนอุปกรณ์ ส่วน Web App แบบ Private Beta ส่งต่อให้ Pathumma เฉพาะข้อความที่ปกป้องแล้ว">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="th_TH">
-<meta property="og:title" content="AI Guard — ปกป้องข้อมูลส่วนบุคคลก่อนส่งเข้า AI">
-<meta property="og:description" content="เว็บแอปสำหรับตรวจจับและปกป้อง Thai PII ก่อนส่งข้อความที่ปกป้องแล้วต่อให้ AI ปลายทาง">
+<meta property="og:title" content="AI Guard Desktop — ปกป้องข้อมูลส่วนบุคคลไทยก่อนใช้ AI">
+<meta property="og:description" content="เริ่มจาก Desktop เพื่อประมวลผลบนอุปกรณ์ หรือทดลอง Web App แบบ Private Beta ที่ส่งต่อให้ Pathumma เฉพาะข้อความที่ปกป้องแล้ว">
 <meta property="og:url" content="https://team08.aiforthai.in.th/">
 <link rel="canonical" href="https://team08.aiforthai.in.th/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Cpath d='M32 10 50 18v14c0 14-8 22-18 26-10-4-18-12-18-26V18z' fill='%232563eb'/%3E%3Cpath d='M24 32l6 6 12-14' stroke='%23e2e8f0' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -184,8 +184,8 @@
   .nav-proof{font-size:12px;color:var(--safe);font-weight:700;background:var(--safe-soft);padding:6px 10px;border-radius:999px;white-space:nowrap}
   .hero-section{padding:58px 0 68px;background:#f8fbff}
   .hero-layout{display:flex;gap:52px;align-items:center}
-  .hero-layout>div{flex:1.18 1 0;min-width:0}
-  .hero-layout>.auth-card{flex:.82 1 360px;min-width:360px}
+  .hero-layout>.hero-copy{flex:1.18 1 0;min-width:0}
+  .hero-layout>.channel-card{flex:.82 1 360px;min-width:360px}
   .hero-kicker{display:inline-flex;align-items:center;gap:8px;color:var(--action);font-size:13px;font-weight:800;letter-spacing:.04em;margin-bottom:16px}
   .hero-kicker::before{content:"";width:28px;height:3px;background:var(--action);border-radius:4px}
   .hero-title strong{color:var(--action)}
@@ -193,25 +193,40 @@
   .hero-flowline{display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:var(--text-secondary);font-size:15px;font-weight:650;margin:22px 0}
   .hero-flowline b{color:var(--text-primary);background:var(--surface);border:1px solid var(--border);padding:7px 11px;border-radius:var(--radius-sm);box-shadow:var(--shadow-sm)}
   .hero-flowline span{color:var(--action);font-weight:800}
-  .trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
-  .trust-item{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text-secondary)}
-  .trust-item::before{content:"✓";width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--safe-soft);color:var(--safe);font-size:12px;font-weight:900}
   .hero-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:26px}
   .hero-cta{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 18px;border-radius:10px;background:var(--action);color:#fff;text-decoration:none;font-weight:750;box-shadow:0 8px 18px rgba(20,99,223,.18)}
   .hero-cta:hover{background:var(--action-hover)}
-  .hero-actions span{font-size:13px;color:var(--text-secondary)}
-  .auth-card{flex-direction:column;align-items:stretch;max-width:480px;justify-self:end}
+  .hero-cta.secondary{background:#fff;color:var(--action);border:1px solid #9ec5ff;box-shadow:none}
+  .hero-cta.secondary:hover{background:#eef6ff}
+  .hero-action-note{display:block;margin-top:10px;font-size:12.5px;color:var(--text-secondary)}
+  .channel-card{background:#0d2947;color:#fff;border-radius:22px;padding:24px;box-shadow:var(--shadow-md)}
+  .channel-card>small{display:block;color:#9fc8ff;font-size:11px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px}
+  .channel-card h2{font-size:20px;line-height:1.4;margin-bottom:17px}
+  .channel-row{padding:14px 0;border-top:1px solid rgba(255,255,255,.15)}
+  .channel-row:first-of-type{border-top:0;padding-top:0}
+  .channel-row strong{display:block;font-size:15px}
+  .channel-row p{color:#c9d9e8;font-size:13px;line-height:1.65;margin-top:3px}
+  .channel-row.local strong{color:#91e0c5}
+  .channel-row.hosted strong{color:#9fc8ff}
+  .channel-provider{margin-top:13px;padding:12px 13px;border-radius:11px;background:rgba(255,255,255,.08);color:#e7f0f8;font-size:12.5px;line-height:1.65}
+  .channel-provider b{color:#fff}
+  .web-beta-panel{margin-top:30px;scroll-margin-top:90px}
+  .web-beta-label{margin:0 0 9px;color:var(--text-secondary);font-size:13px;font-weight:750}
+  .auth-card{max-width:none;justify-self:stretch;flex-direction:row;align-items:center;box-shadow:var(--shadow-sm);border-radius:18px;padding:20px}
   .auth-brand{display:flex;align-items:center;gap:13px}
   .auth-brand .brand-mark{width:42px;height:47px}
-  .auth-card h2{font-size:22px;line-height:1.35}
+  .auth-card h2{font-size:20px;line-height:1.35}
   .auth-card p{font-size:14px;color:var(--text-secondary);margin-top:4px}
-  .auth-controls{display:grid;grid-template-columns:1fr auto;gap:10px;width:100%}
+  .auth-controls{display:grid;grid-template-columns:minmax(190px,1fr) auto;gap:10px;min-width:min(100%,430px);margin-left:auto}
   .auth-controls input{min-width:0;width:100%;padding:12px 14px;background:#fbfdff}
   .auth-controls #authStatus{grid-column:1/-1;min-height:24px}
   .auth-controls #logoutBtn{grid-column:1/-1;justify-self:start}
-  .workflow-nav{margin-top:34px}
-  .workflow-card.flagship{border-color:#9ec5ff;background:#f7fbff;position:relative}
-  .workflow-card.flagship::after{content:"แนะนำ";position:absolute;right:14px;top:14px;font-size:11px;font-weight:900;color:var(--action);background:#e8f2ff;padding:4px 7px;border-radius:6px}
+  .journey-strip{display:grid;grid-template-columns:repeat(4,1fr);margin-top:30px;border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden}
+  .journey-step{display:block;padding:14px 15px;text-decoration:none;color:var(--text-primary);border-left:1px solid var(--line-soft)}
+  .journey-step:first-child{border-left:0}
+  .journey-step small{display:block;color:var(--action);font-size:10.5px;font-weight:850;letter-spacing:.05em}
+  .journey-step strong{display:block;font-size:14px;margin-top:2px}
+  .journey-step:hover{background:#f4f8fe}
   .product-boundary{margin-top:18px;padding:13px 15px;border:1px solid #cbddef;border-radius:12px;background:#f7fbff;color:var(--text-secondary);font-size:14px;line-height:1.65}
   .product-boundary strong{color:var(--text-primary)}
   .product-boundary a{font-weight:750}
@@ -376,6 +391,21 @@
   .product-link-card p{color:var(--text-secondary);font-size:14px;line-height:1.65}
   .product-link-card .availability{margin-top:auto;font-size:13px;font-weight:800;color:var(--safe)}
   .product-link-card .availability.pending{color:#5f7188}
+  .advanced-evidence{margin-top:20px;border:1px solid var(--border);border-radius:16px;background:#fff;overflow:hidden}
+  .advanced-evidence>summary{cursor:pointer;padding:17px 20px;font-weight:750;color:var(--text-primary)}
+  .advanced-evidence>summary span{display:block;margin-top:2px;color:var(--text-secondary);font-size:12.5px;font-weight:500}
+  .advanced-evidence[open]>summary{border-bottom:1px solid var(--line-soft)}
+  .advanced-evidence .evidence-panel{margin:0;border:0;border-radius:0;box-shadow:none}
+  .closing-cta{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:22px;align-items:center;padding:26px;border:1px solid #b8d5f7;border-radius:20px;background:#f5faff}
+  .closing-cta h2{font-size:clamp(22px,3vw,30px);line-height:1.35}
+  .closing-cta p{color:var(--text-secondary);margin-top:7px}
+  .closing-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .closing-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 15px;border-radius:9px;background:var(--action);color:#fff;text-decoration:none;font-weight:750}
+  .closing-actions a.secondary{background:#fff;color:var(--action);border:1px solid #9ec5ff}
+  .use-case-line{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .use-case-line span{padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text-secondary);font-size:13px}
+  .service-details{margin-top:22px}
+  .service-details .system-evidence{margin:0;border-radius:0}
 
   /* ── Sprint 2: judge-facing evidence and presentation layer ── */
   .presentation-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
@@ -488,9 +518,9 @@
   [hidden]{display:none!important}
   .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
   @media(max-width:1100px){.enterprise-grid{grid-template-columns:repeat(3,1fr)}.system-evidence{grid-template-columns:repeat(3,1fr)}.system-evidence-intro{grid-column:1/-1}}
-  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.auth-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid,.executive-metrics,.receipt-grid{grid-template-columns:1fr 1fr}.evidence-duo{grid-template-columns:1fr}.nav-proof{display:none}.product-links-grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head,.guided-top,.presentation-stage-head{align-items:flex-start;flex-direction:column}.presentation-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;justify-content:stretch}.presentation-actions .demo-label{grid-column:1/-1;justify-self:start}.presentation-actions button{width:100%;font-size:14px}.demo-studio,.safe-hero,.guided-shell{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics,.guided-summary{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.workflow-nav{grid-template-columns:1fr}.scenario-gallery,.enterprise-grid{grid-template-columns:1fr 1fr}.system-evidence{grid-template-columns:1fr 1fr}.raw-protected-grid,.mode-choice-grid{grid-template-columns:1fr}.comparison-proof{grid-column:1}.data-map-row{grid-template-columns:minmax(100px,.8fr) minmax(60px,1.2fr) auto}.glossary-grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence,.executive-metrics,.receipt-grid,.glossary-grid,.product-links-grid{grid-template-columns:1fr}.hero-title{font-size:30px}.pipeline-body{min-height:150px}.guided-shell>summary{align-items:flex-start;flex-direction:column}.guided-disclosure-action{white-space:normal}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}.presentation-stage{padding:15px}.presentation-actions{width:100%}.presentation-actions button{flex:1}.receipt-head{flex-direction:column}.comparison-text{font-size:16px}}
+  @media(max-width:980px){.hero-layout{flex-direction:column;align-items:stretch}.hero-layout>.channel-card{flex:1 1 auto;min-width:0}.report-layout,.guided-layout,.closing-cta{grid-template-columns:1fr}.auth-card{justify-self:stretch;max-width:none}.auth-controls{margin-left:0}.closing-actions{justify-content:flex-start}.pipeline{grid-template-columns:1fr}.pipeline-card.provider-evidence{transform:none}.safe-metrics,.evidence-grid,.executive-metrics,.receipt-grid{grid-template-columns:1fr 1fr}.evidence-duo{grid-template-columns:1fr}.nav-proof{display:none}.product-links-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:700px){body{font-size:16px}.topnav-inner{align-items:center;flex-wrap:wrap}.topnav-inner .navlinks{order:3;width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}.navlinks a{font-size:12.5px;padding:7px 5px;text-align:center}.hero-section{padding:38px 0 48px}.hero-lede{font-size:18px}.hero-actions,.closing-actions{display:grid;grid-template-columns:1fr}.hero-actions a,.closing-actions a{width:100%}.journey-strip{grid-template-columns:1fr 1fr}.journey-step:nth-child(odd){border-left:0}.journey-step:nth-child(n+3){border-top:1px solid var(--line-soft)}.auth-card{align-items:stretch;flex-direction:column}.auth-controls{width:100%;min-width:0}.section-shell{padding:54px 0;scroll-margin-top:112px}.section-head,.guided-top,.presentation-stage-head{align-items:flex-start;flex-direction:column}.presentation-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;justify-content:stretch}.presentation-actions .demo-label{grid-column:1/-1;justify-self:start}.presentation-actions button{width:100%;font-size:14px}.demo-studio,.safe-hero,.guided-shell{padding:18px;border-radius:18px}.samples button[data-action="reset"]{margin-left:0}.privacy-grid{grid-template-columns:1fr}.safe-metrics,.guided-summary{grid-template-columns:1fr 1fr}.progress-steps{grid-template-columns:1fr}.progress-step{border-top:0;border-left:3px solid #dce6f1;padding:5px 0 5px 9px}.report-summary{grid-template-columns:1fr 1fr}.auth-controls{grid-template-columns:1fr}.auth-controls #authStatus,.auth-controls #logoutBtn{grid-column:1}.scenario-gallery,.enterprise-grid{grid-template-columns:1fr 1fr}.system-evidence{grid-template-columns:1fr 1fr}.raw-protected-grid,.mode-choice-grid{grid-template-columns:1fr}.comparison-proof{grid-column:1}.data-map-row{grid-template-columns:minmax(100px,.8fr) minmax(60px,1.2fr) auto}.glossary-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:420px){.container{padding:0 15px}.brand{font-size:17px}.brand-mark{width:30px;height:34px}.topnav-inner .navlinks{grid-template-columns:repeat(2,1fr)}.safe-metrics,.report-summary,.guided-summary,.evidence-grid,.enterprise-grid,.system-evidence,.executive-metrics,.receipt-grid,.glossary-grid,.product-links-grid{grid-template-columns:1fr}.hero-title{font-size:30px}.journey-strip{grid-template-columns:1fr}.journey-step,.journey-step:nth-child(odd){border-left:0}.journey-step:nth-child(n+2){border-top:1px solid var(--line-soft)}.pipeline-body{min-height:150px}.guided-shell>summary{align-items:flex-start;flex-direction:column}.guided-disclosure-action{white-space:normal}.guided-step{grid-template-columns:34px minmax(0,1fr)}.guided-step-state{grid-column:2}.scenario-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:2px;padding:2px 2px 12px}.scenario-card{flex:0 0 82vw;min-height:154px;scroll-snap-align:start}.scenario-scroll-hint{display:block}.scenario-toolbar{align-items:flex-start;flex-direction:column}.guided-actions button{width:100%}.presentation-stage{padding:15px}.presentation-actions{width:100%}.presentation-actions button{flex:1}.receipt-head{flex-direction:column}.comparison-text{font-size:16px}}
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.pipeline-card.provider-evidence{transform:none}}
 </style>
 </head>
@@ -501,48 +531,52 @@
   <div class="topnav-inner">
     <a class="brand" href="#top" aria-label="AI Guard หน้าแรก"><span class="brand-mark" aria-hidden="true">✓</span>AI <span>Guard</span></a>
     <nav class="navlinks" aria-label="เมนูผลิตภัณฑ์">
-      <a href="#top">หน้าแรก</a>
-      <a href="#web-access">เว็บแอป</a>
+      <a href="/downloads#desktop">ดาวน์โหลด Desktop</a>
+      <a href="#web-access">Web App</a>
       <a href="/privacy">ความเป็นส่วนตัว</a>
-      <a href="/downloads">ดาวน์โหลด</a>
       <a href="/help">ช่วยเหลือ</a>
     </nav>
-    <span class="nav-proof">Thai PII · PDPA</span>
+    <span class="nav-proof">Desktop-first · Thai PII</span>
   </div>
 </header>
 
 <main id="main-content" tabindex="-1">
 
-<!-- First five seconds: proposition, protection flow, and access -->
-<section class="hero-section" id="top">
+<!-- First five seconds: Desktop-first proposition, channel boundary, and choices. -->
+<section class="hero-section" id="top" data-primary-channel="desktop">
   <div class="container">
     <div class="hero-layout">
-      <div>
-        <p class="hero-kicker">AI PRIVACY FOR THAI ORGANIZATIONS</p>
-        <h1 class="hero-title">AI Guard<br><strong>ปกป้องข้อมูลส่วนบุคคลไทย ก่อนส่งต่อให้ AI</strong></h1>
-        <p class="hero-lede">ตรวจจับและปกป้องข้อมูลส่วนบุคคลก่อนส่งต่อไปยังโมเดล AI พร้อมตรวจคำตอบและกู้คืนบริบทภายในคำขอเดียว</p>
+      <div class="hero-copy">
+        <p class="hero-kicker">LOCAL-FIRST PRIVACY FOR THAI DATA</p>
+        <h1 class="hero-title">ปกป้องข้อมูลส่วนบุคคลไทย<br><strong>ก่อนนำไปใช้กับ AI</strong></h1>
+        <p class="hero-lede">เริ่มด้วย AI Guard Desktop เพื่อให้การตรวจจับ การปกปิด vault/mapping การกู้คืน และรายงาน PDPA ทำงานบนอุปกรณ์ของคุณ</p>
         <div class="hero-flowline" aria-label="ตรวจจับ ปกปิด ส่งต่อ และกู้คืน">
-          <b>ตรวจจับ</b><span>→</span><b>ปกปิด</b><span>→</span><b>ส่งเฉพาะข้อความที่ปกป้องแล้ว</b><span>→</span><b>กู้คืน</b>
-        </div>
-        <div class="trust-row" aria-label="หลักการปกป้อง">
-          <span class="trust-item">ตรวจจับ PII ภาษาไทย</span>
-          <span class="trust-item">ข้อมูลจับคู่ไม่ถูกส่งให้โมเดล</span>
-          <span class="trust-item">ไม่บันทึกเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
+          <b>ตรวจจับในเครื่อง</b><span>→</span><b>ปกปิด</b><span>→</span><b>ตรวจทาน</b><span>→</span><b>กู้คืนหรือออกรายงาน</b>
         </div>
         <div class="hero-actions">
-          <a class="hero-cta" href="#web-access">ใช้ AI Guard บนเว็บ</a>
-          <a href="#how-it-works">ดูวิธีการทำงาน</a>
+          <a class="hero-cta" id="desktopPrimaryCta" href="/downloads#desktop">ดาวน์โหลด AI Guard Desktop 3.0.0</a>
+          <a class="hero-cta secondary" href="#web-access">ใช้ AI Guard บนเว็บ</a>
         </div>
-        <p class="product-boundary"><strong>ขอบเขตข้อมูล:</strong> ข้อความต้นฉบับเดินทางมายังเซิร์ฟเวอร์ AI Guard เพื่อการตรวจจับ จากนั้นเฉพาะข้อความที่ระบบปกป้องและตรวจซ้ำแล้วจึงถูกส่งต่อให้ AI ปลายทาง การตรวจจับอัตโนมัติอาจพลาดได้ <a href="/privacy">อ่านรายละเอียดก่อนใช้ข้อมูลจริง</a></p>
+        <span class="hero-action-note">แนะนำ Windows x64 · มี Linux x64 และ macOS Apple silicon · ดูคำเตือนการเซ็นก่อนติดตั้ง</span>
       </div>
 
+      <aside class="channel-card" aria-labelledby="channelTitle">
+        <small>เลือกช่องทางให้ตรงกับขอบเขตข้อมูล</small>
+        <h2 id="channelTitle">ข้อมูลอยู่ที่ไหนในแต่ละช่องทาง</h2>
+        <div class="channel-row local"><strong>Desktop 3.0.0 · ประมวลผลในเครื่อง</strong><p>ข้อความ การตรวจจับ การปกปิด vault/mapping การกู้คืน และรายงานอยู่บนอุปกรณ์ รุ่นนี้ไม่มีคำสั่งเรียก provider ภายนอก</p></div>
+        <div class="channel-row hosted"><strong>Hosted Web · ประมวลผลบนบริการ Team 08</strong><p>ข้อความต้นฉบับเดินทางถึง edge และเซิร์ฟเวอร์ของทีมเพื่อการตรวจจับ จึงไม่ใช่การประมวลผลในเครื่องหรือ local-only</p></div>
+        <p class="channel-provider"><b>Safe AI บน Web App:</b> ส่งให้ Pathumma / thaillm-8b เฉพาะข้อความที่ปกป้องและตรวจซ้ำแล้วผ่าน backend ของทีม ไม่ส่ง raw PII, vault/mapping หรือคู่ข้อมูลเดิมกับข้อมูลแทน</p>
+      </aside>
+    </div>
+
+    <div class="web-beta-panel" id="web-access">
+      <p class="web-beta-label">ตัวเลือกที่สอง · Hosted Web App สำหรับผู้มีรหัสเชิญ</p>
       <aside class="auth-card" id="authCard" aria-labelledby="accessTitle" tabindex="-1">
-        <span id="web-access"></span>
         <div class="auth-brand">
           <span class="brand-mark" aria-hidden="true">✓</span>
           <div>
-            <h2 id="accessTitle">เข้าสู่ AI Guard Private Beta</h2>
-            <p>ใช้รหัสเชิญที่ได้รับจากผู้ดูแลบริการ</p>
+            <h2 id="accessTitle">ทดลอง Hosted Web App</h2>
+            <p>Private Beta · ข้อความต้นฉบับประมวลผลบนบริการ Team 08 · ไม่บันทึกรหัสเชิญลงพื้นที่จัดเก็บของเบราว์เซอร์</p>
           </div>
         </div>
         <div class="auth-controls">
@@ -552,15 +586,16 @@
           <button id="logoutBtn" class="secondary-action" type="button" hidden>ออกจากระบบและล้างข้อมูล</button>
           <span id="authStatus" role="status" aria-live="polite">กำลังตรวจสอบสิทธิ์...</span>
         </div>
-        <p>ระบบใช้ session cookie อายุไม่เกิน 30 นาทีแบบ Secure, HttpOnly และ SameSite=Strict ไม่บันทึกรหัสเชิญลงพื้นที่จัดเก็บของเบราว์เซอร์ ดู <a href="/help">วิธีขอความช่วยเหลือ</a></p>
       </aside>
     </div>
 
-    <nav class="workflow-nav" id="how-it-works" aria-label="สามเวิร์กโฟลว์สาธารณะ">
-      <a class="workflow-card" href="#privacy-scan"><span class="step">WORKFLOW 01</span><strong>Privacy Scan</strong><span>เห็น PII ภาษาไทยในข้อความ พร้อมจำนวนและประเภทที่ตรวจพบ</span></a>
-      <a class="workflow-card flagship" href="#safe-ai"><span class="step">WORKFLOW 02</span><strong>Safe AI</strong><span>เห็นข้อความที่ถูกปกป้องก่อนส่งต่อให้ AI แล้วกู้คืนผลลัพธ์เมื่อผ่านการตรวจครบ</span></a>
-      <a class="workflow-card" href="#pdpa-report"><span class="step">WORKFLOW 03</span><strong>PDPA Report</strong><span>ดูคะแนนและเกรดก่อนดาวน์โหลดรายงานภาษาไทยที่ลดการเปิดเผยข้อมูล</span></a>
+    <nav class="journey-strip" id="how-it-works" aria-label="เส้นทางใช้งาน AI Guard">
+      <a class="journey-step" href="/downloads#desktop"><small>01 · INSTALL</small><strong>ติดตั้ง Desktop</strong></a>
+      <a class="journey-step" href="#privacy-scan"><small>02 · DETECT</small><strong>ตรวจ PII ภาษาไทย</strong></a>
+      <a class="journey-step" href="#safe-ai"><small>03 · PROTECT</small><strong>ปกปิดก่อนใช้ AI</strong></a>
+      <a class="journey-step" href="#pdpa-report"><small>04 · REVIEW</small><strong>กู้คืนหรือออกรายงาน</strong></a>
     </nav>
+    <p class="product-boundary"><strong>เลือก Desktop เมื่อความเป็นส่วนตัวในเครื่องคือข้อกำหนดหลัก</strong> ส่วน Web App เป็นบริการแบบ Hosted และเปิดเป็น Private Beta การตรวจจับอัตโนมัติอาจพลาดได้ จึงควรตรวจทานก่อนใช้กับงานความเสี่ยงสูง <a href="/privacy">อ่านขอบเขตข้อมูลทั้งหมด</a></p>
   </div>
 </section>
 
@@ -864,29 +899,32 @@
         </section>
       </section>
 
-      <section class="evidence-panel" id="protectionEvidence" aria-labelledby="evidenceTitle">
-        <div class="evidence-panel-head">
-          <div><h3 id="evidenceTitle">หลักฐานการปกป้อง · Protection Evidence</h3><p>แสดงเฉพาะผลจาก API จริงและหลักการที่มีการทดสอบรองรับ</p></div>
-          <span class="demo-label">ไม่ส่งข้อมูลจับคู่ให้โมเดล</span>
-        </div>
-        <div class="evidence-grid">
-          <div class="evidence-item"><span>รูปแบบการปกป้อง</span><b id="safeMode">Token</b></div>
-          <div class="evidence-item"><span>โมเดลปลายทาง</span><b id="safeProvider">รอผล</b></div>
-          <div class="evidence-item"><span>สัญญาณ PII หลังตรวจซ้ำ</span><b id="safeResidual">รอผล</b></div>
-          <div class="evidence-item"><span>โทเคนตกค้างหลังการกู้คืน</span><b id="safeLeftover">รอผล</b></div>
-          <div class="evidence-item"><span>สถานะตรวจความปลอดภัย</span><b id="safeEvidenceSafety">รอผล</b></div>
-          <div class="evidence-item"><span>สถานะการกู้คืน</span><b id="safeEvidenceRestoration">รอผล</b></div>
-          <div class="evidence-item"><span>หมวดอ่อนไหว ม.26</span><b id="safeSection26">รอผล</b></div>
-          <div class="evidence-item"><span>เวลารวมบนหน้าเว็บ</span><b id="safeDuration">—</b></div>
-        </div>
-        <div class="safe-outcome" id="evidenceWarnings"><span class="chip ok-chip">ยังไม่มีข้อมูลความปลอดภัย</span></div>
-        <div class="trust-claims">
-          <span class="trust-claim">ข้อมูลจับคู่ไม่ถูกส่งให้โมเดล</span>
-          <span class="trust-claim">คีย์ของโมเดลอยู่ฝั่งเซิร์ฟเวอร์</span>
-          <span class="trust-claim">ไม่เก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
-          <span class="trust-claim">หยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span>
-        </div>
-      </section>
+      <details class="advanced-evidence">
+        <summary>เปิดดูหลักฐานการปกป้องขั้นสูง<span>ผล API, residual signals, restoration gates และขอบเขตของคำขอนี้</span></summary>
+        <section class="evidence-panel" id="protectionEvidence" aria-labelledby="evidenceTitle">
+          <div class="evidence-panel-head">
+            <div><h3 id="evidenceTitle">หลักฐานการปกป้อง · Protection Evidence</h3><p>แสดงเฉพาะผลจาก API จริงและหลักการที่มีการทดสอบรองรับ</p></div>
+            <span class="demo-label">ไม่ส่งข้อมูลจับคู่ให้โมเดล</span>
+          </div>
+          <div class="evidence-grid">
+            <div class="evidence-item"><span>รูปแบบการปกป้อง</span><b id="safeMode">Token</b></div>
+            <div class="evidence-item"><span>โมเดลปลายทาง</span><b id="safeProvider">รอผล</b></div>
+            <div class="evidence-item"><span>สัญญาณ PII หลังตรวจซ้ำ</span><b id="safeResidual">รอผล</b></div>
+            <div class="evidence-item"><span>โทเคนตกค้างหลังการกู้คืน</span><b id="safeLeftover">รอผล</b></div>
+            <div class="evidence-item"><span>สถานะตรวจความปลอดภัย</span><b id="safeEvidenceSafety">รอผล</b></div>
+            <div class="evidence-item"><span>สถานะการกู้คืน</span><b id="safeEvidenceRestoration">รอผล</b></div>
+            <div class="evidence-item"><span>หมวดอ่อนไหว ม.26</span><b id="safeSection26">รอผล</b></div>
+            <div class="evidence-item"><span>เวลารวมบนหน้าเว็บ</span><b id="safeDuration">—</b></div>
+          </div>
+          <div class="safe-outcome" id="evidenceWarnings"><span class="chip ok-chip">ยังไม่มีข้อมูลความปลอดภัย</span></div>
+          <div class="trust-claims">
+            <span class="trust-claim">ข้อมูลจับคู่ไม่ถูกส่งให้โมเดล</span>
+            <span class="trust-claim">คีย์ของโมเดลอยู่ฝั่งเซิร์ฟเวอร์</span>
+            <span class="trust-claim">ไม่เก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
+            <span class="trust-claim">หยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span>
+          </div>
+        </section>
+      </details>
       <div class="visually-hidden" id="evidenceSanitized">ยังไม่มีข้อมูล</div>
     </div>
 
@@ -974,18 +1012,17 @@
 
 <section class="product-links-section" id="product" aria-labelledby="productTitle">
   <div class="container">
-    <div class="section-head">
+    <div class="closing-cta">
       <div>
-        <p class="workflow-number">AI Guard Product</p>
-        <h2 class="section-title" id="productTitle">ใช้งานอย่างปลอดภัยในช่องทางที่พร้อมจริง</h2>
-        <p class="section-sub">เว็บแอปนี้ยังเป็น Private Beta ส่วน Desktop 3.0.0 และ Extension แบบติดตั้งด้วยตนเองดาวน์โหลดได้จาก Release ทางการ โดย Store ยังไม่เผยแพร่</p>
+        <p class="workflow-number">เริ่มจากขอบเขตที่แข็งแรงกว่า</p>
+        <h2 id="productTitle">ใช้ Desktop เมื่อต้องการให้ข้อมูลและ vault อยู่บนอุปกรณ์</h2>
+        <p>AI Guard Desktop 3.0.0 มีไฟล์สำหรับ Windows x64, Linux x64 และ macOS Apple silicon ส่วน Chrome Extension ยังเป็น Manual / Developer installation และ Store ยังไม่เผยแพร่</p>
       </div>
-    </div>
-    <div class="product-links-grid">
-      <a class="product-link-card" href="#web-access"><small>พร้อมใช้งาน</small><h3>Web App</h3><p>สแกนข้อความ ปกป้องก่อนส่งให้ AI และสร้างรายงานด้วย session ที่มีอายุจำกัด</p><span class="availability">Private Beta · ใช้รหัสเชิญ</span></a>
-      <a class="product-link-card" href="/downloads#desktop"><small>RELEASE v3.0.0</small><h3>AI Guard Desktop</h3><p>ไฟล์ติดตั้งสำหรับ Windows, Linux และ macOS พร้อมดาวน์โหลดจาก GitHub Release ทางการ</p><span class="availability">พร้อมดาวน์โหลด</span></a>
-      <a class="product-link-card" href="/downloads#extension"><small>BROWSER EXTENSION</small><h3>Chrome Extension</h3><p>Store อยู่ระหว่างเตรียมส่งตรวจสอบและยังไม่เผยแพร่ ใช้ ZIP แบบ Manual / Developer installation ได้ การใช้ In-page Mask เริ่มหลังข้อความดิบเข้า DOM ของเว็บไซต์ AI และโค้ดของเว็บไซต์อาจเห็นหรือส่งข้อความนั้นได้ก่อนการปกปิด; Side Panel เป็นขอบเขตที่แข็งแรงกว่า</p><span class="availability pending">Store ยังไม่เผยแพร่ · Manual ZIP พร้อมใช้</span></a>
-      <a class="product-link-card" href="/privacy"><small>DOCS &amp; SUPPORT</small><h3>Privacy &amp; Help</h3><p>อ่านเส้นทางข้อมูล ข้อจำกัด คุกกี้ การเก็บ log และวิธีขอความช่วยเหลือโดยไม่ส่งข้อมูลลับ</p><span class="availability">อ่านเอกสารผลิตภัณฑ์</span></a>
+      <div class="closing-actions">
+        <a href="/downloads#desktop">เลือกไฟล์ Desktop</a>
+        <a class="secondary" href="#web-access">เข้า Web App Private Beta</a>
+        <a class="secondary" href="/privacy">อ่านขอบเขตข้อมูล</a>
+      </div>
     </div>
   </div>
 </section>
@@ -996,26 +1033,25 @@
       <div>
         <p class="workflow-number">สำหรับองค์กร · For Organizations</p>
         <h2 class="section-title" id="enterpriseTitle">ชั้นปกป้องข้อมูลก่อนองค์กรใช้ AI</h2>
-        <p class="section-sub">ใช้หลักการเดียวกันกับงานที่มีข้อมูลบุคคลหลายบริบท โดยคงข้อมูลรับรองของ AI ปลายทางและการกู้คืนไว้ฝั่งเซิร์ฟเวอร์</p>
+        <p class="section-sub">ใช้ได้กับงาน HR สุขภาพ การศึกษา บริการลูกค้า และภาครัฐ โดยต้องตรวจทานผลและไม่ถือสัญญาณมาตรา 26 เป็นข้อสรุปทางกฎหมาย</p>
       </div>
-      <span class="demo-label">ภาษาไทยเป็นหลัก · ใช้ผ่านเว็บ</span>
+      <span class="demo-label">Desktop local · Web hosted</span>
     </div>
-    <div class="enterprise-grid">
-      <article class="enterprise-card"><small>HR</small><h3>คัดกรองใบสมัคร</h3><p>ลดการเปิดเผยชื่อ ช่องทางติดต่อ และที่อยู่ ก่อนส่งบริบทให้ AI ช่วยสรุป</p></article>
-      <article class="enterprise-card"><small>Healthcare</small><h3>สรุปงานสุขภาพ</h3><p>มองเห็นข้อมูลระบุตัวและหมวดข้อมูลอ่อนไหวตามมาตรา 26 ที่ระบบพบ โดยไม่อ้างว่าเป็นคำรับรองทางกฎหมาย</p></article>
-      <article class="enterprise-card"><small>Education</small><h3>ช่วยงานผู้เรียน</h3><p>ปกป้องข้อมูลนักเรียนและผู้ปกครองก่อนใช้โมเดลภายนอกช่วยจัดเนื้อหา</p></article>
-      <article class="enterprise-card"><small>Customer Service</small><h3>ร่างคำตอบลูกค้า</h3><p>รักษาบริบทการสนทนา พร้อมลดการส่งชื่อ โทรศัพท์ และอีเมลที่ไม่จำเป็น</p></article>
-      <article class="enterprise-card"><small>Government</small><h3>งานเอกสารภาครัฐ</h3><p>เพิ่มหลักฐานการปกป้องและสรุป PDPA สำหรับกระบวนงานเอกสารภาษาไทย</p></article>
+    <div class="use-case-line" aria-label="บริบทตัวอย่าง">
+      <span>HR</span><span>Healthcare</span><span>Education</span><span>Customer Service</span><span>Government</span>
     </div>
 
-    <div class="system-evidence" id="systemEvidence" aria-label="สถานะบริการ">
-      <div class="system-evidence-intro"><h3>สถานะบริการ</h3><p>เป็นการตรวจ liveness ครั้งเดียวเมื่อเปิดหน้า ไม่ใช่การรับรองว่า AI ปลายทางพร้อมใช้งาน</p></div>
-      <div class="system-evidence-item"><span>สถานะบริการ</span><b id="serviceStatus">กำลังตรวจสอบ</b></div>
-      <div class="system-evidence-item"><span>เวอร์ชันผลิตภัณฑ์</span><b id="serviceVersion">—</b></div>
-      <div class="system-evidence-item"><span>รูปแบบการปกป้อง</span><b id="systemMode">Token</b></div>
-      <div class="system-evidence-item"><span>AI ปลายทาง</span><b>การเชื่อมต่อที่ได้รับอนุมัติ</b></div>
-      <div class="system-evidence-item"><span>ขอบเขตเวอร์ชัน Hosted</span><b>การลบ PII ใน PDF/OCR แบบสาธารณะ: ปิด</b></div>
-    </div>
+    <details class="trust-details service-details" id="systemEvidence">
+      <summary>ดูสถานะและขอบเขตของ Hosted Web App</summary>
+      <div class="system-evidence" aria-label="สถานะบริการ">
+        <div class="system-evidence-intro"><h3>สถานะบริการ</h3><p>เป็นการตรวจ liveness ครั้งเดียวเมื่อเปิดหน้า ไม่ใช่การรับรองว่า AI ปลายทางพร้อมใช้งาน</p></div>
+        <div class="system-evidence-item"><span>สถานะบริการ</span><b id="serviceStatus">กำลังตรวจสอบ</b></div>
+        <div class="system-evidence-item"><span>เวอร์ชันผลิตภัณฑ์</span><b id="serviceVersion">—</b></div>
+        <div class="system-evidence-item"><span>รูปแบบการปกป้อง</span><b id="systemMode">Token</b></div>
+        <div class="system-evidence-item"><span>AI ปลายทาง</span><b>การเชื่อมต่อที่ได้รับอนุมัติ</b></div>
+        <div class="system-evidence-item"><span>ขอบเขตเวอร์ชัน Hosted</span><b>การลบ PII ใน PDF/OCR แบบสาธารณะ: ปิด</b></div>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -1023,7 +1059,7 @@
 
 <footer>
   <div class="container">
-    <strong>AI Guard Hosted</strong> · Private Beta · VERSION 2.5.0
+    <strong>AI Guard</strong> · Desktop 3.0.0 · Hosted Private Beta 2.5.0
     <br><a href="/privacy">ความเป็นส่วนตัวและความปลอดภัย</a> · <a href="/terms">ข้อกำหนด</a> · <a href="/help">ช่วยเหลือ/FAQ</a> · <a href="/downloads">Desktop และ Extension</a>
   </div>
 </footer>

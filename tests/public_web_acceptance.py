@@ -83,6 +83,12 @@ def main() -> int:
         assert headers.get("X-Frame-Options") == "DENY", path
         assert headers.get("Referrer-Policy") == "no-referrer", path
         assert "http://" not in text, path
+        if path == "/":
+            assert 'data-primary-channel="desktop"' in text
+            assert 'id="desktopPrimaryCta" href="/downloads#desktop"' in text
+            assert text.index('id="desktopPrimaryCta"') < text.index('id="authCard"')
+            assert "รุ่นนี้ไม่มีคำสั่งเรียก provider ภายนอก" in text
+            assert "ส่งให้ Pathumma / thaillm-8b เฉพาะข้อความที่ปกป้อง" in text
         if path == "/downloads":
             for link in (
                 RELEASE_PAGE,
@@ -93,6 +99,9 @@ def main() -> int:
             assert "ยังไม่เผยแพร่" in text
             assert "SHA256SUMS" in text
             assert "gh attestation verify" in text
+            assert 'data-recommended="true"' in text
+            assert "Verify this file · ตรวจ SHA-256 และ provenance" in text
+            assert "เผยแพร่ 14 ส.ค. 2569" in text
             for digest in RELEASE_ASSET_SHA256:
                 assert digest in text
             assert "ข้อความดิบเข้า DOM ของเว็บไซต์ AI" in text

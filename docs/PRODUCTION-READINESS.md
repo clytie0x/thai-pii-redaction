@@ -1,6 +1,6 @@
 # AI Guard hosted production-readiness ledger
 
-Status date: 2026-08-14
+Status date: 2026-08-15
 
 Starting source: `c02ec1c82e22d0e200fbfad68556c169eba68007`
 
@@ -21,7 +21,7 @@ claim about organizer infrastructure that this repository cannot inspect.
 | WEB-002 | P1 | A shared invite code alone does not bound provider cost or concurrent long requests. | repository | Keep a clearly labelled private-beta invite gate.  Apply global and signed-session request/concurrency lanes, with a stricter `/roundtrip` lane and fixed 429 projection. |
 | WEB-003 | P1 | Stateless logout leaves a copied signed cookie usable until expiry. | repository | Maintain only SHA-256 token fingerprints in bounded process memory, revoke on logout, and fail closed across restart.  No user database or raw session token is persisted. |
 | WEB-004 | P1 | Application access logs retain client IP addresses. | repository | Log only fixed operation, method, status, response bytes and request duration.  Rate keys remain in nginx shared memory and are not logged. |
-| WEB-005 | P1 | The landing path is framed as a judge demo and lacks product privacy, acceptable-use, help, and Desktop/Extension status surfaces. | repository | Product-first CTA/navigation/copy; dedicated static Privacy, Terms, Help and Downloads pages; competition presentation controls remain secondary. |
+| WEB-005 | P1 | The landing path is framed as a judge demo and lacks product privacy, acceptable-use, help, and Desktop/Extension status surfaces. | repository | Desktop-first CTA/navigation/copy; Hosted is explicitly secondary and not local-only; Desktop local processing and Hosted/Pathumma boundaries are stated before input; dedicated Privacy, Terms, Help and Downloads pages; Quick Start, advanced evidence, and presentation controls remain secondary. |
 | WEB-006 | P1 | Health checks report unhealthy state but `restart: unless-stopped` does not restart a live unhealthy process. | repository + platform | Candidate health watchdog exits after repeated local failure so Docker restart policy can recover the process.  Host/daemon/edge failure monitoring remains organizer evidence. |
 | WEB-007 | P1 | In-place deployment has no automatic recovery when the candidate becomes unhealthy after container mutation. | repository | Deployment helper snapshots exact prior image IDs/Compose source, health-gates the candidate, and restores the prior stack on a failed post-mutation gate. |
 | WEB-008 | P1 | The hosted image downloads the Thai NER asset during build without content verification and includes disabled OCR runtime weight. | repository | Verify the baked model-tree digest; omit OCR-only dependencies/prewarm from the hosted image while keeping all public PDF/OCR aliases denied. |

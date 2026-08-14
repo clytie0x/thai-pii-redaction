@@ -29,6 +29,8 @@ runtime/web/proxy:
    200 plain HTTP ให้หยุด public launch และขอ organizer edge redirect—ห้ามแก้ด้วย
    client-side JavaScript หรือซ่อน access form เท่านั้น
 9. browser QA จริงต้องครอบ `/`, `/privacy`, `/terms`, `/help`, `/downloads`,
+   ยืนยันว่า Desktop 3.0.0 เป็น CTA หลักก่อน invite gate, Desktop local boundary
+   ไม่อ้าง provider command และ Hosted/Pathumma boundary ระบุ raw-vs-sanitized ตรงจริง,
    ลิงก์ Release v3.0.0 ทั้งสี่ Desktop artifact + manual Extension ZIP,
    SHA-256/SHA256SUMS/provenance และ raw-entry warning ว่า Side Panel แข็งแรงกว่า,
    สถานะ Store “เตรียมส่งตรวจสอบ · ยังไม่เผยแพร่” โดยไม่มี Store link,

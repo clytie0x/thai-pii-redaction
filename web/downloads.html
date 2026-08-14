@@ -16,47 +16,60 @@
   </nav>
 </header>
 <main class="wrap">
-  <p class="status">RELEASE v3.0.0</p>
-  <h1>AI Guard บนอุปกรณ์ของคุณ</h1>
-  <p class="lede">ดาวน์โหลด Desktop สำหรับระบบปฏิบัติการของคุณ หรือใช้ Browser Extension แบบติดตั้งด้วยตนเองจาก GitHub Release ทางการ</p>
+  <p class="status">RELEASE v3.0.0 · เผยแพร่ 14 ส.ค. 2569</p>
+  <h1>ดาวน์โหลด AI Guard Desktop</h1>
+  <p class="lede">ตรวจจับ ปกปิด vault/mapping กู้คืน และสร้างรายงาน PDPA บนอุปกรณ์ของคุณ โดย Desktop 3.0.0 ไม่มีคำสั่งส่งข้อความไปยัง provider ภายนอก</p>
+  <div class="local-note"><strong>เหมาะเมื่อข้อมูลต้องอยู่ในเครื่อง:</strong> เลือกไฟล์ให้ตรงกับระบบและสถาปัตยกรรม แล้วตรวจคำเตือนการเซ็นก่อนติดตั้ง หากต้องการ Safe AI ผ่าน Pathumma ให้ใช้ Hosted Web App แยกต่างหาก ซึ่งประมวลผลบนบริการ Team 08</div>
 
   <section class="card release-card" id="desktop" data-product="desktop" data-status="published" aria-labelledby="desktop-title">
-    <span class="status">พร้อมดาวน์โหลด</span>
+    <span class="status recommended">แนะนำเริ่มต้น · Windows x64</span>
     <h2 id="desktop-title">AI Guard Desktop 3.0.0</h2>
-    <p>เลือกไฟล์ให้ตรงกับระบบปฏิบัติการและสถาปัตยกรรมของเครื่อง ปุ่มด้านล่างชี้ไปยัง artifact ของ Release v3.0.0 โดยตรง</p>
+    <p>ปุ่มทั้งหมดชี้ไปยัง artifact ของ Release v3.0.0 โดยตรง ไม่มี auto-download, mirror หรือ mutable “latest” link</p>
     <div class="download-list" aria-label="ไฟล์ติดตั้ง AI Guard Desktop 3.0.0">
-      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe">Windows x64 · Setup .exe</a><code class="digest">SHA-256 1d170bf792923564dcc599b849de9f72a19b89f18e0be82e43849cdad75880ef</code></div>
-      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb">Linux x64 · Debian .deb</a><code class="digest">SHA-256 7b5fbdc0cf9019254e89c006870ae244a31fbf5db038ae699e4b0c3a91d6b9e8</code></div>
-      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.AppImage">Linux x64 · AppImage</a><code class="digest">SHA-256 f0178a8b171bea1f28868563f52a05e0ad09008e93bdc6581a160d5bda486a34</code></div>
-      <div class="download-item"><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_aarch64.dmg">macOS Apple silicon · .dmg</a><code class="digest">SHA-256 663fff430671ff0210044a1c1b64675b2918597db27ebae16103a9dd5988a356</code></div>
+      <div class="download-item recommended" data-recommended="true"><span class="platform-label">แนะนำ · Windows x64</span><a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe">ดาวน์โหลด Setup .exe</a><span class="file-meta">70.7 MB · x64 · per-user installer</span></div>
+      <div class="download-item"><span class="platform-label">Linux x64 · Debian/Ubuntu</span><a class="button secondary" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb">ดาวน์โหลด .deb</a><span class="file-meta">98.8 MB · amd64 · ติดตั้งด้วย dpkg</span></div>
+      <div class="download-item"><span class="platform-label">Linux x64 · Portable</span><a class="button secondary" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.AppImage">ดาวน์โหลด AppImage</a><span class="file-meta">172.8 MB · amd64 · จัดวางไฟล์เอง</span></div>
+      <div class="download-item"><span class="platform-label">macOS · Apple silicon</span><a class="button secondary" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_aarch64.dmg">ดาวน์โหลด .dmg</a><span class="file-meta">70.8 MB · arm64 · Apple silicon</span></div>
     </div>
+    <div class="requirements"><strong>ความต้องการพื้นฐาน</strong><span>เครื่อง 64-bit ให้ตรงกับไฟล์: Windows x64, Linux amd64 หรือ macOS Apple silicon (arm64) · เตรียมพื้นที่มากกว่าขนาดดาวน์โหลดสำหรับติดตั้งและโมเดลในแพ็กเกจ · Extension 3.0.0 ต้องใช้ Desktop 3.0.0 ที่ติดตั้งแล้ว</span></div>
     <p class="muted trust-note"><strong>สถานะการเซ็น:</strong> installer ของ Windows ยังไม่มี publisher signature และแพ็กเกจ macOS ยังไม่ได้เซ็นหรือ notarize ระบบจึงอาจแสดงคำเตือนความน่าเชื่อถือ เพราะการเซ็นโค้ดยังเลื่อนไว้ โปรดตรวจสอบไฟล์ตามหลักฐานด้านล่างก่อนตัดสินใจดำเนินการ</p>
-    <div class="verification" aria-labelledby="verification-title">
-      <h3 id="verification-title">ตรวจสอบไฟล์ก่อนเปิด</h3>
-      <p>GitHub Release นี้ยังแก้ไข asset ได้ หากค่า SHA-256 ไม่ตรงกับค่าที่แสดงในหน้านี้ ให้หยุดและไม่เปิดไฟล์</p>
-      <ul>
-        <li>ดาวน์โหลด <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS">SHA256SUMS</a> (SHA-256 <code>ff3a8c68f7110d362d772f665cbe940b58bc5bfd4ad6e9a2f6c25e19529ed518</code>) แล้วเปรียบเทียบบรรทัดของไฟล์ Desktop</li>
-        <li>ตรวจ provenance ของ Desktop ด้วย <code>gh attestation verify &lt;file&gt; -R Teerapat-Vatpitak/thai-pii-redaction</code></li>
-        <li>อ่าน <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/v3.0.0/SECURITY.md#supply-chain-and-distribution-model">โมเดลความน่าเชื่อถือของ Release v3.0.0</a> ซึ่งแยกการตรวจ origin/integrity ออกจาก OS code signing</li>
-      </ul>
-    </div>
+    <details class="verification" aria-labelledby="verification-title">
+      <summary id="verification-title">Verify this file · ตรวจ SHA-256 และ provenance</summary>
+      <div class="verification-body">
+        <p>GitHub Release นี้ยังแก้ไข asset ได้ หากค่า SHA-256 ไม่ตรงกับค่าด้านล่าง ให้หยุดและไม่เปิดไฟล์</p>
+        <ul class="digest-list">
+          <li><b>Windows .exe · 70,696,034 bytes</b><code class="digest">1d170bf792923564dcc599b849de9f72a19b89f18e0be82e43849cdad75880ef</code></li>
+          <li><b>Linux .deb · 98,758,624 bytes</b><code class="digest">7b5fbdc0cf9019254e89c006870ae244a31fbf5db038ae699e4b0c3a91d6b9e8</code></li>
+          <li><b>Linux AppImage · 172,784,120 bytes</b><code class="digest">f0178a8b171bea1f28868563f52a05e0ad09008e93bdc6581a160d5bda486a34</code></li>
+          <li><b>macOS .dmg · 70,844,788 bytes</b><code class="digest">663fff430671ff0210044a1c1b64675b2918597db27ebae16103a9dd5988a356</code></li>
+        </ul>
+        <ul>
+          <li>ดาวน์โหลด <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS">SHA256SUMS</a> (SHA-256 <code class="digest inline">ff3a8c68f7110d362d772f665cbe940b58bc5bfd4ad6e9a2f6c25e19529ed518</code>) แล้วเปรียบเทียบบรรทัดของไฟล์ Desktop</li>
+          <li>ตรวจ provenance ของ Desktop ด้วย <code>gh attestation verify &lt;file&gt; -R Teerapat-Vatpitak/thai-pii-redaction</code></li>
+          <li>อ่าน <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/v3.0.0/SECURITY.md#supply-chain-and-distribution-model">โมเดลความน่าเชื่อถือของ Release v3.0.0</a> ซึ่งแยกการตรวจ origin/integrity ออกจาก OS code signing</li>
+        </ul>
+      </div>
+    </details>
   </section>
 
   <section class="card release-card" id="extension" data-product="browser-extension" data-status="not-published" aria-labelledby="extension-title">
     <span class="status closed">Store: เตรียมส่งตรวจสอบ · ยังไม่เผยแพร่</span>
     <h2 id="extension-title">Chrome Extension 3.0.0</h2>
-    <p>Chrome Web Store ยังไม่มีหน้ารายการที่เผยแพร่ ขณะนี้ใช้ได้เฉพาะ <strong>Manual / Developer installation</strong> จาก ZIP ทางการ โดยต้องติดตั้งและเปิด AI Guard Desktop 3.0.0 ก่อนเพื่อให้ Native Messaging ทำงาน</p>
-    <ol class="install-steps">
-      <li>ดาวน์โหลดไฟล์ ZIP แล้วแตกไฟล์ ZIP ไปยังโฟลเดอร์ที่เก็บถาวร</li>
-      <li>เปิด <code>chrome://extensions</code> แล้วเปิด Developer mode</li>
-      <li>เลือก <strong>Load unpacked</strong> และเลือกโฟลเดอร์ที่แตกไว้</li>
-      <li>เปิด AI Guard Desktop 3.0.0 ก่อนทดสอบการเชื่อมต่อจากส่วนขยาย</li>
-    </ol>
-    <div class="privacy-warning"><strong>ขอบเขตข้อมูลดิบ:</strong> การใช้ In-page Mask เริ่มหลังข้อความดิบเข้า DOM ของเว็บไซต์ AI แล้ว โค้ดของเว็บไซต์อาจเห็นหรือส่งข้อความนั้นได้ก่อนการปกปิด หากต้องการแยกข้อมูลดิบให้มากขึ้น ให้กรอกใน AI Guard Side Panel แล้วนำเฉพาะข้อความที่ปกปิดและตรวจทานแล้วไปวาง — Side Panel เป็นขอบเขตที่แข็งแรงกว่า อ่าน <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/v3.0.0/SECURITY.md#local-desktop-and-extension">ขอบเขตความปลอดภัยของ Desktop และ Extension</a></div>
-    <div class="actions">
-      <a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip">ดาวน์โหลด ZIP · Manual / Developer installation</a>
-    </div>
-    <p class="muted">Extension ZIP ขนาด 295,228 ไบต์ แยกจากชุด Desktop SHA256SUMS/provenance — ตรวจ SHA-256 ให้ตรงกับ <code class="digest inline">feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670</code></p>
+    <p>Chrome Web Store ยังไม่มีหน้ารายการที่เผยแพร่ การติดตั้ง ZIP จึงเหมาะกับผู้ใช้ขั้นสูงและต้องใช้ Desktop 3.0.0 สำหรับ Native Messaging</p>
+    <details class="extension-details">
+      <summary>ดูวิธีติดตั้งแบบ Manual / Developer installation</summary>
+      <ol class="install-steps">
+        <li>ดาวน์โหลดไฟล์ ZIP แล้วแตกไฟล์ ZIP ไปยังโฟลเดอร์ที่เก็บถาวร</li>
+        <li>เปิด <code>chrome://extensions</code> แล้วเปิด Developer mode</li>
+        <li>เลือก <strong>Load unpacked</strong> และเลือกโฟลเดอร์ที่แตกไว้</li>
+        <li>เปิด AI Guard Desktop 3.0.0 ก่อนทดสอบการเชื่อมต่อจากส่วนขยาย</li>
+      </ol>
+      <div class="privacy-warning"><strong>ขอบเขตข้อมูลดิบ:</strong> การใช้ In-page Mask เริ่มหลังข้อความดิบเข้า DOM ของเว็บไซต์ AI แล้ว โค้ดของเว็บไซต์อาจเห็นหรือส่งข้อความนั้นได้ก่อนการปกปิด หากต้องการแยกข้อมูลดิบให้มากขึ้น ให้กรอกใน AI Guard Side Panel แล้วนำเฉพาะข้อความที่ปกปิดและตรวจทานแล้วไปวาง — Side Panel เป็นขอบเขตที่แข็งแรงกว่า อ่าน <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/v3.0.0/SECURITY.md#local-desktop-and-extension">ขอบเขตความปลอดภัยของ Desktop และ Extension</a></div>
+      <div class="actions">
+        <a class="button" href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip">ดาวน์โหลด ZIP · Manual / Developer installation</a>
+      </div>
+      <p class="muted">Extension ZIP ขนาด 295,228 ไบต์ แยกจากชุด Desktop SHA256SUMS/provenance — ตรวจ SHA-256 ให้ตรงกับ <code class="digest inline">feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670</code></p>
+    </details>
   </section>
 
   <div class="notice">AI Guard Web App บน deployment นี้ยังเป็น invite-only Private Beta การดาวน์โหลด Desktop หรือ Extension ไม่เปลี่ยนขอบเขตการเข้าถึง การเก็บข้อมูล หรือข้อจำกัดของ Web App</div>

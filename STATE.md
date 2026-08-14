@@ -1,4 +1,4 @@
-# สถานะงาน (14 ส.ค. 2569 — Hosted Production Web Launch)
+# สถานะงาน (15 ส.ค. 2569 — Desktop-first Production Candidate)
 
 ## Current productionization candidate
 
@@ -16,9 +16,12 @@
   ไม่มี HSTS Candidate จึงเพิ่ม fixed-host 308 จาก forwarded original scheme +
   HSTS ทั้ง web/api และเพิ่ม public-edge acceptance จริง หาก organizer edge ไม่ส่ง
   scheme เดิม/ไม่ redirect นี่คือ external launch blocker ไม่ใช่เหตุให้ลด security
-- product surface เปลี่ยนจาก judge-first เป็น Web App Private Beta: CTA หลักเข้า
-  เว็บแอป, ขอบเขต server/provider อยู่ก่อน input, Quick Start เป็น optional
-  disclosure และมี static `/privacy`, `/terms`, `/help`, `/downloads`, robots,
+- product surface ปัจจุบันเป็น Desktop-first: CTA หลักพาไปเลือก Desktop 3.0.0,
+  Hosted Web App เป็น Private Beta ลำดับรอง และอธิบายก่อน input ว่า Desktop
+  ตรวจจับ/ปกปิด/vault/restoration/report ในเครื่องโดยไม่มี provider command
+  ส่วน Web รับ raw text ที่บริการ Team 08 และ Safe AI ส่ง Pathumma เฉพาะข้อความ
+  ที่ปกป้อง+ตรวจซ้ำแล้ว Quick Start/หลักฐานขั้นสูงเป็น optional disclosure และมี
+  static `/privacy`, `/terms`, `/help`, `/downloads`, robots,
   sitemap หน้า download ชี้ Release v3.0.0 ที่ตรวจ HTTP 200 แล้วสำหรับ Desktop
   Windows/Linux/macOS และ manual Extension ZIP โดยไม่สร้าง Store link ที่ยังไม่มี
   และ pin SHA-256/ขนาด/asset identity, SHA256SUMS กับ GitHub provenance Source

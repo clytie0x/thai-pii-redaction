@@ -1,28 +1,31 @@
-# AI Guard Hosted — Thai PII protection for AI
+# AI Guard — local-first Thai PII protection for AI
 
-AI Guard Hosted is the private-beta web product deployed for team08 on the AI
-for Thai platform:
+AI Guard is Desktop-first.  The published Desktop 3.0.0 channel keeps
+detection, masking/pseudonymization, the reversible vault/mapping, restoration,
+and deterministic PDPA report generation on the user's device.  Desktop 3.0.0
+does not expose a provider command.
+
+The secondary Hosted Web App is an invite-only private beta deployed for team08
+on the AI for Thai platform:
 
 <https://team08.aiforthai.in.th>
 
-It helps a user inspect Thai text for personal data, replace recognized values
-before an approved downstream AI request, validate the protected response, and
-restore context inside one request.  The product has three workflows:
+Hosted helps a user inspect Thai text for personal data, replace recognized
+values before an approved downstream AI request, validate the protected
+response, and restore context inside one request.  It has three workflows:
 
 1. **Privacy Scan** — show counts, types, and spans returned by the detector.
 2. **Safe AI** — show the protected provider-bound input and reveal a restored
    answer only after the outbound-safety and restoration gates pass.
 3. **PDPA Report** — show the automated score/grade before an explicit download.
 
-The home page is the user product.  Quick Start and Presenter/fullscreen remain
+The home page first recommends Desktop, then offers Hosted as a separate trust
+boundary.  Quick Start, advanced evidence, and Presenter/fullscreen remain
 optional tools; competition narrative and Sprint evidence live in `docs/`, not
 as the primary user journey.
 
 ## Product availability
 
-- **Web App:** invite-only private beta.  A shared invite gate is retained to
-  bound abuse and downstream-provider cost without introducing accounts or a
-  user database.
 - **Desktop:** [AI Guard 3.0.0 is published on GitHub Releases](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0), with verified links for
   [Windows x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe),
   [Linux Debian x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb),
@@ -33,6 +36,12 @@ as the primary user journey.
   [SHA256SUMS](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS)
   and verify GitHub provenance before proceeding.  The release is mutable, so
   a filename or tag alone is not an integrity check.
+- **Web App:** invite-only private beta.  Original text reaches the AI for Thai
+  edge and team service for detection.  When the user invokes Safe AI, only
+  policy-checked protected text is sent through the team backend to the single
+  approved Tokenmind/Pathumma `thaillm-8b` provider.  A shared invite gate is
+  retained to bound abuse and provider cost without introducing accounts or a
+  user database.
 - **Browser Extension:** the Chrome Web Store item is still a draft preparing
   for review and is not published, so no Store link is claimed.  The
   [3.0.0 ZIP](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip)
@@ -44,9 +53,8 @@ as the primary user journey.
   `feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670`.
 - **Public PDF redaction/OCR:** intentionally unsupported.  Both
   `/redact-pdf` and `/v1/redact-pdf` return a fixed proxy-level 404 and there is
-  no upload UI.  This is not a blocker for the production-ready text Web App;
-  enabling it later requires separate correctness, provenance, timeout, and
-  resource acceptance.
+  no upload UI.  Enabling it later requires separate correctness, provenance,
+  timeout, and resource acceptance.
 
 Product documentation is served from `/privacy`, `/terms`, `/help`, and
 `/downloads`.  Those pages describe data flow, cookies, retention, acceptable
@@ -55,8 +63,11 @@ overclaim.
 
 ## Privacy and security boundary
 
-- Source text reaches the AI for Thai edge, reverse proxy, and AI Guard server
-  before detection.  This is not on-device-only processing.
+- Desktop source text, findings, vault/mapping, restoration, and deterministic
+  report stay local.  Desktop 3.0.0 has no provider command and contains no
+  shared NECTEC credential.
+- Hosted source text reaches the AI for Thai edge, reverse proxy, and AI Guard
+  server before detection.  Hosted is not on-device-only processing.
 - Only the masked text that passes the fresh outbound policy check is sent to
   the single approved Tokenmind/Pathumma `thaillm-8b` integration.  There is no
   provider fallback.

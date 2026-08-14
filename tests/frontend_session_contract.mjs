@@ -13,6 +13,34 @@ for (const forbidden of ["redact-pdf", "pdfFile", "pdfPick", "pdfDownload", "aft
 for (const workflow of ['id="privacy-scan"', 'id="safe-ai"', 'id="pdpa-report"']) {
   assert.ok(page.includes(workflow), `public workflow is missing: ${workflow}`);
 }
+assert.match(
+  page,
+  /<section class="hero-section" id="top" data-primary-channel="desktop">/,
+  "the public hero is not explicitly Desktop-first",
+);
+assert.match(
+  page,
+  /id="desktopPrimaryCta" href="\/downloads#desktop">ดาวน์โหลด AI Guard Desktop 3\.0\.0/,
+  "the primary hero action is not the reviewed Desktop download path",
+);
+assert.ok(
+  page.indexOf('id="desktopPrimaryCta"') < page.indexOf('id="authCard"'),
+  "the hosted invite gate appears before the primary Desktop action",
+);
+for (const channelBoundary of [
+  "ข้อความ การตรวจจับ การปกปิด vault/mapping การกู้คืน และรายงานอยู่บนอุปกรณ์",
+  "รุ่นนี้ไม่มีคำสั่งเรียก provider ภายนอก",
+  "ข้อความต้นฉบับเดินทางถึง edge และเซิร์ฟเวอร์ของทีม",
+  "ส่งให้ Pathumma / thaillm-8b เฉพาะข้อความที่ปกป้องและตรวจซ้ำแล้ว",
+  "ไม่ส่ง raw PII, vault/mapping หรือคู่ข้อมูลเดิมกับข้อมูลแทน",
+]) {
+  assert.ok(page.includes(channelBoundary), `channel boundary is missing: ${channelBoundary}`);
+}
+assert.match(
+  page,
+  /<details class="advanced-evidence">[\s\S]*id="protectionEvidence"/,
+  "advanced protection evidence is not progressively disclosed",
+);
 for (const guidedMarker of [
   'id="guided-demo"',
   'id="guidedStart"',

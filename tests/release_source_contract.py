@@ -224,6 +224,22 @@ def main() -> int:
     assert f'href="{SECURITY_SOURCE}"' in downloads
     assert "Manual / Developer installation" in downloads
     assert "AI Guard Desktop 3.0.0" in downloads
+    assert 'data-recommended="true"' in downloads
+    assert "แนะนำเริ่มต้น · Windows x64" in downloads
+    assert "เผยแพร่ 14 ส.ค. 2569" in downloads
+    assert "ความต้องการพื้นฐาน" in downloads
+    for metadata in ("70.7 MB", "98.8 MB", "172.8 MB", "70.8 MB"):
+        assert metadata in downloads, metadata
+    assert '<details class="verification"' in downloads
+    assert "Verify this file · ตรวจ SHA-256 และ provenance" in downloads
+    verification_index = downloads.index('<details class="verification"')
+    for name in RELEASE_ASSETS[:4]:
+        assert downloads.index(RELEASE_ASSET_TRUST[name]["sha256"]) > verification_index
+    assert downloads.index(RELEASE_ASSET_BASE + RELEASE_ASSETS[0]) < downloads.index(
+        RELEASE_ASSET_BASE + RELEASE_ASSETS[1]
+    )
+    assert "Desktop 3.0.0 ไม่มีคำสั่งส่งข้อความไปยัง provider ภายนอก" in downloads
+    assert "Pathumma" in downloads and "บริการ Team 08" in downloads
     assert "Native Messaging" in downloads
     assert "แตกไฟล์ ZIP" in downloads
     assert "Load unpacked" in downloads

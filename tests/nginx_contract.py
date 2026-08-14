@@ -526,7 +526,7 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
         "/privacy": "ความเป็นส่วนตัวและความปลอดภัย",
         "/terms": "ข้อกำหนดและการใช้งานที่ยอมรับได้",
         "/help": "ช่วยเหลือและคำถามที่พบบ่อย",
-        "/downloads": "AI Guard บนอุปกรณ์ของคุณ",
+        "/downloads": "ดาวน์โหลด AI Guard Desktop",
         "/robots.txt": "Disallow: /api/",
         "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
     }
