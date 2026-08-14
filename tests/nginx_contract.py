@@ -556,8 +556,11 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
 def check_rate_and_log_policy(failures: list[str]) -> None:
     config = (REPO / "api" / "default.conf.template").read_text(encoding="utf-8")
     web_config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
+    core_dockerfile = (REPO / "core" / "Dockerfile").read_text(encoding="utf-8")
     if "$remote_addr" in config or "$remote_addr" in web_config:
         failures.append("log privacy: client IP remains in an application log format")
+    if "--no-access-log" not in core_dockerfile:
+        failures.append("log privacy: Uvicorn client metadata logging remains enabled")
     for required in (
         '"~(?:^|;[[:space:]]*)__Host-aift_session=v1\\.[0-9]{1,12}\\.([A-Za-z0-9_-]{22})\\.[A-Za-z0-9_-]{43}(?:;|$)" $1;',
         "$aift_duplicate_session_cookie",

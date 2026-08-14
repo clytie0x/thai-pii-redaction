@@ -17,6 +17,7 @@ from http.cookies import SimpleCookie
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -40,6 +41,10 @@ APP_VARIABLES = (
     "APP_TOKENMIND_API_KEY",
 )
 CONTAINERS = tuple(f"{TEAM}-{name}-1" for name in ("web", "api", "core"))
+CLIENT_ACCESS_LOG = re.compile(
+    r'^INFO:\s+\S+:\d+\s+-\s+"(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s',
+    re.MULTILINE,
+)
 
 
 class AcceptanceFailure(RuntimeError):
@@ -423,6 +428,8 @@ def scan_logs(cookie: str) -> None:
     markers.extend(os.environ.get(name, "") for name in APP_VARIABLES)
     if any(marker and marker in logs for marker in markers):
         raise AcceptanceFailure("synthetic sensitive marker reached retained logs")
+    if CLIENT_ACCESS_LOG.search(logs):
+        raise AcceptanceFailure("client metadata reached retained runtime logs")
 
 
 def restart_and_verify(revision: str) -> None:

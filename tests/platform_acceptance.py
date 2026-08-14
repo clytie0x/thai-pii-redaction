@@ -12,6 +12,7 @@ from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import urllib.error
@@ -31,6 +32,10 @@ APP_VARIABLES = (
     "APP_AIFT_ACCESS_CODE",
     "APP_AIFT_COOKIE_SIGNING_KEY",
     "APP_TOKENMIND_API_KEY",
+)
+CLIENT_ACCESS_LOG = re.compile(
+    r'^INFO:\s+\S+:\d+\s+-\s+"(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s',
+    re.MULTILINE,
 )
 
 
@@ -362,6 +367,8 @@ def _verify_logs(cookie: str) -> None:
         )
         if any(marker and marker in logs for marker in markers):
             raise AcceptanceFailure("sensitive value reached retained runtime logs")
+        if CLIENT_ACCESS_LOG.search(logs):
+            raise AcceptanceFailure("client metadata reached retained runtime logs")
 
 
 def main() -> int:

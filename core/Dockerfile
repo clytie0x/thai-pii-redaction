@@ -59,4 +59,4 @@ EXPOSE 8000
 # exec so SIGTERM reaches uvicorn (clean container stops); workers default 1 —
 # NER/OCR models are cached per process, so extra workers multiply RAM and
 # cold starts. Raise only after measuring.
-CMD ["sh", "-c", "exec python -m uvicorn aift_gateway:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-1}"]
+CMD ["sh", "-c", "exec python -m uvicorn aift_gateway:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-1} --no-access-log"]

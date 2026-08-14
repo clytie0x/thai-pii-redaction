@@ -59,6 +59,19 @@
   `72e18bbe723adaf54c847e4b17c2177dfa60dd68` healthy ตามนโยบาย ไม่ปล่อย
   candidate ที่ยังไม่ accepted ค้างอยู่ การแก้ใช้ stdin เข้า `python -` ภายใน
   container และผ่าน local read-only report probe โดยไม่อ่าน secret ออกมา
+- protected-main web Pipeline #36253 ที่ exact
+  `6ce57356540c5f3b47b8ea12a601039f9e8582e3` ผ่าน check+deploy และ internal
+  platform acceptance ผ่าน auth, 16-route allowlist, live Pathumma roundtrip,
+  report และ sensitive-value log scan แต่ public edge คืน HTTP 200 แทน 308
+  ที่ `/?sentinel=must-not-reflect` Acceptance trap คืน exact `72e18bbe...`
+  และ Job #140572 ยืนยัน web/api/core revision ตรง, healthy และอยู่ใน resource
+  limit แล้ว นี่พิสูจน์ organizer-edge original-scheme/redirect blocker; ห้ามลด
+  public acceptance หรือ deploy ซ้ำจน edge ทำ 308 เองหรือ forward scheme เดิม
+- strict log audit หลัง rollback พบว่า Uvicorn access stream ยังมี client IP/port
+  metadata แม้ไม่มี body, prompt, cookie, mapping หรือ credential Follow-up
+  candidate จึงปิด Uvicorn access log ที่ launcher และทำให้ local/production
+  acceptance fail หากรูปแบบ client-address access record กลับมา Structured
+  web/api/audit logs ที่ไม่เก็บ request target ยังคงอยู่
 - รายการ P0/P1/P2 และ platform evidence ที่ไม่ควรอ้างอยู่ที่
   `docs/PRODUCTION-READINESS.md` งานนี้เปลี่ยน runtime จึงต้อง deploy exact SHA;
   ห้ามอ้าง candidate ว่า public-ready ก่อน HTTP redirect, protected acceptance,
