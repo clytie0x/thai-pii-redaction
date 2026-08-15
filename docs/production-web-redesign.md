@@ -20,8 +20,13 @@ an end-to-end production serving path.
   authenticated Hosted workspace is isolated in `web/app.html`, `web/app.css`,
   and `web/app.js`. Home contains no invite input, application runtime, or API
   initialization. The exact built-image checks and required real-browser matrix
-  now pass locally; independent full-page reviews and public deployment remain
-  open.
+  now pass locally and independent full-page reviews report no material blocker.
+  The first exact production attempt, Pipeline #36391 at `9995532a`, deployed
+  cleanly but was automatically rolled back because the public acceptance test
+  incorrectly expected an unauthenticated `GET /api/auth/session` to return
+  `404`; the live API's intentional contract is `401 authentication_required`.
+  The rollback to `75aaa7e6` completed healthy. A corrected exact-revision
+  protected deployment and public browser check remain open.
 - `web/home-concept-c.html` is the selected visual prototype. It is not deployed
   by `web/Dockerfile`; it remains the visual quality baseline for the next
   production pass rather than merely a provenance artifact.
@@ -639,6 +644,17 @@ Before production-ready status, verify at minimum:
 
 ### 2026-08-16
 
+- Protected-main production Pipeline #36391 checked and deployed exact revision
+  `9995532a2a27a4e49e74ee9d9a46795e9ac1bb1a`; its internal platform acceptance
+  passed auth, the API allowlist, live provider roundtrip, report generation,
+  and log checks. Public acceptance then exposed a stale assertion: it expected
+  unauthenticated `GET /api/auth/session` to be an unknown route (`404`), while
+  the intentionally exposed session endpoint returns JSON
+  `401 authentication_required`. The mandatory trap restored the exact healthy
+  rollback baseline `75aaa7e61b529204b5cf1294aae37d3e99d389ae`. The acceptance
+  contract now verifies the truthful `401` status, JSON MIME type and exact safe
+  error code while continuing to reject HTML fallback; this correction requires
+  a new protected deployment before the redesign can be called live.
 - The user approved the six-page static Nginx architecture plus the internal
   branded 404 and explicitly prioritized finishing and deploying the production
   web redesign before the event. Deployment Checklist completion, final slides,

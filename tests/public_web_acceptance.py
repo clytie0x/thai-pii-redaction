@@ -311,8 +311,10 @@ def main() -> int:
         status, _headers, body = fetch(HTTPS + path)
         assert status == 404, (path, status)
         assert b"<!doctype html>" not in body.lower(), path
-    status, _headers, body = fetch(HTTPS + "/api/auth/session")
-    assert status == 404
+    status, headers, body = fetch(HTTPS + "/api/auth/session")
+    assert status == 401
+    assert headers.get("Content-Type", "").lower().startswith("application/json")
+    assert json.loads(body) == {"error": {"code": "authentication_required"}}
     assert b"<!doctype html>" not in body.lower()
 
     print(
