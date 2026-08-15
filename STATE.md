@@ -1,7 +1,29 @@
-# สถานะงาน (16 ส.ค. 2569 — Concept C Production Web Candidate)
+# สถานะงาน (16 ส.ค. 2569 — Concept C Production Web Live)
 
 ## Current productionization candidate
 
+- Concept C production web is live at exact revision
+  `dbcfe17b34744dc3e9a88e4099786a754fe903a6`. Feature Pipeline #36392 and
+  protected-main check-only Pipeline #36393 passed, followed by complete
+  protected production Pipeline #36394: check #141734, deploy #141735,
+  acceptance #141736, logs #141737, exact-revision/process inspection #141738,
+  and restart/recovery #141739 all passed. Public Chrome after restart verified
+  all six routes, API health/session boundaries, branded versus fail-closed
+  404s, all required desktop/tablet/mobile widths, reduced motion, keyboard
+  entry, self-hosted font loading, same-origin assets, no broken images, and no
+  horizontal overflow.
+- The first redesign attempt at `9995532a` in Pipeline #36391 deployed cleanly,
+  then safely rolled back to `75aaa7e6` because public acceptance still expected
+  `GET /api/auth/session` to return `404`. The joined public contract is the
+  intentional JSON `401 authentication_required`; `dbcfe17b` corrected and
+  independently reviewed that assertion before the successful redeployment.
+- Remaining web content inputs are owner facts, not unimplemented UI: approved
+  operator/jurisdiction/policy-date wording, a publishable private privacy and
+  security contact, an accessibility-feedback channel, and organizer metadata-
+  policy availability. The live pages disclose the limitation rather than
+  inventing details. The organizer edge still lacks a plain-HTTP-to-HTTPS
+  redirect under the documented 2026-08-15 owner risk decision; HTTPS TLS/HSTS
+  passes, but plain HTTP is not represented as secure.
 - รอบ deploy เว็บไซต์วันที่ 16 ส.ค. แยก Concept C Home ออกจาก Hosted `/app`
   จริงแล้ว พร้อมหน้า `/downloads`, `/privacy`, `/help`, `/terms`, branded human
   404, ฟอนต์ Anuphan ที่ self-host, revision-B2 logo และ exact Nginx allowlist
@@ -13,8 +35,8 @@
   ที่ผ่าน check, deploy, public acceptance และ ops recovery แล้ว Candidate เว็บ
   ใหม่ผ่าน local GitLab-equivalent checks ทั้ง 13 รายการ, built-image Chrome
   matrix และ repeated independent art/frontend/UX review โดยไม่มี material
-  disagreement แต่สถานะ live ต้องตัดสินจาก protected-main web pipeline และ
-  public caller-facing acceptance ของ exact revision เท่านั้น
+  disagreement ก่อนผ่าน protected-main Pipeline #36394 และ public caller-facing
+  acceptance ของ exact revision ตามหลักฐานปัจจุบันด้านบน
 - routing ใหม่ปิด source `.html` aliases และ filename/asset near-match แบบ fixed
   unbranded 404; เฉพาะ unknown extensionless human route ได้ branded 404
   Legacy fragments หกตัวไม่ถูก sticky header บัง และ Guided Demo/provider
@@ -120,7 +142,7 @@
   mandatory ทั้งหมด การขาด HTTP 308 เท่านั้นที่เป็น accepted external warning
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
-remote `main` protected และ known-good production Pipeline #35744 ที่ exact
+Historical Sprint-2 baseline คือ protected Pipeline #35744 ที่ exact
 `72e18bbe723adaf54c847e4b17c2177dfa60dd68` ผ่าน
 `check → deploy → acceptance` ครบแล้ว web/api/core ใช้ revision เดียวกัน และ
 public acceptance ผ่าน health, auth, Privacy Scan, live Tokenmind Safe AI,
@@ -324,7 +346,9 @@ Secure/HttpOnly/SameSite=Strict internal core key และ provider key แย�
    พิสูจน์ network correction ครั้งแรกบน runner #227; Pipeline #35736 ที่ exact
    `9d38c6753aa0242bc35d09ec3332e90fe3f90079` คือ rollback ก่อน Sprint 2 และ
    Pipeline #35744 ที่ exact `72e18bbe723adaf54c847e4b17c2177dfa60dd68`
-   คือ known-good production ปัจจุบัน: check/deploy/acceptance ผ่านครบ สาม image revision
+   คือ known-good production ณ รอบนั้น ซึ่งถูกแทนที่ภายหลังด้วย live revision
+   `dbcfe17b34744dc3e9a88e4099786a754fe903a6` ตามหลักฐานบนสุด:
+   check/deploy/acceptance ผ่านครบ สาม image revision
    ตรงกัน public HTTPS และ `/api` stripping ผ่าน login/session/logout, synthetic
    Privacy Scan, live Tokenmind/thaillm roundtrip, PDPA Report, PDF/forbidden-route
    denial, retained-log scan, resource และ restart/recovery

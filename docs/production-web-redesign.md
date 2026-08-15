@@ -25,11 +25,14 @@ an end-to-end production serving path.
   cleanly but was automatically rolled back because the public acceptance test
   incorrectly expected an unauthenticated `GET /api/auth/session` to return
   `404`; the live API's intentional contract is `401 authentication_required`.
-  The rollback to `75aaa7e6` completed healthy. A corrected exact-revision
-  protected deployment and public browser check remain open.
+  The rollback to `75aaa7e6` completed healthy. Corrected protected production
+  Pipeline #36394 now runs exact revision
+  `dbcfe17b34744dc3e9a88e4099786a754fe903a6`; check, deploy, joined public
+  acceptance, logs, exact-revision/process inspection, and restart/recovery all
+  pass. The Concept C redesign is live at `https://team08.aiforthai.in.th/`.
 - `web/home-concept-c.html` is the selected visual prototype. It is not deployed
   by `web/Dockerfile`; it remains the visual quality baseline for the next
-  production pass rather than merely a provenance artifact.
+  production iteration rather than merely a provenance artifact.
 - `web/logo-preview.html` is a comparison surface for logo exploration only.
 - Downloads, Privacy, Help, and Terms now use the calm reference-document
   archetype with visible summaries, local contents where useful, non-collapsed
@@ -41,8 +44,8 @@ an end-to-end production serving path.
   construction plus main, one-color, inverse, and light/dark favicon variants.
   Independent art-direction, frontend/product, and UX/accessibility review now
   reports no material logo blocker. The assets are integrated into production
-  HTML, Docker, exact Nginx routes, CSP, and tests; public deployment remains
-  pending the complete browser/review gate.
+  HTML, Docker, exact Nginx routes, CSP, and tests, and the joined public route
+  serves them successfully at every required browser width.
 - The canonical historical logo source is in the sibling project at
   `C:/Users/teera/dev/thai-pii-redaction/assets/logo.svg`, with PNG and source
   image variants beside it.
@@ -618,12 +621,12 @@ Before production-ready status, verify at minimum:
 
 ## Open work for this production session
 
-1. Update `STATE.md`, deployment evidence, and this document with the exact
-   committed revision, protected-pipeline result, and public caller-facing
-   verification.
-2. Commit and push the reviewed tree, deploy it through the protected-main UI
-   pipeline, and run public route/API/asset/browser acceptance before calling
-   the redesign production-ready.
+No implementation, protected-deployment, or caller-verification gate remains for
+the redesign. The only content dependency is owner-supplied operator,
+jurisdiction, policy-date, private-contact, accessibility-feedback, and
+organizer-metadata-policy facts. The live pages state the current limitation and
+do not fabricate those facts. The organizer edge's accepted lack of plain-HTTP
+redirect also remains external and is not represented as secure.
 
 ## Production-ready acceptance criteria
 
@@ -644,6 +647,41 @@ Before production-ready status, verify at minimum:
 
 ### 2026-08-16
 
+- Corrected exact revision `dbcfe17b34744dc3e9a88e4099786a754fe903a6`
+  passed feature Pipeline #36392 and protected-main check-only Pipeline #36393,
+  then passed the complete UI-started protected production Pipeline #36394:
+  check Job #141734, deploy #141735, acceptance #141736, logs #141737,
+  process/revision inspection #141738, and restart/recovery #141739. Acceptance
+  verified authenticated platform behavior, the 16-route allowlist, a live
+  provider roundtrip, report generation, log privacy, HTTPS/TLS/HSTS, every
+  product/document surface and pinned static asset, health, and exact legacy
+  denials. All three production containers survived restart healthy at the same
+  exact revision.
+- A fresh Chrome 151 caller audit against the public host after restart returned
+  `200` for Home, App, Downloads, Privacy, Help, and Terms; every page had one
+  truthful H1, the production CSP and HSTS, zero broken images and no horizontal
+  overflow. The App correctly bootstrapped out of `inert`, reported the signed-
+  out invite state, and kept business controls disabled; DevTools recorded the
+  handled `401` session probe as a failed resource, with no uncaught application
+  error. `/api/health` returned version `2.5.0`; unauthenticated
+  `/api/auth/session` returned exact JSON `401 authentication_required`.
+  Branded human 404 and unbranded source, asset-near-match, and API denials all
+  preserved their intended `404` boundaries.
+- The public Home passed Chrome at `1440×729`, `1366×768`, `1440×900`,
+  `1024×768`, `768×1024`, `720×365`, `390×844`, and `360×800`: no overflow,
+  no broken image, the self-hosted `AIGuardAnuphan` face loaded, and every
+  network resource remained same-origin. Reduced motion capped animation at
+  `0.00001 s`; keyboard focus began on the skip link. With JavaScript disabled,
+  the native mobile menu exposed all four primary destinations and the App kept
+  its operational workspace inert while leaving recovery text available.
+  Post-restart screenshots are
+  `output/playwright/production-public-home-1440x729.png`,
+  `production-public-home-390x844.png`, and
+  `production-public-home-360x800.png`.
+- Pipeline #36394 repeated the accepted structured warning that the organizer's
+  plain-HTTP edge does not redirect to HTTPS. HTTPS itself has valid TLS and
+  HSTS; the external HTTP limitation remains explicitly unsafe, owner-accepted
+  for this competition deployment on 2026-08-15, and not rollback-eligible.
 - Protected-main production Pipeline #36391 checked and deployed exact revision
   `9995532a2a27a4e49e74ee9d9a46795e9ac1bb1a`; its internal platform acceptance
   passed auth, the API allowlist, live provider roundtrip, report generation,
@@ -653,8 +691,9 @@ Before production-ready status, verify at minimum:
   `401 authentication_required`. The mandatory trap restored the exact healthy
   rollback baseline `75aaa7e61b529204b5cf1294aae37d3e99d389ae`. The acceptance
   contract now verifies the truthful `401` status, JSON MIME type and exact safe
-  error code while continuing to reject HTML fallback; this correction requires
-  a new protected deployment before the redesign can be called live.
+  error code while continuing to reject HTML fallback. At that point the
+  correction required a new protected deployment; Pipeline #36394 subsequently
+  supplied it and is the live evidence recorded above.
 - The user approved the six-page static Nginx architecture plus the internal
   branded 404 and explicitly prioritized finishing and deploying the production
   web redesign before the event. Deployment Checklist completion, final slides,
@@ -662,8 +701,8 @@ Before production-ready status, verify at minimum:
 - The verified rollback baseline is Hosted 2.5.0 at exact commit
   `75aaa7e61b529204b5cf1294aae37d3e99d389ae`, whose protected production
   Pipeline #36309 passed check, deploy, acceptance, logs, process/resource, and
-  restart/recovery jobs. The redesign must preserve that runtime as the rollback
-  target until its own exact-revision pipeline and public acceptance pass.
+  restart/recovery jobs. It was retained as the rollback target until the
+  redesign's exact-revision Pipeline #36394 and public acceptance passed.
 - Owner identity, approved jurisdiction wording, and a publishable private
   privacy/security/accessibility contact remain owner-supplied facts. The
   implementation may preserve the existing bounded support wording but must not
@@ -723,8 +762,9 @@ Before production-ready status, verify at minimum:
   `/api/health` and `/api/auth/session`, producing two expected console network
   errors on `/app`; production routes these through the organizer edge. This
   artifact proves the web image's fail-closed boundary, not the joined public
-  caller path. The protected deployment and public acceptance must prove that
-  the edge serves those two API paths successfully before release completion.
+  caller path. The joined-edge proof was therefore assigned to protected
+  deployment and public acceptance, and Pipeline #36394 plus the post-restart
+  browser audit have now satisfied it.
 - First full-page adversarial review found four real integration defects: the
   Nginx catch-all exposed source `.html` filenames and branded filename-like
   misses; old Guided Demo/provider-evidence fragments did not expose their
@@ -748,7 +788,7 @@ Before production-ready status, verify at minimum:
   the visible hash, retains the target only in memory, and after successful
   session confirmation restores `#safe-ai` with focus on that section. This
   proves the client transition; protected-pipeline HTTP acceptance and the
-  public browser check remain responsible for the joined edge/API path.
+  public browser check subsequently proved the joined edge/API path.
 - `product.css` and `sitemap.xml` are now explicit caller-facing acceptance
   targets. Runtime Nginx tests also deny all five private `.html` source names
   and top-level script/style near-matches, closing the route-allowlist gap.
@@ -758,8 +798,15 @@ Before production-ready status, verify at minimum:
   caller-asset coverage, and browser session restoration; UX/accessibility
   independently reproduced the no-JavaScript fail-closed state, click and
   `hashchange` gate behavior, keyboard mobile menu, and overflow results. These
-  are pre-commit candidate approvals. Exact-commit and public deployment gates
-  remain mandatory.
+  were pre-commit candidate approvals. The exact-commit and public deployment
+  gates later passed in Pipeline #36394 and the public Chrome audit above.
+- A separate post-deploy adversarial pass inspected the public revision itself.
+  Art direction found no live visual/brand regression at desktop or both mobile
+  widths; UX/accessibility independently reproduced skip-link, native mobile
+  menu, reduced-motion, gate-first, and no-JavaScript fail-closed behavior; and
+  frontend/product verified the exact revision, joined API/session contracts,
+  resource state, and 404 separation. After correcting stale historical wording
+  in this document and `STATE.md`, no material post-deploy disagreement remains.
 
 ### 2026-08-15
 
@@ -782,9 +829,9 @@ Before production-ready status, verify at minimum:
   privacy/security contact, an accessibility-feedback channel, and an organizer
   metadata-policy URL or explicit confirmation that none is public. These must
   not be fabricated.
-- Compared the current production integration directly with the original
+- Compared the then-current production integration directly with the original
   Concept C at `1440×729`. The user found the original materially stronger, so
-  the current production composition is rejected and must be redesigned while
+  that prior production composition was rejected and had to be redesigned while
   retaining the real production architecture and technical asset path.
 - Set the central brand hue to approximately `#3266A8` and retained the warm
   editorial paper/ink contrast.
@@ -846,7 +893,8 @@ Before production-ready status, verify at minimum:
   `1024×768`, `768×1024`, `390×844`, and `360×800` found no horizontal overflow;
   the local Anuphan face was ready for a Thai combining-mark sample at every
   size. This is responsive iteration evidence only; the built-image browser
-  matrix and interaction checks remain open.
+  matrix and interaction checks were still open at that stage and were
+  subsequently completed in the 2026-08-16 evidence above.
 - Removed superseded Concept B, Concept D, and the initial home mock from the
   retained handoff set. Concept C remains the only selected prototype.
 - Consolidated `aiguard-aift` onto local `main`; removed 16 merged local branches
