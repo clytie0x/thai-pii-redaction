@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import runpy
 import subprocess
 import urllib.error
 import urllib.request
@@ -294,6 +295,63 @@ def main() -> int:
         path.read_bytes() for path in public_surface_paths if path != downloads_path
     ).lower()
     assert b"native messaging" not in implementation_surface
+
+    public_policy_path = ROOT / "tests" / "public_web_acceptance.py"
+    public_policy_source = public_policy_path.read_text(encoding="utf-8")
+    public_policy = runpy.run_path(str(public_policy_path))
+    classify_http_redirect = public_policy["classify_http_redirect"]
+    warning = classify_http_redirect(
+        "/?sentinel=contract",
+        200,
+        {"Strict-Transport-Security": "max-age=31536000"},
+        b"AI Guard",
+    )
+    assert warning == {
+        "type": "external_http_to_https_redirect_unavailable",
+        "scope": "organizer_public_edge",
+        "owner_risk_decision_date": "2026-08-15",
+        "path": "/",
+        "observed_status": 200,
+        "expected_redirect_status": 308,
+        "expected_https_location": "https://team08.aiforthai.in.th/",
+        "location_matches_expected_https": False,
+        "plain_http_secure": False,
+        "rollback_eligible": False,
+    }
+    assert classify_http_redirect(
+        "/api/health?sentinel=contract",
+        308,
+        {"Location": "https://team08.aiforthai.in.th/api/health"},
+        b"",
+    ) is None
+    try:
+        classify_http_redirect(
+            "/",
+            308,
+            {"Location": "http://team08.aiforthai.in.th/elsewhere"},
+            b"",
+        )
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("an incorrect 308 redirect must remain fatal")
+    assert "assert status == 308" not in public_policy_source
+    assert "PUBLIC_EDGE_WARNING " in public_policy_source
+    assert "ssl.create_default_context()" in public_policy_source
+    assert public_policy["LEGACY_DENIALS"] == (
+        "/not-a-product-page",
+        "/api/sanitize",
+        "/api/reidentify",
+        "/api/docs",
+        "/api/openapi.json",
+        "/api/api/health",
+        "/api/detectx",
+        "/api/v1/sanitize",
+        "/api/auth/unknown",
+        "/api/v1/auth/unknown",
+        "/api/redact-pdf",
+        "/api/v1/redact-pdf",
+    )
     verify_release_assets()
     print(
         "release source contract ok: tracked secret patterns absent, docs/version/pin consistent, "

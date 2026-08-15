@@ -30,6 +30,25 @@ RELEASE_ASSET_SHA256 = (
     "663fff430671ff0210044a1c1b64675b2918597db27ebae16103a9dd5988a356",
     "feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670",
 )
+HTTP_PROBES = (
+    "/?sentinel=must-not-reflect",
+    "/api/health?sentinel=must-not-reflect",
+)
+OWNER_HTTP_RISK_DECISION_DATE = "2026-08-15"
+LEGACY_DENIALS = (
+    "/not-a-product-page",
+    "/api/sanitize",
+    "/api/reidentify",
+    "/api/docs",
+    "/api/openapi.json",
+    "/api/api/health",
+    "/api/detectx",
+    "/api/v1/sanitize",
+    "/api/auth/unknown",
+    "/api/v1/auth/unknown",
+    "/api/redact-pdf",
+    "/api/v1/redact-pdf",
+)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -57,13 +76,40 @@ def fetch(url: str) -> tuple[int, dict[str, str], bytes]:
         return error.code, dict(error.headers), error.read()
 
 
-def main() -> int:
-    for path in ("/?sentinel=must-not-reflect", "/api/health?sentinel=must-not-reflect"):
-        status, headers, body = fetch(HTTP + path)
-        expected = HTTPS + path.split("?", 1)[0]
-        assert status == 308, (path, status)
+def classify_http_redirect(
+    path: str,
+    status: int,
+    headers: dict[str, str],
+    body: bytes,
+) -> dict[str, object] | None:
+    """Keep a correct redirect strict; report organizer-edge absence without rollback."""
+    expected = HTTPS + path.split("?", 1)[0]
+    if status == 308:
         assert headers.get("Location") == expected, (path, headers.get("Location"))
         assert b"AI Guard" not in body
+        return None
+    return {
+        "type": "external_http_to_https_redirect_unavailable",
+        "scope": "organizer_public_edge",
+        "owner_risk_decision_date": OWNER_HTTP_RISK_DECISION_DATE,
+        "path": path.split("?", 1)[0],
+        "observed_status": status,
+        "expected_redirect_status": 308,
+        "expected_https_location": expected,
+        "location_matches_expected_https": headers.get("Location") == expected,
+        "plain_http_secure": False,
+        "rollback_eligible": False,
+    }
+
+
+def main() -> int:
+    warnings: list[dict[str, object]] = []
+    for path in HTTP_PROBES:
+        status, headers, body = fetch(HTTP + path)
+        warning = classify_http_redirect(path, status, headers, body)
+        if warning is not None:
+            warnings.append(warning)
+            print("PUBLIC_EDGE_WARNING " + json.dumps(warning, sort_keys=True))
 
     pages = {
         "/": "ใช้ AI Guard บนเว็บ",
@@ -116,18 +162,15 @@ def main() -> int:
     assert health.get("version") == "2.5.0"
     assert headers.get("Strict-Transport-Security") == "max-age=31536000"
 
-    for path in (
-        "/not-a-product-page",
-        "/api/redact-pdf",
-        "/api/v1/redact-pdf",
-        "/api/openapi.json",
-    ):
-        status, _headers, _body = fetch(HTTPS + path)
+    for path in LEGACY_DENIALS:
+        status, headers, _body = fetch(HTTPS + path)
         assert status == 404, (path, status)
+        assert headers.get("Strict-Transport-Security") == "max-age=31536000", path
 
     print(
-        "public web acceptance ok: TLS-only edge, product/docs surfaces, headers, "
-        "health, exact 404s, PDF/OCR denied"
+        "public web acceptance ok: HTTPS valid TLS/HSTS, product/docs surfaces, "
+        f"health, {len(LEGACY_DENIALS)} exact legacy 404s; "
+        f"external_http_warnings={len(warnings)}"
     )
     return 0
 

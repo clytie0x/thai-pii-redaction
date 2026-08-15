@@ -1,6 +1,6 @@
 # วันที่ deploy ต้องทำอะไรบ้าง
 
-## Production Web Launch gate (13 ส.ค. 2569)
+## Production Web Launch gate (ปรับ owner decision 15 ส.ค. 2569)
 
 ส่วนนี้มีผลเหนือ competition demo checklist ด้านล่างสำหรับ descendant ที่เปลี่ยน
 runtime/web/proxy:
@@ -24,10 +24,14 @@ runtime/web/proxy:
 7. acceptance ต้องผ่านทั้ง `tests/platform_acceptance.py` (synthetic auth/scan/
    one live Safe AI/report/routes/logs) และ `tests/public_web_acceptance.py`
    บน public edge จริง
-8. **hard launch gate:** `http://team08.aiforthai.in.th/` และ `/api/health`
-   ต้อง 308 ไป fixed HTTPS path โดยไม่สะท้อน query; HTTPS ต้องมี HSTS หากยัง
-   200 plain HTTP ให้หยุด public launch และขอ organizer edge redirect—ห้ามแก้ด้วย
-   client-side JavaScript หรือซ่อน access form เท่านั้น
+8. **mandatory HTTPS gate + scoped external HTTP warning:** HTTPS ต้อง reachable
+   ด้วย PKI-valid TLS และ exact HSTS ทุก surface Public HTTP `/` และ `/api/health`
+   ยังต้อง probe โดยไม่ follow redirect หากได้ 308 ต้องไป fixed query-free HTTPS
+   path และไม่คืน app body; status อื่นรวม HTTP 200 ต้องออก structured
+   `PUBLIC_EDGE_WARNING` แต่ warning นี้อย่างเดียวห้าม trigger rollback ตาม owner
+   risk acceptance วันที่ 15 ส.ค. Plain HTTP ยังไม่ปลอดภัยและยังไม่ได้ถูกแก้;
+   fixed-host redirect implementation ต้องคงไว้เพื่อทำงานหาก organizer forward
+   original scheme ในภายหลัง
 9. browser QA จริงต้องครอบ `/`, `/privacy`, `/terms`, `/help`, `/downloads`,
    ยืนยันว่า Desktop 3.0.0 เป็น CTA หลักก่อน invite gate, Desktop local boundary
    ไม่อ้าง provider command และ Hosted/Pathumma boundary ระบุ raw-vs-sanitized ตรงจริง,
@@ -43,9 +47,12 @@ runtime/web/proxy:
     PID caps, read-only/no-new-privileges, restart/watchdog, exact revision และ
     recoverable previous images
 
-หาก deploy เขียวแต่ public-edge/acceptance แดง candidate อาจกำลังรันอยู่แต่
-**ยังไม่พร้อมให้สาธารณะใช้** ให้รักษาสภาพ exact SHA และรายงาน external gate
-แทนการลด auth, rate, privacy, provider หรือ route control
+หากมีเฉพาะ `PUBLIC_EDGE_WARNING` จากการขาด HTTP 308 ให้รายงาน external
+organizer limitation แยกและทำ acceptance ต่อ หาก HTTPS/TLS/HSTS, auth/Secure
+cookie, 16-route allowlist/legacy denial, live Pathumma, report, log privacy,
+resource, restart/recovery, exact SHA หรือ acceptance อื่นแดง ต้อง rollback
+อัตโนมัติและห้ามอ้างว่า candidate พร้อม ห้ามลด auth, rate, privacy, provider
+หรือ route control
 
 ทุกอย่างในไฟล์นี้เป็นงานที่เจ้าของทำเองหรือมอบอำนาจให้ operator อย่างชัดเจน
 เพราะออกนอกเครื่องทั้งหมด
@@ -110,6 +117,16 @@ Production pipeline #35722 ที่ SHA เดียวกันผ่าน ch
 healthy แต่ deploy job ล้มหลัง mutation เพราะ job-container loopback ไปไม่ถึง
 host ports 20070/20071 Acceptance/ops ไม่ได้ execute และ #35722 ห้ามนับเป็น
 successful deployment evidence
+
+Production Pipeline #36253 ที่ exact
+`6ce57356540c5f3b47b8ea12a601039f9e8582e3` ผ่าน check/deploy และ internal
+acceptance (auth, 16-route allowlist, live Pathumma, PDPA report และ sensitive
+log scan) แล้ว public acceptance พบ HTTP 200 แทน 308 Acceptance trap จึงคืน
+exact `72e18bbe723adaf54c847e4b17c2177dfa60dd68`; Job #140572 ยืนยัน revision,
+health และ resources หลัง rollback ประวัตินี้ห้ามลบ Owner decision วันที่
+15 ส.ค. เปลี่ยนเฉพาะการขาด public 308 เป็น structured non-rollback external
+warning ไม่ได้ย้อนหลังเปลี่ยน #36253 เป็น successful deployment และไม่ได้ทำให้
+HTTP ปลอดภัย
 
 ## 4 Credential gate และ production pipeline สำหรับ descendant ใหม่
 

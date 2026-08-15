@@ -12,12 +12,13 @@ This ledger records launch findings against executable source and the real AI
 for Thai route.  Historical Sprint 1–3 findings are not reopened when their
 current contracts already pass.  A status of `external evidence` is not a
 claim about organizer infrastructure that this repository cannot inspect.
+An `external accepted risk` is a scoped owner decision, not a claim that the
+underlying transport is secure or that the limitation has been fixed.
 
 ## Launch-blocking findings
 
 | ID | Priority | Finding | Owner | Candidate disposition |
 |---|---|---|---|---|
-| WEB-001 | P0 | Plain HTTP currently serves the app and API, so an access code or source text can be submitted without TLS; HTTPS also lacks HSTS. | organizer edge | Pipeline #36253 proved the candidate's internal auth/live-provider/log gates and redirect contract, then the real edge returned HTTP 200 for `/?sentinel=must-not-reflect`; rollback restored exact `72e18bbe...`.  The app can emit fixed-host 308 only when the original scheme is forwarded, while an unconditional container redirect would loop HTTPS.  The organizer must redirect HTTP at the edge or forward the original scheme before another production attempt. |
 | WEB-002 | P1 | A shared invite code alone does not bound provider cost or concurrent long requests. | repository | Keep a clearly labelled private-beta invite gate.  Apply global and signed-session request/concurrency lanes, with a stricter `/roundtrip` lane and fixed 429 projection. |
 | WEB-003 | P1 | Stateless logout leaves a copied signed cookie usable until expiry. | repository | Maintain only SHA-256 token fingerprints in bounded process memory, revoke on logout, and fail closed across restart.  No user database or raw session token is persisted. |
 | WEB-004 | P1 | Application access logs retain client IP addresses. | repository | Keep fixed operation/surface, method, status, response bytes and request duration logs, disable Uvicorn's client-address access stream at the hosted launcher, and make both local and production acceptance reject its access-record shape.  Rate keys remain in nginx shared memory and are not logged. |
@@ -37,6 +38,7 @@ claim about organizer infrastructure that this repository cannot inspect.
 
 | ID | Priority | Finding | Disposition |
 |---|---|---|---|
+| WEB-001 | external accepted risk | The organizer public edge currently serves the Team 08 app/API over plain HTTP instead of redirecting to HTTPS. Plain HTTP is not secure. | Pipeline #36253 deployed exact `6ce57356540c5f3b47b8ea12a601039f9e8582e3`, passed internal auth/16-route/live Pathumma/report/log gates, then observed HTTP 200 and automatically restored exact `72e18bbe...`; that rollback history remains valid. On 2026-08-15 the owner accepted only the missing public redirect for the competition deployment after an owner-provided public survey found no HTTP-to-HTTPS redirect on 14 other team hosts: available hosts returned HTTP 200 except Team 15, which redirected to another HTTP application path. The Participant Guide documents the HTTPS public URL but does not explicitly require a team-level HTTP 308. Keep the fixed-host 308 implementation so it activates if the organizer later forwards the original scheme. Emit a structured external warning for a non-308 status; that warning alone is not rollback-eligible. A present 308 with the wrong fixed HTTPS location remains fatal. HTTPS availability, PKI-valid TLS, exact HSTS, authentication/Secure cookies, route policy, live provider, report, privacy, resource, exact-SHA and recovery failures remain fatal. |
 | WEB-010 | P2 | Health is liveness, not provider readiness. | Keep the response and UI wording as liveness only; the protected production acceptance performs the minimum synthetic live-provider check. |
 | WEB-011 | P2 | Single-worker/single-replica deployment has no zero-downtime redundancy. | Document the platform envelope; add graceful stop windows and rollback.  Multi-replica routing is outside the assigned platform. |
 | WEB-012 | P2 | CSP still permits the self-hosted inline application script/style. | Deferred: no third-party script, CDN, tracker, dynamic HTML sink, or public source map is introduced; existing XSS contracts remain mandatory.  Nonce/hash extraction is backlog, not a reason to weaken CSP. |
@@ -71,8 +73,11 @@ claim about organizer infrastructure that this repository cannot inspect.
    contracts pass locally and in feature-branch CI.
 2. Three independent read-only reviews find no open P0/P1 on the exact tree.
 3. Protected-main `check → deploy → acceptance` is green for one exact SHA.
-4. The real public HTTP route redirects to HTTPS; HTTPS emits HSTS and all
-   expected headers.
+4. HTTPS is reachable with PKI-valid TLS and emits exact HSTS plus all expected
+   headers.  Each public HTTP probe records the observed status: an exact 308
+   must target the fixed query-free HTTPS path; absence of 308 is a structured
+   organizer-edge warning and is not rollback-eligible under the 2026-08-15
+   owner decision.  This exception does not make plain HTTP secure.
 5. Synthetic browser acceptance proves login, scan, Safe AI, report, refresh,
    logout/expiry, fixed failures, rate limits, mobile/desktop pages, and no
    console/mixed-content errors.

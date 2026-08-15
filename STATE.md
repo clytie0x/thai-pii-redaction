@@ -12,10 +12,18 @@
   Pipeline #36033 และ VERSION ยัง `2.5.0`
   และต้องคง 16 routes, public `/redact-pdf` + `/v1/redact-pdf` fixed 404,
   Tokenmind provider เดียว, no mapping และ no browser persistence
-- live baseline เมื่อ 13 ส.ค. พบ P0 ว่า plain HTTP ยังคืน app/API 200 และ HTTPS
+- live baseline เมื่อ 13 ส.ค. พบว่า plain HTTP ยังคืน app/API 200 และ HTTPS เดิม
   ไม่มี HSTS Candidate จึงเพิ่ม fixed-host 308 จาก forwarded original scheme +
-  HSTS ทั้ง web/api และเพิ่ม public-edge acceptance จริง หาก organizer edge ไม่ส่ง
-  scheme เดิม/ไม่ redirect นี่คือ external launch blocker ไม่ใช่เหตุให้ลด security
+  HSTS ทั้ง web/api และเพิ่ม public-edge acceptance จริง Fixed-host redirect ยังคง
+  อยู่และต้องทำงานแบบ fail-closed หาก organizer ส่ง original scheme ในภายหลัง
+- Owner รับความเสี่ยงเฉพาะ competition deployment เมื่อ 15 ส.ค. ว่า organizer
+  public edge ที่ไม่ทำ HTTP-to-HTTPS redirect เป็น external platform limitation:
+  public survey ที่ Owner ให้มาพบว่า host ของอีก 14 ทีมไม่มีทีมใด redirect ไป
+  HTTPS; ทีมที่ตอบได้คืน HTTP 200 ทั้งหมด ยกเว้น Team 15 ที่ redirect ไป path อื่น
+  บน HTTP และ Participant Guide ระบุ public HTTPS URL แต่ไม่ได้กำหนด team-level
+  HTTP 308 ชัดเจน Acceptance จึงรายงาน status ที่ไม่ใช่ 308 เป็น structured
+  `PUBLIC_EDGE_WARNING` ซึ่งอย่างเดียวไม่ทำ rollback ทั้งนี้ plain HTTP ยังไม่
+  ปลอดภัยและ limitation นี้ยังไม่ได้ถูกแก้
 - product surface ปัจจุบันเป็น Desktop-first: CTA หลักพาไปเลือก Desktop 3.0.0,
   Hosted Web App เป็น Private Beta ลำดับรอง และอธิบายก่อน input ว่า Desktop
   ตรวจจับ/ปกปิด/vault/restoration/report ในเครื่องโดยไม่มี provider command
@@ -65,17 +73,21 @@
   report และ sensitive-value log scan แต่ public edge คืน HTTP 200 แทน 308
   ที่ `/?sentinel=must-not-reflect` Acceptance trap คืน exact `72e18bbe...`
   และ Job #140572 ยืนยัน web/api/core revision ตรง, healthy และอยู่ใน resource
-  limit แล้ว นี่พิสูจน์ organizer-edge original-scheme/redirect blocker; ห้ามลด
-  public acceptance หรือ deploy ซ้ำจน edge ทำ 308 เองหรือ forward scheme เดิม
+  limit แล้ว ประวัติ rollback นี้ต้องเก็บไว้ หลัง owner decision วันที่ 15 ส.ค.
+  เฉพาะ failure นี้ถูกจัดเป็น external warning; ไม่ใช่หลักฐานว่า HTTP ปลอดภัย
 - strict log audit หลัง rollback พบว่า Uvicorn access stream ยังมี client IP/port
   metadata แม้ไม่มี body, prompt, cookie, mapping หรือ credential Follow-up
-  candidate จึงปิด Uvicorn access log ที่ launcher และทำให้ local/production
+  exact `db5c041132ac2d8527a3ab7e629bb767f7298bf0` จึงปิด Uvicorn access log ที่
+  launcher และทำให้ local/production
   acceptance fail หากรูปแบบ client-address access record กลับมา Structured
-  web/api/audit logs ที่ไม่เก็บ request target ยังคงอยู่
+  web/api/audit logs ที่ไม่เก็บ request target ยังคงอยู่ SHA นี้ผ่าน feature
+  Pipeline #36257 และ protected-main check-only Pipeline #36258 แล้ว แต่ไม่ได้
+  deploy ซ้ำภายใต้นโยบาย acceptance เดิมเพราะจะ rollback แบบ deterministic
 - รายการ P0/P1/P2 และ platform evidence ที่ไม่ควรอ้างอยู่ที่
   `docs/PRODUCTION-READINESS.md` งานนี้เปลี่ยน runtime จึงต้อง deploy exact SHA;
-  ห้ามอ้าง candidate ว่า public-ready ก่อน HTTP redirect, protected acceptance,
-  live provider, log/resource/restart และ browser QA ผ่านครบ
+  HTTPS/valid TLS/HSTS, protected acceptance, live provider, auth/Secure cookie,
+  16-route allowlist+legacy denial, log/resource/restart และ browser QA ยังเป็น
+  mandatory ทั้งหมด การขาด HTTP 308 เท่านั้นที่เป็น accepted external warning
 
 แผนแม่บท: `C:\Users\teera\.claude\plans\ai-for-thai-expressive-lighthouse.md`
 remote `main` protected และ known-good production Pipeline #35744 ที่ exact
