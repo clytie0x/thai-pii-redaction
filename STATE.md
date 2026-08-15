@@ -1,6 +1,26 @@
-# สถานะงาน (15 ส.ค. 2569 — Desktop-first Production Candidate)
+# สถานะงาน (16 ส.ค. 2569 — Concept C Production Web Candidate)
 
 ## Current productionization candidate
+
+- รอบ deploy เว็บไซต์วันที่ 16 ส.ค. แยก Concept C Home ออกจาก Hosted `/app`
+  จริงแล้ว พร้อมหน้า `/downloads`, `/privacy`, `/help`, `/terms`, branded human
+  404, ฟอนต์ Anuphan ที่ self-host, revision-B2 logo และ exact Nginx allowlist
+  Home ไม่มี invite/API runtime ส่วน `/app` คงสาม workflow, Guided Demo,
+  `/guard`, evidence/presenter tools, session/request safety และขอบเขต Hosted
+  ตามเดิม
+- ก่อนเริ่มรอบนี้ known-good live/rollback baseline คือ exact
+  `75aaa7e61b529204b5cf1294aae37d3e99d389ae` จาก protected Pipeline #36309
+  ที่ผ่าน check, deploy, public acceptance และ ops recovery แล้ว Candidate เว็บ
+  ใหม่ผ่าน local GitLab-equivalent checks ทั้ง 13 รายการ, built-image Chrome
+  matrix และ repeated independent art/frontend/UX review โดยไม่มี material
+  disagreement แต่สถานะ live ต้องตัดสินจาก protected-main web pipeline และ
+  public caller-facing acceptance ของ exact revision เท่านั้น
+- routing ใหม่ปิด source `.html` aliases และ filename/asset near-match แบบ fixed
+  unbranded 404; เฉพาะ unknown extensionless human route ได้ branded 404
+  Legacy fragments หกตัวไม่ถูก sticky header บัง และ Guided Demo/provider
+  evidence มี handoff ไป `/app` ที่ตรง fragment App แบบไม่มี JavaScript จะ inert
+  จน bootstrap สำเร็จ ส่วน signed-out workflow hash จะกลับ access gate ก่อนแล้ว
+  restore หลัง session ยืนยัน
 
 - เริ่มจาก evaluation/main exact
   `c02ec1c82e22d0e200fbfad68556c169eba68007`; known-good deployed runtime

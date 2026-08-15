@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /app
 Sitemap: https://team08.aiforthai.in.th/sitemap.xml

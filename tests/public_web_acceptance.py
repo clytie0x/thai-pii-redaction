@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from html.parser import HTMLParser
 import json
 import re
@@ -71,6 +72,33 @@ NETWORK_URL_ATTRIBUTES = {
     "poster",
     "src",
     "xlink:href",
+}
+STATIC_ASSETS = {
+    "/home.css": ("text/css", b"    @font-face", None),
+    "/home.js": ("application/javascript", b"document.documentElement.classList.add", None),
+    "/app.css": ("text/css", b"  @font-face", None),
+    "/app.js": ("application/javascript", b'"use strict";', None),
+    "/product.css": ("text/css", b"@font-face", None),
+    "/assets/ai-guard-mark.svg": ("image/svg+xml", b"<svg", None),
+    "/assets/ai-guard-mark-one-color.svg": ("image/svg+xml", b"<svg", None),
+    "/assets/ai-guard-mark-inverse.svg": ("image/svg+xml", b"<svg", None),
+    "/assets/ai-guard-favicon.svg": ("image/svg+xml", b"<svg", None),
+    "/assets/ai-guard-favicon-inverse.svg": ("image/svg+xml", b"<svg", None),
+    "/assets/fonts/anuphan-thai.woff2": (
+        "font/woff2",
+        b"wOF2",
+        "8a03cb45df9decacc349c794b1d626363109d99affb74f698a27d019996c220f",
+    ),
+    "/assets/fonts/anuphan-latin.woff2": (
+        "font/woff2",
+        b"wOF2",
+        "3a98eb4685d98ab59073f8b2f9995629e23f850f737144025b3ce491f20372d6",
+    ),
+    "/assets/fonts/OFL-Anuphan.txt": (
+        "text/plain",
+        b"Copyright 2019 The Anuphan Project Authors",
+        "94da26c98ca8d2ec3555ad30828a4184edfdf5832df92ae8cf4edd490e9ee655",
+    ),
 }
 
 
@@ -189,12 +217,14 @@ def main() -> int:
             print("PUBLIC_EDGE_WARNING " + json.dumps(warning, sort_keys=True))
 
     pages = {
-        "/": "ใช้ AI Guard บนเว็บ",
-        "/privacy": "ความเป็นส่วนตัวและความปลอดภัย",
-        "/terms": "ข้อกำหนดและการใช้งานที่ยอมรับได้",
-        "/help": "ช่วยเหลือและคำถามที่พบบ่อย",
+        "/": "ปกป้องข้อมูลก่อน",
+        "/app": "Hosted Web App",
+        "/privacy": "ข้อมูลไปไหน",
+        "/terms": "ใช้ได้เมื่อ",
+        "/help": "แก้ปัญหา",
         "/downloads": "Manual / Developer installation",
         "/robots.txt": "Disallow: /api/",
+        "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
     }
     for path, marker in pages.items():
         status, headers, body = fetch(HTTPS + path)
@@ -207,11 +237,16 @@ def main() -> int:
         assert headers.get("Referrer-Policy") == "no-referrer", path
         assert_no_insecure_network_reference(text, path)
         if path == "/":
-            assert 'data-primary-channel="desktop"' in text
-            assert 'id="desktopPrimaryCta" href="/downloads#desktop"' in text
-            assert text.index('id="desktopPrimaryCta"') < text.index('id="authCard"')
-            assert "รุ่นนี้ไม่มีคำสั่งเรียก provider ภายนอก" in text
-            assert "ส่งให้ Pathumma / thaillm-8b เฉพาะข้อความที่ปกป้อง" in text
+            assert 'href="/downloads#desktop">ดาวน์โหลด Desktop 3.0.0' in text
+            assert 'id="accessCode"' not in text
+            assert 'src="/app.js"' not in text
+            assert "/app#privacy-scan" in text
+        if path == "/app":
+            assert 'content="noindex,nofollow"' in text
+            assert 'id="accessCode"' in text
+            assert 'src="/app.js" defer' in text
+            assert "ข้อความต้นฉบับถึง AI for Thai edge" in text
+            assert "Pathumma / thaillm-8b" in text
         if path == "/downloads":
             for link in (
                 RELEASE_PAGE,
@@ -232,6 +267,15 @@ def main() -> int:
             assert "chrome.google.com/webstore/detail" not in text
             assert "chromewebstore.google.com/detail" not in text
 
+    for path, (content_type, prefix, expected_sha256) in STATIC_ASSETS.items():
+        status, headers, body = fetch(HTTPS + path)
+        assert status == 200, (path, status)
+        assert headers.get("Content-Type", "").lower().startswith(content_type), path
+        assert body.startswith(prefix), path
+        assert headers.get("Cache-Control") == "no-store", path
+        if expected_sha256 is not None:
+            assert hashlib.sha256(body).hexdigest() == expected_sha256, path
+
     status, headers, body = fetch(HTTPS + "/api/health")
     assert status == 200
     health = json.loads(body)
@@ -243,6 +287,33 @@ def main() -> int:
         status, headers, _body = fetch(HTTPS + path)
         assert status == 404, (path, status)
         assert headers.get("Strict-Transport-Security") == "max-age=31536000", path
+
+    status, _headers, body = fetch(HTTPS + "/not-a-product-page")
+    assert status == 404
+    branded_404 = body.decode("utf-8")
+    assert "หลงทาง" in branded_404
+    assert "AI Guard" in branded_404
+    for href in ('href="/"', 'href="/app"', 'href="/downloads"', 'href="/help"'):
+        assert href in branded_404, href
+    status, _headers, body = fetch(HTTPS + "/assets/ai-guard-mark.svgx")
+    assert status == 404
+    assert b"<!doctype html>" not in body.lower()
+    for path in (
+        "/app.html",
+        "/privacy.html",
+        "/terms.html",
+        "/help.html",
+        "/downloads.html",
+        "/home.jsx",
+        "/product.cssx",
+        "/unknown.js",
+    ):
+        status, _headers, body = fetch(HTTPS + path)
+        assert status == 404, (path, status)
+        assert b"<!doctype html>" not in body.lower(), path
+    status, _headers, body = fetch(HTTPS + "/api/auth/session")
+    assert status == 404
+    assert b"<!doctype html>" not in body.lower()
 
     print(
         "public web acceptance ok: HTTPS valid TLS/HSTS, product/docs surfaces, "

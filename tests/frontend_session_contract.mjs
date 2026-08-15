@@ -6,35 +6,49 @@ import vm from "node:vm";
 import {fileURLToPath} from "node:url";
 
 const repo = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const page = fs.readFileSync(path.join(repo, "web", "index.html"), "utf8");
+const home = fs.readFileSync(path.join(repo, "web", "index.html"), "utf8");
+const appPage = fs.readFileSync(path.join(repo, "web", "app.html"), "utf8");
+const appCss = fs.readFileSync(path.join(repo, "web", "app.css"), "utf8");
+const source = fs.readFileSync(path.join(repo, "web", "app.js"), "utf8");
+const page = `${appPage}\n${appCss}\n${source}`;
+
+assert.match(home, /<main id="main-content"/, "Home has no semantic main target");
+assert.match(home, /<script src="\/home\.js" defer><\/script>/, "Home does not load the exact local deferred script");
+assert.doesNotMatch(home, /id="accessCode"|id="authCard"|\/api\//, "Home contains app authentication or API initialization");
+assert.doesNotMatch(home, /src="\/app\.js"/, "Home loads the Hosted application runtime");
+for (const handoff of ["/app#privacy-scan", "/app#safe-ai", "/app#pdpa-report", "/app#guided-demo", "/app#providerEvidenceCard"]) {
+  assert.ok(home.includes(handoff), `Home workflow handoff is missing: ${handoff}`);
+}
+assert.match(home, /<details class="mobile-nav">[\s\S]*href="\/privacy"[\s\S]*href="\/help"/, "Home has no no-JavaScript mobile navigation");
+assert.match(appPage, /<meta name="robots" content="noindex,nofollow">/, "Hosted app is indexable");
+assert.match(appPage, /<script src="\/app\.js" defer><\/script>/, "Hosted app does not load the exact local runtime");
+assert.doesNotMatch(appPage, /<script>([\s\S]*?)<\/script>/, "Hosted app retains inline executable script");
+assert.ok(appPage.includes('id="appBootstrapNotice"'), "Hosted app has no no-script/bootstrap failure panel");
+assert.ok(appPage.includes('<div id="appControls" inert>'), "Hosted operational controls do not fail closed before JavaScript bootstrap");
+assert.ok(source.includes('document.getElementById("appControls").removeAttribute("inert")'), "Hosted bootstrap never unlocks the inert application controls");
+assert.ok(source.includes('event.target.closest(\'a[href^="#"]\')'), "signed-out same-page workflow links are not intercepted");
+assert.ok(source.includes("holdWorkflowUntilAuthenticated(location.hash)"), "signed-out hash changes can bypass the access gate");
+assert.ok(appPage.includes('id="editorBoundary"'), "Hosted raw input lacks an adjacent privacy boundary");
 for (const forbidden of ["redact-pdf", "pdfFile", "pdfPick", "pdfDownload", "after_png_b64"]) {
   assert.ok(!page.includes(forbidden), `public PDF execution path remains: ${forbidden}`);
 }
 for (const workflow of ['id="privacy-scan"', 'id="safe-ai"', 'id="pdpa-report"']) {
   assert.ok(page.includes(workflow), `public workflow is missing: ${workflow}`);
 }
-assert.match(
-  page,
-  /<section class="hero-section" id="top" data-primary-channel="desktop">/,
-  "the public hero is not explicitly Desktop-first",
-);
-assert.match(
-  page,
-  /id="desktopPrimaryCta" href="\/downloads#desktop">ดาวน์โหลด AI Guard Desktop 3\.0\.0/,
-  "the primary hero action is not the reviewed Desktop download path",
-);
-assert.ok(
-  page.indexOf('id="desktopPrimaryCta"') < page.indexOf('id="authCard"'),
-  "the hosted invite gate appears before the primary Desktop action",
-);
+assert.match(home, /href="\/downloads#desktop">ดาวน์โหลด Desktop 3\.0\.0/, "Home is not Desktop-first");
+assert.ok(home.includes('class="visual"') && home.includes('class="poster"'), "Home lost the approved protection canvas");
 for (const channelBoundary of [
-  "ข้อความ การตรวจจับ การปกปิด vault/mapping การกู้คืน และรายงานอยู่บนอุปกรณ์",
-  "รุ่นนี้ไม่มีคำสั่งเรียก provider ภายนอก",
-  "ข้อความต้นฉบับเดินทางถึง edge และเซิร์ฟเวอร์ของทีม",
+  "การตรวจจับ การแทนที่ vault/mapping การกู้คืน และรายงานอยู่บนอุปกรณ์",
+  "Desktop 3.0.0 ไม่มีคำสั่งเรียก provider ภายนอก",
+]) {
+  assert.ok(home.includes(channelBoundary), `Home channel boundary is missing: ${channelBoundary}`);
+}
+for (const channelBoundary of [
+  "ข้อความต้นฉบับถึง AI for Thai edge และเซิร์ฟเวอร์ Team 08",
   "ส่งให้ Pathumma / thaillm-8b เฉพาะข้อความที่ปกป้องและตรวจซ้ำแล้ว",
   "ไม่ส่ง raw PII, vault/mapping หรือคู่ข้อมูลเดิมกับข้อมูลแทน",
 ]) {
-  assert.ok(page.includes(channelBoundary), `channel boundary is missing: ${channelBoundary}`);
+  assert.ok(appPage.includes(channelBoundary), `Hosted channel boundary is missing: ${channelBoundary}`);
 }
 assert.match(
   page,
@@ -146,7 +160,13 @@ for (const marker of [
   'id="reportDownloadBtn"',
   "ข้อความแสดงลำดับโดยประมาณ",
   "prefers-reduced-motion",
-  "--canvas:#f4f7fb",
+  "--canvas:#f3f1eb",
+  "@font-face{font-family:AIGuardAnuphan",
+  "url('/assets/fonts/anuphan-thai.woff2')",
+  "url('/assets/fonts/anuphan-latin.woff2')",
+  'href="/assets/ai-guard-favicon.svg"',
+  "url('/assets/ai-guard-mark.svg')",
+  "ข้อมูลสังเคราะห์",
 ]) {
   assert.ok(page.includes(marker), `competition UX contract missing: ${marker}`);
 }
@@ -155,19 +175,12 @@ assert.ok(
   "PDPA report is not reviewed before explicit download",
 );
 assert.ok(!page.includes("body.ai_response_masked"), "masked provider response leaked into the frontend");
-assert.ok(!/localStorage|sessionStorage/.test(page), "frontend persists sensitive state in browser storage");
+assert.ok(!/localStorage\s*[.\[]|sessionStorage\s*[.\[]/.test(source), "frontend persists sensitive state in browser storage");
 assert.ok(
   !/<script[^>]+src=["']https?:|<link[^>]+rel=["']stylesheet["'][^>]+href=["']https?:|<link[^>]+href=["']https?:[^>]+rel=["']stylesheet["']/i.test(page),
   "third-party executable/style dependency was added",
 );
-const scripts = [...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-assert.ok(
-  scripts.some(script => script.includes("same-origin caller authentication")),
-  "frontend application script is missing",
-);
-// Execute inline scripts in document order. Sprint 2 presentation helpers are
-// deliberately client-only and may live beside the main application script.
-const source = scripts.join("\n");
+assert.ok(source.includes("same-origin caller authentication"), "frontend application script is missing");
 
 class FakeClassList {
   constructor(owner) {
@@ -583,7 +596,7 @@ const contextObject = {
 const context = vm.createContext(contextObject);
 windowObject.document = document;
 windowObject.window = windowObject;
-vm.runInContext(source, context, {filename: "web/index.html"});
+vm.runInContext(source, context, {filename: "web/app.js"});
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 await flush();
@@ -680,7 +693,7 @@ assert.ok(!element("evidenceWarnings").innerHTML.includes("<svg"), "warning coun
 assert.match(element("evidenceWarnings").innerHTML, /&lt;img/, "warning evidence did not preserve escaped text");
 assert.equal(
   vm.runInContext('errorMessage(500, "RAW_EXCEPTION_DETAIL", "text")', context),
-  "ไม่สามารถดำเนินการได้ในขณะนี้ กรุณาตรวจข้อมูลแล้วลองใหม่",
+  "บริการไม่สามารถทำคำขอนี้ให้เสร็จได้ ระบบไม่แสดงผลลัพธ์ที่ตรวจสอบไม่ได้",
   "raw backend detail reached the user-facing error",
 );
 assert.match(

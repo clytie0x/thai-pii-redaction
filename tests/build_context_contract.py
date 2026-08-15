@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path, PurePosixPath
 
@@ -107,11 +108,29 @@ def main() -> int:
     web_dockerfile = (ROOT / "web" / "Dockerfile").read_text(encoding="utf-8")
     api_dockerfile = (ROOT / "api" / "Dockerfile").read_text(encoding="utf-8")
     for required in (
-        "product.css privacy.html terms.html help.html downloads.html robots.txt sitemap.xml",
+        "home.css home.js app.html app.css app.js product.css privacy.html terms.html help.html downloads.html 404.html robots.txt sitemap.xml",
+        "assets/ai-guard-mark.svg assets/ai-guard-mark-one-color.svg assets/ai-guard-mark-inverse.svg assets/ai-guard-favicon.svg assets/ai-guard-favicon-inverse.svg",
+        "assets/fonts/anuphan-thai.woff2 assets/fonts/anuphan-latin.woff2 assets/fonts/OFL-Anuphan.txt",
         "COPY healthcheck.sh /usr/local/bin/aift-healthcheck",
     ):
         if required not in web_dockerfile:
             raise AssertionError(f"web product image is incomplete: {required}")
+    expected_web_asset_hashes = {
+        "assets/fonts/anuphan-thai.woff2": "8a03cb45df9decacc349c794b1d626363109d99affb74f698a27d019996c220f",
+        "assets/fonts/anuphan-latin.woff2": "3a98eb4685d98ab59073f8b2f9995629e23f850f737144025b3ce491f20372d6",
+        "assets/fonts/OFL-Anuphan.txt": "94da26c98ca8d2ec3555ad30828a4184edfdf5832df92ae8cf4edd490e9ee655",
+    }
+    for relative_path, expected_hash in expected_web_asset_hashes.items():
+        payload = (ROOT / "web" / relative_path).read_bytes()
+        actual_hash = hashlib.sha256(payload).hexdigest()
+        if actual_hash != expected_hash:
+            raise AssertionError(
+                f"web licensed asset digest changed: {relative_path} {actual_hash}"
+            )
+    if not (ROOT / "web" / "assets/fonts/anuphan-thai.woff2").read_bytes().startswith(b"wOF2"):
+        raise AssertionError("Anuphan Thai asset is not WOFF2")
+    if not (ROOT / "web" / "assets/fonts/anuphan-latin.woff2").read_bytes().startswith(b"wOF2"):
+        raise AssertionError("Anuphan Latin asset is not WOFF2")
     if "COPY healthcheck.sh /usr/local/bin/aift-healthcheck" not in api_dockerfile:
         raise AssertionError("api image lacks its bounded recovery probe")
     print("build context contract ok: env, credential, VCS, output, cache, and editor sentinels excluded")

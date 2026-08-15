@@ -191,6 +191,19 @@ def web_response(path: str) -> tuple[int, dict[str, str], str]:
         return error.code, dict(error.headers), error.read().decode("utf-8", "replace")
 
 
+def web_binary_response(path: str) -> tuple[int, dict[str, str], bytes]:
+    request = urllib.request.Request(
+        WEB_BASE + path,
+        headers={"Host": "team08.aiforthai.in.th"},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return response.status, dict(response.headers), response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, dict(error.headers), error.read()
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -347,7 +360,10 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
             "web log hygiene: frontend config can record request data visible in Dozzle"
         )
 
-    page = (REPO / "web" / "index.html").read_text(encoding="utf-8")
+    home = (REPO / "web" / "index.html").read_text(encoding="utf-8")
+    app_page = (REPO / "web" / "app.html").read_text(encoding="utf-8")
+    app_js = (REPO / "web" / "app.js").read_text(encoding="utf-8")
+    page = app_page + "\n" + app_js
     readme = (REPO / "README.md").read_text(encoding="utf-8")
     forbidden_claims = (
         "ก่อนที่ข้อความจะออกจากเครื่อง",
@@ -358,7 +374,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         "ส่งเข้า AI อย่างปลอดภัย",
     )
     for claim in forbidden_claims:
-        if claim in page or claim in readme:
+        if claim in home or claim in page or claim in readme:
             failures.append(
                 f"hosted wording: stale local-only claim remains: {claim!r}"
             )
@@ -382,7 +398,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         if claim not in page + readme:
             failures.append(f"hosted wording: caller-auth boundary missing: {claim!r}")
     for forbidden_storage in ("localStorage", "sessionStorage"):
-        if forbidden_storage in page:
+        if re.search(rf"{forbidden_storage}\s*[.\[]", app_js):
             failures.append(
                 f"frontend auth: credential storage primitive present: {forbidden_storage}"
             )
@@ -513,20 +529,25 @@ def check_frontend_security_headers(failures: list[str]) -> None:
     for directive in (
         "default-src 'self'",
         "connect-src 'self'",
+        "font-src 'self'",
         "object-src 'none'",
         "base-uri 'none'",
         "frame-ancestors 'none'",
+        "script-src 'self'",
     ):
         if directive not in csp:
             failures.append(f"frontend header: CSP missing {directive!r}")
 
 
 def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
+    web_config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
     expected_pages = {
-        "/privacy": "ความเป็นส่วนตัวและความปลอดภัย",
-        "/terms": "ข้อกำหนดและการใช้งานที่ยอมรับได้",
-        "/help": "ช่วยเหลือและคำถามที่พบบ่อย",
-        "/downloads": "ดาวน์โหลด AI Guard Desktop",
+        "/": "ปกป้องข้อมูลก่อน",
+        "/app": "Hosted Web App",
+        "/privacy": "ข้อมูลไปไหน",
+        "/terms": "ใช้ได้เมื่อ",
+        "/help": "แก้ปัญหา",
+        "/downloads": "ข้อมูลอยู่ในเครื่อง",
         "/robots.txt": "Disallow: /api/",
         "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
     }
@@ -535,11 +556,72 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
         if status != 200 or marker not in body:
             failures.append(f"product page: {path} was not the expected static surface")
         if path in {"/privacy", "/terms", "/help", "/downloads"} and (
-            'href="/#web-access">เว็บแอป</a>' not in body
+            'href="/app">Hosted Web</a>' not in body
         ):
             failures.append(
                 f"product page: {path} Web App navigation bypassed invite access"
             )
+        if path in {"/privacy", "/terms", "/help", "/downloads"} and (
+            'href="/assets/ai-guard-favicon.svg"' not in body
+        ):
+            failures.append(f"product page: {path} does not use the production favicon")
+
+    static_assets = {
+        "/assets/ai-guard-mark.svg": ("image/svg+xml", b"<svg"),
+        "/assets/ai-guard-mark-one-color.svg": ("image/svg+xml", b"<svg"),
+        "/assets/ai-guard-mark-inverse.svg": ("image/svg+xml", b"<svg"),
+        "/assets/ai-guard-favicon.svg": ("image/svg+xml", b"<svg"),
+        "/assets/ai-guard-favicon-inverse.svg": ("image/svg+xml", b"<svg"),
+        "/assets/fonts/anuphan-thai.woff2": ("font/woff2", b"wOF2"),
+        "/assets/fonts/anuphan-latin.woff2": ("font/woff2", b"wOF2"),
+        "/assets/fonts/OFL-Anuphan.txt": ("text/plain", b"Copyright 2019 The Anuphan Project Authors"),
+        "/home.css": ("text/css", b"    @font-face"),
+        "/home.js": ("application/javascript", b"document.documentElement.classList.add"),
+        "/app.css": ("text/css", b"  @font-face"),
+        "/app.js": ("application/javascript", b'"use strict";'),
+        "/product.css": ("text/css", b"@font-face"),
+    }
+    for path, (content_type, prefix) in static_assets.items():
+        if f"location = {path}" not in web_config or f"try_files {path} =404;" not in web_config:
+            failures.append(f"static asset: exact allowlist route missing for {path}")
+            continue
+        status, headers, body = web_binary_response(path)
+        if status != 200:
+            failures.append(f"static asset: {path} returned {status}")
+        if not headers.get("Content-Type", "").lower().startswith(content_type):
+            failures.append(
+                f"static asset: {path} content type was {headers.get('Content-Type')!r}"
+            )
+        if not body.startswith(prefix):
+            failures.append(f"static asset: {path} payload signature/marker mismatch")
+    status, _headers, _body = web_binary_response("/assets/fonts/anuphan-thai.woff2x")
+    if status != 404:
+        failures.append("static asset: near-match font route was not denied")
+    status, body = web_get("/not-a-product-page")
+    if status != 404 or "หลงทาง" not in body or "AI Guard" not in body:
+        failures.append("web routing: unknown human route did not preserve branded 404")
+    for href in ('href="/"', 'href="/app"', 'href="/downloads"', 'href="/help"'):
+        if href not in body:
+            failures.append(f"web routing: branded 404 recovery is missing {href}")
+    status, body = web_get("/assets/ai-guard-mark.svgx")
+    if status != 404 or "<!doctype html>" in body.lower():
+        failures.append("web routing: asset near-match returned branded HTML")
+    for path in (
+        "/app.html",
+        "/privacy.html",
+        "/terms.html",
+        "/help.html",
+        "/downloads.html",
+        "/home.jsx",
+        "/product.cssx",
+        "/unknown.js",
+    ):
+        status, body = web_get(path)
+        if status != 404 or "<!doctype html>" in body.lower():
+            failures.append(f"web routing: filename-like route was not fixed 404: {path}")
+    status, body = web_get("/404.html")
+    if status != 404 or "หลงทาง" in body:
+        failures.append("web routing: internal 404 document is directly accessible")
     for base, path, location in (
         (WEB_BASE, "/private?q=must-not-reflect", "https://team08.aiforthai.in.th/private"),
         (BASE, "/health?q=must-not-reflect", "https://team08.aiforthai.in.th/api/health"),
@@ -813,7 +895,7 @@ def check_fixed_proxy_failures_and_timeout_policy(failures: list[str]) -> None:
     if config.count("proxy_read_timeout 200s;") != 2:
         failures.append("timeout: provider deadline was widened beyond two roundtrip aliases")
 
-    frontend = (REPO / "web" / "index.html").read_text(encoding="utf-8")
+    frontend = (REPO / "web" / "app.js").read_text(encoding="utf-8")
     uncertain_lock = re.search(
         r"const\s+PROVIDER_UNCERTAIN_LOCK_MS\s*=\s*(\d+)\s*;", frontend
     )

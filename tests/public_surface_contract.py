@@ -15,7 +15,10 @@ def require(condition: bool, message: str) -> None:
 
 def main() -> int:
     nginx = (ROOT / "api" / "default.conf.template").read_text(encoding="utf-8")
-    frontend = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    frontend = "\n".join(
+        (ROOT / "web" / name).read_text(encoding="utf-8")
+        for name in ("index.html", "app.html", "app.js")
+    )
     core = (ROOT / "core" / "app" / "server.py").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     state = (ROOT / "STATE.md").read_text(encoding="utf-8")

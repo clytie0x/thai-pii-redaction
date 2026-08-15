@@ -1,75 +1,72 @@
 <!doctype html>
-<html lang="th">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>AI Guard — Brand Mark Preview</title>
+  <title>AI Guard — Numeric Brand Mark Candidate</title>
   <link rel="icon" href="assets/ai-guard-favicon.svg" type="image/svg+xml">
   <style>
-    :root{--paper:#f3f1eb;--paper-2:#e8eef4;--ink:#151515;--blue:#3266a8;--blue-soft:#dce8f4;--red:#b85868}
+    :root{--paper:#f3f1eb;--ink:#151515;--blue:#3266a8;--red:#b85868;--gold:#e2b95f;--line:rgba(21,21,21,.22)}
     *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:Anuphan,"IBM Plex Sans Thai Looped",system-ui,sans-serif}
-    body{min-height:100vh;background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(21,21,21,.08) 50%,transparent calc(50% + .5px)),var(--paper)}
-    header{height:82px;padding:0 4vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink);font-size:12px;font-weight:700;letter-spacing:.12em}
-    main{min-height:calc(100vh - 82px);display:grid;grid-template-columns:1.05fr .95fr}
-    .hero{padding:5vw;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--ink)}
-    .eyebrow{display:flex;align-items:center;gap:12px;color:var(--blue);font-size:11px;font-weight:800;letter-spacing:.13em}
-    .eyebrow:before{content:"01";width:38px;height:38px;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font-size:10px}
-    .lockup{margin-top:38px;display:flex;align-items:center;gap:32px}
-    .lockup img{width:clamp(150px,18vw,260px);height:auto;filter:drop-shadow(0 24px 24px rgba(29,57,88,.12))}
-    h1{margin:0;font-size:clamp(54px,7vw,112px);line-height:.92;letter-spacing:-.045em}
-    h1 span{display:block;color:var(--blue)}
-    .hero p{max-width:650px;margin:40px 0 0;color:#4a5055;font-size:16px;line-height:1.8}
-    .specimen{display:grid;grid-template-rows:1.2fr .8fr}
-    .field{position:relative;padding:42px;display:grid;place-items:center;overflow:hidden;color:#fff;background:var(--blue)}
-    .field:before{content:"PRIMARY MARK / BLUE FIELD";position:absolute;left:32px;top:26px;font-size:10px;font-weight:800;letter-spacing:.12em}
-    .field:after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px);background-size:56px 56px;pointer-events:none}
-    .field img{position:relative;z-index:2;width:min(250px,45%);height:auto;filter:drop-shadow(18px 22px 0 rgba(21,21,21,.22))}
-    .tests{display:grid;grid-template-columns:1.25fr .75fr;border-top:1px solid var(--ink)}
-    .sizes,.palette{padding:30px}
-    .sizes{border-right:1px solid var(--ink)}
-    h2{margin:0;font-size:10px;letter-spacing:.12em}
-    .size-row{margin-top:26px;display:flex;align-items:end;gap:22px;flex-wrap:wrap}
-    .size-sample{display:grid;justify-items:center;gap:8px;color:#656b70;font-size:9px;font-weight:700}
-    .size-sample img{display:block}
-    .palette-row{margin-top:24px;display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
-    .swatch{min-height:58px;padding:9px;display:flex;align-items:end;border:1px solid var(--ink);font-size:9px;font-weight:800}
-    .swatch.blue{color:#fff;background:var(--blue)}.swatch.ink{color:#fff;background:var(--ink)}.swatch.paper{background:var(--paper)}.swatch.red{color:#fff;background:var(--red)}
-    @media(max-width:900px){main{grid-template-columns:1fr}.hero{min-height:620px;border-right:0;border-bottom:1px solid var(--ink)}.specimen{min-height:720px}.lockup{gap:22px}.tests{grid-template-columns:1fr}.sizes{border-right:0;border-bottom:1px solid var(--ink)}}
-    @media(max-width:560px){header{height:70px;padding-inline:20px}.hero{padding:52px 20px}.lockup{align-items:flex-start;flex-direction:column}.lockup img{width:150px}h1{font-size:64px}.field{min-height:430px}.tests{display:block}.sizes,.palette{padding:25px 20px}}
+    html{background:var(--paper);color:var(--ink);font:15px/1.55 system-ui,sans-serif}
+    body{margin:0}header{min-height:72px;padding:18px clamp(20px,4vw,64px);display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--ink);font-size:11px;font-weight:800;letter-spacing:.12em}
+    main{display:grid;grid-template-columns:minmax(340px,.82fr) minmax(0,1.18fr);min-height:calc(100vh - 72px)}
+    .spec{padding:clamp(32px,5vw,76px);border-right:1px solid var(--ink)}
+    .eyebrow{margin:0 0 22px;color:var(--blue);font-size:11px;font-weight:850;letter-spacing:.14em}
+    h1{margin:0;max-width:9ch;font-size:clamp(48px,6.5vw,96px);line-height:.9;letter-spacing:-.055em}h1 span{color:var(--blue)}
+    .lede{max-width:57ch;margin:30px 0 0;color:#50545a}
+    dl{margin:36px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:10px 18px;padding-top:22px;border-top:1px solid var(--line);font-size:12px}dt{font-weight:850;letter-spacing:.08em}dd{margin:0;color:#555b60}
+    .construction{margin-top:32px;display:grid;grid-template-columns:minmax(190px,250px) 1fr;gap:24px;align-items:center}
+    .grid-mark{position:relative;aspect-ratio:1;border:1px solid var(--ink);background:linear-gradient(rgba(50,102,168,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(50,102,168,.18) 1px,transparent 1px);background-size:12.5% 12.5%}
+    .grid-mark:before{content:"";position:absolute;z-index:2;inset:0 50%;width:1px;background:var(--red)}.grid-mark img{position:absolute;inset:0;width:100%;height:100%}
+    .coordinates{font:10px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;color:#555b60}
+    .clear-box{margin-top:24px;width:160px;aspect-ratio:1;display:grid;place-items:center;border:1px dashed var(--blue);background:rgba(50,102,168,.04)}.clear-box img{width:80%;height:80%}.clear-label{margin-top:7px;font-size:10px;color:#555b60}
+    .review{min-width:0}.review-heading{margin:0;padding:20px 26px;border-bottom:1px solid var(--ink);font-size:10px;letter-spacing:.12em}
+    .variants{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--ink)}
+    figure{margin:0}.variant{min-height:250px;padding:48px 28px 28px;display:grid;place-items:center;position:relative}.variant+.variant{border-left:1px solid var(--ink)}.variant figcaption{position:absolute;left:20px;top:18px;font-size:10px;font-weight:850;letter-spacing:.12em}.variant img{width:min(142px,62%);height:auto}.variant.inverse{background:var(--blue);color:var(--paper)}
+    .matrix-heading{margin:0;padding:18px 26px;border-bottom:1px solid var(--ink);font-size:10px;letter-spacing:.12em}
+    .matrix{display:grid;grid-template-columns:1fr 1fr;min-width:0}.field{min-width:0;padding:25px;display:grid;align-content:start;gap:20px}.field+.field{border-left:1px solid var(--ink)}.field.blue{color:var(--paper);background:var(--blue)}.field h3{margin:0;font-size:10px;letter-spacing:.12em}
+    .size-row{display:flex;align-items:flex-end;gap:clamp(11px,1.6vw,22px);flex-wrap:wrap}.size{display:grid;justify-items:center;gap:7px;font:9px/1 ui-monospace,monospace}.size img{display:block;flex:none}.row-note{padding-top:14px;border-top:1px solid currentColor;font-size:10px;opacity:.82}
+    @media(max-width:1050px){main{grid-template-columns:1fr}.spec{border-right:0;border-bottom:1px solid var(--ink)}.construction{grid-template-columns:220px 1fr}}
+    @media(max-width:680px){header{align-items:flex-start;flex-direction:column}.variants,.matrix{grid-template-columns:1fr}.variant+.variant,.field+.field{border-left:0;border-top:1px solid var(--ink)}.construction{grid-template-columns:1fr}.grid-mark{max-width:250px}}
   </style>
 </head>
 <body>
-  <header><span>AI GUARD / BRAND MARK</span><span>EDITORIAL SHIELD · 2026</span></header>
+  <header><span>AI GUARD / CANDIDATE REVIEW</span><span>64-UNIT MASTER · REVISION B2</span></header>
   <main>
-    <section class="hero">
-      <div class="eyebrow">ORIGINAL IDENTITY, REDRAWN</div>
-      <div class="lockup">
-        <img src="assets/ai-guard-mark.svg" alt="โลโก้ AI Guard รูปโล่และหน้ากากแบ่งสองฝั่ง" width="260" height="260">
-        <h1>AI<span>Guard</span></h1>
+    <section class="spec" aria-labelledby="candidateTitle">
+      <p class="eyebrow">CANONICAL MOTIF, NUMERIC RECONSTRUCTION</p>
+      <h1 id="candidateTitle">Symmetric<br><span>shield.</span></h1>
+      <p class="lede">The shield is an exact reflection around <b>x = 32</b>. The broad gold mask, unequal eyes, and coral flame rising above the crown intentionally preserve the historical asymmetric mnemonic. This revision remains a review candidate.</p>
+      <dl><dt>SHIELD</dt><dd>outer 7…57 · crown y8 · apex y61</dd><dt>FIELD</dt><dd>inner 13…51 · crown y14 · apex y55</dd><dt>STROKES</dt><dd>2 shield · 1.75 motif · 1.25 field/eyes</dd><dt>CLEAR SPACE</dt><dd>8 external units · 80 × 80 usage box</dd></dl>
+      <div class="construction">
+        <div class="grid-mark"><img src="assets/ai-guard-mark.svg" alt="AI Guard candidate aligned directly to its 64-unit construction grid" width="250" height="250"></div>
+        <div><div class="coordinates">AXIS x=32<br>OUTER (7,16) ↔ (57,16)<br>INNER (13,20) ↔ (51,20)<br>MASK CONTROL BOX 12.5…35<br>FLAME CONTROL BOX 29.25…56<br>FLAME TIP y=2 · ABOVE CROWN y=8<br>MIN CUT EDGE GAP=1.594</div><div class="clear-box"><img src="assets/ai-guard-mark.svg" alt="" width="128" height="128"></div><div class="clear-label">80 × 80 usage box: 64-unit mark + 8 units per edge</div></div>
       </div>
-      <p>รักษาโล่ หน้ากาก และเส้นเปลวไฟจากตราเดิม แต่ลดเส้นรบกวนให้คมเมื่อย่อ สีแดงทำหน้าที่เป็นสัญญาณข้อมูลที่ตรวจพบ ส่วนสีน้ำเงินคือข้อมูลหลังได้รับการปกป้อง</p>
     </section>
-    <section class="specimen">
-      <div class="field"><img src="assets/ai-guard-mark.svg" alt="" width="250" height="250"></div>
-      <div class="tests">
-        <div class="sizes">
-          <h2>LEGIBILITY / CSS SIZE</h2>
-          <div class="size-row">
-            <span class="size-sample"><img src="assets/ai-guard-favicon.svg" alt="" width="16" height="16">16</span>
-            <span class="size-sample"><img src="assets/ai-guard-favicon.svg" alt="" width="24" height="24">24</span>
-            <span class="size-sample"><img src="assets/ai-guard-mark.svg" alt="" width="32" height="32">32</span>
-            <span class="size-sample"><img src="assets/ai-guard-mark.svg" alt="" width="48" height="48">48</span>
-            <span class="size-sample"><img src="assets/ai-guard-mark.svg" alt="" width="64" height="64">64</span>
-          </div>
+    <section class="review" aria-labelledby="variantsTitle">
+      <h2 class="review-heading" id="variantsTitle">FIXED-COLOR VARIANTS</h2>
+      <div class="variants">
+        <figure class="variant"><figcaption>MAIN / HERITAGE COLOR</figcaption><img src="assets/ai-guard-mark.svg" alt="Main AI Guard logo variant" width="142" height="142"></figure>
+        <figure class="variant inverse"><figcaption>INVERSE / PAPER</figcaption><img src="assets/ai-guard-mark-inverse.svg" alt="Inverse AI Guard logo variant" width="142" height="142"></figure>
+        <figure class="variant"><figcaption>ONE COLOR / INK</figcaption><img src="assets/ai-guard-mark-one-color.svg" alt="One-color AI Guard logo variant" width="142" height="142"></figure>
+      </div>
+      <h2 class="matrix-heading">LEGIBILITY MATRIX / EXACT CSS PIXELS</h2>
+      <div class="matrix">
+        <div class="field">
+          <h3>MAIN ON PAPER</h3>
+          <div class="size-row"><span class="size"><img src="assets/ai-guard-favicon.svg" alt="" width="16" height="16">16</span><span class="size"><img src="assets/ai-guard-favicon.svg" alt="" width="24" height="24">24</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="32" height="32">32</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="42" height="42">42</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="64" height="64">64</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="128" height="128">128</span></div>
+          <h3>ONE-COLOR INK / STRESS TEST</h3>
+          <div class="size-row"><span class="size"><img src="assets/ai-guard-mark-one-color.svg" alt="" width="16" height="16">16</span><span class="size"><img src="assets/ai-guard-mark-one-color.svg" alt="" width="24" height="24">24</span><span class="size"><img src="assets/ai-guard-mark-one-color.svg" alt="" width="32" height="32">32</span><span class="size"><img src="assets/ai-guard-mark-one-color.svg" alt="" width="42" height="42">42</span><span class="size"><img src="assets/ai-guard-mark-one-color.svg" alt="" width="64" height="64">64</span><span class="size"><img src="assets/ai-guard-mark-one-color.svg" alt="" width="128" height="128">128</span></div>
+          <div class="row-note">At 16/24 the favicon is the supported asset; the full mark is shown only as a stress test.</div>
         </div>
-        <div class="palette">
-          <h2>CORE PALETTE</h2>
-          <div class="palette-row">
-            <span class="swatch blue">#3266A8</span><span class="swatch ink">#151515</span>
-            <span class="swatch paper">#F3F1EB</span><span class="swatch red">#B85868</span>
-          </div>
+        <div class="field blue">
+          <h3>INVERSE ON PROTECTION BLUE</h3>
+          <div class="size-row"><span class="size"><img src="assets/ai-guard-favicon-inverse.svg" alt="" width="16" height="16">16</span><span class="size"><img src="assets/ai-guard-favicon-inverse.svg" alt="" width="24" height="24">24</span><span class="size"><img src="assets/ai-guard-mark-inverse.svg" alt="" width="32" height="32">32</span><span class="size"><img src="assets/ai-guard-mark-inverse.svg" alt="" width="42" height="42">42</span><span class="size"><img src="assets/ai-guard-mark-inverse.svg" alt="" width="64" height="64">64</span><span class="size"><img src="assets/ai-guard-mark-inverse.svg" alt="" width="128" height="128">128</span></div>
+          <h3>COLOR MARK / UNSUPPORTED CONTRAST STRESS TEST</h3>
+          <div class="size-row"><span class="size"><img src="assets/ai-guard-favicon.svg" alt="" width="16" height="16">16</span><span class="size"><img src="assets/ai-guard-favicon.svg" alt="" width="24" height="24">24</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="32" height="32">32</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="42" height="42">42</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="64" height="64">64</span><span class="size"><img src="assets/ai-guard-mark.svg" alt="" width="128" height="128">128</span></div>
+          <div class="row-note">The inverse favicon is a non-semantic one-color mnemonic; tiny assets do not encode detected/protected status by color.</div>
         </div>
       </div>
     </section>

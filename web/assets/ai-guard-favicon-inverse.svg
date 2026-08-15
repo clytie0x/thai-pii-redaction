@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <mask id="ag-favicon-inverse-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#000"/>
+      <path d="M32 8 57 16v16c0 13-8.5 22-25 29C15.5 54 7 45 7 32V16L32 8Z M32 15 50 21v11c0 9-6 15.5-18 21.5C20 47.5 14 41 14 32V21L32 15Z" fill="#fff" fill-rule="evenodd"/>
+      <path d="M31.5 15c-1.5 5-4.5 7.5-8 7.5-3.5 0-6.5-1.5-8-3.5-2 5-2 10-.75 15 2 7 7.25 12 16.25 15-.5-5.5-1.25-10.5.5-15.5 2-5.5 3.5-12 0-18.5ZM33 3c6 4 9.5 9 10 15 2-3 2-6.5.5-9.5 5 4 6.5 9 5.5 14 2-2 3-4.5 2.5-7 3.5 5.5 3 11-.5 15-.5 7-5.5 13.5-18 19.5-1.5-6-3-11-1.5-16 1.75-5 4-10.5 3.75-16C35 12.5 32.5 7 31.5 5c1 .5 1.5-.5 1.5-2Z" fill="#fff"/>
+      <path d="M18.5 31c3-2.25 7-1.75 9.5.75-2.75 2.5-6.75 2.25-9.5-.75ZM36.5 31.5c2.75-2.25 6.5-2.25 9.25-.75-2.75 3-6.5 3.25-9.25.75Z" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="64" height="64" fill="#F3F1EB" mask="url(#ag-favicon-inverse-mask)"/>
+  <path d="M32 8 57 16v16c0 13-8.5 22-25 29C15.5 54 7 45 7 32V16L32 8Z" fill="none" stroke="#F3F1EB" stroke-width="2.75" stroke-linejoin="round"/>
+</svg>

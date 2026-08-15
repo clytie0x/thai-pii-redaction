@@ -120,7 +120,7 @@ The browser permits one unresolved provider-bound request at a time.
 
 | Component | Boundary |
 |---|---|
-| `web/` | Read-only static nginx on loopback host port 20070.  Product pages, fixed 404 routing, security headers, minimized logs. |
+| `web/` | Read-only static nginx on loopback host port 20070. Concept C Home is isolated from the invite-only `/app` runtime; exact routes also serve Downloads, Privacy, Help, Terms, a branded human 404, local fonts/logos, security headers, and minimized logs. |
 | `api/` | Read-only nginx on loopback host port 20071.  Re-adds the stripped `/api` prefix, exact allowlist, holds the inner service key, applies limits and fixed errors. |
 | `core/` | Non-root/read-only FastAPI container, internal network only.  Port-owned auth/report policy wraps a vendored upstream slice. |
 | `sync/` | Pins 75 upstream files from `44ef30b0e8ea2021fc4ceec9d3b12dc9f64c750f` with per-file hashes. |

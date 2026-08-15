@@ -17,7 +17,11 @@ DEPLOY = "\n".join(
     (ROOT / "scripts" / name).read_text(encoding="utf-8")
     for name in ("deploy_production.sh", "rollback_production.sh")
 )
-FRONTEND = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+FRONTEND = "\n".join(
+    path.read_text(encoding="utf-8", errors="ignore")
+    for path in (ROOT / "web").rglob("*")
+    if path.is_file() and path.suffix in {".html", ".js", ".css"}
+)
 INTENDED = {
     "APP_AIGUARD_API_KEY",
     "APP_AIFT_ACCESS_CODE",
