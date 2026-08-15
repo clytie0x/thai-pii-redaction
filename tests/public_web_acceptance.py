@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+from html.parser import HTMLParser
 import json
+import re
 import ssl
 import urllib.error
 import urllib.request
@@ -49,6 +51,72 @@ LEGACY_DENIALS = (
     "/api/redact-pdf",
     "/api/v1/redact-pdf",
 )
+INSECURE_CSS_REFERENCE = re.compile(
+    r"(?:url\(\s*['\"]?|@import\s+(?:url\(\s*)?['\"]?)http://",
+    re.IGNORECASE,
+)
+INSECURE_SCRIPT_REFERENCE = re.compile(
+    r"(?:fetch|WebSocket|EventSource)\s*\(\s*['\"](?:http|ws)://",
+    re.IGNORECASE,
+)
+NETWORK_URL_ATTRIBUTES = {
+    "action",
+    "background",
+    "cite",
+    "formaction",
+    "href",
+    "longdesc",
+    "manifest",
+    "ping",
+    "poster",
+    "src",
+    "xlink:href",
+}
+
+
+class NetworkReferenceParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.insecure_reference = False
+
+    def _check_attributes(
+        self, tag: str, attributes: list[tuple[str, str | None]]
+    ) -> None:
+        normalized = {name.lower(): value or "" for name, value in attributes}
+        if tag.lower() == "meta" and normalized.get("http-equiv", "").lower() == "refresh":
+            if re.search(r"url\s*=\s*['\"]?http://", normalized.get("content", ""), re.I):
+                self.insecure_reference = True
+        for name, value in attributes:
+            if value is None:
+                continue
+            attribute = name.lower()
+            candidate = value.strip().lower()
+            if attribute in NETWORK_URL_ATTRIBUTES and candidate.startswith(
+                ("http://", "ws://")
+            ):
+                self.insecure_reference = True
+            elif (
+                attribute == "data"
+                and tag.lower() == "object"
+                and candidate.startswith("http://")
+            ):
+                self.insecure_reference = True
+            elif attribute == "srcset":
+                urls = (item.strip().split(maxsplit=1)[0] for item in value.split(","))
+                if any(url.lower().startswith("http://") for url in urls if url):
+                    self.insecure_reference = True
+            elif attribute == "style" and INSECURE_CSS_REFERENCE.search(value):
+                self.insecure_reference = True
+
+    def handle_starttag(
+        self, tag: str, attributes: list[tuple[str, str | None]]
+    ) -> None:
+        self._check_attributes(tag, attributes)
+
+    def handle_startendtag(
+        self, tag: str, attributes: list[tuple[str, str | None]]
+    ) -> None:
+        self._check_attributes(tag, attributes)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -102,6 +170,15 @@ def classify_http_redirect(
     }
 
 
+def assert_no_insecure_network_reference(text: str, path: str) -> None:
+    """Reject active plain-HTTP references, not an inline SVG XML namespace."""
+    parser = NetworkReferenceParser()
+    parser.feed(text)
+    assert not parser.insecure_reference, path
+    assert INSECURE_CSS_REFERENCE.search(text) is None, path
+    assert INSECURE_SCRIPT_REFERENCE.search(text) is None, path
+
+
 def main() -> int:
     warnings: list[dict[str, object]] = []
     for path in HTTP_PROBES:
@@ -128,7 +205,7 @@ def main() -> int:
         assert headers.get("X-Content-Type-Options") == "nosniff", path
         assert headers.get("X-Frame-Options") == "DENY", path
         assert headers.get("Referrer-Policy") == "no-referrer", path
-        assert "http://" not in text, path
+        assert_no_insecure_network_reference(text, path)
         if path == "/":
             assert 'data-primary-channel="desktop"' in text
             assert 'id="desktopPrimaryCta" href="/downloads#desktop"' in text

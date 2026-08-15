@@ -335,6 +335,31 @@ def main() -> int:
         pass
     else:
         raise AssertionError("an incorrect 308 redirect must remain fatal")
+    assert_no_insecure_network_reference = public_policy[
+        "assert_no_insecure_network_reference"
+    ]
+    assert_no_insecure_network_reference(
+        "<link rel=\"icon\" href=\"data:image/svg+xml,%3Csvg "
+        "xmlns='http://www.w3.org/2000/svg'%3E\">",
+        "/inline-svg-contract",
+    )
+    for insecure_reference in (
+        '<img src="http://example.invalid/pixel.png">',
+        '<div style="background:url(http://example.invalid/pixel.png)">',
+        '<script>fetch("http://example.invalid/data")</script>',
+        '<source srcset="https://example.invalid/a.png 1x, '
+        'http://example.invalid/b.png 2x">',
+        '<meta http-equiv="refresh" content="0;url=http://example.invalid/">',
+        '<svg><use xlink:href="http://example.invalid/sprite.svg#icon"></use></svg>',
+    ):
+        try:
+            assert_no_insecure_network_reference(
+                insecure_reference, "/mixed-content-contract"
+            )
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("an active plain-HTTP reference must remain fatal")
     assert "assert status == 308" not in public_policy_source
     assert "PUBLIC_EDGE_WARNING " in public_policy_source
     assert "ssl.create_default_context()" in public_policy_source

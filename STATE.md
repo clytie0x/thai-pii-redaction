@@ -83,6 +83,16 @@
   web/api/audit logs ที่ไม่เก็บ request target ยังคงอยู่ SHA นี้ผ่าน feature
   Pipeline #36257 และ protected-main check-only Pipeline #36258 แล้ว แต่ไม่ได้
   deploy ซ้ำภายใต้นโยบาย acceptance เดิมเพราะจะ rollback แบบ deterministic
+- policy exact `8c99dfd58556887db4a7f9d917a0e4ff1b0ae7d9` ผ่าน feature Pipeline
+  #36304 และ protected-main check-only Pipeline #36305 Production Pipeline
+  #36306 ผ่าน check/deploy และ internal platform acceptance ทั้ง auth, 16-route
+  allowlist, live Pathumma, report และ logs จากนั้น public acceptance รายงาน HTTP
+  warnings ตาม owner decision แต่ mixed-content assertion แบบค้น substring จับ
+  standards-required `http://www.w3.org/2000/svg` ภายใน percent-encoded inline
+  favicon data URI เป็น network request ผิดประเภท Mandatory gate จึง rollback
+  กลับ exact `72e18bbe...` healthy ตามนโยบาย Corrective descendant ต้องแยก
+  network-bearing attributes/CSS/JS จาก inert inline SVG namespace โดยไม่ลด
+  browser mixed-content หรือ HTTPS/TLS/HSTS gate
 - รายการ P0/P1/P2 และ platform evidence ที่ไม่ควรอ้างอยู่ที่
   `docs/PRODUCTION-READINESS.md` งานนี้เปลี่ยน runtime จึงต้อง deploy exact SHA;
   HTTPS/valid TLS/HSTS, protected acceptance, live provider, auth/Secure cookie,

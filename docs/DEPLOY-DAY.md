@@ -128,6 +128,16 @@ health และ resources หลัง rollback ประวัตินี้�
 warning ไม่ได้ย้อนหลังเปลี่ยน #36253 เป็น successful deployment และไม่ได้ทำให้
 HTTP ปลอดภัย
 
+Production Pipeline #36306 ที่ policy exact
+`8c99dfd58556887db4a7f9d917a0e4ff1b0ae7d9` ผ่าน check/deploy และ internal
+acceptance; HTTP `/` 200 และ `/api/health` 422 ถูกบันทึกเป็น non-rollback
+external warnings ตาม owner decision แล้ว public gate อื่นพบ substring
+`http://www.w3.org/2000/svg` ใน percent-encoded inline favicon data URI และ
+rollback กลับ exact `72e18bbe...` healthy แม้ SVG namespace นี้ไม่ใช่ network
+request ประวัตินี้ต้องเก็บไว้ Corrective policy ต้อง reject เฉพาะ active
+plain-HTTP/WS network references ใน HTML attributes, `srcset`, CSS/JS และยังต้อง
+ผ่าน browser console/mixed-content gate ห้ามลบ gate หรือ retry #36306
+
 ## 4 Credential gate และ production pipeline สำหรับ descendant ใหม่
 
 `main` protected, force push ปิด และ push/merge จำกัด Maintainers แล้ว Owner
