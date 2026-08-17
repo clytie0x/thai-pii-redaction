@@ -3695,8 +3695,9 @@ Exit gate:
   organizer HTTP-redirect limitation is still reported honestly, and only then
   may Hosted `3.0.0` be called deployed.
 
-Current execution position: **Stages 0 through 8 are complete locally; Stage 9
-protected production release has not started.** The source candidate
+Current execution position: **Stages 0 through 8 are complete locally; the
+first Stage 9 protected production attempt failed acceptance and rolled back,
+so Stage 9 remains incomplete.** The source candidate
 now identifies Hosted `3.0.0`, retains HTTP contract version 2, and has exactly
 40 API locations. Deployed production remains Hosted `2.5.0` with exactly 16
 public API locations until the exact Stage 8 commit passes the protected Stage 9
@@ -3748,6 +3749,19 @@ Stage 8 closeout record:
   all labels equaled that commit. Stage 8 is complete locally. This status-only
   closeout changes no production runtime byte; the final Stage 9 commit must
   still rebuild exact labels and pass protected production acceptance.
+- Protected Pipeline #36531 on exact `ac33152a7ed3074858fcbbd712957536c4b39d68`
+  passed check/deploy but failed the new live custom-result acceptance assertion.
+  Automatic rollback removed the four-service candidate and restored exact
+  healthy Hosted 2.5.0 revision `dbcfe17b34744dc3e9a88e4099786a754fe903a6`.
+  The API had returned a custom result. The first correction then conflated a
+  truthfully classified `incomplete|unsafe` result with sufficient release
+  usefulness. The final acceptance treats that outcome only as fail-closed
+  safety evidence, retries through at most three fresh Standard authorities,
+  and still requires one complete zero-leftover warning-free result. Safety,
+  exact protected-payload, digest/outbound/receipt/provider agreement remains
+  mandatory on every classified attempt; unsafe content is never approved or
+  displayed. Release requires a new descendant commit and new web
+  pipeline; #36531 is historical rollback evidence and must not be retried.
 
 Stage 7 closeout evidence (local release migration only):
 

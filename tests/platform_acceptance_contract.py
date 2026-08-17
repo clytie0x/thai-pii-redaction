@@ -43,6 +43,141 @@ class Response:
 
 def main() -> int:
     acceptance = load_acceptance()
+
+    base_result = {
+        "request_id": "req_complete",
+        "hosted_version": "3.0.0",
+        "source_kind": "custom_standard",
+        "protected_text": "[NAME_1] [EMAIL_1]",
+        "restored_text": "synthetic result",
+        "warnings": [],
+        "safety": {"status": "pass", "residual_count": 0},
+        "restoration": {"status": "complete", "leftover_count": 0},
+        "provider": {"id": "tokenmind", "model": "thaillm-8b", "attempt_count": 1},
+        "receipt": {
+            "restoration_status": "complete",
+            "request_id": "req_complete",
+            "hosted_version": "3.0.0",
+            "source_kind": "custom_standard",
+            "digest_match": True,
+            "outbound_gate_status": "no_residual_signal_detected",
+            "provider_id": "tokenmind",
+            "provider_model": "thaillm-8b",
+            "provider_attempt_count": 1,
+        },
+    }
+    if acceptance._custom_result_status(
+        base_result, expected_protected="[NAME_1] [EMAIL_1]"
+    ) != "complete":
+        raise AssertionError("complete custom result did not pass acceptance")
+    incomplete_result = {
+        **base_result,
+        "request_id": "req_incomplete",
+        "warnings": [],
+        "restoration": {"status": "incomplete", "leftover_count": 1},
+        "receipt": {
+            **base_result["receipt"],
+            "request_id": "req_incomplete",
+            "restoration_status": "incomplete",
+        },
+    }
+    if acceptance._custom_result_status(
+        incomplete_result, expected_protected="[NAME_1] [EMAIL_1]"
+    ) != "incomplete":
+        raise AssertionError("truthfully classified incomplete result did not pass safety subgate")
+    unsafe_result = {
+        **base_result,
+        "request_id": "req_unsafe",
+        "warnings": [{"code": "generated_pii", "count": 1}],
+        "restoration": {"status": "unsafe", "leftover_count": 0},
+        "receipt": {
+            **base_result["receipt"],
+            "request_id": "req_unsafe",
+            "restoration_status": "unsafe",
+        },
+    }
+    if acceptance._custom_result_status(
+        unsafe_result, expected_protected="[NAME_1] [EMAIL_1]"
+    ) != "unsafe":
+        raise AssertionError("truthfully classified unsafe custom result did not pass fail-closed acceptance")
+    mismatched_result = {
+        **unsafe_result,
+        "receipt": {**unsafe_result["receipt"], "restoration_status": "complete"},
+    }
+    if acceptance._custom_result_status(
+        mismatched_result, expected_protected="[NAME_1] [EMAIL_1]"
+    ) is not None:
+        raise AssertionError("mismatched restoration receipt passed acceptance")
+    for malformed in (
+        {**incomplete_result, "warnings": [{"code": "generated_pii", "count": 1}]},
+        {**unsafe_result, "warnings": [], "restoration": {"status": "unsafe", "leftover_count": 1}},
+        {**base_result, "restoration": {"status": "complete", "leftover_count": True}},
+        {**unsafe_result, "warnings": [{"code": "unknown", "count": 1}]},
+        {**base_result, "protected_text": "สมชาย test@example.invalid"},
+        {**base_result, "request_id": "", "receipt": {**base_result["receipt"], "request_id": ""}},
+        {**base_result, "provider": {**base_result["provider"], "attempt_count": True}, "receipt": {**base_result["receipt"], "provider_attempt_count": True}},
+    ):
+        if acceptance._custom_result_status(
+            malformed, expected_protected="[NAME_1] [EMAIL_1]"
+        ) is not None:
+            raise AssertionError("malformed custom restoration combination passed acceptance")
+
+    def session_or_end(path: str, **_kwargs):
+        if path == "/auth/session":
+            return 200, {"X-AIGuard-Service-Class": "standard"}, b"{}"
+        if path == "/auth/guest/end":
+            return 204, {}, b""
+        raise AssertionError(f"unexpected custom release request: {path}")
+
+    with patch.object(
+        acceptance, "_start_standard", side_effect=["cookie-1"]
+    ) as start_once, patch.object(
+        acceptance, "_verify_hosted3_custom", return_value="complete"
+    ) as verify_once, patch.object(
+        acceptance, "_request", side_effect=session_or_end
+    ) as request_once:
+        if acceptance._verify_usable_custom_release_path() != ["cookie-1"]:
+            raise AssertionError("complete custom release path did not stop after one run")
+        if start_once.call_count != 1 or verify_once.call_count != 1 or request_once.call_count != 2:
+            raise AssertionError("complete custom release path repeated authority work")
+
+    with patch.object(
+        acceptance, "_start_standard", side_effect=["cookie-1", "cookie-2", "cookie-3"]
+    ) as start_three, patch.object(
+        acceptance,
+        "_verify_hosted3_custom",
+        side_effect=["unsafe", "incomplete", "complete"],
+    ) as verify_three, patch.object(
+        acceptance, "_request", side_effect=session_or_end
+    ) as request_three:
+        if acceptance._verify_usable_custom_release_path() != [
+            "cookie-1",
+            "cookie-2",
+            "cookie-3",
+        ]:
+            raise AssertionError("bounded custom release path lost authority history")
+        if [call.args[0] for call in verify_three.call_args_list] != [
+            "cookie-1",
+            "cookie-2",
+            "cookie-3",
+        ]:
+            raise AssertionError("custom release retries did not use fresh authorities")
+        if start_three.call_count != 3 or request_three.call_count != 6:
+            raise AssertionError("custom release retry lifecycle count drift")
+
+    with patch.object(
+        acceptance, "_start_standard", side_effect=["cookie-1", "cookie-2", "cookie-3"]
+    ), patch.object(
+        acceptance,
+        "_verify_hosted3_custom",
+        side_effect=["unsafe", "incomplete", "unsafe"],
+    ), patch.object(acceptance, "_request", side_effect=session_or_end):
+        try:
+            acceptance._verify_usable_custom_release_path()
+        except acceptance.AcceptanceFailure:
+            pass
+        else:
+            raise AssertionError("three non-usable custom results approved release")
     acceptance_source = (ROOT / "tests" / "platform_acceptance.py").read_text(
         encoding="utf-8"
     )

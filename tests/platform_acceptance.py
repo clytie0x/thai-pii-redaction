@@ -358,7 +358,65 @@ def _join(ticket: str, cookie: str) -> tuple[str, str]:
     return capability, _claim_ready(capability, cookie)
 
 
-def _verify_hosted3_paths(cookie: str) -> None:
+def _custom_result_status(result: dict, *, expected_protected: str) -> str | None:
+    safety = result.get("safety") or {}
+    restoration = result.get("restoration") or {}
+    receipt = result.get("receipt") or {}
+    provider = result.get("provider") or {}
+    warnings = result.get("warnings")
+    status = restoration.get("status")
+    leftover = restoration.get("leftover_count")
+    warnings_valid = isinstance(warnings, list) and all(
+        isinstance(warning, dict)
+        and set(warning) == {"code", "count"}
+        and warning.get("code") in {"foreign_replacement", "generated_pii"}
+        and type(warning.get("count")) is int
+        and warning["count"] > 0
+        for warning in warnings
+    )
+    classified = bool(
+        type(leftover) is int
+        and leftover >= 0
+        and warnings_valid
+        and (
+            (status == "complete" and leftover == 0 and warnings == [])
+            or (status == "incomplete" and leftover > 0 and warnings == [])
+            or (status == "unsafe" and bool(warnings))
+        )
+    )
+    request_id = result.get("request_id")
+    provider_attempts = provider.get("attempt_count")
+    receipt_attempts = receipt.get("provider_attempt_count")
+    valid = bool(
+        result.get("hosted_version") == "3.0.0"
+        and result.get("source_kind") == "custom_standard"
+        and safety == {"status": "pass", "residual_count": 0}
+        and classified
+        and result.get("protected_text") == expected_protected
+        and "สมชาย" not in expected_protected
+        and "test@example.invalid" not in expected_protected
+        and isinstance(request_id, str)
+        and request_id
+        and receipt.get("request_id") == request_id
+        and receipt.get("hosted_version") == result.get("hosted_version")
+        and receipt.get("source_kind") == result.get("source_kind")
+        and receipt.get("restoration_status") == status
+        and receipt.get("digest_match") is True
+        and receipt.get("outbound_gate_status") == "no_residual_signal_detected"
+        and provider.get("id") == "tokenmind"
+        and provider.get("model") == "thaillm-8b"
+        and type(provider_attempts) is int
+        and 1 <= provider_attempts <= 3
+        and receipt.get("provider_id") == provider.get("id")
+        and receipt.get("provider_model") == provider.get("model")
+        and type(receipt_attempts) is int
+        and receipt_attempts == provider_attempts
+        and isinstance(result.get("restored_text"), str)
+    )
+    return status if valid else None
+
+
+def _verify_hosted3_custom(cookie: str) -> str:
     source = "ผู้สมัครสังเคราะห์ สมชาย ใจดี ติดต่อ test@example.invalid"
     status, headers, raw = _request(
         "/protection-preview",
@@ -389,15 +447,13 @@ def _verify_hosted3_paths(cookie: str) -> None:
     if status != 200:
         raise AcceptanceFailure("Hosted 3 custom execute failed")
     result = _json(raw)
-    if not (
-        result.get("hosted_version") == "3.0.0"
-        and result.get("safety") == {"status": "pass", "residual_count": 0}
-        and (result.get("restoration") or {}).get("status") == "complete"
-        and (result.get("restoration") or {}).get("leftover_count") == 0
-        and isinstance(result.get("receipt"), dict)
-    ):
+    restoration_status = _custom_result_status(result, expected_protected=protected)
+    if restoration_status is None:
         raise AcceptanceFailure("Hosted 3 custom result gates failed")
+    return restoration_status
 
+
+def _verify_hosted3_document(cookie: str) -> None:
     fixture = (
         Path(__file__).resolve().parent.parent
         / "pdf-parser/scenarios/hr-resume-pdf-structured-v1.pdf"
@@ -448,6 +504,33 @@ def _verify_hosted3_paths(cookie: str) -> None:
         and isinstance(artifact.get("receipt"), dict)
     ):
         raise AcceptanceFailure("Hosted 3 protected document artifact failed")
+
+
+def _verify_usable_custom_release_path() -> list[str]:
+    standard_cookies: list[str] = []
+    for attempt in range(3):
+        standard_cookie = _start_standard()
+        standard_cookies.append(standard_cookie)
+        status, headers, _body = _request(
+            "/auth/session", method="GET", cookie=standard_cookie
+        )
+        if status != 200 or headers.get("X-AIGuard-Service-Class") != "standard":
+            raise AcceptanceFailure("Standard authority verification failed")
+        restoration_status = _verify_hosted3_custom(standard_cookie)
+        print(
+            "Hosted 3 custom live classification "
+            f"attempt {attempt + 1}: {restoration_status}"
+        )
+        status, _headers, _body = _request(
+            "/auth/guest/end", method="POST", payload={}, cookie=standard_cookie
+        )
+        if status != 204:
+            raise AcceptanceFailure("Standard authority end failed")
+        if restoration_status == "complete":
+            return standard_cookies
+    raise AcceptanceFailure(
+        "Hosted 3 custom path produced no usable result after bounded attempts"
+    )
 
 
 def _verify_public_contract(cookie: str) -> None:
@@ -577,21 +660,20 @@ def main() -> int:
             if status != 401:
                 raise AcceptanceFailure("logged-out caller cookie remained usable")
 
-            standard_cookie = _start_standard()
-            status, headers, _body = _request(
-                "/auth/session", method="GET", cookie=standard_cookie
-            )
-            if status != 200 or headers.get("X-AIGuard-Service-Class") != "standard":
-                raise AcceptanceFailure("Standard authority verification failed")
-            _verify_hosted3_paths(standard_cookie)
-            _verify_logs(priority_cookie, standard_cookie)
+            standard_cookies = _verify_usable_custom_release_path()
+
+            document_cookie = _start_standard()
+            standard_cookies.append(document_cookie)
+            _verify_hosted3_document(document_cookie)
+            _verify_logs(priority_cookie, *standard_cookies)
             status, _headers, _body = _request(
-                "/auth/guest/end", method="POST", payload={}, cookie=standard_cookie
+                "/auth/guest/end", method="POST", payload={}, cookie=document_cookie
             )
             if status != 204:
                 raise AcceptanceFailure("Standard authority end failed")
             priority_cookie = ""
             standard_cookie = ""
+            document_cookie = ""
         print(
             "platform acceptance passed: Priority legacy, Standard Hosted 3 text/PDF, "
             "queue/provider/artifacts, allowlist, report, resources, logs"

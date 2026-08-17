@@ -1,4 +1,4 @@
-# Status (2026-08-17 — Hosted 3 Stage 8 complete; Stage 9 not started)
+# Status (2026-08-17 — Hosted 3 Stage 8 complete; first Stage 9 attempt rolled back)
 
 ## Current release boundary
 
@@ -39,6 +39,20 @@
   identity, and all three focused adversarial re-reviews. Stage 8 is complete
   locally with no material disagreement. Stage 9 has not started; production
   remains Hosted 2.5.0/16 until the protected pipeline passes.
+- Protected production Pipeline #36531 on exact `ac33152a7ed3074858fcbbd712957536c4b39d68`
+  passed check and deploy, then failed mandatory acceptance at the live custom
+  result classification gate. The trap removed the candidate and restored exact
+  healthy revision `dbcfe17b34744dc3e9a88e4099786a754fe903a6`; production is
+  therefore still Hosted 2.5.0/16. The route/provider request itself returned a
+  result. The first correction then conflated a truthfully classified
+  `incomplete|unsafe` result with sufficient release usefulness. The final gate
+  treats that outcome only as fail-closed safety evidence, retries through at
+  most three fresh Standard authorities/approved runs, and still requires one
+  `complete`, zero-leftover, warning-free result. Safety, exact protected-payload,
+  digest/outbound/receipt/provider agreement remains mandatory on every
+  classified attempt; unsafe content is never approved or displayed. A new
+  commit and new web pipeline are required; the
+  failed pipeline must not be retried.
 
 ## Stage 5 status
 
