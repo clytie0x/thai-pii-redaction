@@ -3762,6 +3762,19 @@ Stage 8 closeout record:
   mandatory on every classified attempt; unsafe content is never approved or
   displayed. Release requires a new descendant commit and new web
   pipeline; #36531 is historical rollback evidence and must not be retried.
+- Protected Pipeline #36534 on exact
+  `54b5524c40b1175d8be1b929332716006e0311e4` passed check/deploy and proved the
+  live bounded custom usefulness gate with classifications
+  `unsafe → unsafe → complete`; the full internal Priority/Standard
+  text/PDF/queue/provider/artifact acceptance then passed. Public acceptance
+  failed on a stale literal App-copy assertion, not a runtime boundary: it still
+  expected the retired “raw reaches AI for Thai edge” sentence. The current App
+  instead states that text/text-layer PDF reaches organizer proxy and AI Guard
+  Core, Pathumma receives only the exact protected/approved text, and the PDF is
+  never sent to Pathumma. The mandatory trap restored healthy `dbcfe17b…` again.
+  The corrected assertion locks all three current phrases. #36534 is historical
+  rollback evidence and must not be retried; release requires a new descendant
+  and new web pipeline.
 
 Stage 7 closeout evidence (local release migration only):
 

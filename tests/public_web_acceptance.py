@@ -103,7 +103,7 @@ STATIC_ASSETS = {
     "/home.css": ("text/css", b"    @font-face", None),
     "/home.js": ("application/javascript", b"document.documentElement.classList.add", None),
     "/app.css": ("text/css", b"  @font-face", None),
-    "/hosted3-app.js": ("application/javascript", b'"use strict";', None),
+    "/hosted3-app.js": ("application/javascript", b"(() => {", None),
     "/product.css": ("text/css", b"@font-face", None),
     "/assets/ai-guard-mark.svg": ("image/svg+xml", b"<svg", None),
     "/assets/ai-guard-mark-one-color.svg": ("image/svg+xml", b"<svg", None),
@@ -274,8 +274,9 @@ def main() -> int:
             assert 'id="h3PrioritySubmit"' in text
             assert 'src="/hosted3-app.js" defer' in text
             assert "Hosted 3.0.0" in text
-            assert "ข้อความต้นฉบับถึง AI for Thai edge" in text
-            assert "Pathumma / thaillm-8b" in text
+            assert "ข้อความและ PDF แบบมี text layer ผ่าน organizer proxy และ AI Guard Core" in text
+            assert "Pathumma ได้รับเฉพาะข้อความที่ปกป้องและอนุมัติแล้ว" in text
+            assert "ไม่ถูกส่งให้ Pathumma" in text
         if path == "/downloads":
             for link in (
                 RELEASE_PAGE,

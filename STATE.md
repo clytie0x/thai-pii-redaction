@@ -53,6 +53,16 @@
   classified attempt; unsafe content is never approved or displayed. A new
   commit and new web pipeline are required; the
   failed pipeline must not be retried.
+- Replacement Pipeline #36534 on exact
+  `54b5524c40b1175d8be1b929332716006e0311e4` proved the bounded live custom
+  usefulness policy: attempts classified `unsafe`, `unsafe`, then `complete`,
+  and internal Priority/Standard text/PDF/queue/provider/artifact acceptance
+  passed. Credential-free public acceptance then failed only because it still
+  searched for superseded App boundary copy. Automatic rollback again restored
+  healthy `dbcfe17b…`; production remains 2.5.0/16. The assertion now locks the
+  current explicit organizer-proxy/Core raw boundary, exact approved Pathumma
+  payload boundary, and PDF-not-sent wording. A new descendant and new web
+  pipeline are required; #36534 must not be retried.
 
 ## Stage 5 status
 
