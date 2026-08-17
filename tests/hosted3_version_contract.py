@@ -31,7 +31,7 @@ def main() -> int:
     assert "Hosted candidate" not in joined
     assert "local candidate" not in joined.lower()
     for required in (
-        "Hosted 3.0.1",
+        "Hosted 3.0.2",
         "Desktop 3.0.0",
         "Extension 3.0.0 Manual",
         "Standard access",
@@ -43,7 +43,7 @@ def main() -> int:
 
     readme = (ROOT / "README.md").read_text("utf-8")
     assert "exactly **40 routes**" in readme
-    assert "Hosted 3.0.1" in readme
+    assert "Hosted 3.0.2" in readme
     assert "HTTP contract" in readme
     assert "Desktop 3.0.0" in readme
     assert "Extension" in readme and "3.0.0" in readme
@@ -51,7 +51,7 @@ def main() -> int:
     approval = (ROOT / "core/aift_hosted3/approval.py").read_text("utf-8")
     assert "HTTP_CONTRACT_VERSION = 2" in approval
     public_acceptance = (ROOT / "tests/public_web_acceptance.py").read_text("utf-8")
-    assert 'health.get("version") == "3.0.1"' in public_acceptance
+    assert 'health.get("version") == "3.0.2"' in public_acceptance
 
     docs = (ROOT / "docs/production-web-redesign.md").read_text("utf-8")
     state = (ROOT / "STATE.md").read_text("utf-8")
@@ -59,7 +59,7 @@ def main() -> int:
     assert "Production is Hosted `3.0.1` with exactly 40 public locations" in state
 
     print(
-        "hosted3 version contract ok: Hosted 3.0.1 candidate/40, HTTP contract 2, "
+        "hosted3 version contract ok: Hosted 3.0.2 candidate/40, HTTP contract 2, "
         "Desktop/Extension unchanged"
     )
     return 0

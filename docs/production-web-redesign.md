@@ -71,7 +71,7 @@ an end-to-end production serving path.
   custom preview/result accepted any nonempty Hosted version and PDF did not
   bind top-level, receipt, and artifact-provenance versions before exporting an
   artifact labeled `3.0.1`. Current source now uses one exact
-  `HOSTED_VERSION = "3.0.1"` browser constant, rejects stale custom/PDF preview
+  `HOSTED_VERSION = "3.0.2"` browser constant, rejects stale custom/PDF preview
   and execute DTOs, binds PDF receipt and artifact provenance, and locks those
   failures with executable negatives. Frontend behavior and static contracts
   pass after the correction. Exact source commit
