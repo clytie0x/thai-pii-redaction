@@ -8,6 +8,10 @@
   three manual ops gates (logs #143199, exact revision/process #143200,
   restart/recovery #143201). All four services restarted healthy with the exact
   runtime label; no rollback triggered.
+- Current deployment, same-origin application API, data-flow, acceptance,
+  rollback, and operations guidance is centralized in
+  `docs/HOSTED-3-DEPLOY-API-GUIDE.md`. Older deployment documents remain
+  historical rollout/incident records and do not override that guide.
 - Post-deploy UX review of `827e0601…` found ordinary Standard/Priority entry
   lost focus when the access gate hid. Runtime `f0774520…` fixes that boundary:
   direct entry and initial authenticated bootstrap focus the programmatically

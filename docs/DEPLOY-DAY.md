@@ -1,5 +1,11 @@
 # วันที่ deploy ต้องทำอะไรบ้าง
 
+> **Historical rollout and incident runbook.** Use
+> [`HOSTED-3-DEPLOY-API-GUIDE.md`](HOSTED-3-DEPLOY-API-GUIDE.md) for the current
+> Hosted 3.0.0 deployment, API, acceptance, rollback and operations contract.
+> Older SHA, route-count and production-state statements below remain audit
+> history and do not override the current guide.
+
 ## Production Web Launch gate (ปรับ owner decision 15 ส.ค. 2569)
 
 ส่วนนี้มีผลเหนือ competition demo checklist ด้านล่างสำหรับ descendant ที่เปลี่ยน

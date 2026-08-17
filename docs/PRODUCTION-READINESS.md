@@ -1,5 +1,10 @@
 # AI Guard hosted production-readiness ledger
 
+> **Historical launch ledger dated 2026-08-15.** Current Hosted 3.0.0
+> deployment, application API, acceptance, rollback and operations guidance is
+> [`HOSTED-3-DEPLOY-API-GUIDE.md`](HOSTED-3-DEPLOY-API-GUIDE.md). Historical
+> 2.5.0/16-route invariants below must not be presented as current production.
+
 Status date: 2026-08-15
 
 Starting source: `c02ec1c82e22d0e200fbfad68556c169eba68007`

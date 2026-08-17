@@ -1,5 +1,11 @@
 # Deploy design v3 — AIFT team08 production web (2026-08-13)
 
+> **Historical design record.** Current production deployment and application
+> API guidance is maintained in
+> [`HOSTED-3-DEPLOY-API-GUIDE.md`](HOSTED-3-DEPLOY-API-GUIDE.md). Route counts,
+> service topology, version and runtime identity in this file must not be used
+> as current status unless the current guide explicitly incorporates them.
+
 ฉบับนี้ **แทนที่** design ก่อน public-web productionization โดยรักษา port
 แยกและ 16-route contract เดิม แต่เปลี่ยน hosted runtime ให้ตรง capability ที่
 เปิดใช้จริง:

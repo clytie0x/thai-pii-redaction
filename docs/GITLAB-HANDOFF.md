@@ -1,5 +1,10 @@
 # GitLab competition enhancement handoff
 
+> **Historical handoff with retained release evidence.** Current Hosted 3.0.0
+> deployment and application API guidance is
+> [`HOSTED-3-DEPLOY-API-GUIDE.md`](HOSTED-3-DEPLOY-API-GUIDE.md). Use that guide
+> for present version, routes, services, release sequence and operational truth.
+
 ## Official requirement vs AI Guard hardening
 
 The official Participant Guide requires non-main branches to run `check`,

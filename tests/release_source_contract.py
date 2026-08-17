@@ -22,6 +22,7 @@ CURRENT_DOCS = (
     ROOT / "docs" / "DEPLOY-DAY.md",
     ROOT / "docs" / "DEPLOY-DESIGN.md",
     ROOT / "docs" / "GITLAB-HANDOFF.md",
+    ROOT / "docs" / "HOSTED-3-DEPLOY-API-GUIDE.md",
 )
 RELEASE_PAGE = (
     "https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0"
@@ -206,6 +207,47 @@ def main() -> int:
     ):
         assert required in current, required
     assert re.search(r"(?:fixed|proxy-level) 404", current, re.IGNORECASE)
+
+    current_guide = (ROOT / "docs" / "HOSTED-3-DEPLOY-API-GUIDE.md").read_text(
+        encoding="utf-8"
+    )
+    for required in (
+        "f07745209e3da3b926eb6802f2ca2919e5b9fe9d",
+        "#36540",
+        "40 exact locations",
+        "same-origin application",
+        "web, api, core, pdf-parser",
+        "APP_AIFT_PRIORITY_INVITES_JSON",
+        "Pathumma ไม่ได้รับ source PDF",
+    ):
+        assert required in current_guide, required
+    for forbidden in (
+        "synthetic-distinct-core-key",
+        "YOUR_PRIORITY_INVITE",
+        "public arbitrary third-party API key",
+    ):
+        assert forbidden not in current_guide, forbidden
+    hosted3_fixture = json.loads(
+        (ROOT / "tests" / "fixtures" / "hosted3" / "contract.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    expected_canonical_routes = set(hosted3_fixture["existing_canonical_routes"]) | set(
+        hosted3_fixture["additive_canonical_routes"]
+    )
+    documented_canonical_routes = set(
+        re.findall(r"\| (?:GET|POST) \| `([^`]+)` \|", current_guide)
+    )
+    assert documented_canonical_routes == expected_canonical_routes
+    for historical_name in (
+        "DEPLOY-DAY.md",
+        "DEPLOY-DESIGN.md",
+        "GITLAB-HANDOFF.md",
+        "PRODUCTION-READINESS.md",
+    ):
+        historical = (ROOT / "docs" / historical_name).read_text(encoding="utf-8")
+        assert "Historical" in historical, historical_name
+        assert "HOSTED-3-DEPLOY-API-GUIDE.md" in historical, historical_name
 
     downloads_path = ROOT / "web" / "downloads.html"
     downloads = downloads_path.read_text(encoding="utf-8")

@@ -63,7 +63,9 @@ as the primary user journey.
 Product documentation is served from `/privacy`, `/terms`, `/help`, and
 `/downloads`.  Those pages describe data flow, cookies, retention, acceptable
 use, limitations, support, and release availability without legal or security
-overclaim.
+overclaim. The current deployment, same-origin application API, acceptance,
+rollback, and operations guide is
+[`docs/HOSTED-3-DEPLOY-API-GUIDE.md`](docs/HOSTED-3-DEPLOY-API-GUIDE.md).
 
 ## Privacy and security boundary
 
@@ -99,10 +101,10 @@ signed session created from an issued Priority Invite. Cookies are `Secure`,
 `HttpOnly`, `SameSite=Strict`, `Path=/`, and have a maximum 30-minute lifetime.
 Authority creation and ending enforce same-origin browser context.
 
-Only SHA-256 token fingerprints and expiry times are retained in bounded
-process memory (maximum 256 active sessions).  Logout revokes the current token;
-a core restart invalidates all prior sessions.  No token, invite code, identity,
-or user record is persisted.
+Only SHA-256 token fingerprints and expiry times are retained in separate
+bounded process-memory pools: maximum 256 Priority sessions and 512 Standard
+sessions. Logout revokes the current token; a core restart invalidates all prior
+sessions. No token, invite code, identity, or user record is persisted.
 
 Nginx enforces server-side lanes independent of client code:
 
@@ -112,8 +114,12 @@ Nginx enforces server-side lanes independent of client code:
   avoids turning one unauthenticated source into a sustained global lockout;
 - ordinary processing: 20 requests/second globally and 30/minute per presented
   session key, with global and per-caller connection caps;
-- Safe AI: 6 requests/minute globally, 2/minute per presented session key,
-  maximum two concurrent provider operations globally and one per caller.
+- legacy `/roundtrip`: 6 requests/minute globally and 2/minute per presented
+  session key;
+- Hosted 3 preview, document, queue and execute controls: route- and
+  service-class-specific limits documented in the current deploy/API guide;
+- shared provider scheduler: maximum two concurrent provider operations
+  globally and one unresolved provider operation per authority.
 
 The core caps text at 20,000 characters; nginx caps the entire request body at
 128 KiB (8 KiB on login).  Fixed value-free JSON is used for 413, 429, 502 and
@@ -140,19 +146,21 @@ runs offline.  The four containers are read-only, no-new-privileges, PID/memory
 exits the service so Docker's bounded restart policy can recover it.  Graceful
 stop allows up to 210 seconds for a long provider operation.
 
-## Public API
+## Same-origin application API
 
-The API proxy exposes exactly **40 routes**: 20 canonical paths and one exact
-`/v1` alias for each. External callers use `/api/...`; the organizer strips that
-prefix and the API proxy restores it for Core. The HTTP contract remains version
-2 for Hosted 3.0.0.
+The public edge exposes exactly **40 routes** for same-origin application use
+by the official Web App: 20 canonical paths and one exact `/v1` alias for each.
+This is not an arbitrary third-party API, developer-key product, or broad CORS
+surface. Browser requests use `/api/...`; the organizer strips that prefix and
+the API proxy restores it for Core. The HTTP contract remains version 2 for
+Hosted 3.0.0.
 
 | Method/path | Purpose |
 |---|---|
 | `GET /health` | Liveness and VERSION only; not provider readiness. |
 | `POST /auth/login` | Exchange invite code for the bounded cookie. |
 | `POST /auth/logout` | Revoke the current process-local session and clear cookie. |
-| `GET /auth/session` | Report authenticated/expiry state without returning authority. |
+| `GET /auth/session` | Report authenticated/expiry state plus service-class and timing headers without returning credential, subject, or token. |
 | `POST /detect` | Strict PII counts/types/spans. |
 | `POST /guard` | Heuristic prompt-risk warning; it does not block by itself. |
 | `POST /roundtrip` | Detect → protect → policy-check → approved AI → validate → restore. |
