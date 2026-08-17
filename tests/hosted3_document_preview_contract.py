@@ -229,7 +229,7 @@ class DocumentPreviewTests(unittest.TestCase):
             self.engine,
             parser=parser or FakeParser(),
             protector=protector or FakeProtector(),
-            hosted_version="3.0.1",
+            hosted_version="3.0.2",
             now=self.clock,
             random_bytes=self.random,
             blocked_exceptions=(Blocked,),

@@ -191,7 +191,7 @@ def main() -> int:
     manifest = json.loads((ROOT / "sync" / "PORT_MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["commit"] == UPSTREAM
     assert len(manifest["files"]) == 75
-    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.1"
+    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.2"
 
     current = "\n".join(path.read_text(encoding="utf-8") for path in CURRENT_DOCS)
     for required in (

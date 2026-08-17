@@ -393,7 +393,7 @@ class ExecuteContractTests(unittest.TestCase):
 
         service = ExecuteService(
             h.queue,
-            hosted_version="3.0.1",
+            hosted_version="3.0.2",
             protector=protector,
             custom_provider_call=custom_call or provider,
             document_provider_call=lambda _system, _user: provider_ast(),
@@ -426,7 +426,7 @@ class ExecuteContractTests(unittest.TestCase):
         return (
             ExecuteService(
                 h.queue,
-                hosted_version="3.0.1",
+                hosted_version="3.0.2",
                 parser=parser or FakeParser(),
                 protector=FakeProtector(),
                 custom_provider_call=lambda *_args: (_ for _ in ()).throw(

@@ -2,7 +2,7 @@
   "use strict";
 
   const $ = id => document.getElementById(id);
-  const HOSTED_VERSION = "3.0.1";
+  const HOSTED_VERSION = "3.0.2";
   // Must match aift_hosted3.execution.GENERATED_PII_MARKER; the browser only
   // names it in the notice, it never inserts or removes one itself.
   const GENERATED_PII_MARKER = "[ปกปิดโดยระบบ]";

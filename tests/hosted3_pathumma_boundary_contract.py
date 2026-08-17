@@ -153,7 +153,7 @@ class PathummaBoundaryTests(unittest.TestCase):
                     response.encode("utf-8"),
                     segments=segments,
                     provenance=ArtifactProvenance(
-                        hosted_version="3.0.1",
+                        hosted_version="3.0.2",
                         source_kind="document_standard",
                         source_receipt_id="AAAAAAAAAAAAAAAAAAAAAA",
                         parser_revision=PARSER_REVISION,

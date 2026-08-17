@@ -203,7 +203,7 @@ class DefaultDocumentSemanticGateTests(unittest.TestCase):
                     response.encode("utf-8"),
                     segments=segments,
                     provenance=ArtifactProvenance(
-                        hosted_version="3.0.1",
+                        hosted_version="3.0.2",
                         source_kind="synthetic_document",
                         source_receipt_id="A" * 22,
                         parser_revision=PARSER_REVISION,

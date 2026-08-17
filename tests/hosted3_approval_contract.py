@@ -543,7 +543,7 @@ class Hosted3ApprovalContractTests(unittest.TestCase):
         return PreviewService(
             engine,
             protector=protector or FakeProtector(),
-            hosted_version="3.0.1",
+            hosted_version="3.0.2",
             now=lambda: self.now_value,
             random_bytes=random_bytes or DeterministicBytes(),
             blocked_exceptions=(Blocked,),

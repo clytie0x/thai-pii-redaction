@@ -74,7 +74,7 @@ class RealExecuteImageTests(unittest.TestCase):
         )
         preview = PreviewService(
             approval,
-            hosted_version="3.0.1",
+            hosted_version="3.0.2",
             now=lambda: float(now),
             random_bytes=entropy,
         ).preview_custom(
@@ -112,7 +112,7 @@ class RealExecuteImageTests(unittest.TestCase):
 
         result = ExecuteService(
             queue,
-            hosted_version="3.0.1",
+            hosted_version="3.0.2",
             custom_provider_call=provider,
             request_id=lambda: "00000000-0000-4000-8000-000000000003",
         ).execute_custom(

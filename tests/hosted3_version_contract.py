@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-HOSTED_VERSION = "3.0.1"
+HOSTED_VERSION = "3.0.2"
 WEB_SURFACES = (
     "index.html",
     "app.html",
