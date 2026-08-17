@@ -3695,16 +3695,15 @@ Exit gate:
   organizer HTTP-redirect limitation is still reported honestly, and only then
   may Hosted `3.0.0` be called deployed.
 
-Current execution position: **Stages 0 through 7 are complete locally; Stage 8
-implementation/evidence gates are complete and exact-candidate adversarial
-closeout is in progress.** The source candidate
+Current execution position: **Stages 0 through 8 are complete locally; Stage 9
+protected production release has not started.** The source candidate
 now identifies Hosted `3.0.0`, retains HTTP contract version 2, and has exactly
 40 API locations. Deployed production remains Hosted `2.5.0` with exactly 16
 public API locations until the exact Stage 8 commit passes the protected Stage 9
 pipeline. No public deployment is implied by the source-version migration.
-`HOSTED3_IMPLEMENTATION_STAGE=stage8_review`
+`HOSTED3_IMPLEMENTATION_STAGE=stage8_complete`
 
-Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage8_review`.
+Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage8_complete`.
 
 Stage 8 closeout record:
 
@@ -3736,6 +3735,19 @@ Stage 8 closeout record:
   candidate. The next clean commit must rebuild/rebind all four image labels,
   rerun affected gates, and receive focused frontend plus art/UX identity
   confirmation before Stage 8 may close and Stage 9 may start.
+- Exact replacement candidate `f4d8f72dcad37bea267f2ca50b07447c16a2c517`
+  passed the corrected CI-equivalent `29/29` in 64.5 seconds, source/image parity
+  `3/3`, joined Priority/Standard text/PDF/queue/fake-provider/artifact
+  acceptance, and focused art, frontend/product/security, and UX/accessibility
+  re-review with no material disagreement. Its exact images were web
+  `sha256:2726cb9513d7b143891c7dd1cb985594ebd8946d48a0deee3e4f6b7186a29e6c`,
+  API `sha256:d597f0f973184ac9666ce422b30732e9233d5e9e4a11c07cc7907305d9a3a510`,
+  Core `sha256:64c43a97398d91efdb42656ca1db66631d8247283bf7fb114a8b93110c427b38`,
+  and parser
+  `sha256:8c22fe450c88f3281d83a5d0d3097e7af708045baa6d76d5d0a44251efd1d675`;
+  all labels equaled that commit. Stage 8 is complete locally. This status-only
+  closeout changes no production runtime byte; the final Stage 9 commit must
+  still rebuild exact labels and pass protected production acceptance.
 
 Stage 7 closeout evidence (local release migration only):
 

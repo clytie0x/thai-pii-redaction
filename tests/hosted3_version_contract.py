@@ -55,7 +55,7 @@ def main() -> int:
 
     docs = (ROOT / "docs/production-web-redesign.md").read_text("utf-8")
     state = (ROOT / "STATE.md").read_text("utf-8")
-    assert "HOSTED3_IMPLEMENTATION_STAGE=stage8_review" in docs
+    assert "HOSTED3_IMPLEMENTATION_STAGE=stage8_complete" in docs
     assert "Hosted 3.0.0 release candidate" in state
     assert "deployed production remains Hosted `2.5.0` with exactly 16 public locations" in state
 

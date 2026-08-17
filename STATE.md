@@ -1,4 +1,4 @@
-# Status (2026-08-17 — Hosted 3 Stage 8 exact-candidate review in progress)
+# Status (2026-08-17 — Hosted 3 Stage 8 complete; Stage 9 not started)
 
 ## Current release boundary
 
@@ -32,6 +32,12 @@
   Stage 8 had not started. The current tree fixes all three and is awaiting a
   fresh exact commit/image binding and focused re-review. No production mutation
   has occurred; deployed production remains Hosted 2.5.0/16.
+- Replacement candidate `f4d8f72dcad37bea267f2ca50b07447c16a2c517`
+  passed corrected CI-equivalent `29/29`, parity `3/3`, joined local
+  Priority/Standard text/PDF/queue/provider/artifact acceptance, exact image
+  identity, and all three focused adversarial re-reviews. Stage 8 is complete
+  locally with no material disagreement. Stage 9 has not started; production
+  remains Hosted 2.5.0/16 until the protected pipeline passes.
 
 ## Stage 5 status
 
