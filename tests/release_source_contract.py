@@ -377,6 +377,9 @@ def main() -> int:
         "/api/v1/auth/unknown",
         "/api/redact-pdf",
         "/api/v1/redact-pdf",
+        "/api/auth/guestx",
+        "/api/v1/document-preview/x",
+        "/api/provider-queue/join/",
     )
     verify_release_assets()
     print(
