@@ -111,10 +111,10 @@ let authenticated = false;
 let activeClass = "standard";
 let inspectDeferred = null;
 let customExecuteStatus = "complete";
-let previewHostedVersion = "3.0.1";
-let customExecuteHostedVersion = "3.0.1";
-let pdfExecuteHostedVersion = "3.0.1";
-let pdfReceiptHostedVersion = "3.0.1";
+let previewHostedVersion = "3.0.2";
+let customExecuteHostedVersion = "3.0.2";
+let pdfExecuteHostedVersion = "3.0.2";
+let pdfReceiptHostedVersion = "3.0.2";
 let joinMode = "success";
 let claimResponses = [];
 let endMode = "success";
@@ -163,15 +163,18 @@ const fetch = async (url, options = {}) => {
     if (executeMode === "network") throw new Error("synthetic lost execute response");
     if (customExecuteStatus === "malformed") return jsonResponse(200, {restored_text: "UNSAFE RESTORED"});
     const requestId = `req_${customExecuteStatus}`;
-    const warnings = customExecuteStatus === "unsafe" ? [{code: "generated_pii", count: 2}] : [];
+    const warnings = ["unsafe", "sanitized"].includes(customExecuteStatus) ? [{code: "generated_pii", count: 2}] : [];
     const leftover = customExecuteStatus === "incomplete" ? 1 : 0;
+    const masked = customExecuteStatus === "sanitized" ? 2 : 0;
     return jsonResponse(200, {
       request_id: requestId, hosted_version: customExecuteHostedVersion, source_kind: "custom_standard",
       protected_text: "[NAME_1] โทร [PHONE_1]",
-      restored_text: customExecuteStatus === "complete" ? "ผลสังเคราะห์ที่กู้คืนแล้ว" : "",
+      restored_text: customExecuteStatus === "complete"
+        ? "ผลสังเคราะห์ที่กู้คืนแล้ว"
+        : customExecuteStatus === "sanitized" ? "ผลสังเคราะห์ [ปกปิดโดยระบบ] ที่เหลือ [ปกปิดโดยระบบ] ปิดท้าย" : "",
       detected_entity_count: 2, entity_type_counts: {NAME: 1, PHONE: 1}, section26_categories: ["HEALTH"], guard_findings: [], warnings,
       safety: {status: "pass", residual_count: 0},
-      restoration: {status: customExecuteStatus, replaced_count: customExecuteStatus === "incomplete" ? 1 : 2, leftover_count: leftover},
+      restoration: {status: customExecuteStatus, replaced_count: customExecuteStatus === "incomplete" ? 1 : 2, leftover_count: leftover, masked_count: masked},
       provider: {id: "tokenmind", model: "thaillm-8b", attempt_count: 1},
       receipt: {
         request_id: requestId, hosted_version: customExecuteHostedVersion, source_kind: "custom_standard",
@@ -258,12 +261,12 @@ assert.equal(downloads.at(-1)?.name, "ai-guard-pdpa-report.pdf", "PDPA report do
 await backButtons[2].click(); await taskButtons[1].click();
 get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ โทร 081-000-1020";
 await get("h3Text").emit("input");
-previewHostedVersion = "3.0.0";
+previewHostedVersion = "3.0.1";
 await get("h3TextPreview").click(); await flush();
 assert.equal(get("h3Preview").hidden, true, "stale-version custom preview rendered");
 assert.equal(get("h3Recovery").hidden, false, "stale-version custom preview did not fail closed");
 assert.match(get("h3RecoveryCopy").textContent, /response ที่ไม่ผ่าน validation/, "stale-version preview lost fixed recovery truth");
-await get("h3RecoveryAction").click(); previewHostedVersion = "3.0.1";
+await get("h3RecoveryAction").click(); previewHostedVersion = "3.0.2";
 const beforePreview = requestLog.length;
 await get("h3TextPreview").click(); await flush();
 assert.equal(requestLog.slice(beforePreview).some(item => item.url.includes("execute")), false, "preview contacted execute/provider");
@@ -389,21 +392,21 @@ const beforeSelection = requestLog.length;
 get("h3Pdf").files = [selectedPdf]; await get("h3Pdf").emit("change");
 assert.equal(requestLog.length, beforeSelection, "PDF selection uploaded automatically");
 assert.match(get("h3PdfMeta").textContent, /ยังไม่อัปโหลด/, "selected PDF state did not disclose no-upload truth");
-previewHostedVersion = "3.0.0";
+previewHostedVersion = "3.0.1";
 await get("h3PdfPreview").click(); await flush();
 assert.equal(get("h3Preview").hidden, true, "stale-version PDF preview rendered");
 assert.equal(get("h3Recovery").hidden, false, "stale-version PDF preview did not fail closed");
-await get("h3RecoveryAction").click(); previewHostedVersion = "3.0.1";
+await get("h3RecoveryAction").click(); previewHostedVersion = "3.0.2";
 await get("h3PdfPreview").click(); await flush();
 assert.equal(requestLog.at(-1).url, "/api/document-preview", "explicit PDF upload did not use document preview");
 assert.match(get("h3PreviewWarning").textContent, /หน้า visual ที่ละไว้: 1/, "PDF preview omitted the affected visual page warning");
-pdfReceiptHostedVersion = "3.0.0";
+pdfReceiptHostedVersion = "3.0.1";
 const artifactWritesBeforeMixedPdf = navigator.clipboard.writes.length;
 await get("h3Approve").click(); await flush(12);
 assert.equal(get("h3Result").hidden, true, "mixed-version PDF result rendered");
 assert.equal(get("h3Recovery").hidden, false, "mixed-version PDF result did not fail closed");
 assert.equal(navigator.clipboard.writes.length, artifactWritesBeforeMixedPdf, "mixed-version PDF result exposed a portable artifact");
-await get("h3RecoveryAction").click(); pdfReceiptHostedVersion = "3.0.1";
+await get("h3RecoveryAction").click(); pdfReceiptHostedVersion = "3.0.2";
 await get("h3PdfPreview").click(); await flush();
 await get("h3Approve").click(); await flush(12);
 assert.equal(requestLog.some(item => item.url === "/api/document-execute"), true, "PDF claim did not execute the document path");
@@ -433,13 +436,13 @@ assert.equal(get("h3ClearRunning").hidden, false, "uncertain provider state omit
 await get("h3ClearRunning").click(); executeMode = "success";
 
 await backButtons[1].click(); await taskButtons[1].click();
-customExecuteHostedVersion = "3.0.0"; customExecuteStatus = "complete";
+customExecuteHostedVersion = "3.0.1"; customExecuteStatus = "complete";
 get("h3Text").value = "ข้อมูลสังเคราะห์สำหรับ version binding"; await get("h3Text").emit("input");
 await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
 assert.equal(get("h3Result").hidden, true, "stale-version custom result rendered");
 assert.equal(get("h3Recovery").hidden, false, "stale-version custom result did not fail closed");
 assert.match(get("h3RecoveryCopy").textContent, /response ที่ไม่ผ่าน validation/, "stale-version custom result lost fixed recovery truth");
-await get("h3RecoveryAction").click(); customExecuteHostedVersion = "3.0.1";
+await get("h3RecoveryAction").click(); customExecuteHostedVersion = "3.0.2";
 
 customExecuteStatus = "incomplete";
 get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ"; await get("h3Text").emit("input");
@@ -458,6 +461,16 @@ assert.ok(!get("h3ResultBody").textContent.includes("UNSAFE RESTORED"), "unsafe 
 assert.match(get("h3RecoveryCopy").textContent, /PII ที่ยืนยันที่มาไม่ได้/, "unsafe restoration lost its exact safety explanation");
 assert.equal(get("h3RecoveryAction").textContent, "สร้าง Preview ใหม่", "unsafe restoration exposed an ambiguous Retry action");
 await get("h3RecoveryAction").click();
+
+customExecuteStatus = "sanitized";
+await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
+assert.equal(get("h3Recovery").hidden, true, "sanitized restoration failed closed instead of showing the kept answer");
+assert.equal(get("h3Result").hidden, false, "sanitized restoration withheld the answer it had already made safe");
+assert.ok(get("h3ResultBody").textContent.includes("ปิดท้าย"), "sanitized restoration dropped the material outside the masked spans");
+assert.ok(!get("h3ResultBody").textContent.includes("UNSAFE RESTORED"), "unsafe restored text reached the DOM");
+assert.match(get("h3ResultBody").textContent, /2 จุด/, "sanitized restoration hid how much was masked from the reader");
+await backButtons[1].click(); await taskButtons[1].click();
+get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ"; await get("h3Text").emit("input");
 
 customExecuteStatus = "malformed";
 await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);

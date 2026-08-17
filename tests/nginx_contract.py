@@ -586,7 +586,7 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
     web_config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
     expected_pages = {
         "/": "ปกป้องข้อมูลก่อน",
-        "/app": "Hosted 3.0.1 Web App",
+        "/app": "Hosted 3.0.2 Web App",
         "/privacy": "ข้อมูลไปไหน",
         "/terms": "ใช้ได้เมื่อ",
         "/help": "แก้ปัญหา",

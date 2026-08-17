@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parent.parent
-UPSTREAM = "3c2997835dbdc9842e38b38fb89f09642a713817"
+UPSTREAM = "436d9ab7880762513826cc204d6ff770faf0e193"
 CURRENT_DOCS = (
     ROOT / "README.md",
     ROOT / "STATE.md",
@@ -191,7 +191,7 @@ def main() -> int:
     manifest = json.loads((ROOT / "sync" / "PORT_MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["commit"] == UPSTREAM
     assert len(manifest["files"]) == 75
-    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.1"
+    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.2"
 
     current = "\n".join(path.read_text(encoding="utf-8") for path in CURRENT_DOCS)
     for required in (
@@ -212,7 +212,7 @@ def main() -> int:
         encoding="utf-8"
     )
     for required in (
-        "f07745209e3da3b926eb6802f2ca2919e5b9fe9d",
+        "514945a42f161a96672ace4545ae8afc9c856338",
         "#36540",
         "40 exact locations",
         "same-origin application",

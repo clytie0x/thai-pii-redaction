@@ -61,7 +61,7 @@ def segments():
 
 def provenance(*, synthetic=False):
     return ArtifactProvenance(
-        hosted_version="3.0.1",
+        hosted_version="3.0.2",
         source_kind="synthetic_document" if synthetic else "document_standard",
         source_receipt_id="A" * 22,
         parser_revision="aiguard-pdf-parser-v1",
@@ -327,8 +327,8 @@ class DocumentArtifactTests(unittest.TestCase):
         self.assertTrue(artifact.expected_token_integrity)
         self.assertTrue(artifact.structured_output_validated)
         self.assertEqual(calls[0][1], {TOKEN})
-        self.assertTrue(artifact.protected_markdown.startswith("> AI Guard Hosted 3\\.0\\.1"))
-        self.assertTrue(artifact.protected_plain_text.startswith("AI Guard Hosted 3.0.1"))
+        self.assertTrue(artifact.protected_markdown.startswith("> AI Guard Hosted 3\\.0\\.2"))
+        self.assertTrue(artifact.protected_plain_text.startswith("AI Guard Hosted 3.0.2"))
         self.assertIn("## ข้อมูลผู้สมัคร", artifact.protected_markdown)
         self.assertNotIn("<script>", artifact.semantic_html)
         self.assertIn("&lt;script&gt;", artifact.semantic_html)

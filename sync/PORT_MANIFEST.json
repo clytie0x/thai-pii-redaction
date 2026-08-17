@@ -1,7 +1,7 @@
 {
  "upstream": "https://github.com/Teerapat-Vatpitak/thai-pii-redaction",
- "commit": "3c2997835dbdc9842e38b38fb89f09642a713817",
- "synced_at": "2026-08-17T11:17:27+00:00",
+ "commit": "436d9ab7880762513826cc204d6ff770faf0e193",
+ "synced_at": "2026-08-17T14:54:42+00:00",
  "files": {
   "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "app/access_logging.py": "5b56ce854a1a206825e1974b49957e21f5c37adbbcb791bd017fdbe85d5e4bdc",
@@ -55,7 +55,7 @@
   "pii_redactor/leak_guard.py": "73a30d33ee9e5d8940ce126e25ab76932dfea3a960c6f26a7f7b6155844d2777",
   "pii_redactor/models.py": "d3554bcf92182f903e232e8bcdc2d72fa7d9a208cf699ad96c73021394f6f6dc",
   "pii_redactor/openai_compat.py": "675feaff72ad26fa487f73c25ab23ddcce4a68ef2968a7ed6d4f00953112ef85",
-  "pii_redactor/output_validator.py": "d4293a3fdac8e0b134446667411b5675bcd0d6fd6669ca4aef22454771e7a484",
+  "pii_redactor/output_validator.py": "9b4dbdb03927dd4c95e967151239c487b4334bbaae79ee3419069e17ce31bde9",
   "pii_redactor/pdf_render.py": "059c37cd030ded09d5c1188f02458f3a79d6d7879d11cfe78e2887731ce505ab",
   "pii_redactor/pipeline.py": "feb8203d7baa1802266688e926aa5217baa485754c641cbe5ad5f00de6d2df08",
   "pii_redactor/receipt.py": "99f68a0a2a7156c1bbe172288a9c6d3f9919871426d65c403e0dc531c2894fb3",
@@ -70,7 +70,7 @@
   "pii_redactor/sensitive_detector.py": "9e97abbe4cbc63b1f9ae0ab5b828ac6d2df38b73bb725d6eaca519c2b3c0a84f",
   "pii_redactor/session_service.py": "8248cdfdaa97d33f799b91d7f60476c46469d80de13f32c9cdb1602773b1a8d0",
   "pii_redactor/session_vault.py": "06f14120a91b2b7aaf0ca23ad1a4abac5652362b825ff655b11dbcf750d1e4aa",
-  "pii_redactor/stateless.py": "d7dc40f0974b0632013357ebe9d40f8466ff089bc30627b22899fbb9f1a5b49e",
+  "pii_redactor/stateless.py": "36438eaf590c361998812d84fece9a91e91750456e06089e83e276c16c9ac495",
   "pii_redactor/thai_pdf_text.py": "62bc1b12ce345b004cf35f26bfc09adb231135f34f477a2316ad31ff79295796",
   "pyproject.toml": "a6d8884a873289894866a9af73548a7e4bb3fbe7208f262f1e63549780345b05",
   "requirements-ocr.txt": "4d663076ae7f4f30aede77fd779ff33ddd7d1bb66878820988edd9824c01fbf0",

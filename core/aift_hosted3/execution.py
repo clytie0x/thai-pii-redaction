@@ -106,9 +106,7 @@ class ExecuteService:
         hosted_version: str,
         parser: PDFParserClient | None = None,
         protector: ProtectionService | None = None,
-        custom_provider_call: Callable[
-            [str, str, Callable[[int], None]], tuple[str, float, int]
-        ]
+        custom_provider_call: Callable[[str, str, Callable[[int], None]], tuple[str, float, int]]
         | None = None,
         document_provider_call: Callable[[str, str], str] | None = None,
         restore: Callable[..., object] | None = None,
@@ -125,9 +123,7 @@ class ExecuteService:
         self._parser = PDFParserClient() if parser is None else parser
         self._protector = ProtectionService() if protector is None else protector
         self._custom_provider_call = (
-            _default_custom_provider_call
-            if custom_provider_call is None
-            else custom_provider_call
+            _default_custom_provider_call if custom_provider_call is None else custom_provider_call
         )
         self._document_provider_call = (
             _default_document_provider_call
@@ -135,9 +131,7 @@ class ExecuteService:
             else document_provider_call
         )
         self._restore = _default_restore if restore is None else restore
-        self._outbound_guard = (
-            _default_outbound_guard if outbound_guard is None else outbound_guard
-        )
+        self._outbound_guard = _default_outbound_guard if outbound_guard is None else outbound_guard
         self._monotonic = time.monotonic if monotonic is None else monotonic
         self._request_id = (lambda: str(uuid.uuid4())) if request_id is None else request_id
 
@@ -359,9 +353,7 @@ class ExecuteService:
         authority: AuthorityContext,
     ) -> _PreparedCustom:
         expected = default_bindings()
-        source_kind = (
-            "custom_standard" if authority.scope == "public_guest" else "custom_invite"
-        )
+        source_kind = "custom_standard" if authority.scope == "public_guest" else "custom_invite"
         checks = (
             approval.get("kind") == "custom_text_v1",
             approval.get("scope") == authority.scope,
@@ -489,14 +481,10 @@ class ExecuteService:
         authority: AuthorityContext,
     ) -> _PreparedDocument:
         expected_kind = (
-            "standard_document_v1"
-            if authority.scope == "public_guest"
-            else "invite_document_v1"
+            "standard_document_v1" if authority.scope == "public_guest" else "invite_document_v1"
         )
         expected_source_kind = (
-            "document_standard"
-            if authority.scope == "public_guest"
-            else "document_invite"
+            "document_standard" if authority.scope == "public_guest" else "document_invite"
         )
         _validate_document_approval(
             approval,
@@ -606,19 +594,40 @@ class ExecuteService:
         warnings = _restore_warnings(restored)
         leftovers = getattr(restored, "leftover_pseudonyms", [])
         leftover_count = len(leftovers) if isinstance(leftovers, list) else 0
-        restoration_status = (
-            "unsafe" if warnings else "incomplete" if leftover_count else "complete"
-        )
+        full_text = str(getattr(restored, "restored_text", ""))
+
+        # A detected span in provider prose is a precision question about that
+        # one span. Every other warning says the mapping itself did not land,
+        # and no part of such a reply is trustworthy enough to show.
+        blocking = [w for w in warnings if w.get("code") != "generated_pii"]
+        generated = [w for w in warnings if w.get("code") == "generated_pii"]
+        masked_spans: tuple[tuple[int, int], ...] = ()
+        if generated and not blocking and not leftover_count:
+            masked_spans = _generated_pii_spans(restored, len(full_text))
+
+        if blocking:
+            restoration_status = "unsafe"
+        elif leftover_count:
+            restoration_status = "incomplete"
+        elif generated:
+            # Without usable offsets the distrusted text cannot be located, so
+            # withholding the whole reply stays the only safe answer.
+            restoration_status = "sanitized" if masked_spans else "unsafe"
+        else:
+            restoration_status = "complete"
+
         restoration = {
             "status": restoration_status,
             "replaced_count": int(getattr(restored, "replaced_count", 0)),
             "leftover_count": leftover_count,
+            "masked_count": len(masked_spans),
         }
-        restored_text = (
-            str(getattr(restored, "restored_text", ""))
-            if restoration_status == "complete"
-            else ""
-        )
+        if restoration_status == "complete":
+            restored_text = full_text
+        elif restoration_status == "sanitized":
+            restored_text = _mask_spans(full_text, masked_spans)
+        else:
+            restored_text = ""
         approval = prepared.approval
         receipt = {
             "receipt_version": RECEIPT_VERSION,
@@ -688,9 +697,7 @@ class ExecuteService:
             "parser_revision": approval["parser_revision"],
             "extraction_revision": approval["extraction_revision"],
             "segmentation_revision": approval["segmentation_revision"],
-            "protection_generation_revision": approval[
-                "protection_generation_revision"
-            ],
+            "protection_generation_revision": approval["protection_generation_revision"],
             "provider_id": approval["provider_id"],
             "provider_model": approval["provider_model"],
             "prompt_revision": approval["prompt_revision"],
@@ -702,9 +709,7 @@ class ExecuteService:
             "structured_output_validated": artifact.structured_output_validated,
             "provider_attempt_count": attempt_count,
             "duration_ms": duration_ms,
-            "omitted_visual_page_numbers": list(
-                prepared.provenance.omitted_visual_page_numbers
-            ),
+            "omitted_visual_page_numbers": list(prepared.provenance.omitted_visual_page_numbers),
             "warnings": list(prepared.warnings),
             "artifact_provenance": provenance,
         }
@@ -727,9 +732,7 @@ class ExecuteService:
             },
             "protected_markdown": artifact.protected_markdown,
             "protected_plain_text": artifact.protected_plain_text,
-            "omitted_visual_page_numbers": list(
-                prepared.provenance.omitted_visual_page_numbers
-            ),
+            "omitted_visual_page_numbers": list(prepared.provenance.omitted_visual_page_numbers),
             "warnings": list(prepared.warnings),
             "provider": {
                 "id": approval["provider_id"],
@@ -817,8 +820,7 @@ def _validate_document_approval(
         approval.get("prompt_revision") == bindings.prompt_revision,
         approval.get("detector_code_sha256") == bindings.detector_code_sha256,
         approval.get("detector_model_sha256") == bindings.detector_model_sha256,
-        approval.get("protection_generation_revision")
-        == PROTECTION_GENERATION_REVISION,
+        approval.get("protection_generation_revision") == PROTECTION_GENERATION_REVISION,
     )
     if not all(checks):
         raise ApprovalError()
@@ -837,10 +839,8 @@ def _document_facts_match(
             approval.get("page_count") == parsed.page_count,
             approval.get("character_count") == parsed.character_count,
             approval.get("segment_count") == parsed.segment_count,
-            approval.get("omitted_visual_page_numbers")
-            == list(parsed.omitted_visual_page_numbers),
-            approval.get("segment_manifest_sha256")
-            == parsed.segment_manifest_sha256,
+            approval.get("omitted_visual_page_numbers") == list(parsed.omitted_visual_page_numbers),
+            approval.get("segment_manifest_sha256") == parsed.segment_manifest_sha256,
         )
     )
 
@@ -1020,6 +1020,96 @@ def _restore_warnings(value: object) -> list[dict[str, object]]:
     if type(foreign) is int and foreign > 0:
         output.append({"code": "foreign_replacement", "count": foreign})
     return output
+
+
+# Value-free and type-free. The detector's type guess on text the model wrote is
+# frequently wrong, so naming a type here would assert something the pipeline
+# does not actually know.
+GENERATED_PII_MARKER = "[ปกปิดโดยระบบ]"
+
+
+def _generated_pii_spans(value: object, text_length: int) -> tuple[tuple[int, int], ...]:
+    """Normalize reported offsets into sorted, merged, in-bounds ranges."""
+    raw = getattr(value, "generated_pii_spans", ())
+    if not isinstance(raw, (tuple, list)):
+        return ()
+    clean: list[tuple[int, int]] = []
+    for item in raw:
+        if (
+            isinstance(item, tuple)
+            and len(item) == 2
+            and type(item[0]) is int
+            and type(item[1]) is int
+            and 0 <= item[0] < item[1] <= text_length
+        ):
+            clean.append((item[0], item[1]))
+    if not clean:
+        return ()
+    clean.sort()
+    merged: list[tuple[int, int]] = [clean[0]]
+    for start, end in clean[1:]:
+        last_start, last_end = merged[-1]
+        if start <= last_end:
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+    return tuple(merged)
+
+
+def _mask_spans(text: str, spans: tuple[tuple[int, int], ...]) -> str:
+    parts: list[str] = []
+    cursor = 0
+    for start, end in spans:
+        parts.append(text[cursor:start])
+        parts.append(GENERATED_PII_MARKER)
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
+# Value-free and type-free. The detector's type guess on text the model wrote is
+# frequently wrong, so naming a type here would assert something the pipeline
+# does not know.
+GENERATED_PII_MARKER = "[ปกปิดโดยระบบ]"
+
+
+def _generated_pii_spans(value: object, text_length: int) -> tuple[tuple[int, int], ...]:
+    """Normalize reported offsets into sorted, merged, in-bounds ranges."""
+    raw = getattr(value, "generated_pii_spans", ())
+    if not isinstance(raw, (tuple, list)):
+        return ()
+    clean: list[tuple[int, int]] = []
+    for item in raw:
+        if (
+            isinstance(item, tuple)
+            and len(item) == 2
+            and type(item[0]) is int
+            and type(item[1]) is int
+            and 0 <= item[0] < item[1] <= text_length
+        ):
+            clean.append((item[0], item[1]))
+    if not clean:
+        return ()
+    clean.sort()
+    merged: list[tuple[int, int]] = [clean[0]]
+    for start, end in clean[1:]:
+        last_start, last_end = merged[-1]
+        if start <= last_end:
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+    return tuple(merged)
+
+
+def _mask_spans(text: str, spans: tuple[tuple[int, int], ...]) -> str:
+    parts: list[str] = []
+    cursor = 0
+    for start, end in spans:
+        parts.append(text[cursor:start])
+        parts.append(GENERATED_PII_MARKER)
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
 
 
 def _duration_ms(started: float, finished: float) -> int:

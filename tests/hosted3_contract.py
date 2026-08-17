@@ -68,7 +68,7 @@ def main() -> int:
 
     require(contract["schema_revision"] == "hosted3-plan-2026-08-16", "fixture revision drift")
     require(version == contract["current_hosted_version"], "Hosted release VERSION drift")
-    require(contract["target_hosted_version"] == "3.0.1", "target version drift")
+    require(contract["target_hosted_version"] == "3.0.2", "target version drift")
 
     existing = contract["existing_canonical_routes"]
     additive = contract["additive_canonical_routes"]

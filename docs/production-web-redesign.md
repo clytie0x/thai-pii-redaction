@@ -15,23 +15,28 @@ an end-to-end production serving path.
 
 ## Current state
 
-- Two post-release defects are now open under an owner-authorized `3.0.1`
-  hotfix. First, a fresh public Standard/Token execution against deployed
-  Hosted `3.0.0` returned HTTP `200`; Pathumma preserved both reviewed tokens,
-  the safety gate passed, restoration replaced both tokens with zero leftovers,
-  but the shared output detector reported two `generated_pii` findings. The
-  exact synthetic response showed that `คำตอบ:**` was falsely classified as a
-  name and that a second name span expanded from the restored original into the
-  unchanged `ผู้สมัคร` prefix. The browser then collapsed this valid-but-
-  fail-closed `restoration.status: unsafe` response into the unrelated
-  `provider_response_invalid` copy. Second, an external Windows machine running
-  the published Desktop `3.0.0` NSIS package aborted three times with
-  `AI Guard native component drain failed`; the installer currently discards
-  the underlying fixed stage, so that screenshot proves a real compatibility
-  failure but not its exact cause. Production remains Hosted `3.0.0` and the
-  published Desktop remains `3.0.0`. Local `3.0.1` source and a diagnostic
-  Windows package and Hosted image candidate now exist, but no `v3.0.1` tag,
-  public Desktop release, or Hosted deploy exists yet.
+- Hosted `3.0.1` is deployed at exact runtime
+  `514945a42f161a96672ace4545ae8afc9c856338`. Protected Pipeline #36606 passed
+  check, deploy, and mandatory acceptance without rollback; manual logs #143764,
+  exact revision/process/resources #143765, and restart/recovery #143766 passed,
+  with all four services healthy after restart. Public health reports 3.0.1 and
+  contract 2, public JavaScript bytes match the reviewed source, and public
+  acceptance passes with only the two previously accepted organizer plain-HTTP
+  warnings. Desktop remains published at 3.0.0; its EABA Retest-2 candidate is
+  unsigned, unpublished, and still requires the external-machine result.
+- Post-restart public Chrome then exposed a separate 3.0.1 availability limit.
+  Two exact synthetic résumé executions were safely suppressed as
+  `restoration_unsafe`: provider template prose caused false generated-PII spans
+  for `บริษัท/องค์กร]` twice, `ได้`, and
+  `มีประสบการณ์การทำงานในสายงาน`. This did not expose unsafe text and does not
+  invalidate the deployment safety gates, but it can discard an otherwise useful
+  answer. The owner approved a new 3.0.2 direction: restore only authoritative
+  original-token ranges, replace each newly detected provider-output span with a
+  value-free marker, and display the remaining answer with explicit sanitized
+  status/provenance. Token/digest/residual/foreign-token/malformed/incomplete
+  failures remain full blocks. The behavior must be opt-in for Hosted so Desktop
+  and Extension do not change silently. It is planned, not implemented or
+  deployed.
 - Hotfix work is isolated on `codex/hosted-3.0.1-hotfix` at starting commit
   `bd8f6f07caf7fc4ab6b4099f0ada32e7cfb4a75a`; the submitted-form attachments
   in the original worktree are outside this branch. Stage-0 baselines pass the
@@ -66,7 +71,7 @@ an end-to-end production serving path.
   custom preview/result accepted any nonempty Hosted version and PDF did not
   bind top-level, receipt, and artifact-provenance versions before exporting an
   artifact labeled `3.0.1`. Current source now uses one exact
-  `HOSTED_VERSION = "3.0.1"` browser constant, rejects stale custom/PDF preview
+  `HOSTED_VERSION = "3.0.2"` browser constant, rejects stale custom/PDF preview
   and execute DTOs, binds PDF receipt and artifact provenance, and locks those
   failures with executable negatives. Frontend behavior and static contracts
   pass after the correction. Exact source commit
@@ -86,7 +91,7 @@ an end-to-end production serving path.
   documentation-only release descendant must retain identical runtime bytes and
   receive exact label/parity plus focused status rebind before protected main.
 
-`HOSTED301_HOTFIX_STAGE=stage4_local_candidate`
+`HOSTED301_HOTFIX_STAGE=production_complete`
 - Audio input, TTS, images, Vision, scanned/image-only PDF, and OCR are excluded
   from the approved Hosted 3.0 release and receive no production teaser or
   control. A later modality release requires a separate owner decision and full

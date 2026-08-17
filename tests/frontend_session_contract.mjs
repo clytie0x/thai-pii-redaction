@@ -66,12 +66,12 @@ assert.match(developers, /liveness only/, "developers page overclaims health/pro
 for (const rateTruth of ["30/minute global, burst 10", "12/minute global burst 4", "48/minute global burst 12", "4/minute global with one global connection"]) assert.ok(developers.includes(rateTruth), `developers page rate truth missing: ${rateTruth}`);
 assert.match(developers, /Fixed error and recovery groups/, "developers page lacks deterministic error recovery");
 assert.doesNotMatch(developers, /<script/i, "developers page must be static-first");
-assert.match(home, /Hosted 3\.0\.1/, "Home lacks the Hosted release version");
+assert.match(home, /Hosted 3\.0\.2/, "Home lacks the Hosted release version");
 assert.doesNotMatch(home, /Quick Start หลังผ่านรหัสเชิญ/, "Home incorrectly invite-gates Standard access");
 assert.doesNotMatch(help, /Hosted Web เป็น Private Beta ที่ใช้รหัสเชิญ/, "Help contradicts Standard access");
-assert.match(help, /Hosted 3\.0\.1 รับเฉพาะ text-layer PDF เพื่อสร้าง Protected Markdown เท่านั้น/, "Help lacks the Hosted PDF boundary");
+assert.match(help, /Hosted 3\.0\.2 รับเฉพาะ text-layer PDF เพื่อสร้าง Protected Markdown เท่านั้น/, "Help lacks the Hosted PDF boundary");
 assert.match(terms, /Hosted รับเฉพาะ text-layer PDF → Protected Markdown ไม่ใช่ redacted PDF หรือ OCR/, "Terms lacks the Hosted PDF distinction");
-assert.match(terms, /Hosted 3\.0\.1 ให้ Standard access และ Priority Invite/, "Terms hero lacks current access truth");
+assert.match(terms, /Hosted 3\.0\.2 ให้ Standard access และ Priority Invite/, "Terms hero lacks current access truth");
 assert.match(privacy, /Standard access และ Priority Invite ใช้ workspace เดียว/, "Privacy lacks the two-service-class boundary");
 assert.match(localEdge, /log_format stage6_private 'surface=edge status=\$status bytes=\$body_bytes_sent method=\$request_method rt=\$request_time'/, "local TLS evidence edge lacks value-free logging");
 assert.doesNotMatch(localEdge, /\$request_uri|\$args|combined/, "local TLS evidence edge can log a request target");

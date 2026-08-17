@@ -244,7 +244,7 @@ def main() -> int:
 
     pages = {
         "/": "ปกป้องข้อมูลก่อน",
-        "/app": "Hosted 3.0.1 Web App",
+        "/app": "Hosted 3.0.2 Web App",
         "/privacy": "ข้อมูลไปไหน",
         "/terms": "ใช้ได้เมื่อ",
         "/help": "แก้ปัญหา",
@@ -273,7 +273,7 @@ def main() -> int:
             assert 'id="h3StartStandard"' in text
             assert 'id="h3PrioritySubmit"' in text
             assert 'src="/hosted3-app.js" defer' in text
-            assert "Hosted 3.0.1" in text
+            assert "Hosted 3.0.2" in text
             assert "ข้อความและ PDF แบบมี text layer ผ่าน organizer proxy และ AI Guard Core" in text
             assert "Pathumma ได้รับเฉพาะข้อความที่ปกป้องและอนุมัติแล้ว" in text
             assert "ไม่ถูกส่งให้ Pathumma" in text
@@ -310,7 +310,7 @@ def main() -> int:
     assert status == 200
     health = json.loads(body)
     assert health.get("status") == "ok"
-    assert health.get("version") == "3.0.1"
+    assert health.get("version") == "3.0.2"
     assert headers.get("Strict-Transport-Security") == "max-age=31536000"
 
     # Credential-free, wrong-method probes prove the organizer edge reaches all

@@ -47,7 +47,13 @@ from aift_hosted3.document_preview import (  # noqa: E402
     SCENARIOS,
     SCENARIO_REGISTRY_SHA256,
 )
-from aift_hosted3.execution import ExecuteError, ExecuteService  # noqa: E402
+from aift_hosted3.execution import (  # noqa: E402
+    GENERATED_PII_MARKER,
+    ExecuteError,
+    ExecuteService,
+    _generated_pii_spans,
+    _mask_spans,
+)
 from aift_hosted3.document_provider import DocumentProviderCallError  # noqa: E402
 from aift_hosted3.overlay import (  # noqa: E402
     DOCUMENT_EXECUTE_PATH,
@@ -387,7 +393,7 @@ class ExecuteContractTests(unittest.TestCase):
 
         service = ExecuteService(
             h.queue,
-            hosted_version="3.0.1",
+            hosted_version="3.0.2",
             protector=protector,
             custom_provider_call=custom_call or provider,
             document_provider_call=lambda _system, _user: provider_ast(),
@@ -420,7 +426,7 @@ class ExecuteContractTests(unittest.TestCase):
         return (
             ExecuteService(
                 h.queue,
-                hosted_version="3.0.1",
+                hosted_version="3.0.2",
                 parser=parser or FakeParser(),
                 protector=FakeProtector(),
                 custom_provider_call=lambda *_args: (_ for _ in ()).throw(
@@ -494,6 +500,85 @@ class ExecuteContractTests(unittest.TestCase):
                 authority=h.authority,
             )
 
+    def test_custom_generated_pii_is_masked_rather_than_discarding_the_answer(self):
+        """A detector hit on provider prose must cost that span, not the reply.
+
+        The detector runs outside its calibrated domain on text the model wrote,
+        so ordinary template wording produces false spans. Dropping the whole
+        answer turns each such miss into total unavailability, while masking the
+        span removes exactly the distrusted text and keeps the rest usable.
+        """
+        answer = "ทักษะที่ควรใส่ ได้แก่ การสื่อสาร และ นายสมหญิง ทดสอบดี ปิดท้าย"
+        start = answer.index("นายสมหญิง ทดสอบดี")
+        end = start + len("นายสมหญิง ทดสอบดี")
+        restored = SimpleNamespace(
+            restored_text=answer,
+            replaced_count=1,
+            leftover_pseudonyms=[],
+            generated_pii_count=1,
+            foreign_replacement_count=0,
+            generated_pii_spans=((start, end),),
+        )
+
+        h = Harness()
+        capability, claim = h.claim(h.custom_ticket())
+        service, _protector, _calls, _guards = self.custom_service(
+            h,
+            restore_call=lambda *_args, **_kwargs: restored,
+        )
+
+        response = service.execute_custom(
+            {
+                "text": CUSTOM_SOURCE,
+                "queue_capability": capability,
+                "claim_token": claim,
+            },
+            authority=h.authority,
+        )
+
+        self.assertEqual(response["restoration"]["status"], "sanitized")
+        self.assertEqual(response["restoration"]["masked_count"], 1)
+        self.assertEqual(response["warnings"], [{"code": "generated_pii", "count": 1}])
+        self.assertNotIn("นายสมหญิง", response["restored_text"])
+        self.assertNotIn("ทดสอบดี", response["restored_text"])
+        self.assertIn("ทักษะที่ควรใส่ ได้แก่ การสื่อสาร", response["restored_text"])
+        self.assertIn("ปิดท้าย", response["restored_text"])
+        self.assertEqual(response["receipt"]["restoration_status"], "sanitized")
+
+    def test_custom_generated_pii_without_usable_spans_still_discards_the_answer(self):
+        """Masking is only safe when the offsets say what to mask.
+
+        A count with no offsets means the distrusted text cannot be located, so
+        the old all-or-nothing block stays the correct answer.
+        """
+        restored = SimpleNamespace(
+            restored_text="UNSAFE RESTORED",
+            replaced_count=1,
+            leftover_pseudonyms=[],
+            generated_pii_count=1,
+            foreign_replacement_count=0,
+            generated_pii_spans=(),
+        )
+
+        h = Harness()
+        capability, claim = h.claim(h.custom_ticket())
+        service, _protector, _calls, _guards = self.custom_service(
+            h,
+            restore_call=lambda *_args, **_kwargs: restored,
+        )
+
+        response = service.execute_custom(
+            {
+                "text": CUSTOM_SOURCE,
+                "queue_capability": capability,
+                "claim_token": claim,
+            },
+            authority=h.authority,
+        )
+
+        self.assertEqual(response["restoration"]["status"], "unsafe")
+        self.assertEqual(response["restored_text"], "")
+
     def test_custom_nonusable_restoration_never_returns_restored_text(self):
         cases = (
             (
@@ -502,10 +587,26 @@ class ExecuteContractTests(unittest.TestCase):
                     restored_text="UNSAFE RESTORED",
                     replaced_count=1,
                     leftover_pseudonyms=[],
-                    generated_pii_count=1,
-                    foreign_replacement_count=0,
+                    generated_pii_count=0,
+                    foreign_replacement_count=1,
+                    generated_pii_spans=(),
                 ),
-                [{"code": "generated_pii", "count": 1}],
+                [{"code": "foreign_replacement", "count": 1}],
+            ),
+            (
+                "unsafe",
+                SimpleNamespace(
+                    restored_text="UNSAFE RESTORED",
+                    replaced_count=1,
+                    leftover_pseudonyms=[],
+                    generated_pii_count=1,
+                    foreign_replacement_count=1,
+                    generated_pii_spans=((0, 6),),
+                ),
+                [
+                    {"code": "generated_pii", "count": 1},
+                    {"code": "foreign_replacement", "count": 1},
+                ],
             ),
             (
                 "incomplete",
@@ -517,6 +618,21 @@ class ExecuteContractTests(unittest.TestCase):
                     foreign_replacement_count=0,
                 ),
                 [],
+            ),
+            (
+                # An unresolved token means the mapping itself did not land, so
+                # no part of this reply is trustworthy enough to sanitize and
+                # show -- masking must not rescue it.
+                "incomplete",
+                SimpleNamespace(
+                    restored_text=f"ผลสรุปสำหรับ {TOKEN} และ นายสมหญิง ทดสอบดี",
+                    replaced_count=0,
+                    leftover_pseudonyms=[TOKEN],
+                    generated_pii_count=1,
+                    foreign_replacement_count=0,
+                    generated_pii_spans=((0, 6),),
+                ),
+                [{"code": "generated_pii", "count": 1}],
             ),
         )
         for expected_status, restored, expected_warnings in cases:
@@ -566,6 +682,48 @@ class ExecuteContractTests(unittest.TestCase):
         self.assertEqual(exact.leftover_pseudonyms, [])
         self.assertEqual(exact.generated_pii_count, 0)
         self.assertGreaterEqual(generated.generated_pii_count, 1)
+        self.assertEqual(len(generated.generated_pii_spans), generated.generated_pii_count)
+        covered = "".join(
+            generated.restored_text[start:end] for start, end in generated.generated_pii_spans
+        )
+        self.assertIn("สมหญิง", covered)
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("pythainlp") is not None,
+        "real detector dependencies are verified in the Core image",
+    )
+    def test_real_port_keeps_a_pii_free_template_answer_the_detector_misreads(self):
+        """The exact public incident: résumé template prose blocked a whole reply.
+
+        The provider wrote a placeholder and ordinary Thai template wording that
+        contains no personal data at all. The detector still claims spans there,
+        because provider prose is outside the domain it was measured on. The
+        reply must survive with those spans masked.
+        """
+        from pii_redactor.stateless import restore_stateless, sanitize_stateless
+
+        source = "ผู้สมัครสังเคราะห์ สมชาย ใจดี ติดต่อ test@example.invalid"
+        protected = sanitize_stateless(source, mode="token", salt="hosted-3.0.1")
+        answer = (
+            "เรียน ฝ่ายทรัพยากรบุคคล [บริษัท/องค์กร]\n"
+            f"{protected.sanitized_text}\n"
+            "จึงเรียนมาเพื่อโปรดพิจารณา"
+        )
+        restored = restore_stateless(answer, mapping=protected.mapping, mode="token")
+
+        self.assertEqual(restored.leftover_pseudonyms, [])
+        self.assertGreaterEqual(restored.generated_pii_count, 1)
+
+        spans = _generated_pii_spans(restored, len(restored.restored_text))
+        self.assertTrue(spans)
+        masked = _mask_spans(restored.restored_text, spans)
+
+        # The mapping's own values stay restored; only the misread template
+        # wording is closed, and the surrounding answer survives.
+        self.assertIn("สมชาย ใจดี", masked)
+        self.assertIn("เรียน ฝ่ายทรัพยากรบุคคล", masked)
+        self.assertIn("จึงเรียนมาเพื่อโปรดพิจารณา", masked)
+        self.assertIn(GENERATED_PII_MARKER, masked)
 
     def test_custom_mismatch_and_outbound_failure_contact_no_unapproved_provider(self):
         h = Harness()
