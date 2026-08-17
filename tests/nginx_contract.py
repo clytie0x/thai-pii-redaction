@@ -466,9 +466,12 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
         "body.detected_entity_count",
         'api("/api/auth/login"',
         "body.authenticated !== true",
-        'body.safety.status === "pass"',
-        'body.restoration.status === "complete"',
-        "body.restoration.leftover_count === 0",
+        "function customResultStatus(body, expectedProtected)",
+        'body.safety.status !== "pass"',
+        'status === "complete"',
+        'status === "incomplete"',
+        'status === "unsafe"',
+        'body.restored_text !== ""',
         '!Object.hasOwn(body, "restored_text")',
     ):
         if required_projection not in page:
