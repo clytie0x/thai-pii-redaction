@@ -30,8 +30,8 @@ an end-to-end production serving path.
   the underlying fixed stage, so that screenshot proves a real compatibility
   failure but not its exact cause. Production remains Hosted `3.0.0` and the
   published Desktop remains `3.0.0`. Local `3.0.1` source and a diagnostic
-  Windows package now exist, but no `v3.0.1` tag, public Desktop release,
-  Hosted image candidate, or Hosted deploy exists yet.
+  Windows package and Hosted image candidate now exist, but no `v3.0.1` tag,
+  public Desktop release, or Hosted deploy exists yet.
 - Hotfix work is isolated on `codex/hosted-3.0.1-hotfix` at starting commit
   `bd8f6f07caf7fc4ab6b4099f0ada32e7cfb4a75a`; the submitted-form attachments
   in the original worktree are outside this branch. Stage-0 baselines pass the
@@ -40,8 +40,8 @@ an end-to-end production serving path.
   startup exceeded the test's 0.5-second local threshold; the same source test
   passes in the pinned Core dependency/image environment and is not attributed
   to this unimplemented hotfix.
-- Local Stage-2 projection and frontend behavior are now corrected, but remain
-  unbuilt and undeployed. A classified `incomplete` or `unsafe` custom result
+- Local Stage-2 projection and frontend behavior are now corrected and built,
+  but remain undeployed. A classified `incomplete` or `unsafe` custom result
   returns an empty `restored_text`; the browser validates the reviewed protected
   payload, receipt, provider, attempt, safety, warning, and restoration bindings
   before classifying it. Incomplete and unsafe restoration receive distinct
@@ -52,8 +52,17 @@ an end-to-end production serving path.
   execute `11/11`, frontend behavior, platform-acceptance policy, JavaScript
   syntax, and diff-integrity checks pass. The shared correction is synchronized
   through `PORT_MANIFEST.json` from exact upstream port commit
-  `3c2997835dbdc9842e38b38fb89f09642a713817`; full images, CI-equivalent,
-  repeated live-provider evidence, and deployment are still pending.
+  `3c2997835dbdc9842e38b38fb89f09642a713817`; repeated live-provider evidence,
+  independent review, and deployment are still pending. Clean
+  commit `1346d9a623e2f5ab8074135459f1037777768bfc` passed GitLab Pipeline
+  #36581 and the clean-clone Docker-executor-style check. Exact local image
+  parity is `3/3`, in-image execute is `11/11`, the real-detector execute probe
+  is `1/1`, and local stub-provider platform acceptance produced one usable
+  custom result on attempt 1 while preserving PDF, queue, artifact, route, and
+  log boundaries. The first image quartet is recorded in `STATE.md` and is
+  intentionally superseded by the final evidence-only commit/rebuild.
+
+`HOSTED301_HOTFIX_STAGE=stage4_local_candidate`
 - Audio input, TTS, images, Vision, scanned/image-only PDF, and OCR are excluded
   from the approved Hosted 3.0 release and receive no production teaser or
   control. A later modality release requires a separate owner decision and full

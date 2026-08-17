@@ -9,7 +9,7 @@
   restart/recovery #143201). All four services restarted healthy with the exact
   runtime label; no rollback triggered.
 - A local Hosted `3.0.1` hotfix candidate now exists on
-  `codex/hosted-3.0.1-hotfix`; it is not built, pushed, or deployed. The
+  `codex/hosted-3.0.1-hotfix`; it is pushed and built locally but not deployed. The
   release-owned Core VERSION, production web copy, and acceptance expectations
   are `3.0.1`, while this current-production paragraph deliberately remains
   `3.0.0` until a protected release passes. The port manifest now pins upstream
@@ -21,8 +21,20 @@
   Focused execute is `11/11`, frontend behavior and
   platform policy contracts pass. Non-usable `incomplete|unsafe` execute results
   project an empty `restored_text`, receive distinct recovery copy, and never
-  enter the result DOM. Full images, CI-equivalent, repeated live provider,
-  independent review, and protected deployment are still pending.
+  enter the result DOM. Repeated live-provider evidence, independent review,
+  and protected deployment are still pending. Clean source
+  commit `1346d9a623e2f5ab8074135459f1037777768bfc` passed GitLab check-only
+  Pipeline #36581 and the clean-clone Docker-executor-style check. Its first
+  exact local images are web `sha256:b285a2c2212914ed59dc305f2472579f0c5c2383b7a49e9160c09ad790f8e54d`,
+  API `sha256:0bf9273bd3fb6043e7d7fbb2daaaf79bde52172431b716b87299372b07a1fc6d`,
+  Core `sha256:ae192736fea57313dc597ad602b1d0f4a3d60008ea8991c6064bff2addf9d7ff`,
+  and parser `sha256:81cb4fbd394d199bbefe4fdb438e1e34cebd8d8f78a65412e4bdd381d24183bc`.
+  All four labels equal that commit; parity passes `3/3`, exact-image execute
+  passes `11/11` including the real port regression, the real-detector execute
+  probe passes `1/1`, and local platform acceptance completed a usable custom
+  result on attempt 1 plus Priority legacy, PDF, queue, artifacts, routes,
+  report, and value-free logs. These image IDs will be superseded by the final
+  evidence-only commit/rebuild below; they are not deployment identities.
 - Current deployment, same-origin application API, data-flow, acceptance,
   rollback, and operations guidance is centralized in
   `docs/HOSTED-3-DEPLOY-API-GUIDE.md`. Older deployment documents remain

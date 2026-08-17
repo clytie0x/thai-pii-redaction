@@ -5,6 +5,12 @@
 Production URL: <https://team08.aiforthai.in.th/>
 Public App: <https://team08.aiforthai.in.th/app>
 Runtime version: **Hosted 3.0.0**
+
+Hotfix note (17 August 2026): source candidate Hosted `3.0.1` is local and
+check-only. This guide continues to describe deployed `3.0.0` until the exact
+candidate passes independent review, protected deployment, mandatory
+acceptance, and public verification. Do not use local candidate image IDs as
+production evidence.
 HTTP contract: **2**
 Runtime revision: `f07745209e3da3b926eb6802f2ca2919e5b9fe9d`
 Protected production pipeline: **#36540**
