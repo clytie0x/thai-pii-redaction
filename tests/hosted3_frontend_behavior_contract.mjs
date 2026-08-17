@@ -111,6 +111,10 @@ let authenticated = false;
 let activeClass = "standard";
 let inspectDeferred = null;
 let customExecuteStatus = "complete";
+let previewHostedVersion = "3.0.1";
+let customExecuteHostedVersion = "3.0.1";
+let pdfExecuteHostedVersion = "3.0.1";
+let pdfReceiptHostedVersion = "3.0.1";
 let joinMode = "success";
 let claimResponses = [];
 let endMode = "success";
@@ -140,13 +144,13 @@ const fetch = async (url, options = {}) => {
   if (url === "/api/guard") return jsonResponse(200, {flagged: false, guard_findings: []});
   if (url === "/api/analyze-report") return jsonResponse(200, {overall_score: 20, overall_grade: "A", report_pdf_b64: "JVBERg=="});
   if (url === "/api/protection-preview") return jsonResponse(200, {
-    source_kind: "custom_standard", protected_text: "[NAME_1] โทร [PHONE_1]", detected_entity_count: 2,
+    source_kind: "custom_standard", hosted_version: previewHostedVersion, protected_text: "[NAME_1] โทร [PHONE_1]", detected_entity_count: 2,
     entity_type_counts: {NAME: 1, PHONE: 1}, highlights: [{start: 0, end: 8, data_type: "NAME"}],
     section26_categories: ["HEALTH"], guard_findings: [], outbound_gate: {status: "no_residual_signal_detected", residual_count: 0, human_review_required: true},
     can_execute: true, ticket: "preview-ticket", queue_join_before_unix: Math.floor((SERVER_MS + 600_000) / 1000),
   }, timedHeaders("standard"));
   if (url === "/api/document-preview") return jsonResponse(200, {
-    source_kind: "standard_document", protected_text: "ประวัติย่อ [NAME_1]", protected_markdown: "# Protected resume",
+    source_kind: "document_standard", hosted_version: previewHostedVersion, protected_text: "ประวัติย่อ [NAME_1]", protected_markdown: "# Protected resume",
     detected_entity_count: 1, entity_type_counts: {NAME: 1}, highlights: [], section26_categories: [], guard_findings: [],
     omitted_visual_page_numbers: [1], outbound_gate: {status: "no_residual_signal_detected", residual_count: 0, human_review_required: true},
     can_execute: true, ticket: "document-ticket", queue_join_before_unix: Math.floor((SERVER_MS + 600_000) / 1000),
@@ -162,7 +166,7 @@ const fetch = async (url, options = {}) => {
     const warnings = customExecuteStatus === "unsafe" ? [{code: "generated_pii", count: 2}] : [];
     const leftover = customExecuteStatus === "incomplete" ? 1 : 0;
     return jsonResponse(200, {
-      request_id: requestId, hosted_version: "3.0.1", source_kind: "custom_standard",
+      request_id: requestId, hosted_version: customExecuteHostedVersion, source_kind: "custom_standard",
       protected_text: "[NAME_1] โทร [PHONE_1]",
       restored_text: customExecuteStatus === "complete" ? "ผลสังเคราะห์ที่กู้คืนแล้ว" : "",
       detected_entity_count: 2, entity_type_counts: {NAME: 1, PHONE: 1}, section26_categories: ["HEALTH"], guard_findings: [], warnings,
@@ -170,18 +174,23 @@ const fetch = async (url, options = {}) => {
       restoration: {status: customExecuteStatus, replaced_count: customExecuteStatus === "incomplete" ? 1 : 2, leftover_count: leftover},
       provider: {id: "tokenmind", model: "thaillm-8b", attempt_count: 1},
       receipt: {
-        request_id: requestId, hosted_version: "3.0.1", source_kind: "custom_standard",
+        request_id: requestId, hosted_version: customExecuteHostedVersion, source_kind: "custom_standard",
         restoration_status: customExecuteStatus, digest_match: true,
         outbound_gate_status: "no_residual_signal_detected", provider_id: "tokenmind",
         provider_model: "thaillm-8b", provider_attempt_count: 1, duration_ms: 1250,
       },
     });
   }
-  if (url === "/api/document-execute") return jsonResponse(200, {
-    protected_markdown: "> Protected/pseudonymized, not anonymous.\n\n# Protected resume\n\n## Identity\n\n[NAME_1]\n", protected_plain_text: "Protected resume\n\nIdentity\n[NAME_1]\n", protected_text: "ประวัติย่อ [NAME_1]",
-    protected_document_ast: {ordered_sections: [{role: "identity", segment_ids: ["seg_001"]}]}, warnings: ["Human review is required."], omitted_visual_page_numbers: [1],
-    receipt: {source_receipt_id: "src_synthetic", parser_revision: "parser-v1", extraction_revision: "extract-v1", omitted_visual_page_numbers: [1], duration_ms: 900},
-  });
+  if (url === "/api/document-execute") {
+    const provenance = {hosted_version: pdfReceiptHostedVersion, source_kind: "document_standard", source_receipt_id: "src_synthetic", parser_revision: "parser-v1", extraction_revision: "extract-v1", page_count: 1, omitted_visual_page_numbers: [1], scenario_id: null, scenario_registry_revision: null};
+    return jsonResponse(200, {
+      request_id: "req_document", hosted_version: pdfExecuteHostedVersion, source_kind: "document_standard", source_receipt_id: "src_synthetic", artifact_provenance: {...provenance},
+      protected_markdown: "> Protected/pseudonymized, not anonymous.\n\n# Protected resume\n\n## Identity\n\n[NAME_1]\n", protected_plain_text: "Protected resume\n\nIdentity\n[NAME_1]\n", protected_text: "ประวัติย่อ [NAME_1]",
+      protected_document_ast: {ordered_sections: [{role: "identity", segment_ids: ["seg_001"]}]}, warnings: ["Human review is required."], omitted_visual_page_numbers: [1],
+      provider: {id: "tokenmind", model: "thaillm-8b", attempt_count: 1},
+      receipt: {request_id: "req_document", hosted_version: pdfReceiptHostedVersion, source_kind: "document_standard", source_receipt_id: "src_synthetic", parser_revision: "parser-v1", extraction_revision: "extract-v1", omitted_visual_page_numbers: [1], warnings: ["Human review is required."], duration_ms: 900, artifact_provenance: {...provenance}, digest_match: true, outbound_gate_status: "no_residual_signal_detected", exact_segment_coverage: true, expected_token_integrity: true, structured_output_validated: true, provider_id: "tokenmind", provider_model: "thaillm-8b", provider_attempt_count: 1},
+    });
+  }
   if (url === "/api/provider-queue/cancel") { if (cancelMode === "network") throw new Error("synthetic lost cancel response"); return jsonResponse(204, null); }
   if (url === "/api/provider-queue/status") return jsonResponse(200, {state: queueStatusState, position: queueStatusState === "queued" ? 2 : null, queue_expires_at_unix: Math.floor((SERVER_MS + 500_000) / 1000)});
   throw new Error(`unexpected request ${url}`);
@@ -249,6 +258,12 @@ assert.equal(downloads.at(-1)?.name, "ai-guard-pdpa-report.pdf", "PDPA report do
 await backButtons[2].click(); await taskButtons[1].click();
 get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ โทร 081-000-1020";
 await get("h3Text").emit("input");
+previewHostedVersion = "3.0.0";
+await get("h3TextPreview").click(); await flush();
+assert.equal(get("h3Preview").hidden, true, "stale-version custom preview rendered");
+assert.equal(get("h3Recovery").hidden, false, "stale-version custom preview did not fail closed");
+assert.match(get("h3RecoveryCopy").textContent, /response ที่ไม่ผ่าน validation/, "stale-version preview lost fixed recovery truth");
+await get("h3RecoveryAction").click(); previewHostedVersion = "3.0.1";
 const beforePreview = requestLog.length;
 await get("h3TextPreview").click(); await flush();
 assert.equal(requestLog.slice(beforePreview).some(item => item.url.includes("execute")), false, "preview contacted execute/provider");
@@ -374,9 +389,22 @@ const beforeSelection = requestLog.length;
 get("h3Pdf").files = [selectedPdf]; await get("h3Pdf").emit("change");
 assert.equal(requestLog.length, beforeSelection, "PDF selection uploaded automatically");
 assert.match(get("h3PdfMeta").textContent, /ยังไม่อัปโหลด/, "selected PDF state did not disclose no-upload truth");
+previewHostedVersion = "3.0.0";
+await get("h3PdfPreview").click(); await flush();
+assert.equal(get("h3Preview").hidden, true, "stale-version PDF preview rendered");
+assert.equal(get("h3Recovery").hidden, false, "stale-version PDF preview did not fail closed");
+await get("h3RecoveryAction").click(); previewHostedVersion = "3.0.1";
 await get("h3PdfPreview").click(); await flush();
 assert.equal(requestLog.at(-1).url, "/api/document-preview", "explicit PDF upload did not use document preview");
 assert.match(get("h3PreviewWarning").textContent, /หน้า visual ที่ละไว้: 1/, "PDF preview omitted the affected visual page warning");
+pdfReceiptHostedVersion = "3.0.0";
+const artifactWritesBeforeMixedPdf = navigator.clipboard.writes.length;
+await get("h3Approve").click(); await flush(12);
+assert.equal(get("h3Result").hidden, true, "mixed-version PDF result rendered");
+assert.equal(get("h3Recovery").hidden, false, "mixed-version PDF result did not fail closed");
+assert.equal(navigator.clipboard.writes.length, artifactWritesBeforeMixedPdf, "mixed-version PDF result exposed a portable artifact");
+await get("h3RecoveryAction").click(); pdfReceiptHostedVersion = "3.0.1";
+await get("h3PdfPreview").click(); await flush();
 await get("h3Approve").click(); await flush(12);
 assert.equal(requestLog.some(item => item.url === "/api/document-execute"), true, "PDF claim did not execute the document path");
 assert.match(get("h3ResultBody").textContent, /Protected resume.*Identity/s, "PDF primary result did not render the semantic Markdown subset");
@@ -405,6 +433,14 @@ assert.equal(get("h3ClearRunning").hidden, false, "uncertain provider state omit
 await get("h3ClearRunning").click(); executeMode = "success";
 
 await backButtons[1].click(); await taskButtons[1].click();
+customExecuteHostedVersion = "3.0.0"; customExecuteStatus = "complete";
+get("h3Text").value = "ข้อมูลสังเคราะห์สำหรับ version binding"; await get("h3Text").emit("input");
+await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
+assert.equal(get("h3Result").hidden, true, "stale-version custom result rendered");
+assert.equal(get("h3Recovery").hidden, false, "stale-version custom result did not fail closed");
+assert.match(get("h3RecoveryCopy").textContent, /response ที่ไม่ผ่าน validation/, "stale-version custom result lost fixed recovery truth");
+await get("h3RecoveryAction").click(); customExecuteHostedVersion = "3.0.1";
+
 customExecuteStatus = "incomplete";
 get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ"; await get("h3Text").emit("input");
 await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);

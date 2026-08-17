@@ -2,6 +2,7 @@
   "use strict";
 
   const $ = id => document.getElementById(id);
+  const HOSTED_VERSION = "3.0.1";
   const TIMING_UNAVAILABLE = "timing_unavailable";
   const controls = $("appControls");
   const state = { generation: 0, previewRequest: 0, inspectRequest: 0, inspectReport: null, authorityMutation: false, joinPending: false, claimInFlight: false, authority: null, task: null, anchor: null, preview: null, source: "", file: null, result: null, queue: null, claimAbort: null, queueStartedAt: 0, providerRunning: false, returnFocus: null, queuePaused: false };
@@ -327,7 +328,7 @@
   }
 
   function displayPreview(body, source) {
-    if (!body || typeof body.protected_text !== "string" || body.can_execute !== true || typeof body.ticket !== "string") { showError("request_failed"); return; }
+    if (!body || body.hosted_version !== HOSTED_VERSION || typeof body.protected_text !== "string" || body.can_execute !== true || typeof body.ticket !== "string") { showError("provider_response_invalid"); return; }
     state.preview = body; state.source = source; $("h3Protected").textContent = body.protected_text;
     $("h3Gate").textContent = `Outbound gate: ${body.outbound_gate?.status || "unknown"} · human review required`;
     const deadline = Number(body.queue_join_before_unix); const minimum = state.task === "pdf" ? 300 : 120;
@@ -445,8 +446,8 @@
   function provenanceHeader(receipt, isPdf) {
     const omitted = Array.isArray(receipt?.omitted_visual_page_numbers) && receipt.omitted_visual_page_numbers.length ? ` Omitted visual page(s): ${receipt.omitted_visual_page_numbers.join(", ")}.` : "";
     return isPdf
-      ? ["AI Guard protected/pseudonymized artifact; it is not anonymous.", "The source PDF is unchanged and is not sanitized. PII was not restored into this artifact.", `Text-layer-only extraction; parser ${receipt?.parser_revision || "unavailable"}; extraction ${receipt?.extraction_revision || "unavailable"}.${omitted}`, "Human review is required.", `Hosted channel: AI Guard 3.0.1 · receipt: ${receipt?.source_receipt_id || "unavailable"}`].join("\n")
-      : ["AI Guard protected/pseudonymized text artifact; it is not anonymous.", "This portable protected text does not include restored PII. Human review is required.", `Hosted channel: AI Guard 3.0.1 · receipt: ${receipt?.request_id || "unavailable"}`].join("\n");
+      ? ["AI Guard protected/pseudonymized artifact; it is not anonymous.", "The source PDF is unchanged and is not sanitized. PII was not restored into this artifact.", `Text-layer-only extraction; parser ${receipt?.parser_revision || "unavailable"}; extraction ${receipt?.extraction_revision || "unavailable"}.${omitted}`, "Human review is required.", `Hosted channel: AI Guard ${HOSTED_VERSION} · receipt: ${receipt?.source_receipt_id || "unavailable"}`].join("\n")
+      : ["AI Guard protected/pseudonymized text artifact; it is not anonymous.", "This portable protected text does not include restored PII. Human review is required.", `Hosted channel: AI Guard ${HOSTED_VERSION} · receipt: ${receipt?.request_id || "unavailable"}`].join("\n");
   }
   function portableReceipt(body, isPdf) {
     const envelope = {
@@ -482,21 +483,46 @@
     const provider = body.provider, receipt = body.receipt, requestId = body.request_id;
     if (!isPlainObject(provider) || !isPlainObject(receipt) || typeof requestId !== "string" || !requestId) return null;
     if (provider.id !== "tokenmind" || provider.model !== "thaillm-8b" || !Number.isInteger(provider.attempt_count) || provider.attempt_count < 1 || provider.attempt_count > 3) return null;
-    if (typeof body.hosted_version !== "string" || !body.hosted_version || body.source_kind !== "custom_standard") return null;
-    if (receipt.request_id !== requestId || receipt.hosted_version !== body.hosted_version || receipt.source_kind !== body.source_kind || receipt.restoration_status !== status || receipt.digest_match !== true || receipt.outbound_gate_status !== "no_residual_signal_detected") return null;
+    if (body.hosted_version !== HOSTED_VERSION || body.source_kind !== "custom_standard") return null;
+    if (receipt.request_id !== requestId || receipt.hosted_version !== HOSTED_VERSION || receipt.source_kind !== body.source_kind || receipt.restoration_status !== status || receipt.digest_match !== true || receipt.outbound_gate_status !== "no_residual_signal_detected") return null;
     if (receipt.provider_id !== provider.id || receipt.provider_model !== provider.model || !Number.isInteger(receipt.provider_attempt_count) || receipt.provider_attempt_count !== provider.attempt_count) return null;
     return status;
   }
-  function validPdfResult(body) {
-    return isPlainObject(body)
+  function validPdfResult(body, expectedProtected) {
+    if (!isPlainObject(body) || !isPlainObject(body.receipt) || !isPlainObject(body.artifact_provenance) || !isPlainObject(body.receipt.artifact_provenance) || !isPlainObject(body.provider)) return false;
+    const receipt = body.receipt, provenance = body.artifact_provenance, receiptProvenance = receipt.artifact_provenance;
+    const sameOmissions = Array.isArray(body.omitted_visual_page_numbers)
+      && Array.isArray(receipt.omitted_visual_page_numbers)
+      && Array.isArray(provenance.omitted_visual_page_numbers)
+      && Array.isArray(receiptProvenance.omitted_visual_page_numbers)
+      && JSON.stringify(body.omitted_visual_page_numbers) === JSON.stringify(receipt.omitted_visual_page_numbers)
+      && JSON.stringify(body.omitted_visual_page_numbers) === JSON.stringify(provenance.omitted_visual_page_numbers)
+      && JSON.stringify(body.omitted_visual_page_numbers) === JSON.stringify(receiptProvenance.omitted_visual_page_numbers);
+    const sameProvenance = JSON.stringify(provenance) === JSON.stringify(receiptProvenance);
+    return body.hosted_version === HOSTED_VERSION
+      && receipt.hosted_version === HOSTED_VERSION
+      && provenance.hosted_version === HOSTED_VERSION
+      && receiptProvenance.hosted_version === HOSTED_VERSION
+      && typeof body.request_id === "string" && !!body.request_id && receipt.request_id === body.request_id
+      && ["document_standard", "document_invite", "synthetic_document"].includes(body.source_kind)
+      && receipt.source_kind === body.source_kind && provenance.source_kind === body.source_kind && receiptProvenance.source_kind === body.source_kind
+      && typeof body.source_receipt_id === "string" && !!body.source_receipt_id
+      && receipt.source_receipt_id === body.source_receipt_id && provenance.source_receipt_id === body.source_receipt_id && receiptProvenance.source_receipt_id === body.source_receipt_id
+      && body.protected_text === expectedProtected
+      && sameProvenance && sameOmissions
+      && receipt.digest_match === true && receipt.outbound_gate_status === "no_residual_signal_detected"
+      && receipt.exact_segment_coverage === true && receipt.expected_token_integrity === true && receipt.structured_output_validated === true
+      && typeof body.provider.id === "string" && !!body.provider.id && typeof body.provider.model === "string" && !!body.provider.model
+      && Number.isInteger(body.provider.attempt_count) && body.provider.attempt_count >= 1 && body.provider.attempt_count <= 3
+      && receipt.provider_id === body.provider.id && receipt.provider_model === body.provider.model && receipt.provider_attempt_count === body.provider.attempt_count
       && typeof body.protected_markdown === "string"
       && typeof body.protected_plain_text === "string"
       && typeof body.protected_text === "string"
-      && isPlainObject(body.receipt)
       && isPlainObject(body.protected_document_ast)
       && Array.isArray(body.protected_document_ast.ordered_sections)
       && Array.isArray(body.warnings)
-      && Array.isArray(body.omitted_visual_page_numbers)
+      && Array.isArray(receipt.warnings)
+      && JSON.stringify(body.warnings) === JSON.stringify(receipt.warnings)
       && !Object.hasOwn(body, "restored_text");
   }
   function decodeMarkdownText(value) { return value.replace(/\\([\\`*_{}\[\]()#+\-.!>])/g, "$1"); }
@@ -519,7 +545,7 @@
   }
   function renderResult(body) {
     const isPdf = state.task === "pdf";
-    if (isPdf && !validPdfResult(body)) return showError("provider_response_invalid", null);
+    if (isPdf && !validPdfResult(body, state.preview?.protected_text)) return showError("provider_response_invalid", null);
     if (!isPdf) {
       const status = customResultStatus(body, state.preview?.protected_text);
       if (status === null) return showError("provider_response_invalid", null);

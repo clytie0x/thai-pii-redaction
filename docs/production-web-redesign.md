@@ -59,8 +59,18 @@ an end-to-end production serving path.
   parity is `3/3`, in-image execute is `11/11`, the real-detector execute probe
   is `1/1`, and local stub-provider platform acceptance produced one usable
   custom result on attempt 1 while preserving PDF, queue, artifact, route, and
-  log boundaries. The first image quartet is recorded in `STATE.md` and is
-  intentionally superseded by the final evidence-only commit/rebuild.
+  log boundaries. Evidence-only commit
+  `b371c2fd516ba0f6821fd6e74ac5be29a2975806` passed GitLab Pipeline #36584
+  and supplied a second exact healthy image quartet recorded in `STATE.md`.
+  Adversarial frontend review then found a release-boundary gap in those bytes:
+  custom preview/result accepted any nonempty Hosted version and PDF did not
+  bind top-level, receipt, and artifact-provenance versions before exporting an
+  artifact labeled `3.0.1`. Current source now uses one exact
+  `HOSTED_VERSION = "3.0.1"` browser constant, rejects stale custom/PDF preview
+  and execute DTOs, binds PDF receipt and artifact provenance, and locks those
+  failures with executable negatives. Frontend behavior and static contracts
+  pass after the correction. The prior quartet is superseded; a fresh exact
+  image rebuild and focused re-review remain mandatory before deployment.
 
 `HOSTED301_HOTFIX_STAGE=stage4_local_candidate`
 - Audio input, TTS, images, Vision, scanned/image-only PDF, and OCR are excluded

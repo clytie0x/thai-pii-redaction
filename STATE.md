@@ -21,8 +21,13 @@
   Focused execute is `11/11`, frontend behavior and
   platform policy contracts pass. Non-usable `incomplete|unsafe` execute results
   project an empty `restored_text`, receive distinct recovery copy, and never
-  enter the result DOM. Repeated live-provider evidence, independent review,
-  and protected deployment are still pending. Clean source
+  enter the result DOM. Adversarial frontend review then found that the browser
+  accepted stale or mixed Hosted-version DTOs while portable provenance was
+  labeled `3.0.1`. Current source uses one exact `HOSTED_VERSION = "3.0.1"`
+  browser boundary for custom/PDF preview and execute, requires custom receipt
+  agreement plus matching PDF receipt/artifact provenance, and has executable
+  stale-version custom/PDF negatives. Those corrected frontend contracts pass;
+  a fresh exact image rebuild and focused re-review are pending. Clean source
   commit `1346d9a623e2f5ab8074135459f1037777768bfc` passed GitLab check-only
   Pipeline #36581 and the clean-clone Docker-executor-style check. Its first
   exact local images are web `sha256:b285a2c2212914ed59dc305f2472579f0c5c2383b7a49e9160c09ad790f8e54d`,
@@ -33,8 +38,14 @@
   passes `11/11` including the real port regression, the real-detector execute
   probe passes `1/1`, and local platform acceptance completed a usable custom
   result on attempt 1 plus Priority legacy, PDF, queue, artifacts, routes,
-  report, and value-free logs. These image IDs will be superseded by the final
-  evidence-only commit/rebuild below; they are not deployment identities.
+  report, and value-free logs. Evidence-only commit
+  `b371c2fd516ba0f6821fd6e74ac5be29a2975806` then passed GitLab Pipeline
+  #36584 and produced healthy web `sha256:53801a0b886457d74f5edfa104116cf4ca3564ff4b66295df19d4191db454382`,
+  API `sha256:0f757861c62684d85157f729a8d5a940ad20e6c92fdf55c4e4cfe987bce92dcd`,
+  Core `sha256:32a15d28d13cc28ba953519524b23bf8d1afc3d747cf0d1abd87bb068a690d00`,
+  and parser `sha256:ee7097f68c8cbc21b3bbf043c0ce2601ff8e13d09caaa7c3c495cb51ce001c09`.
+  That quartet is now superseded for release by the browser version-binding
+  correction above; none of these image IDs is a deployment identity.
 - Current deployment, same-origin application API, data-flow, acceptance,
   rollback, and operations guidance is centralized in
   `docs/HOSTED-3-DEPLOY-API-GUIDE.md`. Older deployment documents remain
