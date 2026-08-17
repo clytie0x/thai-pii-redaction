@@ -69,8 +69,22 @@ an end-to-end production serving path.
   `HOSTED_VERSION = "3.0.1"` browser constant, rejects stale custom/PDF preview
   and execute DTOs, binds PDF receipt and artifact provenance, and locks those
   failures with executable negatives. Frontend behavior and static contracts
-  pass after the correction. The prior quartet is superseded; a fresh exact
-  image rebuild and focused re-review remain mandatory before deployment.
+  pass after the correction. Exact source commit
+  `2a7aa944e85a36e4c988605b8ebc6afee2a10aed` passed GitLab Pipeline #36589
+  and produced healthy exact-label images: web
+  `sha256:f6505bc982c24debd334e4d5b8c37aac1127730c1374419a8edaeb1262247790`,
+  API `sha256:a704cf83d5d50418802076ad7d13b85080c6418ae3a6aed4cf67d905164665ef`,
+  Core `sha256:f4124aef4ae5a07340298846a5eb006c63cfb3f903ecb22c3d304cfae862fdb1`,
+  and parser `sha256:906ba11ea51c22eb8e175d84a286abba63d6be114c519ee0e681a08c09b2ab44`.
+  Parity passes `3/3`, exact-image execute passes `11/11`, local platform
+  acceptance passes Priority legacy and Standard text/PDF/queue/provider/
+  artifact paths, and real Chrome completed the original false-positive input
+  to a complete restored result with exact `3.0.1` receipt and zero browser
+  storage. Focused art/product and UX/lifecycle re-reviews pass; frontend/
+  security review found no remaining runtime blocker after requiring this
+  durable evidence correction. The prior quartet is superseded. Any
+  documentation-only release descendant must retain identical runtime bytes and
+  receive exact label/parity plus focused status rebind before protected main.
 
 `HOSTED301_HOTFIX_STAGE=stage4_local_candidate`
 - Audio input, TTS, images, Vision, scanned/image-only PDF, and OCR are excluded

@@ -26,8 +26,24 @@
   labeled `3.0.1`. Current source uses one exact `HOSTED_VERSION = "3.0.1"`
   browser boundary for custom/PDF preview and execute, requires custom receipt
   agreement plus matching PDF receipt/artifact provenance, and has executable
-  stale-version custom/PDF negatives. Those corrected frontend contracts pass;
-  a fresh exact image rebuild and focused re-review are pending. Clean source
+  stale-version custom/PDF negatives. Those corrected frontend contracts pass.
+  Exact source commit `2a7aa944e85a36e4c988605b8ebc6afee2a10aed`
+  passed GitLab check-only Pipeline #36589. Its healthy exact local images are
+  web `sha256:f6505bc982c24debd334e4d5b8c37aac1127730c1374419a8edaeb1262247790`,
+  API `sha256:a704cf83d5d50418802076ad7d13b85080c6418ae3a6aed4cf67d905164665ef`,
+  Core `sha256:f4124aef4ae5a07340298846a5eb006c63cfb3f903ecb22c3d304cfae862fdb1`,
+  and parser `sha256:906ba11ea51c22eb8e175d84a286abba63d6be114c519ee0e681a08c09b2ab44`;
+  every image label equals `2a7aa944...`. Source/image parity passes `3/3`,
+  exact-image execute passes `11/11`, and local platform acceptance completed
+  Priority legacy plus Standard custom/PDF/queue/provider/artifact paths with a
+  usable custom result on attempt 1. Real Chrome completed the exact public
+  false-positive input through preview, approval, queue, stub Pathumma,
+  complete restored result, and a `3.0.1` receipt with zero browser storage.
+  Focused art/product and UX/lifecycle re-reviews pass; frontend/security review
+  found no remaining runtime blocker after requiring this durable evidence
+  correction. A documentation-only release descendant must still receive exact
+  label/parity and status rebind before it can advance to protected `main`.
+  Clean source
   commit `1346d9a623e2f5ab8074135459f1037777768bfc` passed GitLab check-only
   Pipeline #36581 and the clean-clone Docker-executor-style check. Its first
   exact local images are web `sha256:b285a2c2212914ed59dc305f2472579f0c5c2383b7a49e9160c09ad790f8e54d`,
@@ -44,8 +60,9 @@
   API `sha256:0f757861c62684d85157f729a8d5a940ad20e6c92fdf55c4e4cfe987bce92dcd`,
   Core `sha256:32a15d28d13cc28ba953519524b23bf8d1afc3d747cf0d1abd87bb068a690d00`,
   and parser `sha256:ee7097f68c8cbc21b3bbf043c0ce2601ff8e13d09caaa7c3c495cb51ce001c09`.
-  That quartet is now superseded for release by the browser version-binding
-  correction above; none of these image IDs is a deployment identity.
+  That quartet is superseded for release by the `2a7aa944...` browser
+  version-binding candidate above; none of the older image IDs is a deployment
+  identity.
 - Current deployment, same-origin application API, data-flow, acceptance,
   rollback, and operations guidance is centralized in
   `docs/HOSTED-3-DEPLOY-API-GUIDE.md`. Older deployment documents remain
