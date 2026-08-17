@@ -1,16 +1,25 @@
-# Status (2026-08-17 — Hosted 3.0.1 deployed; 3.0.2 output sanitization planned)
+# Status (2026-08-17 — Hosted 3.0.2 deployed; provider-span sanitization live)
 
 ## Current release boundary
 
-- Production is Hosted `3.0.1` with exactly 40 public locations at runtime
-  revision `514945a42f161a96672ace4545ae8afc9c856338`. HTTP contract remains 2.
-  Protected Pipeline #36606 passed check, deploy, and mandatory acceptance with
-  no rollback. Manual ops gates logs #143764, exact revision/process/resources
-  #143765, and restart/recovery #143766 passed; web, API, Core, and PDF parser
-  restarted healthy with the exact runtime label. Public HTTPS health reports
-  3.0.1/contract 2, public `hosted3-app.js` exactly matches the reviewed source,
-  and credential-free public acceptance passes 40-route/product/TLS/HSTS gates
-  with only the two previously accepted organizer plain-HTTP warnings.
+- Production is Hosted `3.0.2` with exactly 40 public locations at runtime
+  revision `1fac6011`. HTTP contract remains 2. Pipeline #36658 passed check
+  #144242, deploy #144243, and mandatory acceptance #144244 with no rollback,
+  and all three manual ops gates passed: logs #144245, exact
+  revision/process/resources #144246, and restart/recovery #144247. Public
+  HTTPS health reports 3.0.2/contract 2 both immediately after deploy and again
+  after the restart gate.
+- The first attempt, Pipeline #36645 on `50f06339`, deployed correctly and then
+  failed its own mandatory acceptance with `public health version mismatch`,
+  which restored `514945a4` automatically. The deployed service was reporting
+  3.0.2 as intended; `tests/platform_acceptance.py` was the stale side, still
+  asserting 3.0.1 for public health and for the custom and document
+  `hosted_version` fields. The version sweep missed it because that file pins
+  the version as a bare literal rather than through the `hosted_version=`
+  keyword the sweep matched. The mandatory rollback behaved exactly as designed
+  and left no partial state.
+- Hosted `3.0.1` release history: production ran `514945a4` under Pipeline
+  #36606 with ops gates #143764/#143765/#143766. That release is superseded.
 - Post-restart public Chrome proved the new fail-closed classification but also
   exposed a remaining availability issue. Two bounded executions of the exact
   synthetic résumé prompt returned `restoration_unsafe` and no restored output.
