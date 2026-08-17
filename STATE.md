@@ -1,18 +1,29 @@
-# Status (2026-08-17 — Hosted 3.0.0 deployed; 3.0.1 hotfix candidate local)
+# Status (2026-08-17 — Hosted 3.0.1 deployed; 3.0.2 output sanitization planned)
 
 ## Current release boundary
 
-- Production is Hosted `3.0.0` with exactly 40 public locations at runtime
-  revision `f07745209e3da3b926eb6802f2ca2919e5b9fe9d`. HTTP contract remains 2.
-  Protected Pipeline #36540 passed check, deploy, mandatory acceptance, and all
-  three manual ops gates (logs #143199, exact revision/process #143200,
-  restart/recovery #143201). All four services restarted healthy with the exact
-  runtime label; no rollback triggered.
-- A local Hosted `3.0.1` hotfix candidate now exists on
-  `codex/hosted-3.0.1-hotfix`; it is pushed and built locally but not deployed. The
-  release-owned Core VERSION, production web copy, and acceptance expectations
-  are `3.0.1`, while this current-production paragraph deliberately remains
-  `3.0.0` until a protected release passes. The port manifest now pins upstream
+- Production is Hosted `3.0.1` with exactly 40 public locations at runtime
+  revision `514945a42f161a96672ace4545ae8afc9c856338`. HTTP contract remains 2.
+  Protected Pipeline #36606 passed check, deploy, and mandatory acceptance with
+  no rollback. Manual ops gates logs #143764, exact revision/process/resources
+  #143765, and restart/recovery #143766 passed; web, API, Core, and PDF parser
+  restarted healthy with the exact runtime label. Public HTTPS health reports
+  3.0.1/contract 2, public `hosted3-app.js` exactly matches the reviewed source,
+  and credential-free public acceptance passes 40-route/product/TLS/HSTS gates
+  with only the two previously accepted organizer plain-HTTP warnings.
+- Post-restart public Chrome proved the new fail-closed classification but also
+  exposed a remaining availability issue. Two bounded executions of the exact
+  synthetic résumé prompt returned `restoration_unsafe` and no restored output.
+  The provider created generic résumé-template prose; the detector falsely
+  classified the literal placeholder `บริษัท/องค์กร]` twice plus `ได้` and
+  `มีประสบการณ์การทำงานในสายงาน` as four generated-PII findings. No unsafe text
+  entered the result DOM. The owner approved a separate `3.0.2` plan: preserve
+  authoritative restored ranges, replace only newly detected provider-output
+  spans with value-free markers, and show the remaining sanitized answer. Token
+  integrity, digest, residual, foreign-token, malformed-response, and incomplete
+  restoration failures remain full blocks. This opt-in Hosted behavior is not
+  implemented or deployed yet and must not silently change Desktop/Extension.
+- Hosted `3.0.1` release history: the port manifest pins upstream
   `3c2997835dbdc9842e38b38fb89f09642a713817`, which is the prior 75-file source
   base plus only the reviewed Thai NAME-boundary fix. The exact real-port
   restoration regression and generated-name adversarial control pass inside the
@@ -42,7 +53,8 @@
   Focused art/product and UX/lifecycle re-reviews pass; frontend/security review
   found no remaining runtime blocker after requiring this durable evidence
   correction. A documentation-only release descendant must still receive exact
-  label/parity and status rebind before it can advance to protected `main`.
+  label/parity and status rebind before it advanced to protected `main`; that
+  rebind and Pipeline #36606 release are now complete.
   Clean source
   commit `1346d9a623e2f5ab8074135459f1037777768bfc` passed GitLab check-only
   Pipeline #36581 and the clean-clone Docker-executor-style check. Its first

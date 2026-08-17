@@ -4,20 +4,19 @@
 วันที่ตรวจล่าสุด: **17 สิงหาคม 2569**
 Production URL: <https://team08.aiforthai.in.th/>
 Public App: <https://team08.aiforthai.in.th/app>
-Runtime version: **Hosted 3.0.0**
+Runtime version: **Hosted 3.0.1**
 
-Hotfix note (17 August 2026): source candidate Hosted `3.0.1` is local and
-check-only. This guide continues to describe deployed `3.0.0` until the exact
-candidate passes independent review, protected deployment, mandatory
-acceptance, and public verification. Do not use local candidate image IDs as
-production evidence.
+Hotfix note (17 August 2026): Hosted `3.0.1` passed independent review,
+protected deployment, mandatory acceptance, operational restart/recovery, and
+public verification. A later `3.0.2` output-sanitization policy is planned but
+is not current behavior.
 HTTP contract: **2**
-Runtime revision: `f07745209e3da3b926eb6802f2ca2919e5b9fe9d`
-Protected production pipeline: **#36540**
+Runtime revision: `514945a42f161a96672ace4545ae8afc9c856338`
+Protected production pipeline: **#36606**
 
 เอกสารนี้เป็นแหล่งอ้างอิงปัจจุบันสำหรับ deployment, same-origin application
 API, authentication, data flow, acceptance, rollback และ operations ของ
-AI Guard Hosted 3.0.0 เอกสาร deployment รุ่นก่อนหน้าที่ยังกล่าวถึง Hosted
+  AI Guard Hosted 3.0.1 เอกสาร deployment รุ่นก่อนหน้าที่ยังกล่าวถึง Hosted
 2.5.0, 16 routes หรือสถาปัตยกรรม 3 services ให้ถือเป็นหลักฐานประวัติเท่านั้น
 
 ## 1. Product และ trust boundary
@@ -26,7 +25,7 @@ AI Guard เป็นผลิตภัณฑ์ Desktop-first โดย Desktop
 pseudonymization, vault/mapping, restoration และรายงานช่วยตรวจทาน PDPA
 ไว้บนอุปกรณ์ และไม่มีคำสั่งเรียก provider ภายนอก
 
-Hosted 3.0.0 เป็นช่องทางแยกต่างหาก:
+Hosted 3.0.1 เป็นช่องทางแยกต่างหาก:
 
 - ข้อความและ text-layer PDF ที่ผู้ใช้เลือกถึง AI for Thai organizer edge,
   API proxy และ AI Guard Core ก่อนการปกป้อง
@@ -70,7 +69,7 @@ CPU/memory/PID, volatile tmpfs, bounded rotating logs และ health watchdog
 
 ## 3. Public access model
 
-Hosted 3.0.0 เป็น public Web App ที่ใช้ **same-origin application API
+Hosted 3.0.1 เป็น public Web App ที่ใช้ **same-origin application API
 contract** ไม่ใช่ public arbitrary third-party API, ไม่ออก developer API key
 และไม่เปิด broad CORS
 
@@ -299,11 +298,12 @@ Health เป็น liveness เท่านั้น ไม่ใช่ provide
 | `ps` | verify exact revision, process health, ports และ resource snapshot |
 | `restart` | ใช้ได้เมื่อ job SHA เท่ากับ latest `main` และ deployed image revisions เท่านั้น จากนั้น restart 4 services และรอ health recovery |
 
-Pipeline #36540 ops jobs ผ่านครบในเวลาที่ `f0774520...` เป็นทั้ง latest main และ
-deployed revision หลังจาก docs-only commits ขยับ `main` ต่อมา old `f077` restart
-job จะ fail latest-main check ส่วน ops job จาก current main จะ fail image-revision
-check จนกว่าจะมี protected deploy/acceptance pipeline ใหม่ ดังนั้นเอกสารนี้ไม่อ้าง
-ว่า restart job ปัจจุบันสามารถ restart runtime `f077` ได้โดยตรง
+Pipeline #36606 ops jobs ผ่านครบในเวลาที่ `514945a4...` เป็นทั้ง latest main และ
+deployed revision หลังจาก post-deploy docs-only commit ขยับ `main` ต่อมา old
+`514945a4` restart job จะ fail latest-main check ส่วน ops job จาก current main
+จะ fail image-revision check จนกว่าจะมี protected deploy/acceptance pipeline ใหม่
+ดังนั้นเอกสารนี้ไม่อ้างว่า restart job เดิมสามารถ restart runtime ได้ตลอดไป
+Pipeline #36540/`f0774520...` เป็นหลักฐาน production รุ่นก่อนหน้าเท่านั้น
 
 ### Incident order
 
@@ -337,9 +337,9 @@ retention อยู่นอกขอบเขตที่ repository ตรว�
 
 | Evidence | Result |
 |---|---|
-| Runtime | Hosted 3.0.0, contract 2, revision `f0774520...` |
-| Pipeline | #36540 passed check, deploy and mandatory acceptance |
-| Ops | logs #143199, revision/process #143200, restart #143201 passed |
+| Runtime | Hosted 3.0.1, contract 2, revision `514945a4...` |
+| Pipeline | #36606 passed check, deploy and mandatory acceptance |
+| Ops | logs #143764, revision/process #143765, restart #143766 passed |
 | Services | web, api, core, pdf-parser healthy after restart |
 | API surface | exactly 40 same-origin locations |
 | Browser | 64 route/viewport states passed |

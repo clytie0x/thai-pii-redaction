@@ -163,15 +163,18 @@ const fetch = async (url, options = {}) => {
     if (executeMode === "network") throw new Error("synthetic lost execute response");
     if (customExecuteStatus === "malformed") return jsonResponse(200, {restored_text: "UNSAFE RESTORED"});
     const requestId = `req_${customExecuteStatus}`;
-    const warnings = customExecuteStatus === "unsafe" ? [{code: "generated_pii", count: 2}] : [];
+    const warnings = ["unsafe", "sanitized"].includes(customExecuteStatus) ? [{code: "generated_pii", count: 2}] : [];
     const leftover = customExecuteStatus === "incomplete" ? 1 : 0;
+    const masked = customExecuteStatus === "sanitized" ? 2 : 0;
     return jsonResponse(200, {
       request_id: requestId, hosted_version: customExecuteHostedVersion, source_kind: "custom_standard",
       protected_text: "[NAME_1] โทร [PHONE_1]",
-      restored_text: customExecuteStatus === "complete" ? "ผลสังเคราะห์ที่กู้คืนแล้ว" : "",
+      restored_text: customExecuteStatus === "complete"
+        ? "ผลสังเคราะห์ที่กู้คืนแล้ว"
+        : customExecuteStatus === "sanitized" ? "ผลสังเคราะห์ [ปกปิดโดยระบบ] ที่เหลือ [ปกปิดโดยระบบ] ปิดท้าย" : "",
       detected_entity_count: 2, entity_type_counts: {NAME: 1, PHONE: 1}, section26_categories: ["HEALTH"], guard_findings: [], warnings,
       safety: {status: "pass", residual_count: 0},
-      restoration: {status: customExecuteStatus, replaced_count: customExecuteStatus === "incomplete" ? 1 : 2, leftover_count: leftover},
+      restoration: {status: customExecuteStatus, replaced_count: customExecuteStatus === "incomplete" ? 1 : 2, leftover_count: leftover, masked_count: masked},
       provider: {id: "tokenmind", model: "thaillm-8b", attempt_count: 1},
       receipt: {
         request_id: requestId, hosted_version: customExecuteHostedVersion, source_kind: "custom_standard",
@@ -458,6 +461,16 @@ assert.ok(!get("h3ResultBody").textContent.includes("UNSAFE RESTORED"), "unsafe 
 assert.match(get("h3RecoveryCopy").textContent, /PII ที่ยืนยันที่มาไม่ได้/, "unsafe restoration lost its exact safety explanation");
 assert.equal(get("h3RecoveryAction").textContent, "สร้าง Preview ใหม่", "unsafe restoration exposed an ambiguous Retry action");
 await get("h3RecoveryAction").click();
+
+customExecuteStatus = "sanitized";
+await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
+assert.equal(get("h3Recovery").hidden, true, "sanitized restoration failed closed instead of showing the kept answer");
+assert.equal(get("h3Result").hidden, false, "sanitized restoration withheld the answer it had already made safe");
+assert.ok(get("h3ResultBody").textContent.includes("ปิดท้าย"), "sanitized restoration dropped the material outside the masked spans");
+assert.ok(!get("h3ResultBody").textContent.includes("UNSAFE RESTORED"), "unsafe restored text reached the DOM");
+assert.match(get("h3ResultBody").textContent, /2 จุด/, "sanitized restoration hid how much was masked from the reader");
+await backButtons[1].click(); await taskButtons[1].click();
+get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ"; await get("h3Text").emit("input");
 
 customExecuteStatus = "malformed";
 await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);

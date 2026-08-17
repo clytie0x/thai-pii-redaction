@@ -3,6 +3,9 @@
 
   const $ = id => document.getElementById(id);
   const HOSTED_VERSION = "3.0.1";
+  // Must match aift_hosted3.execution.GENERATED_PII_MARKER; the browser only
+  // names it in the notice, it never inserts or removes one itself.
+  const GENERATED_PII_MARKER = "[ปกปิดโดยระบบ]";
   const TIMING_UNAVAILABLE = "timing_unavailable";
   const controls = $("appControls");
   const state = { generation: 0, previewRequest: 0, inspectRequest: 0, inspectReport: null, authorityMutation: false, joinPending: false, claimInFlight: false, authority: null, task: null, anchor: null, preview: null, source: "", file: null, result: null, queue: null, claimAbort: null, queueStartedAt: 0, providerRunning: false, returnFocus: null, queuePaused: false };
@@ -470,7 +473,9 @@
     if (!isPlainObject(body) || typeof body.protected_text !== "string" || body.protected_text !== expectedProtected || typeof body.restored_text !== "string") return null;
     if (!isPlainObject(body.safety) || body.safety.status !== "pass" || body.safety.residual_count !== 0 || !isPlainObject(body.restoration)) return null;
     const status = body.restoration.status, leftover = body.restoration.leftover_count, warnings = body.warnings;
+    const masked = body.restoration.masked_count;
     if (!Number.isInteger(leftover) || leftover < 0 || !Array.isArray(warnings)) return null;
+    if (!Number.isInteger(masked) || masked < 0) return null;
     const warningsValid = warnings.every(warning => isPlainObject(warning)
       && Object.keys(warning).length === 2
       && Object.hasOwn(warning, "code")
@@ -479,7 +484,7 @@
       && Number.isInteger(warning.count)
       && warning.count > 0);
     if (!warningsValid) return null;
-    if (status === "complete" ? leftover !== 0 || warnings.length || !body.restored_text : status === "incomplete" ? leftover <= 0 || warnings.length || body.restored_text !== "" : status === "unsafe" ? !warnings.length || body.restored_text !== "" : true) return null;
+    if (status === "complete" ? leftover !== 0 || warnings.length || masked !== 0 || !body.restored_text : status === "incomplete" ? leftover <= 0 || warnings.length || masked !== 0 || body.restored_text !== "" : status === "unsafe" ? !warnings.length || masked !== 0 || body.restored_text !== "" : status === "sanitized" ? leftover !== 0 || masked <= 0 || !body.restored_text || !warnings.length || !warnings.every(warning => warning.code === "generated_pii") : true) return null;
     const provider = body.provider, receipt = body.receipt, requestId = body.request_id;
     if (!isPlainObject(provider) || !isPlainObject(receipt) || typeof requestId !== "string" || !requestId) return null;
     if (provider.id !== "tokenmind" || provider.model !== "thaillm-8b" || !Number.isInteger(provider.attempt_count) || provider.attempt_count < 1 || provider.attempt_count > 3) return null;
@@ -545,12 +550,14 @@
   }
   function renderResult(body) {
     const isPdf = state.task === "pdf";
+    let sanitizedCount = 0;
     if (isPdf && !validPdfResult(body, state.preview?.protected_text)) return showError("provider_response_invalid", null);
     if (!isPdf) {
       const status = customResultStatus(body, state.preview?.protected_text);
       if (status === null) return showError("provider_response_invalid", null);
       if (status === "incomplete") return showError("restoration_incomplete", null);
       if (status === "unsafe") return showError("restoration_unsafe", null);
+      if (status === "sanitized") sanitizedCount = body.restoration.masked_count;
     }
     state.queue = null; setProviderRunning(false); hide($("h3Queue")); clearNode($("h3ResultBody")); const bodyNode = $("h3ResultBody");
     const result = isPdf ? body.protected_markdown : body.restored_text;
@@ -559,7 +566,9 @@
     const paragraph = document.createElement("p");
     paragraph.textContent = isPdf
       ? `Protected Markdown ผ่าน structured segment validation แล้ว PDF ต้นฉบับไม่เปลี่ยน ไม่มี PII restoration และต้องตรวจทานโดยมนุษย์${body.omitted_visual_page_numbers.length ? ` · visual content ที่ละไว้หน้า ${body.omitted_visual_page_numbers.join(", ")}` : ""}`
-      : "ผล provider ผ่าน integrity, residual และ restoration gates แล้ว";
+      : sanitizedCount
+        ? `ผล provider ผ่าน integrity และ residual gates แล้ว AI Guard พบข้อความ ${sanitizedCount} จุดในคำตอบที่ยืนยันที่มาไม่ได้ จึงปิดเฉพาะจุดนั้นด้วย ${GENERATED_PII_MARKER} ส่วนที่เหลือแสดงตามเดิม`
+        : "ผล provider ผ่าน integrity, residual และ restoration gates แล้ว";
     paragraph.className = "hosted3-result-status"; bodyNode.append(paragraph);
     if (isPdf) {
       if (!renderProtectedMarkdown(bodyNode, result)) return showError("document_structure_invalid", null);

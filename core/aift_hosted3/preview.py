@@ -28,14 +28,16 @@ QUEUE_ADMISSION_SECONDS = 900
 CUSTOM_MINIMUM_REVIEW_SECONDS = 120
 PROVIDER_ID = "tokenmind"
 PROVIDER_MODEL = "thaillm-8b"
-DETECTOR_CODE_SHA256 = "de2edadb469a753a6b928af45b8e52c9186cf527c96b88e777ad91ab7d03396f"
+DETECTOR_CODE_SHA256 = "f33b7de49ef3b76b2ee8c51692f681b622490b0ee404726c2fb6f6d6ff4d44c1"
 DETECTOR_MODEL_SHA256 = "bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315"
 DEFAULT_SYSTEM_PROMPT = (
     "คุณเป็น AI assistant ที่มีประสิทธิภาพ "
     "ข้อความที่ได้รับอาจมี token เช่น 1909802000000 หรือ นายสมชาย รักชาติ "
     "ให้เก็บ token เหล่านั้นไว้ในคำตอบโดยไม่แก้ไขหรือแปล"
 )
-PROMPT_REVISION = "default-v1-" + hashlib.sha256(DEFAULT_SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:16]
+PROMPT_REVISION = (
+    "default-v1-" + hashlib.sha256(DEFAULT_SYSTEM_PROMPT.encode("utf-8")).hexdigest()[:16]
+)
 
 
 class PreviewError(ValueError):
@@ -287,9 +289,7 @@ class PreviewService:
     ) -> dict[str, object]:
         return {
             "source_kind": (
-                "custom_standard"
-                if authority.scope == "public_guest"
-                else "custom_invite"
+                "custom_standard" if authority.scope == "public_guest" else "custom_invite"
             ),
             "scenario": None,
             "source_text": None,
@@ -336,9 +336,7 @@ class PreviewService:
     ) -> dict[str, object]:
         return {
             "source_kind": (
-                "custom_standard"
-                if authority.scope == "public_guest"
-                else "custom_invite"
+                "custom_standard" if authority.scope == "public_guest" else "custom_invite"
             ),
             "scenario": None,
             "source_text": None,
