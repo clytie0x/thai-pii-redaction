@@ -203,10 +203,12 @@ assert.equal(queryChildren.get("h3SyntheticEvidence:summary").focused, true, "gu
 queueStatusState = "queued";
 await windowObject.emit("pageshow", {persisted: true}); await flush();
 assert.equal(get("h3Queue").hidden, false, "BFCache/status recovery did not expose the orphan queue");
+assert.equal(queryChildren.get("h3SyntheticEvidence:summary").focused, true, "same-authority BFCache recovery stole focus from the active disclosure");
 const claimsBeforeStatusOnlyLifecycle = requestLog.filter(item => item.url === "/api/provider-queue/claim").length;
 document.visibilityState = "hidden"; await document.emit("visibilitychange"); document.visibilityState = "visible"; await document.emit("visibilitychange"); await windowObject.emit("online"); await flush();
 assert.equal(requestLog.filter(item => item.url === "/api/provider-queue/claim").length, claimsBeforeStatusOnlyLifecycle, "status-only recovery attempted a claim without capability");
 assert.equal(requestLog.filter(item => item.url.includes("execute")).length, 0, "status-only recovery attempted execute");
+assert.equal(queryChildren.get("h3SyntheticEvidence:summary").focused, true, "queue visibility/online recovery stole focus from the active disclosure");
 queueStatusState = "absent"; await get("h3CancelQueue").click(); await flush();
 assert.equal(get("h3Chooser").hidden, false, "status-only cancel did not return to the visible chooser");
 assert.equal(get("h3ChooserTitle").focused, true, "status-only cancel focused a hidden task control");
@@ -316,8 +318,14 @@ loginMode = "lost_success";
 await get("h3ShowPriority").click(); get("h3Invite").value = "synthetic-priority-code"; await get("h3PriorityForm").emit("submit"); await flush();
 assert.equal(get("h3ClassChip").textContent, "Priority Invite", "Priority login did not recover its service class");
 assert.equal(get("h3Invite").value, "", "Priority credential remained in the DOM");
+assert.equal(get("h3ChooserTitle").focused, true, "direct Priority entry did not focus the chooser heading");
+await get("h3EndAuthority").click(); await flush();
+authenticated = true; activeClass = "standard";
+await windowObject.emit("pageshow", {persisted: true}); await flush();
+assert.equal(get("h3ChooserTitle").focused, true, "initial authenticated bootstrap did not focus the chooser heading");
 await get("h3EndAuthority").click(); await flush();
 await get("h3StartStandard").click(); await flush();
+assert.equal(get("h3ChooserTitle").focused, true, "direct Standard entry did not focus the chooser heading");
 const deepLinks = [
   ["#privacy-scan", "h3InspectTask", "h3Detect"], ["#pdpa-report", "h3InspectTask", "h3Report"],
   ["#safe-ai", "h3TextTask", "h3Text"], ["#how-it-works", "h3TextTask", "h3TextTitle"],

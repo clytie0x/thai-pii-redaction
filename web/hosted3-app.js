@@ -171,12 +171,13 @@
     show($("h3Recovery")); $("h3RecoveryAction").focus(); announce("ต้องตรวจสอบ session อีกครั้งก่อนส่งข้อความที่ปกป้องแล้ว");
   }
 
-  function setAuthority(serviceClass) {
+  function setAuthority(serviceClass, { focusEntry = false } = {}) {
     state.authority = serviceClass;
     $("h3ClassChip").textContent = serviceClass === "priority" ? "Priority Invite" : "Standard access";
     $("h3AuthorityStatus").textContent = serviceClass === "priority" ? "Priority Invite พร้อมใช้งาน" : "Standard access พร้อมใช้งาน 30 นาที";
     hide($("h3Access")); show($("h3Chooser")); controls.removeAttribute("inert");
     if (requestedDestination) restoreDestination();
+    else if (focusEntry) $("h3ChooserTitle").focus();
   }
 
   function normalizeFragment() { history.replaceState(null, "", location.pathname); }
@@ -211,7 +212,7 @@
     if (response.status === 401) { resetSensitive({ keepInputs: false }); state.authority = null; state.task = null; hide($("h3Chooser"), ...Object.values(taskPanels)); show($("h3Access")); $("h3AuthorityStatus").textContent = hadAuthority ? "Session สิ้นสุดแล้วและล้างข้อมูลในหน้านี้แล้ว" : "ยังไม่ได้เริ่ม access · เลือก Standard access หรือ Priority Invite"; unlockControls(); if (focusOnFailure || requestedDestination) $("h3StartStandard").focus(); return false; }
     const anchor = readAnchor(response, sentAt, receivedAt, { requireExpiry: true });
     if (!response.ok || !anchor || !anchor.serviceClass || !body || body.authenticated !== true) { if (focusOnFailure) timingUnavailable(); return false; }
-    state.anchor = anchor; setAuthority(anchor.serviceClass); unlockControls();
+    state.anchor = anchor; setAuthority(anchor.serviceClass, { focusEntry: !hadAuthority }); unlockControls();
     if (recoverQueue) await recoverQueueStatus();
     return true;
   }
@@ -232,7 +233,7 @@
       const response = await api("/api/auth/session"), receivedAt = now(), body = await bodyOf(response);
       if (response.status === 401) { resetSensitive({ keepInputs: false }); state.authority = null; hide($("h3Chooser"), ...Object.values(taskPanels)); show($("h3Access")); return "signed_out"; }
       const anchor = readAnchor(response, sentAt, receivedAt, {requireExpiry: true});
-      if (response.ok && body?.authenticated === true && anchor?.serviceClass === expectedClass) { state.anchor = anchor; setAuthority(expectedClass); unlockControls(); return "authenticated"; }
+      if (response.ok && body?.authenticated === true && anchor?.serviceClass === expectedClass) { state.anchor = anchor; setAuthority(expectedClass, { focusEntry: true }); unlockControls(); return "authenticated"; }
     } catch { /* unresolved below */ }
     $("h3RecoveryCopy").textContent = "ยืนยันผลการเริ่ม access กับ server ไม่ได้ session อาจถูกสร้างแล้ว ห้ามเริ่ม access อีกแบบจนตรวจ session สำเร็จ";
     $("h3RecoveryAction").textContent = "Retry session check";
@@ -255,7 +256,7 @@
       const anchor = readAnchor(response, sentAt, receivedAt, { requireExpiry: true });
       if (!response.ok) { $("h3AuthorityStatus").textContent = errorCopy[errorCode(body)] || "เริ่ม Standard access ไม่สำเร็จ"; return; }
       if (!body || !anchor || anchor.serviceClass !== "standard") throw new Error("ambiguous");
-      state.anchor = anchor; setAuthority("standard"); announce("Standard access started");
+      state.anchor = anchor; setAuthority("standard", { focusEntry: true }); announce("Standard access started");
     } catch { const result = await reconcileAmbiguousAuthority("standard"); holdForReconciliation = result === "unknown"; if (result === "signed_out") $("h3AuthorityStatus").textContent = "เริ่ม Standard access ไม่สำเร็จและไม่พบ session ที่ใช้งานอยู่"; }
     finally { if (!holdForReconciliation) setAuthorityBusy(false); }
   }

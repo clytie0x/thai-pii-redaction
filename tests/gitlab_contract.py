@@ -291,7 +291,7 @@ def main() -> int:
         "GitLab auto-protected the first remote `main`",
         "Ordinary pushes are check-only",
         "does not require a Protected runner",
-        "Historical production used four project variables",
+        "Hosted 3.0.0 production uses five project variables",
         "Pipeline #35722",
         "declare no environment",
         "Build → Pipelines → Run pipeline",

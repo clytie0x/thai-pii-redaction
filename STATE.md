@@ -1,14 +1,20 @@
-# Status (2026-08-17 — Hosted 3 Stage 8 complete; first Stage 9 attempt rolled back)
+# Status (2026-08-17 — Hosted 3.0.0 live; post-deploy focus correction pending)
 
 ## Current release boundary
 
-- Stages 0 through 6 are complete locally. The source candidate is now Hosted
-  `3.0.0`, uses HTTP contract version 2, and exposes exactly 40 routes in the
-  reviewed local stack.
-- This is a Hosted 3.0.0 release candidate, not production evidence. The
-  deployed production remains Hosted `2.5.0` with exactly 16 public locations until the
-  exact Stage 8 commit passes the protected Stage 9 deployment and public
-  acceptance pipeline.
+- Production is Hosted `3.0.0` with exactly 40 public locations at runtime
+  revision `827e0601b52f022e97e5be8da84e0ef8e39504cd`. HTTP contract remains 2.
+  Protected Pipeline #36537 passed check, deploy, mandatory acceptance, and all
+  three manual ops gates (logs #143191, exact revision/process #143192,
+  restart/recovery #143193). All four services restarted healthy with the exact
+  runtime label; no rollback triggered.
+- Post-deploy UX review found one material accessibility regression in runtime
+  `827e0601…`: ordinary Standard/Priority success hides the clicked access
+  control and reveals the chooser without moving focus, leaving `body` active.
+  The reviewed descendant makes `#h3ChooserTitle` programmatically focusable and
+  focuses it for direct entry while preserving pending deep-link restoration.
+  Both direct service classes have executable focus assertions. This correction
+  is not deployed yet, so final Stage 9 closeout remains open.
 - Desktop remains published at 3.0.0 and Extension remains 3.0.0 Manual. The
   Hosted migration does not change either sibling channel.
 - Audio, TTS, images, Vision, scanned/image-only PDF, and OCR remain excluded.
@@ -22,8 +28,8 @@
   and thainer tree SHA-256
   `bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315`.
   These are deterministic synthetic/adversarial results, not a population
-  benchmark or legal/compliance accuracy. Stage 8 exact-image acceptance is
-  complete; Stage 9 protected deployment has not yet run.
+  benchmark or legal/compliance accuracy. Stage 8 exact-image acceptance and
+  Stage 9 protected deployment are complete.
 - Stage 8 candidate `8053c08404824cbc6eb121bdbe74abd6aa77a4fb`
   passed the first exact image/test/browser evidence set but is superseded for
   release because adversarial review found three closeout gaps: re-sync could
@@ -31,27 +37,26 @@
   additive routes through the organizer edge, and durable status still said
   Stage 8 had not started. At that review point the tree awaited a replacement
   exact commit/image binding; `f4d8f72d…` below supplied it and closed all three
-  findings. No production mutation has occurred; deployed production remains
-  Hosted 2.5.0/16.
+  findings. At that review point no production mutation had occurred and
+  production was still Hosted 2.5.0/16.
 - Replacement candidate `f4d8f72dcad37bea267f2ca50b07447c16a2c517`
   passed corrected CI-equivalent `29/29`, parity `3/3`, joined local
   Priority/Standard text/PDF/queue/provider/artifact acceptance, exact image
-  identity, and all three focused adversarial re-reviews. Stage 8 is complete
-  locally with no material disagreement. Stage 9 has not started; production
-  remains Hosted 2.5.0/16 until the protected pipeline passes.
+  identity, and all three focused adversarial re-reviews. That closed Stage 8
+  locally with no material disagreement before Stage 9 began.
 - Protected production Pipeline #36531 on exact `ac33152a7ed3074858fcbbd712957536c4b39d68`
   passed check and deploy, then failed mandatory acceptance at the live custom
   result classification gate. The trap removed the candidate and restored exact
-  healthy revision `dbcfe17b34744dc3e9a88e4099786a754fe903a6`; production is
-  therefore still Hosted 2.5.0/16. The route/provider request itself returned a
+  healthy revision `dbcfe17b34744dc3e9a88e4099786a754fe903a6`; production was
+  therefore still Hosted 2.5.0/16 at that point. The route/provider request returned a
   result. The first correction then conflated a truthfully classified
   `incomplete|unsafe` result with sufficient release usefulness. The final gate
   treats that outcome only as fail-closed safety evidence, retries through at
   most three fresh Standard authorities/approved runs, and still requires one
   `complete`, zero-leftover, warning-free result. Safety, exact protected-payload,
   digest/outbound/receipt/provider agreement remains mandatory on every
-  classified attempt; unsafe content is never approved or displayed. A new
-  commit and new web pipeline are required; the
+  classified attempt; unsafe content is never approved or displayed. That
+  failure required a new commit and new web pipeline; the
   failed pipeline must not be retried.
 - Replacement Pipeline #36534 on exact
   `54b5524c40b1175d8be1b929332716006e0311e4` proved the bounded live custom
@@ -59,10 +64,19 @@
   and internal Priority/Standard text/PDF/queue/provider/artifact acceptance
   passed. Credential-free public acceptance then failed only because it still
   searched for superseded App boundary copy. Automatic rollback again restored
-  healthy `dbcfe17b…`; production remains 2.5.0/16. The assertion now locks the
+  healthy `dbcfe17b…`; production remained 2.5.0/16 at that point. The assertion locks the
   current explicit organizer-proxy/Core raw boundary, exact approved Pathumma
-  payload boundary, and PDF-not-sent wording. A new descendant and new web
-  pipeline are required; #36534 must not be retried.
+  payload boundary, and PDF-not-sent wording. That failure required a new
+  descendant and new web pipeline; #36534 must not be retried.
+- Pipeline #36537 on exact `827e0601b52f022e97e5be8da84e0ef8e39504cd`
+  completed the release. Live custom classifications were `unsafe → unsafe →
+  complete`; Priority legacy, Standard text/PDF, queue/claim/provider/artifacts,
+  40 public canonical/alias paths, near-match denial, report, resources, and log
+  privacy passed. Post-restart public Chrome completed a real Standard custom
+  preview→approval→queue→Pathumma→restored-result flow and End access. The
+  64-state route/viewport matrix passed with no overflow, status, structure,
+  storage, asset/font, or unexpected-console failure. The organizer plain-HTTP
+  warning remains; HTTPS/TLS/HSTS is valid.
 
 ## Stage 5 status
 

@@ -32,11 +32,11 @@ The guide does not require a Protected runner, Protected Environment,
   visual acceptance passed. `9d38c6753aa0242bc35d09ec3332e90fe3f90079`
   remains the pre-Sprint-2 rollback; Pipeline #35727 remains historical evidence
   of the first successful runner-network correction.
-- Historical production used four project variables: `APP_AIGUARD_API_KEY`,
+- Hosted 3.0.0 production uses five project variables: `APP_AIGUARD_API_KEY`,
   `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`, and
-  `APP_TOKENMIND_API_KEY`. Their values were not inspected. Hosted 3.0.0 also
-  requires `APP_AIFT_PRIORITY_INVITES_JSON`; deployment must fail before
-  mutation unless all five protected, masked, environment-scoped values exist.
+  `APP_TOKENMIND_API_KEY`, and `APP_AIFT_PRIORITY_INVITES_JSON`. Their values
+  were not inspected. GitLab metadata shows all five Protected, Masked, Hidden,
+  and scoped to `team08`; deployment fails before mutation unless all exist.
 - Pipeline #35722 was the historical failed production attempt on an earlier SHA.
   `check` passed;
   Compose built and started web/api/core and all became healthy. Deploy then

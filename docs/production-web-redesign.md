@@ -3695,16 +3695,20 @@ Exit gate:
   organizer HTTP-redirect limitation is still reported honestly, and only then
   may Hosted `3.0.0` be called deployed.
 
-Current execution position: **Stages 0 through 8 are complete locally; the
-first Stage 9 protected production attempt failed acceptance and rolled back,
-so Stage 9 remains incomplete.** The source candidate
-now identifies Hosted `3.0.0`, retains HTTP contract version 2, and has exactly
-40 API locations. Deployed production remains Hosted `2.5.0` with exactly 16
-public API locations until the exact Stage 8 commit passes the protected Stage 9
-pipeline. No public deployment is implied by the source-version migration.
-`HOSTED3_IMPLEMENTATION_STAGE=stage8_complete`
+Current execution position: **The Stage 9 pipeline and ops gates passed, but
+post-deploy UX closeout found an ordinary authority-entry focus blocker and its
+correction is not deployed yet.** Hosted `3.0.0` is live at runtime revision
+`827e0601b52f022e97e5be8da84e0ef8e39504cd`, retains HTTP contract version 2,
+and exposes exactly 40 public API locations. Protected Pipeline #36537 passed
+check, deploy, mandatory internal/public acceptance, value-safe logs, exact
+revision/process inspection, and restart/recovery. The later docs-only closeout
+commit does not change the deployed runtime revision. Direct Standard/Priority
+entry currently reveals the chooser but loses focus to `body`; the reviewed
+descendant focuses the programmatically focusable chooser heading while
+preserving deep-link destination precedence.
+`HOSTED3_IMPLEMENTATION_STAGE=stage9_postdeploy_fix`
 
-Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage8_complete`.
+Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage9_postdeploy_fix`.
 
 Stage 8 closeout record:
 
@@ -3775,6 +3779,24 @@ Stage 8 closeout record:
   The corrected assertion locks all three current phrases. #36534 is historical
   rollback evidence and must not be retried; release requires a new descendant
   and new web pipeline.
+- Protected Pipeline #36537 deployed exact
+  `827e0601b52f022e97e5be8da84e0ef8e39504cd`. Check, deploy, and mandatory
+  acceptance passed; live custom classifications were `unsafe → unsafe →
+  complete`, proving both fail-closed suppression and one usable result within
+  the bounded three fresh-authority policy. Priority legacy, Standard custom
+  text, text-layer PDF, queue/claim, live Pathumma, protected artifacts,
+  40-route public reachability, near-match denial, report, resources, and logs
+  passed. Manual logs Job #143191, exact revision/process Job #143192, and
+  restart/recovery Job #143193 all passed; all four restarted services were
+  healthy and labeled `827e0601…`.
+- Post-restart public Chrome then completed a real Standard access custom flow:
+  preview, exact protected payload, approval, queue/claim, live Pathumma,
+  restored-result gate, and End access. The public 8-viewports × 8-routes matrix
+  passed `64/64` with zero overflow, status, structure, storage, font/image, or
+  unexpected-console failures; it observed exactly eight handled signed-out
+  401 rows and eight deliberate navigation 404 rows. Organizer plain HTTP still
+  returned the already accepted `PUBLIC_EDGE_WARNING`; HTTPS/TLS/HSTS remained
+  valid. Hosted 3.0.0 may now be called deployed.
 
 Stage 7 closeout evidence (local release migration only):
 

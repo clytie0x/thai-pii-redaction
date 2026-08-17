@@ -28,6 +28,7 @@ assert.match(app, /<details class="app-mobile-nav">[\s\S]*href="\/terms"[\s\S]*h
 assert.equal((app.match(/<h1\b/g) || []).length, 1, "App must retain one stable page H1 across authority states");
 assert.doesNotMatch(app, /id="h3InspectResult"[^>]*aria-live|id="h3AuthorityStatus"[^>]*role="status"/, "App duplicates global live announcements");
 for (const id of ["h3StartStandard", "h3ShowPriority", "h3PdfTask", "h3TextTask", "h3InspectTask", "h3Preview", "h3Queue", "h3Result", "h3Recovery"]) assert.ok(app.includes(`id="${id}"`), `missing Stage 6 surface: ${id}`);
+assert.match(app, /id="h3ChooserTitle" tabindex="-1"/, "Hosted chooser heading is not programmatically focusable");
 assert.match(app, /Start Standard access/, "Standard entry is not primary");
 assert.match(app, /Use Priority Invite/, "Priority entry is absent");
 assert.match(app, /PDF → Protected Markdown/, "featured PDF journey is absent");

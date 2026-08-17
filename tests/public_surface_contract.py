@@ -43,12 +43,12 @@ def main() -> int:
     for claim in ("production-ready", "correctness", "resource acceptance"):
         require(claim in current_docs, f"current PDF quarantine documentation missing: {claim}")
     require("40 routes" in current_docs, "Hosted 3.0.0 route count is not documented")
-    require("deployed production remains Hosted `2.5.0` with exactly 16 public locations" in state, "pre-release production boundary is not explicit")
+    require("Production is Hosted `3.0.0` with exactly 40 public locations" in state, "deployed Hosted 3.0/40 truth is not explicit")
     for path in ("/auth/guest", "/protection-preview", "/document-preview", "/provider-queue/join", "/provider-queue/claim", "/provider-queue/cancel"):
         require(f'"/api{path}"' in frontend, f"Stage 6 caller path missing {path}")
     require('localStorage' not in frontend and 'sessionStorage' not in frontend, "Stage 6 browser persistence leaked")
     require('href="/developers"' in frontend and 'same-origin application contract' in frontend, "developer reference is incomplete")
-    print("public surface contract ok: Hosted 3.0.0 release candidate uses the approved 40-route caller while deployed 2.5/16 remains explicit")
+    print("public surface contract ok: deployed Hosted 3.0.0 uses the approved 40-route caller")
     return 0
 
 
