@@ -22,16 +22,17 @@
   and thainer tree SHA-256
   `bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315`.
   These are deterministic synthetic/adversarial results, not a population
-  benchmark or legal/compliance accuracy. Stage 8 exact-image acceptance and
-  Stage 9 protected deployment have not yet run.
+  benchmark or legal/compliance accuracy. Stage 8 exact-image acceptance is
+  complete; Stage 9 protected deployment has not yet run.
 - Stage 8 candidate `8053c08404824cbc6eb121bdbe74abd6aa77a4fb`
   passed the first exact image/test/browser evidence set but is superseded for
   release because adversarial review found three closeout gaps: re-sync could
   overwrite release-owned Hosted VERSION, public acceptance did not enumerate
   additive routes through the organizer edge, and durable status still said
-  Stage 8 had not started. The current tree fixes all three and is awaiting a
-  fresh exact commit/image binding and focused re-review. No production mutation
-  has occurred; deployed production remains Hosted 2.5.0/16.
+  Stage 8 had not started. At that review point the tree awaited a replacement
+  exact commit/image binding; `f4d8f72d…` below supplied it and closed all three
+  findings. No production mutation has occurred; deployed production remains
+  Hosted 2.5.0/16.
 - Replacement candidate `f4d8f72dcad37bea267f2ca50b07447c16a2c517`
   passed corrected CI-equivalent `29/29`, parity `3/3`, joined local
   Priority/Standard text/PDF/queue/provider/artifact acceptance, exact image
