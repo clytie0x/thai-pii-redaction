@@ -46,6 +46,20 @@ def main() -> int:
     acceptance_source = (ROOT / "tests" / "platform_acceptance.py").read_text(
         encoding="utf-8"
     )
+    public_source = (ROOT / "tests" / "public_web_acceptance.py").read_text(
+        encoding="utf-8"
+    )
+    for marker in (
+        "HOSTED3_CANONICAL_PATHS",
+        'method="DELETE"',
+        '"/v1" + canonical',
+        'status in {401, 405, 429}',
+        '"method_not_allowed"',
+        '"/api/auth/guestx"',
+        '"/api/v1/document-preview/x"',
+    ):
+        if marker not in public_source:
+            raise AssertionError(f"public Hosted 3 route acceptance missing: {marker}")
     if '_run("docker", "inspect", f"{TEAM}-' in acceptance_source:
         raise AssertionError("production acceptance can perform a full secret-bearing inspect")
     if '"docker", "cp"' in acceptance_source:

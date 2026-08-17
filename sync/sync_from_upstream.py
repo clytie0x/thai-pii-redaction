@@ -124,9 +124,26 @@ def do_sync(upstream: Path) -> None:
     CORE.mkdir(exist_ok=True)
 
     files: dict[str, str] = {}
+    upstream_provenance: dict[str, str] = {}
     for entry in SLICE:
         src = upstream / entry
         dst = CORE / entry
+        relative_entry = Path(entry).as_posix()
+        if _is_port_owned(relative_entry):
+            # Hosted VERSION is release-owned: never overwrite it during a
+            # vendored re-sync. Still pin the exact upstream byte in the
+            # manifest so provenance verification remains complete.
+            if src.is_file():
+                upstream_provenance[relative_entry] = _sha256_bytes(
+                    _normalized_bytes(src)
+                )
+            else:
+                for item in _iter_files(src):
+                    relative = (Path(entry) / item.relative_to(src)).as_posix()
+                    upstream_provenance[relative] = _sha256_bytes(
+                        _normalized_bytes(item)
+                    )
+            continue
         if src.is_dir():
             for f in _iter_files(src):
                 _copy_normalized(f, dst / f.relative_to(src))
@@ -140,6 +157,7 @@ def do_sync(upstream: Path) -> None:
         if _is_port_owned(rel):
             continue
         files[rel] = _sha256(p)
+    files.update(upstream_provenance)
 
     manifest_text = json.dumps(
         {

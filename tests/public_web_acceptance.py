@@ -8,6 +8,7 @@ from html.parser import HTMLParser
 import json
 import re
 import ssl
+import time
 import urllib.error
 import urllib.request
 
@@ -51,6 +52,31 @@ LEGACY_DENIALS = (
     "/api/v1/auth/unknown",
     "/api/redact-pdf",
     "/api/v1/redact-pdf",
+    "/api/auth/guestx",
+    "/api/v1/document-preview/x",
+    "/api/provider-queue/join/",
+)
+HOSTED3_CANONICAL_PATHS = (
+    "/health",
+    "/auth/login",
+    "/auth/logout",
+    "/auth/session",
+    "/detect",
+    "/guard",
+    "/roundtrip",
+    "/analyze-report",
+    "/auth/guest",
+    "/auth/guest/end",
+    "/guest/preview",
+    "/guest/execute",
+    "/protection-preview",
+    "/protection-execute",
+    "/document-preview",
+    "/document-execute",
+    "/provider-queue/join",
+    "/provider-queue/status",
+    "/provider-queue/claim",
+    "/provider-queue/cancel",
 )
 INSECURE_CSS_REFERENCE = re.compile(
     r"(?:url\(\s*['\"]?|@import\s+(?:url\(\s*)?['\"]?)http://",
@@ -159,11 +185,11 @@ OPENER = urllib.request.build_opener(
 )
 
 
-def fetch(url: str) -> tuple[int, dict[str, str], bytes]:
+def fetch(url: str, *, method: str = "GET") -> tuple[int, dict[str, str], bytes]:
     request = urllib.request.Request(
         url,
         headers={"User-Agent": "aiguard-public-acceptance/3.0"},
-        method="GET",
+        method=method,
     )
     try:
         with OPENER.open(request, timeout=20) as response:
@@ -285,6 +311,35 @@ def main() -> int:
     assert health.get("status") == "ok"
     assert health.get("version") == "3.0.0"
     assert headers.get("Strict-Transport-Security") == "max-age=31536000"
+
+    # Credential-free, wrong-method probes prove the organizer edge reaches all
+    # 20 canonical Hosted 3 operations and all 20 exact /v1 aliases without
+    # creating authority, reading a request body, or contacting parser/provider.
+    for canonical in HOSTED3_CANONICAL_PATHS:
+        observed = []
+        for path in (canonical, "/v1" + canonical):
+            status, route_headers, route_body = fetch(
+                HTTPS + "/api" + path, method="DELETE"
+            )
+            assert status in {401, 405, 429}, (path, status)
+            assert route_headers.get("Content-Type", "").lower().startswith(
+                "application/json"
+            ), path
+            payload = json.loads(route_body)
+            assert payload.get("error", {}).get("code") in {
+                "authentication_required",
+                "method_not_allowed",
+                "queue_rate_limited",
+                "rate_limited",
+            }, path
+            assert b"<!doctype html>" not in route_body.lower(), path
+            observed.append((status, payload))
+            time.sleep(0.05)
+        # Canonical and alias directives are proven byte-equivalent by the
+        # built-Nginx contract. Public traffic shares rate buckets, so one of a
+        # pair may legitimately cross a 429 boundary after platform acceptance;
+        # both must still reach an approved JSON API error rather than 404/HTML.
+        assert len(observed) == 2, canonical
 
     for path in LEGACY_DENIALS:
         status, headers, _body = fetch(HTTPS + path)

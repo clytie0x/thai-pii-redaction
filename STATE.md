@@ -1,4 +1,4 @@
-# Status (2026-08-17 — Hosted 3 Stage 7 complete; Stage 8 not started)
+# Status (2026-08-17 — Hosted 3 Stage 8 exact-candidate review in progress)
 
 ## Current release boundary
 
@@ -24,6 +24,14 @@
   These are deterministic synthetic/adversarial results, not a population
   benchmark or legal/compliance accuracy. Stage 8 exact-image acceptance and
   Stage 9 protected deployment have not yet run.
+- Stage 8 candidate `8053c08404824cbc6eb121bdbe74abd6aa77a4fb`
+  passed the first exact image/test/browser evidence set but is superseded for
+  release because adversarial review found three closeout gaps: re-sync could
+  overwrite release-owned Hosted VERSION, public acceptance did not enumerate
+  additive routes through the organizer edge, and durable status still said
+  Stage 8 had not started. The current tree fixes all three and is awaiting a
+  fresh exact commit/image binding and focused re-review. No production mutation
+  has occurred; deployed production remains Hosted 2.5.0/16.
 
 ## Stage 5 status
 

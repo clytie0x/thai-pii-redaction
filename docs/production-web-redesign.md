@@ -3696,14 +3696,46 @@ Exit gate:
   may Hosted `3.0.0` be called deployed.
 
 Current execution position: **Stages 0 through 7 are complete locally; Stage 8
-exact release-candidate acceptance has not started.** The source candidate
+implementation/evidence gates are complete and exact-candidate adversarial
+closeout is in progress.** The source candidate
 now identifies Hosted `3.0.0`, retains HTTP contract version 2, and has exactly
 40 API locations. Deployed production remains Hosted `2.5.0` with exactly 16
 public API locations until the exact Stage 8 commit passes the protected Stage 9
 pipeline. No public deployment is implied by the source-version migration.
-`HOSTED3_IMPLEMENTATION_STAGE=stage7_complete`
+`HOSTED3_IMPLEMENTATION_STAGE=stage8_review`
 
-Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage7_complete`.
+Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage8_review`.
+
+Stage 8 closeout record:
+
+- Clean candidate `8053c08404824cbc6eb121bdbe74abd6aa77a4fb` established
+  the first exact-SHA evidence set: pinned CI-equivalent `29/29`, source/image
+  parity `3/3`, parser image `16/16`, parser lifecycle `3/3`, legacy image
+  integration `2/2`, real-detector execute `1/1`, exact networkless evaluation,
+  joined Priority/Standard text/PDF/queue/fake-provider/artifact acceptance, and
+  built-caller browser route/viewport matrix `64/64`. Its four image IDs were
+  web `sha256:44b9886e462a607959959274b27466f518492d54d82e2e3b69f14cd2031d7686`,
+  API `sha256:3eb3c6c909cf40424331861be5e602619deb87a3c6178c8781aaa2dc837076f7`,
+  Core `sha256:69b817efdf314c24aeb272c18ef49a8774dfc3e375170df972baeb52901352eb`,
+  and parser `sha256:e0d5f90ede391e26335dc6aa6f99534f30823bd587016b1dfb116a248b0b79e6`.
+- Art-direction and UX/accessibility reviewers passed that exact candidate. The
+  frontend/security reviewer correctly rejected its release closeout because a
+  future vendored re-sync could overwrite release-owned Hosted VERSION, public
+  acceptance did not enumerate the 24 additive paths through the organizer
+  edge, and durable status still said Stage 8 had not started.
+- The current review tree fixes all three findings. `do_sync()` now preserves
+  Hosted VERSION while retaining the upstream VERSION hash in the 75-file
+  manifest; a temporary clean-Git sync regression proves both invariants.
+  Credential-free public acceptance now probes all 20 canonical paths and all
+  20 `/v1` aliases through HTTPS using wrong-method/unauthenticated requests,
+  requires approved JSON API errors rather than 404/HTML, and retains explicit
+  additive near-match denials. Static/built Nginx tests remain the canonical
+  directive-parity proof because shared public rate buckets can legitimately
+  place adjacent live probes on opposite sides of a 429 boundary.
+- `8053c084…` and its images are therefore superseded as the production release
+  candidate. The next clean commit must rebuild/rebind all four image labels,
+  rerun affected gates, and receive focused frontend plus art/UX identity
+  confirmation before Stage 8 may close and Stage 9 may start.
 
 Stage 7 closeout evidence (local release migration only):
 

@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import runpy
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -14,6 +18,41 @@ FIXTURE = ROOT / "tests" / "fixtures" / "hosted3" / "contract.json"
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+def verify_release_owned_version_survives_sync(sync_module: dict[str, object]) -> None:
+    with tempfile.TemporaryDirectory(prefix="aiguard-version-sync-") as temporary:
+        root = Path(temporary)
+        upstream = root / "upstream"
+        target_core = root / "core"
+        target_manifest = root / "sync" / "PORT_MANIFEST.json"
+        shutil.copytree(ROOT / "core", upstream)
+        (upstream / "VERSION").write_text("2.5.0\n", encoding="utf-8")
+        subprocess.run(["git", "init", "--quiet"], cwd=upstream, check=True)
+        subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=upstream, check=True)
+        subprocess.run(["git", "config", "user.email", "sync@example.invalid"], cwd=upstream, check=True)
+        subprocess.run(["git", "config", "user.name", "Hosted sync contract"], cwd=upstream, check=True)
+        subprocess.run(["git", "add", "."], cwd=upstream, check=True)
+        subprocess.run(["git", "commit", "--quiet", "-m", "fixture"], cwd=upstream, check=True)
+
+        target_core.mkdir()
+        (target_core / "VERSION").write_text("3.0.0\n", encoding="utf-8")
+        target_manifest.parent.mkdir()
+        do_sync = sync_module["do_sync"]
+        do_sync.__globals__["CORE"] = target_core
+        do_sync.__globals__["MANIFEST"] = target_manifest
+        do_sync(upstream)
+
+        require(
+            (target_core / "VERSION").read_text("utf-8").strip() == "3.0.0",
+            "vendored sync overwrote Hosted VERSION",
+        )
+        manifest = json.loads(target_manifest.read_text("utf-8"))
+        require(
+            manifest["files"]["VERSION"]
+            == hashlib.sha256(b"2.5.0\n").hexdigest(),
+            "upstream VERSION provenance disappeared from manifest",
+        )
 
 
 def main() -> int:
@@ -72,6 +111,7 @@ def main() -> int:
     require(not is_port_owned("aift_hosted3x/authority.py"), "overlay prefix is too broad")
     require(not is_port_owned("app/server.py"), "vendored server became port-owned")
     require(not is_port_owned("unreviewed.py"), "arbitrary core extras became port-owned")
+    verify_release_owned_version_survives_sync(sync_module)
 
     require("cryptography==50.0.0" in security_lock, "approved AEAD dependency pin missing")
     require(
