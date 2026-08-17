@@ -614,6 +614,11 @@ class ExecuteService:
             "replaced_count": int(getattr(restored, "replaced_count", 0)),
             "leftover_count": leftover_count,
         }
+        restored_text = (
+            str(getattr(restored, "restored_text", ""))
+            if restoration_status == "complete"
+            else ""
+        )
         approval = prepared.approval
         receipt = {
             "receipt_version": RECEIPT_VERSION,
@@ -644,7 +649,7 @@ class ExecuteService:
             "synthetic_provenance": None,
             "protected_text": prepared.protected.protected_text,
             "ai_response_masked": ai_text,
-            "restored_text": str(getattr(restored, "restored_text", "")),
+            "restored_text": restored_text,
             "mode": approval["mode"],
             "detected_entity_count": prepared.protected.detected_entity_count,
             "entity_type_counts": prepared.protected.entity_type_counts,

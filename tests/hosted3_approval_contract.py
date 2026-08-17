@@ -284,7 +284,7 @@ class Hosted3ApprovalContractTests(unittest.TestCase):
         self.assertEqual(len(ticket), 1279)
         self.assertEqual(
             hashlib.sha256(ticket.encode()).hexdigest(),
-            "85fbf7b7630ce2c8cd6488bceb9f45939e34e4d20ed7c7e0a9eb6e527bc852aa",
+            "30e1767c6dfa0128d57e4de88fbf11b9fcace9e97614836e29a9191eca09229f",
         )
         decoded = base64.urlsafe_b64decode(ticket + "=" * (-len(ticket) % 4))
         self.assertNotIn(b"source", decoded)
@@ -543,7 +543,7 @@ class Hosted3ApprovalContractTests(unittest.TestCase):
         return PreviewService(
             engine,
             protector=protector or FakeProtector(),
-            hosted_version="3.0.0",
+            hosted_version="3.0.1",
             now=lambda: self.now_value,
             random_bytes=random_bytes or DeterministicBytes(),
             blocked_exceptions=(Blocked,),

@@ -1,8 +1,8 @@
 {
   "schema_revision": "hosted3-plan-2026-08-16",
   "implementation_stage": "stage9_complete",
-  "current_hosted_version": "3.0.0",
-  "target_hosted_version": "3.0.0",
+  "current_hosted_version": "3.0.1",
+  "target_hosted_version": "3.0.1",
   "existing_canonical_routes": [
     "/health",
     "/auth/login",

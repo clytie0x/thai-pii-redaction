@@ -110,7 +110,7 @@ const requestLog = [];
 let authenticated = false;
 let activeClass = "standard";
 let inspectDeferred = null;
-let customExecuteValid = true;
+let customExecuteStatus = "complete";
 let joinMode = "success";
 let claimResponses = [];
 let endMode = "success";
@@ -124,7 +124,7 @@ const deferred = () => { let resolve; const promise = new Promise(done => { reso
 const fetch = async (url, options = {}) => {
   const body = typeof options.body === "string" ? JSON.parse(options.body) : options.body;
   requestLog.push({url, method: options.method || "GET", body});
-  if (url === "/api/health") return jsonResponse(200, {status: "ok", version: "3.0.0"});
+  if (url === "/api/health") return jsonResponse(200, {status: "ok", version: "3.0.1"});
   if (url === "/api/auth/session") return authenticated
     ? jsonResponse(200, {authenticated: true, expires_in: 1800}, timedHeaders(activeClass))
     : jsonResponse(401, {error: {code: "authentication_required"}});
@@ -157,16 +157,24 @@ const fetch = async (url, options = {}) => {
   if (url === "/api/provider-queue/claim") return jsonResponse(200, claimResponses.shift() || {state: "claim_ready", revision: 1, claim_token: "claim-token", claim_expires_at_unix: Math.floor((SERVER_MS + 20_000) / 1000)});
   if (url === "/api/protection-execute") {
     if (executeMode === "network") throw new Error("synthetic lost execute response");
-    return jsonResponse(200, customExecuteValid ? {
-    protected_text: "[NAME_1] โทร [PHONE_1]", restored_text: "ผลสังเคราะห์ที่กู้คืนแล้ว", detected_entity_count: 2,
-    entity_type_counts: {NAME: 1, PHONE: 1}, section26_categories: ["HEALTH"], guard_findings: [], warnings: [],
-    safety: {status: "pass", residual_count: 0}, restoration: {status: "complete", replaced_count: 2, leftover_count: 0},
-    provider: {id: "tokenmind", model: "thaillm-8b", attempt_count: 1},
-    receipt: {request_id: "req_synthetic", provider_attempt_count: 1, duration_ms: 1250},
-  } : {
-    protected_text: "[NAME_1]", restored_text: "UNSAFE RESTORED", detected_entity_count: 1, entity_type_counts: {NAME: 1},
-    section26_categories: [], guard_findings: [], warnings: [], safety: {status: "pass", residual_count: 0},
-    restoration: {status: "incomplete", replaced_count: 0, leftover_count: 1}, provider: {attempt_count: 1}, receipt: {request_id: "req_invalid"},
+    if (customExecuteStatus === "malformed") return jsonResponse(200, {restored_text: "UNSAFE RESTORED"});
+    const requestId = `req_${customExecuteStatus}`;
+    const warnings = customExecuteStatus === "unsafe" ? [{code: "generated_pii", count: 2}] : [];
+    const leftover = customExecuteStatus === "incomplete" ? 1 : 0;
+    return jsonResponse(200, {
+      request_id: requestId, hosted_version: "3.0.1", source_kind: "custom_standard",
+      protected_text: "[NAME_1] โทร [PHONE_1]",
+      restored_text: customExecuteStatus === "complete" ? "ผลสังเคราะห์ที่กู้คืนแล้ว" : "",
+      detected_entity_count: 2, entity_type_counts: {NAME: 1, PHONE: 1}, section26_categories: ["HEALTH"], guard_findings: [], warnings,
+      safety: {status: "pass", residual_count: 0},
+      restoration: {status: customExecuteStatus, replaced_count: customExecuteStatus === "incomplete" ? 1 : 2, leftover_count: leftover},
+      provider: {id: "tokenmind", model: "thaillm-8b", attempt_count: 1},
+      receipt: {
+        request_id: requestId, hosted_version: "3.0.1", source_kind: "custom_standard",
+        restoration_status: customExecuteStatus, digest_match: true,
+        outbound_gate_status: "no_residual_signal_detected", provider_id: "tokenmind",
+        provider_model: "thaillm-8b", provider_attempt_count: 1, duration_ms: 1250,
+      },
     });
   }
   if (url === "/api/document-execute") return jsonResponse(200, {
@@ -386,7 +394,7 @@ assert.match(navigator.clipboard.writes.at(-1), /PII was not restored/, "PDF art
 assert.match(get("h3Receipt").textContent, /source_pdf_unchanged.*text_layer_only.*ocr_or_visual_layout_interpreted/s, "PDF receipt JSON lacks mandatory portable provenance");
 
 await backButtons[0].click(); await taskButtons[1].click();
-executeMode = "network"; customExecuteValid = true;
+executeMode = "network"; customExecuteStatus = "complete";
 get("h3Text").value = "ข้อมูลสังเคราะห์สำหรับ uncertain execute"; await get("h3Text").emit("input");
 await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
 assert.match(get("h3QueueFacts").textContent, /สถานะ provider ยังไม่แน่ชัด.*ห้าม preview, join หรือส่งซ้ำ/s, "lost execute response invited an unsafe retry");
@@ -397,12 +405,29 @@ assert.equal(get("h3ClearRunning").hidden, false, "uncertain provider state omit
 await get("h3ClearRunning").click(); executeMode = "success";
 
 await backButtons[1].click(); await taskButtons[1].click();
-customExecuteValid = false;
+customExecuteStatus = "incomplete";
 get("h3Text").value = "ข้อมูลสังเคราะห์ นายทดสอบ"; await get("h3Text").emit("input");
 await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
 assert.equal(get("h3Result").hidden, true, "incomplete restoration rendered a result");
 assert.equal(get("h3Recovery").hidden, false, "incomplete restoration did not fail closed into recovery");
 assert.ok(!get("h3ResultBody").textContent.includes("UNSAFE RESTORED"), "unsafe restored text reached the DOM");
+assert.match(get("h3RecoveryCopy").textContent, /คืน token ได้ไม่ครบ/, "incomplete restoration was mislabeled as provider response invalid");
+assert.equal(get("h3RecoveryAction").textContent, "สร้าง Preview ใหม่", "incomplete restoration exposed an ambiguous Retry action");
+await get("h3RecoveryAction").click();
+
+customExecuteStatus = "unsafe";
+await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
+assert.equal(get("h3Result").hidden, true, "unsafe restoration rendered a result");
+assert.ok(!get("h3ResultBody").textContent.includes("UNSAFE RESTORED"), "unsafe restored text reached the DOM");
+assert.match(get("h3RecoveryCopy").textContent, /PII ที่ยืนยันที่มาไม่ได้/, "unsafe restoration lost its exact safety explanation");
+assert.equal(get("h3RecoveryAction").textContent, "สร้าง Preview ใหม่", "unsafe restoration exposed an ambiguous Retry action");
+await get("h3RecoveryAction").click();
+
+customExecuteStatus = "malformed";
+await get("h3TextPreview").click(); await flush(); await get("h3Approve").click(); await flush(12);
+assert.match(get("h3RecoveryCopy").textContent, /response ที่ไม่ผ่าน validation/, "malformed provider response lost its separate classification");
+assert.equal(get("h3RecoveryAction").textContent, "สร้าง Preview ใหม่", "malformed response exposed an ambiguous Retry action");
+await get("h3RecoveryAction").click(); customExecuteStatus = "complete";
 
 timingHeadersValid = false;
 get("h3Text").value = "ข้อมูลสังเคราะห์สำหรับ timing"; await get("h3Text").emit("input");

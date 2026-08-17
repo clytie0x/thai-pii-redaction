@@ -130,8 +130,8 @@ def main() -> int:
     state = (ROOT / "STATE.md").read_text("utf-8")
     assert "HOSTED3_IMPLEMENTATION_STAGE=stage9_complete" in docs
     assert "Production is Hosted `3.0.0` with exactly 40 public locations" in state
-    assert (ROOT / "core/VERSION").read_text("utf-8").strip() == "3.0.0"
-    print("hosted3 stage5 contract ok: exact 40-route proxy/core matrix and bounded edge lanes retained for Hosted 3.0.0")
+    assert (ROOT / "core/VERSION").read_text("utf-8").strip() == "3.0.1"
+    print("hosted3 stage5 contract ok: exact 40-route proxy/core matrix retained for the Hosted 3.0.1 candidate")
     return 0
 
 

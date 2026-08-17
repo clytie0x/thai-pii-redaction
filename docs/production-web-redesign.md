@@ -1,6 +1,6 @@
 # AI Guard Production Web Redesign
 
-Last updated: 2026-08-16 (Asia/Bangkok)
+Last updated: 2026-08-17 (Asia/Bangkok)
 
 ## Purpose
 
@@ -15,6 +15,45 @@ an end-to-end production serving path.
 
 ## Current state
 
+- Two post-release defects are now open under an owner-authorized `3.0.1`
+  hotfix. First, a fresh public Standard/Token execution against deployed
+  Hosted `3.0.0` returned HTTP `200`; Pathumma preserved both reviewed tokens,
+  the safety gate passed, restoration replaced both tokens with zero leftovers,
+  but the shared output detector reported two `generated_pii` findings. The
+  exact synthetic response showed that `คำตอบ:**` was falsely classified as a
+  name and that a second name span expanded from the restored original into the
+  unchanged `ผู้สมัคร` prefix. The browser then collapsed this valid-but-
+  fail-closed `restoration.status: unsafe` response into the unrelated
+  `provider_response_invalid` copy. Second, an external Windows machine running
+  the published Desktop `3.0.0` NSIS package aborted three times with
+  `AI Guard native component drain failed`; the installer currently discards
+  the underlying fixed stage, so that screenshot proves a real compatibility
+  failure but not its exact cause. Production remains Hosted `3.0.0` and the
+  published Desktop remains `3.0.0`. Local `3.0.1` source and a diagnostic
+  Windows package now exist, but no `v3.0.1` tag, public Desktop release,
+  Hosted image candidate, or Hosted deploy exists yet.
+- Hotfix work is isolated on `codex/hosted-3.0.1-hotfix` at starting commit
+  `bd8f6f07caf7fc4ab6b4099f0ada32e7cfb4a75a`; the submitted-form attachments
+  in the original worktree are outside this branch. Stage-0 baselines pass the
+  exact Core-image execute contract `9/9` and frontend behavior contract. The
+  host-Windows execute run remains `8/9` only because its real child-process
+  startup exceeded the test's 0.5-second local threshold; the same source test
+  passes in the pinned Core dependency/image environment and is not attributed
+  to this unimplemented hotfix.
+- Local Stage-2 projection and frontend behavior are now corrected, but remain
+  unbuilt and undeployed. A classified `incomplete` or `unsafe` custom result
+  returns an empty `restored_text`; the browser validates the reviewed protected
+  payload, receipt, provider, attempt, safety, warning, and restoration bindings
+  before classifying it. Incomplete and unsafe restoration receive distinct
+  Thai explanations and a `สร้าง Preview ใหม่` action, while an actually
+  malformed provider response retains `provider_response_invalid` and an
+  uncertain transport retains the existing no-retry status path. No non-usable
+  restored text enters the result DOM or public response projection. Focused
+  execute `11/11`, frontend behavior, platform-acceptance policy, JavaScript
+  syntax, and diff-integrity checks pass. The shared correction is synchronized
+  through `PORT_MANIFEST.json` from exact upstream port commit
+  `3c2997835dbdc9842e38b38fb89f09642a713817`; full images, CI-equivalent,
+  repeated live-provider evidence, and deployment are still pending.
 - Audio input, TTS, images, Vision, scanned/image-only PDF, and OCR are excluded
   from the approved Hosted 3.0 release and receive no production teaser or
   control. A later modality release requires a separate owner decision and full

@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import importlib.util
 import json
 import os
 import sys
@@ -386,7 +387,7 @@ class ExecuteContractTests(unittest.TestCase):
 
         service = ExecuteService(
             h.queue,
-            hosted_version="3.0.0",
+            hosted_version="3.0.1",
             protector=protector,
             custom_provider_call=custom_call or provider,
             document_provider_call=lambda _system, _user: provider_ast(),
@@ -419,7 +420,7 @@ class ExecuteContractTests(unittest.TestCase):
         return (
             ExecuteService(
                 h.queue,
-                hosted_version="3.0.0",
+                hosted_version="3.0.1",
                 parser=parser or FakeParser(),
                 protector=FakeProtector(),
                 custom_provider_call=lambda *_args: (_ for _ in ()).throw(
@@ -492,6 +493,79 @@ class ExecuteContractTests(unittest.TestCase):
                 },
                 authority=h.authority,
             )
+
+    def test_custom_nonusable_restoration_never_returns_restored_text(self):
+        cases = (
+            (
+                "unsafe",
+                SimpleNamespace(
+                    restored_text="UNSAFE RESTORED",
+                    replaced_count=1,
+                    leftover_pseudonyms=[],
+                    generated_pii_count=1,
+                    foreign_replacement_count=0,
+                ),
+                [{"code": "generated_pii", "count": 1}],
+            ),
+            (
+                "incomplete",
+                SimpleNamespace(
+                    restored_text=f"ผลสรุปสำหรับ {TOKEN}",
+                    replaced_count=0,
+                    leftover_pseudonyms=[TOKEN],
+                    generated_pii_count=0,
+                    foreign_replacement_count=0,
+                ),
+                [],
+            ),
+        )
+        for expected_status, restored, expected_warnings in cases:
+            with self.subTest(expected_status):
+                h = Harness()
+                capability, claim = h.claim(h.custom_ticket())
+                service, _protector, _calls, _guards = self.custom_service(
+                    h,
+                    restore_call=lambda *_args, **_kwargs: restored,
+                )
+
+                response = service.execute_custom(
+                    {
+                        "text": CUSTOM_SOURCE,
+                        "queue_capability": capability,
+                        "claim_token": claim,
+                    },
+                    authority=h.authority,
+                )
+
+                self.assertEqual(response["restoration"]["status"], expected_status)
+                self.assertEqual(response["warnings"], expected_warnings)
+                self.assertEqual(response["restored_text"], "")
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("pythainlp") is not None,
+        "real detector dependencies are verified in the Core image",
+    )
+    def test_real_port_restoration_accepts_exact_tokens_and_rejects_generated_name(self):
+        from pii_redactor.stateless import restore_stateless, sanitize_stateless
+
+        source = "ผู้สมัครสังเคราะห์ สมชาย ใจดี ติดต่อ test@example.invalid"
+        protected = sanitize_stateless(source, mode="token", salt="hosted-3.0.1")
+        exact = restore_stateless(
+            f"**คำตอบ:**\n\n{protected.sanitized_text}",
+            mapping=protected.mapping,
+            mode="token",
+        )
+        generated = restore_stateless(
+            f"ผู้ติดต่อใหม่ นายสมหญิง ทดสอบดี\n{protected.sanitized_text}",
+            mapping=protected.mapping,
+            mode="token",
+        )
+
+        self.assertEqual(exact.restored_text, f"**คำตอบ:**\n\n{source}")
+        self.assertEqual(exact.replaced_count, len(protected.mapping))
+        self.assertEqual(exact.leftover_pseudonyms, [])
+        self.assertEqual(exact.generated_pii_count, 0)
+        self.assertGreaterEqual(generated.generated_pii_count, 1)
 
     def test_custom_mismatch_and_outbound_failure_contact_no_unapproved_provider(self):
         h = Harness()

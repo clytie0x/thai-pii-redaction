@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parent.parent
-UPSTREAM = "44ef30b0e8ea2021fc4ceec9d3b12dc9f64c750f"
+UPSTREAM = "3c2997835dbdc9842e38b38fb89f09642a713817"
 CURRENT_DOCS = (
     ROOT / "README.md",
     ROOT / "STATE.md",
@@ -191,11 +191,11 @@ def main() -> int:
     manifest = json.loads((ROOT / "sync" / "PORT_MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["commit"] == UPSTREAM
     assert len(manifest["files"]) == 75
-    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.0"
+    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.1"
 
     current = "\n".join(path.read_text(encoding="utf-8") for path in CURRENT_DOCS)
     for required in (
-        "44ef30b",
+        "3c2997835dbd",
         "40 routes",
         "/redact-pdf",
         "/v1/redact-pdf",

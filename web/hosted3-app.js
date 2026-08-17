@@ -58,6 +58,8 @@
     provider_timeout: "Provider หมดเวลา คำขออาจไปถึง upstream แล้ว ห้ามส่งซ้ำจนสถานะนี้สิ้นสุด",
     provider_failed: "Provider request ไม่สำเร็จ คำขอนี้สิ้นสุดแล้ว ต้องสร้าง preview ใหม่",
     restore_failed: "การกู้คืนไม่ผ่าน gate จึงระงับคำตอบและไม่แสดงผลที่กู้คืน",
+    restoration_incomplete: "Pathumma ตอบกลับแล้ว แต่ AI Guard คืน token ได้ไม่ครบ จึงระงับผลลัพธ์ ต้องสร้าง Preview ใหม่",
+    restoration_unsafe: "Pathumma ตอบกลับแล้ว แต่ AI Guard พบสัญญาณ PII ที่ยืนยันที่มาไม่ได้หลัง restoration จึงระงับผลลัพธ์ ต้องสร้าง Preview ใหม่",
     internal_error: "บริการไม่สามารถยืนยันผลลัพธ์ได้ จึงระงับผลและล้าง execute authority"
   });
   let requestedDestination = null;
@@ -319,7 +321,8 @@
     if (preservePreview) { hide($("h3Queue"), $("h3Result")); state.queue = null; setProviderRunning(false); $("h3Approve").disabled = false; }
     else resetSensitive({ keepInputs: true });
     const copy = errorCopy[code] || "ไม่สามารถดำเนินการได้อย่างปลอดภัย โปรดลองอีกครั้ง";
-    $("h3RecoveryCopy").textContent = copy; $("h3RecoveryAction").textContent = code === "session_review_window" ? (state.authority === "standard" ? "Restart Standard access" : "Use Priority Invite again") : preservePreview ? "Retry queue" : "Retry"; recoveryAction = () => { hide($("h3Recovery")); if (code === "session_review_window") endAuthority(); else (retryTarget || (state.task === "pdf" ? $("h3PdfPreview") : $("h3TextPreview")))?.focus(); };
+    const needsNewPreview = ["provider_response_invalid", "restoration_incomplete", "restoration_unsafe"].includes(code);
+    $("h3RecoveryCopy").textContent = copy; $("h3RecoveryAction").textContent = code === "session_review_window" ? (state.authority === "standard" ? "Restart Standard access" : "Use Priority Invite again") : preservePreview ? "Retry queue" : needsNewPreview ? "สร้าง Preview ใหม่" : "Retry"; recoveryAction = () => { hide($("h3Recovery")); if (code === "session_review_window") endAuthority(); else (retryTarget || (state.task === "pdf" ? $("h3PdfPreview") : $("h3TextPreview")))?.focus(); };
     show($("h3Recovery")); $("h3Recovery").focus(); announce(copy);
   }
 
@@ -442,8 +445,8 @@
   function provenanceHeader(receipt, isPdf) {
     const omitted = Array.isArray(receipt?.omitted_visual_page_numbers) && receipt.omitted_visual_page_numbers.length ? ` Omitted visual page(s): ${receipt.omitted_visual_page_numbers.join(", ")}.` : "";
     return isPdf
-      ? ["AI Guard protected/pseudonymized artifact; it is not anonymous.", "The source PDF is unchanged and is not sanitized. PII was not restored into this artifact.", `Text-layer-only extraction; parser ${receipt?.parser_revision || "unavailable"}; extraction ${receipt?.extraction_revision || "unavailable"}.${omitted}`, "Human review is required.", `Hosted channel: AI Guard 3.0.0 · receipt: ${receipt?.source_receipt_id || "unavailable"}`].join("\n")
-      : ["AI Guard protected/pseudonymized text artifact; it is not anonymous.", "This portable protected text does not include restored PII. Human review is required.", `Hosted channel: AI Guard 3.0.0 · receipt: ${receipt?.request_id || "unavailable"}`].join("\n");
+      ? ["AI Guard protected/pseudonymized artifact; it is not anonymous.", "The source PDF is unchanged and is not sanitized. PII was not restored into this artifact.", `Text-layer-only extraction; parser ${receipt?.parser_revision || "unavailable"}; extraction ${receipt?.extraction_revision || "unavailable"}.${omitted}`, "Human review is required.", `Hosted channel: AI Guard 3.0.1 · receipt: ${receipt?.source_receipt_id || "unavailable"}`].join("\n")
+      : ["AI Guard protected/pseudonymized text artifact; it is not anonymous.", "This portable protected text does not include restored PII. Human review is required.", `Hosted channel: AI Guard 3.0.1 · receipt: ${receipt?.request_id || "unavailable"}`].join("\n");
   }
   function portableReceipt(body, isPdf) {
     const envelope = {
@@ -462,19 +465,27 @@
     });
     return envelope;
   }
-  function validCustomResult(body) {
-    return isPlainObject(body)
-      && typeof body.protected_text === "string"
-      && typeof body.restored_text === "string"
-      && isPlainObject(body.receipt)
-      && isPlainObject(body.safety)
-      && body.safety.status === "pass"
-      && body.safety.residual_count === 0
-      && isPlainObject(body.restoration)
-      && body.restoration.status === "complete"
-      && body.restoration.leftover_count === 0
-      && Array.isArray(body.warnings)
-      && body.warnings.length === 0;
+  function customResultStatus(body, expectedProtected) {
+    if (!isPlainObject(body) || typeof body.protected_text !== "string" || body.protected_text !== expectedProtected || typeof body.restored_text !== "string") return null;
+    if (!isPlainObject(body.safety) || body.safety.status !== "pass" || body.safety.residual_count !== 0 || !isPlainObject(body.restoration)) return null;
+    const status = body.restoration.status, leftover = body.restoration.leftover_count, warnings = body.warnings;
+    if (!Number.isInteger(leftover) || leftover < 0 || !Array.isArray(warnings)) return null;
+    const warningsValid = warnings.every(warning => isPlainObject(warning)
+      && Object.keys(warning).length === 2
+      && Object.hasOwn(warning, "code")
+      && Object.hasOwn(warning, "count")
+      && ["foreign_replacement", "generated_pii"].includes(warning.code)
+      && Number.isInteger(warning.count)
+      && warning.count > 0);
+    if (!warningsValid) return null;
+    if (status === "complete" ? leftover !== 0 || warnings.length || !body.restored_text : status === "incomplete" ? leftover <= 0 || warnings.length || body.restored_text !== "" : status === "unsafe" ? !warnings.length || body.restored_text !== "" : true) return null;
+    const provider = body.provider, receipt = body.receipt, requestId = body.request_id;
+    if (!isPlainObject(provider) || !isPlainObject(receipt) || typeof requestId !== "string" || !requestId) return null;
+    if (provider.id !== "tokenmind" || provider.model !== "thaillm-8b" || !Number.isInteger(provider.attempt_count) || provider.attempt_count < 1 || provider.attempt_count > 3) return null;
+    if (typeof body.hosted_version !== "string" || !body.hosted_version || body.source_kind !== "custom_standard") return null;
+    if (receipt.request_id !== requestId || receipt.hosted_version !== body.hosted_version || receipt.source_kind !== body.source_kind || receipt.restoration_status !== status || receipt.digest_match !== true || receipt.outbound_gate_status !== "no_residual_signal_detected") return null;
+    if (receipt.provider_id !== provider.id || receipt.provider_model !== provider.model || !Number.isInteger(receipt.provider_attempt_count) || receipt.provider_attempt_count !== provider.attempt_count) return null;
+    return status;
   }
   function validPdfResult(body) {
     return isPlainObject(body)
@@ -508,7 +519,13 @@
   }
   function renderResult(body) {
     const isPdf = state.task === "pdf";
-    if (isPdf ? !validPdfResult(body) : !validCustomResult(body)) return showError("provider_response_invalid", null);
+    if (isPdf && !validPdfResult(body)) return showError("provider_response_invalid", null);
+    if (!isPdf) {
+      const status = customResultStatus(body, state.preview?.protected_text);
+      if (status === null) return showError("provider_response_invalid", null);
+      if (status === "incomplete") return showError("restoration_incomplete", null);
+      if (status === "unsafe") return showError("restoration_unsafe", null);
+    }
     state.queue = null; setProviderRunning(false); hide($("h3Queue")); clearNode($("h3ResultBody")); const bodyNode = $("h3ResultBody");
     const result = isPdf ? body.protected_markdown : body.restored_text;
     $("h3ResultTitle").textContent = isPdf ? "Protected Markdown" : "Restored provider result";

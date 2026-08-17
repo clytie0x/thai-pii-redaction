@@ -96,7 +96,7 @@ def _read_version() -> str:
             encoding="utf-8"
         ).strip()
     except OSError:
-        return "3.0.0"
+        return "3.0.1"
 
 
 def _strict_json(body: bytes) -> object:

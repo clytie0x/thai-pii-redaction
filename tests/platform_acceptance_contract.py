@@ -46,7 +46,7 @@ def main() -> int:
 
     base_result = {
         "request_id": "req_complete",
-        "hosted_version": "3.0.0",
+        "hosted_version": "3.0.1",
         "source_kind": "custom_standard",
         "protected_text": "[NAME_1] [EMAIL_1]",
         "restored_text": "synthetic result",
@@ -57,7 +57,7 @@ def main() -> int:
         "receipt": {
             "restoration_status": "complete",
             "request_id": "req_complete",
-            "hosted_version": "3.0.0",
+            "hosted_version": "3.0.1",
             "source_kind": "custom_standard",
             "digest_match": True,
             "outbound_gate_status": "no_residual_signal_detected",
@@ -73,6 +73,7 @@ def main() -> int:
     incomplete_result = {
         **base_result,
         "request_id": "req_incomplete",
+        "restored_text": "",
         "warnings": [],
         "restoration": {"status": "incomplete", "leftover_count": 1},
         "receipt": {
@@ -88,6 +89,7 @@ def main() -> int:
     unsafe_result = {
         **base_result,
         "request_id": "req_unsafe",
+        "restored_text": "",
         "warnings": [{"code": "generated_pii", "count": 1}],
         "restoration": {"status": "unsafe", "leftover_count": 0},
         "receipt": {
@@ -113,6 +115,7 @@ def main() -> int:
         {**unsafe_result, "warnings": [], "restoration": {"status": "unsafe", "leftover_count": 1}},
         {**base_result, "restoration": {"status": "complete", "leftover_count": True}},
         {**unsafe_result, "warnings": [{"code": "unknown", "count": 1}]},
+        {**unsafe_result, "restored_text": "unsafe result"},
         {**base_result, "protected_text": "สมชาย test@example.invalid"},
         {**base_result, "request_id": "", "receipt": {**base_result["receipt"], "request_id": ""}},
         {**base_result, "provider": {**base_result["provider"], "attempt_count": True}, "receipt": {**base_result["receipt"], "provider_attempt_count": True}},

@@ -36,7 +36,7 @@ def verify_release_owned_version_survives_sync(sync_module: dict[str, object]) -
         subprocess.run(["git", "commit", "--quiet", "-m", "fixture"], cwd=upstream, check=True)
 
         target_core.mkdir()
-        (target_core / "VERSION").write_text("3.0.0\n", encoding="utf-8")
+        (target_core / "VERSION").write_text("3.0.1\n", encoding="utf-8")
         target_manifest.parent.mkdir()
         do_sync = sync_module["do_sync"]
         do_sync.__globals__["CORE"] = target_core
@@ -44,7 +44,7 @@ def verify_release_owned_version_survives_sync(sync_module: dict[str, object]) -
         do_sync(upstream)
 
         require(
-            (target_core / "VERSION").read_text("utf-8").strip() == "3.0.0",
+            (target_core / "VERSION").read_text("utf-8").strip() == "3.0.1",
             "vendored sync overwrote Hosted VERSION",
         )
         manifest = json.loads(target_manifest.read_text("utf-8"))
@@ -68,7 +68,7 @@ def main() -> int:
 
     require(contract["schema_revision"] == "hosted3-plan-2026-08-16", "fixture revision drift")
     require(version == contract["current_hosted_version"], "Hosted release VERSION drift")
-    require(contract["target_hosted_version"] == "3.0.0", "target version drift")
+    require(contract["target_hosted_version"] == "3.0.1", "target version drift")
 
     existing = contract["existing_canonical_routes"]
     additive = contract["additive_canonical_routes"]
@@ -145,7 +145,7 @@ def main() -> int:
         require(modality in redesign, f"excluded modality not documented: {modality}")
 
     print(
-        "hosted3 contract ok: Hosted 3.0.0 release candidate exposes exactly 40 "
+        "hosted3 contract ok: Hosted 3.0.1 release candidate exposes exactly 40 "
         "approved locations with the reviewed implementation-stage marker"
     )
     return 0

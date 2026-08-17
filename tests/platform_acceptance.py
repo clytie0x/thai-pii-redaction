@@ -366,6 +366,7 @@ def _custom_result_status(result: dict, *, expected_protected: str) -> str | Non
     warnings = result.get("warnings")
     status = restoration.get("status")
     leftover = restoration.get("leftover_count")
+    restored_text = result.get("restored_text")
     warnings_valid = isinstance(warnings, list) and all(
         isinstance(warning, dict)
         and set(warning) == {"code", "count"}
@@ -379,16 +380,27 @@ def _custom_result_status(result: dict, *, expected_protected: str) -> str | Non
         and leftover >= 0
         and warnings_valid
         and (
-            (status == "complete" and leftover == 0 and warnings == [])
-            or (status == "incomplete" and leftover > 0 and warnings == [])
-            or (status == "unsafe" and bool(warnings))
+            (
+                status == "complete"
+                and leftover == 0
+                and warnings == []
+                and isinstance(restored_text, str)
+                and bool(restored_text)
+            )
+            or (
+                status == "incomplete"
+                and leftover > 0
+                and warnings == []
+                and restored_text == ""
+            )
+            or (status == "unsafe" and bool(warnings) and restored_text == "")
         )
     )
     request_id = result.get("request_id")
     provider_attempts = provider.get("attempt_count")
     receipt_attempts = receipt.get("provider_attempt_count")
     valid = bool(
-        result.get("hosted_version") == "3.0.0"
+        result.get("hosted_version") == "3.0.1"
         and result.get("source_kind") == "custom_standard"
         and safety == {"status": "pass", "residual_count": 0}
         and classified
@@ -411,7 +423,7 @@ def _custom_result_status(result: dict, *, expected_protected: str) -> str | Non
         and receipt.get("provider_model") == provider.get("model")
         and type(receipt_attempts) is int
         and receipt_attempts == provider_attempts
-        and isinstance(result.get("restored_text"), str)
+        and isinstance(restored_text, str)
     )
     return status if valid else None
 
@@ -496,7 +508,7 @@ def _verify_hosted3_document(cookie: str) -> None:
         raise AcceptanceFailure("Hosted 3 document execute failed")
     artifact = _json(raw)
     if not (
-        artifact.get("hosted_version") == "3.0.0"
+        artifact.get("hosted_version") == "3.0.1"
         and artifact.get("source_kind") == "document_standard"
         and isinstance(artifact.get("protected_markdown"), str)
         and "PII was not restored" in artifact["protected_markdown"]
@@ -634,7 +646,7 @@ def main() -> int:
             status, _headers, raw_health = _request("/health")
             if status != 200:
                 raise AcceptanceFailure("public health failed")
-            if _json(raw_health).get("version") != "3.0.0":
+            if _json(raw_health).get("version") != "3.0.1":
                 raise AcceptanceFailure("public health version mismatch")
 
             priority_cookie = _login()

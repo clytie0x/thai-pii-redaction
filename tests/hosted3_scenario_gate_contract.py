@@ -203,7 +203,7 @@ class DefaultDocumentSemanticGateTests(unittest.TestCase):
                     response.encode("utf-8"),
                     segments=segments,
                     provenance=ArtifactProvenance(
-                        hosted_version="3.0.0",
+                        hosted_version="3.0.1",
                         source_kind="synthetic_document",
                         source_receipt_id="A" * 22,
                         parser_revision=PARSER_REVISION,
@@ -255,7 +255,7 @@ class DefaultDocumentSemanticGateTests(unittest.TestCase):
                                 )
                             ),
                             "provenance_present": artifact.protected_markdown.startswith(
-                                "> AI Guard Hosted 3\\.0\\.0"
+                                "> AI Guard Hosted 3\\.0\\.1"
                             ),
                             "role_counts": role_counts,
                             "section_roles": [row["role"] for row in sections],

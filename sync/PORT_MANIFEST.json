@@ -1,7 +1,7 @@
 {
  "upstream": "https://github.com/Teerapat-Vatpitak/thai-pii-redaction",
- "commit": "44ef30b0e8ea2021fc4ceec9d3b12dc9f64c750f",
- "synced_at": "2026-08-08T15:40:01+00:00",
+ "commit": "3c2997835dbdc9842e38b38fb89f09642a713817",
+ "synced_at": "2026-08-17T11:17:27+00:00",
  "files": {
   "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "app/access_logging.py": "5b56ce854a1a206825e1974b49957e21f5c37adbbcb791bd017fdbe85d5e4bdc",
@@ -37,7 +37,7 @@
   "pii_redactor/detectors/fp_detector.py": "9179232552560d2b6d4082e3730e44de030e4d6278c856f457522285034ac9c6",
   "pii_redactor/detectors/name_context.py": "b80b07c5c8965532244a31849c6e2062b0c0ca396db89dd0231e1b0a04237ffd",
   "pii_redactor/detectors/ner_failure.py": "c3d0a6358265f037dec5ce23aeae0b441dd7d6acd3f4bbe77583337ef5dae82d",
-  "pii_redactor/detectors/tb_detector.py": "a76404d7d3c0f7576e173dcdeafc8744b53fc03cb39723efddd57eb354896935",
+  "pii_redactor/detectors/tb_detector.py": "161b941e245c61d7e611290efbdebf5dfac79956dc77ef147e29ef33fc84aa32",
   "pii_redactor/detectors/thai_id.py": "edd814ed58e6c4864370ec4490f71dc01b2b86e159f46dd53de03f2361917ca4",
   "pii_redactor/detectors/tner_client.py": "9f73a8533ed3bd16a29733f19b6b1a18f544975073ef8780b7347e0ae7e26a79",
   "pii_redactor/dsar.py": "bb42bbc6ad98e562a6656829010d740b7c66307af87c591433bfabf355c10fa0",

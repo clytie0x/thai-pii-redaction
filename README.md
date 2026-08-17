@@ -5,7 +5,9 @@ detection, masking/pseudonymization, the reversible vault/mapping, restoration,
 and deterministic PDPA report generation on the user's device.  Desktop 3.0.0
 does not expose a provider command.
 
-The secondary Hosted 3.0.0 Web App runs for team08 on the AI for Thai platform:
+The secondary Hosted 3.0.1 Web App candidate is prepared for team08 on the AI
+for Thai platform. Deployed production remains Hosted 3.0.0 until the protected
+release and public acceptance gates pass:
 
 <https://team08.aiforthai.in.th>
 
@@ -39,7 +41,7 @@ as the primary user journey.
   [SHA256SUMS](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS)
   and verify GitHub provenance before proceeding.  The release is mutable, so
   a filename or tag alone is not an integrity check.
-- **Web App:** Hosted 3.0.0 provides Standard access per signed browser session
+- **Web App:** the Hosted 3.0.1 candidate provides Standard access per signed browser session
   and Priority access per issued invite. Original text reaches the AI for Thai
   edge and team service for detection. Only the exact reviewed, policy-checked
   protected text may be admitted through the bounded queue to the single
@@ -54,7 +56,7 @@ as the primary user journey.
   where page code may already observe or transmit it; the Side Panel is the
   stronger raw-entry boundary.  The separately certified ZIP SHA-256 is
   `feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670`.
-- **Hosted text-layer PDF:** Hosted 3.0.0 accepts bounded text-layer PDF to
+- **Hosted text-layer PDF:** the Hosted 3.0.1 candidate accepts bounded text-layer PDF to
   produce Protected Markdown after exact-payload review. The source PDF remains
   unchanged and never reaches Pathumma. PDF redaction/rebuilding, scanned or
   image-only PDF, and OCR remain unsupported; `/redact-pdf` and
@@ -135,7 +137,7 @@ The browser permits one unresolved provider-bound request at a time.
 | `api/` | Read-only nginx on loopback host port 20071.  Re-adds the stripped `/api` prefix, exact allowlist, holds the inner service key, applies limits and fixed errors. |
 | `core/` | Non-root/read-only FastAPI container, internal network only.  Port-owned auth/report policy wraps a vendored upstream slice. |
 | `pdf-parser/` | Secretless, networkless, non-root parser on a Unix socket. It accepts one bounded text-layer PDF job, returns strict extracted segments/metadata, and cleans its volatile work directory before readmission. |
-| `sync/` | Pins 75 upstream files from `44ef30b0e8ea2021fc4ceec9d3b12dc9f64c750f` with per-file hashes. |
+| `sync/` | Pins 75 upstream provenance entries from `3c2997835dbdc9842e38b38fb89f09642a713817` with per-file hashes; Hosted keeps its release-owned VERSION. |
 | `evaluation/thai_pii/` | Sprint 3 deterministic synthetic/adversarial evidence; outside all runtime build contexts and provider-free. |
 
 The hosted image omits disabled Paddle OCR dependencies.  Its PyThaiNLP
@@ -153,7 +155,7 @@ by the official Web App: 20 canonical paths and one exact `/v1` alias for each.
 This is not an arbitrary third-party API, developer-key product, or broad CORS
 surface. Browser requests use `/api/...`; the organizer strips that prefix and
 the API proxy restores it for Core. The HTTP contract remains version 2 for
-Hosted 3.0.0.
+Hosted 3.0.1.
 
 | Method/path | Purpose |
 |---|---|
@@ -224,7 +226,7 @@ Acceptance then verifies the same exact SHA, synthetic auth/business/provider
 flows, route denial, logs, and the real public edge.  This rollback is repository
 hardening, not an official Participant Guide requirement.
 
-The Hosted 3.0.0 release source requires exactly five protected,
+The Hosted 3.0.1 release source requires exactly five protected,
 environment-scoped variables:
 
 - `APP_AIGUARD_API_KEY`

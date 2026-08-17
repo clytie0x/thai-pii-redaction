@@ -1,4 +1,4 @@
-# Status (2026-08-17 — Hosted 3.0.0 deployed; Stage 9 complete)
+# Status (2026-08-17 — Hosted 3.0.0 deployed; 3.0.1 hotfix candidate local)
 
 ## Current release boundary
 
@@ -8,6 +8,21 @@
   three manual ops gates (logs #143199, exact revision/process #143200,
   restart/recovery #143201). All four services restarted healthy with the exact
   runtime label; no rollback triggered.
+- A local Hosted `3.0.1` hotfix candidate now exists on
+  `codex/hosted-3.0.1-hotfix`; it is not built, pushed, or deployed. The
+  release-owned Core VERSION, production web copy, and acceptance expectations
+  are `3.0.1`, while this current-production paragraph deliberately remains
+  `3.0.0` until a protected release passes. The port manifest now pins upstream
+  `3c2997835dbdc9842e38b38fb89f09642a713817`, which is the prior 75-file source
+  base plus only the reviewed Thai NAME-boundary fix. The exact real-port
+  restoration regression and generated-name adversarial control pass inside the
+  Core dependency image; the candidate detector-code binding is
+  `de2edadb469a753a6b928af45b8e52c9186cf527c96b88e777ad91ab7d03396f`.
+  Focused execute is `11/11`, frontend behavior and
+  platform policy contracts pass. Non-usable `incomplete|unsafe` execute results
+  project an empty `restored_text`, receive distinct recovery copy, and never
+  enter the result DOM. Full images, CI-equivalent, repeated live provider,
+  independent review, and protected deployment are still pending.
 - Current deployment, same-origin application API, data-flow, acceptance,
   rollback, and operations guidance is centralized in
   `docs/HOSTED-3-DEPLOY-API-GUIDE.md`. Older deployment documents remain
