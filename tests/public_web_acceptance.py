@@ -77,7 +77,7 @@ STATIC_ASSETS = {
     "/home.css": ("text/css", b"    @font-face", None),
     "/home.js": ("application/javascript", b"document.documentElement.classList.add", None),
     "/app.css": ("text/css", b"  @font-face", None),
-    "/app.js": ("application/javascript", b'"use strict";', None),
+    "/hosted3-app.js": ("application/javascript", b'"use strict";', None),
     "/product.css": ("text/css", b"@font-face", None),
     "/assets/ai-guard-mark.svg": ("image/svg+xml", b"<svg", None),
     "/assets/ai-guard-mark-one-color.svg": ("image/svg+xml", b"<svg", None),
@@ -162,7 +162,7 @@ OPENER = urllib.request.build_opener(
 def fetch(url: str) -> tuple[int, dict[str, str], bytes]:
     request = urllib.request.Request(
         url,
-        headers={"User-Agent": "aiguard-public-acceptance/2.5"},
+        headers={"User-Agent": "aiguard-public-acceptance/3.0"},
         method="GET",
     )
     try:
@@ -218,11 +218,12 @@ def main() -> int:
 
     pages = {
         "/": "ปกป้องข้อมูลก่อน",
-        "/app": "Hosted Web App",
+        "/app": "Hosted 3.0.0 Web App",
         "/privacy": "ข้อมูลไปไหน",
         "/terms": "ใช้ได้เมื่อ",
         "/help": "แก้ปัญหา",
         "/downloads": "Manual / Developer installation",
+        "/developers": "Contract &amp;",
         "/robots.txt": "Disallow: /api/",
         "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
     }
@@ -238,13 +239,15 @@ def main() -> int:
         assert_no_insecure_network_reference(text, path)
         if path == "/":
             assert 'href="/downloads#desktop">ดาวน์โหลด Desktop 3.0.0' in text
-            assert 'id="accessCode"' not in text
+            assert 'id="h3StartStandard"' not in text
             assert 'src="/app.js"' not in text
             assert "/app#privacy-scan" in text
         if path == "/app":
             assert 'content="noindex,nofollow"' in text
-            assert 'id="accessCode"' in text
-            assert 'src="/app.js" defer' in text
+            assert 'id="h3StartStandard"' in text
+            assert 'id="h3PrioritySubmit"' in text
+            assert 'src="/hosted3-app.js" defer' in text
+            assert "Hosted 3.0.0" in text
             assert "ข้อความต้นฉบับถึง AI for Thai edge" in text
             assert "Pathumma / thaillm-8b" in text
         if path == "/downloads":
@@ -280,7 +283,7 @@ def main() -> int:
     assert status == 200
     health = json.loads(body)
     assert health.get("status") == "ok"
-    assert health.get("version") == "2.5.0"
+    assert health.get("version") == "3.0.0"
     assert headers.get("Strict-Transport-Security") == "max-age=31536000"
 
     for path in LEGACY_DENIALS:
@@ -307,6 +310,7 @@ def main() -> int:
         "/home.jsx",
         "/product.cssx",
         "/unknown.js",
+        "/app.js",
     ):
         status, _headers, body = fetch(HTTPS + path)
         assert status == 404, (path, status)

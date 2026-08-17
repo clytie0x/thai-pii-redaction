@@ -32,7 +32,7 @@ Usage (from this repo, with the upstream venv's python for pyyaml):
     python tests/run_ci_local.py --all
     python tests/run_ci_local.py --job deploy --cold
 
-Only the four intended application variables are forwarded from the machine
+Only the five intended application variables are forwarded from the machine
 environment through a restricted temporary env file. Values never enter
 `docker run` argv, are never printed, and are replaced with a placeholder
 before any output is written to disk.
@@ -67,6 +67,7 @@ INTENDED_APP_VARIABLES = (
     "APP_AIGUARD_API_KEY",
     "APP_AIFT_ACCESS_CODE",
     "APP_AIFT_COOKIE_SIGNING_KEY",
+    "APP_AIFT_PRIORITY_INVITES_JSON",
     "APP_TOKENMIND_API_KEY",
 )
 
@@ -109,8 +110,15 @@ def redact(text: str, secrets: list[str]) -> str:
 def build_script(pipeline: dict, job: str) -> str:
     if job not in pipeline:
         raise SystemExit(f"run_ci_local: no job named {job!r} in {CI_FILE.name}")
-    before = pipeline.get("default", {}).get("before_script", [])
-    script = pipeline[job].get("script", [])
+    default = pipeline.get("default", {})
+    definition = pipeline[job]
+    # GitLab job-level `before_script` replaces, rather than appends to, the
+    # default. The check job intentionally has a different bootstrap because
+    # the Hosted approval/queue contracts import AES-GCM. Simulating the
+    # default here silently omitted that dependency and made local runner
+    # evidence disagree with the actual pipeline.
+    before = definition.get("before_script", default.get("before_script", []))
+    script = definition.get("script", [])
     # The first line answers "which shell am I actually in" on every run, so a
     # future image change that swaps the shell shows up in the log rather than
     # as a mystery failure.

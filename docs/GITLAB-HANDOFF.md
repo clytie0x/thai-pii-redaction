@@ -32,10 +32,11 @@ The guide does not require a Protected runner, Protected Environment,
   visual acceptance passed. `9d38c6753aa0242bc35d09ec3332e90fe3f90079`
   remains the pre-Sprint-2 rollback; Pipeline #35727 remains historical evidence
   of the first successful runner-network correction.
-- Exactly four project variables are configured: `APP_AIGUARD_API_KEY`,
+- Historical production used four project variables: `APP_AIGUARD_API_KEY`,
   `APP_AIFT_ACCESS_CODE`, `APP_AIFT_COOKIE_SIGNING_KEY`, and
-  `APP_TOKENMIND_API_KEY`. Their values were not inspected. GitLab metadata
-  shows all four Protected, Masked, Hidden, and scoped to `team08`.
+  `APP_TOKENMIND_API_KEY`. Their values were not inspected. Hosted 3.0.0 also
+  requires `APP_AIFT_PRIORITY_INVITES_JSON`; deployment must fail before
+  mutation unless all five protected, masked, environment-scoped values exist.
 - Pipeline #35722 was the historical failed production attempt on an earlier SHA.
   `check` passed;
   Compose built and started web/api/core and all became healthy. Deploy then
@@ -57,7 +58,7 @@ The production path:
 
 - calls the reviewed `scripts/deploy_production.sh`, which retains one exact
   previous image/Compose set, separates build from `up`, rechecks current remote
-  main before and after mutation, health/revision-gates all three services, and
+  main before and after mutation, health/revision-gates all four services, and
   restores the previous stack if a post-mutation gate fails;
 - probes health from inside the api/web containers rather than assuming runner
   job loopback reaches host-published ports;
@@ -73,7 +74,7 @@ The production path:
 - runs credential-free public-edge acceptance after internal platform
   acceptance. Plain HTTP must return fixed-host 308 (without reflected query),
   HTTPS must emit HSTS, product/docs pages must resolve, unknown/PDF/OCR/internal
-  paths must remain 404, and public health must report VERSION 2.5.0.
+  paths must remain 404, and public health must report VERSION 3.0.0.
 
 `resource_group: team08-production` and exact-remote-SHA checks remain the
 repository's serialization/stale-deployment controls. `newest_first`, automatic
@@ -87,9 +88,11 @@ it must not be described as an organizer feature or as proof of host recovery.
   `c02ec1c82e22d0e200fbfad68556c169eba68007`; deployed rollback evidence remains
   `72e18bbe723adaf54c847e4b17c2177dfa60dd68` / Pipeline #35744 until a new exact
   protected-main acceptance completes.
-- Web access remains an invite-only Private Beta: no anonymous provider use,
-  user accounts or database. Session fingerprints are bounded in core process
-  memory, logout revokes replay and restart invalidates prior cookies.
+- Hosted 3.0.0 provides Standard signed-browser access and issued Priority
+  Invite access in one application. Neither is a user account or database, and
+  neither bypasses preview, approval, queue, provider, or output gates. Session
+  fingerprints are bounded in Core process memory; ending authority revokes
+  replay and restart invalidates prior cookies.
 - API request/cost controls are global plus signed-session keyed; provider lanes
   are stricter than ordinary text work. Application logs no longer include
   client IP or request target.

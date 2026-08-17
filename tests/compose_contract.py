@@ -17,6 +17,7 @@ SAFE_ENV = {
     "APP_TOKENMIND_API_KEY": "synthetic-provider-key-000000000000",
     "APP_AIFT_ACCESS_CODE": "synthetic-access-code-000000000000",
     "APP_AIFT_COOKIE_SIGNING_KEY": ("synthetic-cookie-signing-key-000000000000000000"),
+    "APP_AIFT_PRIORITY_INVITES_JSON": ('[{"subject_id":"sub_AAAAAAAAAAAAAAAAAAAAAA","role":"priority_invite","enabled":true,"code_sha256":"bd589d9bfd76f29c18d8541750287a480badb3c2272b4f98af6c4439792c2687"}]'),
     "CI_COMMIT_SHA": REVISION,
 }
 
@@ -103,7 +104,7 @@ def check_common(name: str, service: dict) -> None:
     assert service.get("network_mode") != "host", name
     assert service.get("read_only") is True, name
     assert "no-new-privileges:true" in (service.get("security_opt") or []), name
-    assert limits.get("pids") in {128, 256}, name
+    assert limits.get("pids") in {32, 128, 256}, name
     assert service.get("stop_grace_period") == "3m30s", name
     for mount in service.get("volumes") or []:
         assert mount.get("type") != "bind", name
@@ -116,7 +117,7 @@ def check_common(name: str, service: dict) -> None:
 def main() -> int:
     try:
         services = rendered_config().get("services", {})
-        assert set(services) == {"web", "api", "core"}
+        assert set(services) == {"web", "api", "core", "pdf-parser"}
         for name, service in services.items():
             check_common(name, service)
 
@@ -124,18 +125,61 @@ def main() -> int:
         check_port(services["api"], published="20071", target=8000)
         assert not services["core"].get("ports")
         assert services["web"].get("tmpfs") == [
-            "/var/cache/nginx:size=32m",
-            "/var/run:size=4m",
-            "/tmp:size=4m",
+            "/var/cache/nginx:size=32m,uid=101,gid=101,mode=0755",
+            "/var/run:size=4m,uid=101,gid=101,mode=0755",
+            "/tmp:size=4m,uid=101,gid=101,mode=1777",
         ]
         assert services["api"].get("tmpfs") == [
-            "/var/cache/nginx:size=64m",
-            "/var/run:size=4m",
-            "/tmp:size=4m",
-            "/etc/nginx/conf.d:size=4m",
+            "/var/cache/nginx:size=64m,uid=101,gid=101,mode=0755",
+            "/var/run:size=4m,uid=101,gid=101,mode=0755",
+            "/tmp:size=4m,uid=101,gid=101,mode=1777",
+            "/etc/nginx/conf.d:size=4m,uid=101,gid=101,mode=0755",
         ]
+        for name in ("web", "api"):
+            assert services[name].get("user") == "101:101", name
+            assert services[name].get("cap_drop") == ["ALL"], name
         assert services["core"].get("tmpfs") == ["/tmp:size=128m,mode=1777"]
         assert services["core"].get("cap_drop") == ["ALL"]
+        assert services["pdf-parser"].get("tmpfs") == [
+            "/work:rw,noexec,nosuid,nodev,size=64m,uid=1000,gid=1000,mode=0700"
+        ]
+        assert services["pdf-parser"].get("network_mode") == "none"
+        assert services["pdf-parser"].get("user") == "1000:1000"
+        assert services["pdf-parser"].get("cap_drop") == ["ALL"]
+        assert any(
+            str(value).endswith("pdf-parser/seccomp.json")
+            for value in services["pdf-parser"].get("security_opt", [])
+        )
+        assert not services["pdf-parser"].get("environment")
+        assert not services["pdf-parser"].get("ports")
+        assert services["pdf-parser"]["deploy"]["resources"]["limits"] == {
+            "memory": str(512 * 1024 * 1024),
+            "cpus": 1.0,
+            "pids": 32,
+        }
+        core_mounts = services["core"].get("volumes") or []
+        parser_mounts = services["pdf-parser"].get("volumes") or []
+        assert core_mounts == [
+            {
+                "type": "volume",
+                "source": "pdf-socket",
+                "target": "/run/aiguard-pdf",
+                "read_only": True,
+            }
+        ]
+        assert parser_mounts == [
+            {
+                "type": "volume",
+                "source": "pdf-socket",
+                "target": "/run/aiguard-pdf",
+            }
+        ]
+        assert services["core"]["depends_on"] == {
+            "pdf-parser": {
+                "condition": "service_healthy",
+                "required": True,
+            }
+        }
         assert services["web"]["healthcheck"]["test"] == [
             "CMD",
             "/usr/local/bin/aift-healthcheck",
@@ -145,6 +189,11 @@ def main() -> int:
             "/usr/local/bin/aift-healthcheck",
         ]
         assert services["core"]["healthcheck"]["test"] == [
+            "CMD",
+            "python",
+            "/app/healthcheck.py",
+        ]
+        assert services["pdf-parser"]["healthcheck"]["test"] == [
             "CMD",
             "python",
             "/app/healthcheck.py",
@@ -167,6 +216,10 @@ def main() -> int:
             core_environment.get("AIFT_COOKIE_SIGNING_KEY")
             == SAFE_ENV["APP_AIFT_COOKIE_SIGNING_KEY"]
         )
+        assert (
+            core_environment.get("AIFT_PRIORITY_INVITES_JSON")
+            == SAFE_ENV["APP_AIFT_PRIORITY_INVITES_JSON"]
+        )
         assert "AIGUARD_PDF_MAX_PAGES" not in core_environment
         assert services["core"]["deploy"]["resources"]["limits"]["memory"] == str(
             2 * 1024 * 1024 * 1024
@@ -175,6 +228,7 @@ def main() -> int:
             ("web/healthcheck.sh", "kill -QUIT 1"),
             ("api/healthcheck.sh", "kill -TERM 1"),
             ("core/healthcheck.py", "os.kill(1, 15)"),
+            ("pdf-parser/healthcheck.py", "os.kill(1, signal.SIGTERM)"),
         ):
             source = (REPO / relative).read_text(encoding="utf-8")
             assert signal in source, relative

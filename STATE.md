@@ -1,7 +1,534 @@
+# Status (2026-08-17 — Hosted 3 Stage 7 complete; Stage 8 not started)
+
+## Current release boundary
+
+- Stages 0 through 6 are complete locally. The source candidate is now Hosted
+  `3.0.0`, uses HTTP contract version 2, and exposes exactly 40 routes in the
+  reviewed local stack.
+- This is a Hosted 3.0.0 release candidate, not production evidence. The
+  deployed production remains Hosted `2.5.0` with exactly 16 public locations until the
+  exact Stage 8 commit passes the protected Stage 9 deployment and public
+  acceptance pipeline.
+- Desktop remains published at 3.0.0 and Extension remains 3.0.0 Manual. The
+  Hosted migration does not change either sibling channel.
+- Audio, TTS, images, Vision, scanned/image-only PDF, and OCR remain excluded.
+  Hosted text-layer PDF produces Protected Markdown; it does not redact or
+  rebuild the source PDF and does not restore PII into the PDF artifact.
+- Stage 7 reran the locked 138-case direct-PII corpus and separate 32-case
+  Section 26 heuristic corpus in a networkless Core image. It reproduced exact
+  typed precision 76.86%, recall 77.50%, F1 77.18%, protective-character recall
+  91.57%, zero network/provider calls, detector-code SHA-256
+  `01bb7d890aa79cbc4f03a8c8da09c134e7e5074cfca3ef64960bf401c7391c64`,
+  and thainer tree SHA-256
+  `bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315`.
+  These are deterministic synthetic/adversarial results, not a population
+  benchmark or legal/compliance accuracy. Stage 8 exact-image acceptance and
+  Stage 9 protected deployment have not yet run.
+
+## Stage 5 status
+
+- Stage 4C is verified locally at Core image
+  `sha256:2582ecba14300dd816a7b788f562d6c70325a3098bffd8adaa57a86d6bd6b1eb`,
+  revision `stage4c-final-local-contract`; the approved parser is
+  `sha256:2e9244ee0eb465313a414274d53418525c1e6d7387e6d9f55b1270345791a91c`,
+  revision `stage3-final6-local-contract`.
+- Stage 5 is complete for the local-only candidate. The exact four-image
+  revision is `stage5-final-local-contract-r3`: web
+  `sha256:69b7129b0589df1f190767dd1f8b7247fcf6212dfb065e6c35aea1d14a3749f0`,
+  API `sha256:e2a03cf7069b9fc8cb4be5c613df14d7d8e5e3ba9f8606dd0ade2ca43d20f2ab`,
+  Core `sha256:2d03c7191b247bbb4c75d2c47728fc0c022881877e9acfc0a1bf6a912ad842a8`,
+  and parser `sha256:98f46c99744fa9184fe17c3618944d9a28cf42727b810ac0bff51033b90f3cc2`.
+  Creation times are respectively `2026-08-16T18:46:38.195506729Z`,
+  `2026-08-16T18:46:36.355848559Z`, `2026-08-16T18:47:33.200293594Z`,
+  and `2026-08-16T18:46:52.053046898Z`.
+  The approved edit surface was the port-owned Core overlay and authority
+  gateway, exact API Nginx proxy, four-service Docker/Compose wiring,
+  release-source/rollback scripts, and their tests; manifest-pinned vendored
+  upstream files remained out of scope.
+- The local candidate may expose the approved 40 exact API locations. Deployed
+  production remains Hosted `2.5.0` with exactly 16 public locations; all 24
+  Hosted 3 additions remain unexposed in production. No deployment, public
+  acceptance, version migration, or Stage 6 UI work has started.
+- Evidence is current-source Stage 5/static/authority/rate/queue contracts,
+  built-Nginx checks, caller-facing local Compose probe, Core/Parser parity
+  `3/3`, legacy image integration `2/2`, parser lifecycle `3/3`, and the
+  final 27-command pinned CI-equivalent check (exit 0). The single
+  GPT-5.6 Sol/xhigh adversarial reviewer reported no material disagreement.
+  Parser and Compose foundations retain network isolation, secretless
+  Unix-socket transport, Core read-only socket access, health ordering,
+  resource limits, cleanup, and runtime inventory controls.
+- Stage 6 is now in progress for the local-only App and reference-page
+  integration. Before product edits, the `stage5-final-local-contract-r3`
+  images were checked locally under their `aiguardstage5-*` names and matched
+  the documented digests; source contracts still prove the 40-location local
+  candidate. A read-only public check returned `/api/health` version `2.5.0`
+  and fixed `404` for the unexposed Standard-start path. No deployment, public
+  acceptance, version migration, or production mutation occurred.
+- The active Stage 6 caller probe is `https://127.0.0.1:20270`, a loopback-only
+  self-signed TLS edge defined by `web/nginx.stage6-edge.conf` and
+  `docker-compose.stage6-local.yml`. It proxies only same-origin candidate API
+  calls and is not production TLS evidence. Chromium verified synthetic
+  Standard start (201), session confirmation (200 with timing headers), and a
+  protected custom-text preview. The current local source slice is
+  `web/app.html`, `app.css`, `hosted3-app.js`, and `developers.html`.
+- Stage 6 is complete locally. Hidden legacy workflow and cross-page source-copy
+  gates are closed; executable behavior, complete failure/queue/browser, exact
+  final images/full CI, and all three focused re-reviews pass on final3.
+  Production remains Hosted 2.5.0 with exactly 16 public locations; no
+  deployment or version migration has occurred.
+- During the retained-workflow integration gate, the active result surface now
+  owns compact raw-versus-protected working comparison, provider/timing/receipt
+  evidence, glossary limits, protected exports, and a presenter/fullscreen
+  action. The active Inspect task owns five synthetic scenario entry points.
+  The executable zero-dependency behavior contract now proves all seven deep
+  links, non-submitting scenarios, Inspect/report ownership, custom/PDF gates,
+  presenter focus, provenance, and clearing. The hidden legacy wrapper has been
+  deleted from the production App; full queue/error/browser lifecycle evidence
+  remains open.
+- The latest source-only parity pass adds a value-free Sensitive Data Map from
+  current `/detect` fields, shows Section 26 only from Core-returned protected
+  preview/result fields, derives an Executive Summary only from a verified
+  custom execute result, exposes explicit zero-residual/zero-leftover evidence,
+  and reports `/health` as liveness only. Custom restored DOM now requires exact
+  pass/zero safety and restoration gates; PDF result validation rejects a
+  `restored_text` field. Presenter fallback hides custom raw comparison. These
+  changes pass the executable behavior contract and the provider-free secure
+  built-caller parity slice. Retained-workflow parity is closed, but Stage 6 is
+  still open pending complete PDF/queue/result failure-state evidence, final
+  images, browser matrix, and all three re-reviews.
+- A Stage 6-only fake Tokenmind service now runs solely in the loopback local
+  Compose overlay with no production credential. The secure built caller
+  completed synthetic custom and real fixture-PDF preview→queue→claim→execute
+  journeys through the local 40-route stack. Browser inspection rejected the
+  first PDF result because it displayed raw Markdown as one `<pre>`; the client
+  now validates and renders only fixed provenance, heading, and paragraph nodes
+  via `textContent`, rejecting HTML/link/image/table/code constructs. This is
+  local fake-provider evidence only, not final-image or deployment evidence.
+- The static-first `/developers` and six-scene Home/reference copy gates are now
+  source-complete: exact starting rate/error groups are documented, and Home,
+  Privacy, Help, Terms, and Downloads distinguish deployed Hosted 2.5.0 from
+  the Standard/Priority local candidate and text-layer PDF→Protected Markdown
+  without weakening the continuing PDF-redaction/OCR denial. Static and built-
+  Nginx contracts pass; final viewport and reviewer evidence remains open.
+- First-round Stage 6 reviews found and the current source fixes authority/end/
+  cancel ambiguity, Inspect 401 clearing, queued/running mutation locks,
+  uncertain execute no-retry truth, portable receipt provenance, custom
+  Presenter privacy, task-specific result focus/headings, stable H1, complete
+  no-JS mobile routes, duplicate live announcements, local-edge request logs,
+  mobile PDF overflow, technical-first PDF reading order, and roughly 55 KiB of
+  dead legacy App CSS. Real 390×844 browser evidence now reports zero PDF/result
+  overflow and semantic protected-document headings/paragraphs. Exact final3
+  focused re-reviews pass these fixes. A fresh signed-out App's handled
+  `/api/auth/session` 401 remains the one explicit Chromium failed-resource
+  exception required by the locked HttpOnly session contract; other console/
+  CSP/resource errors remain blockers.
+- The first exact Stage 6 candidate is superseded after a status-only reload
+  could attempt claim without a capability. Exact final2 revision
+  `stage6-final2-local-contract` is web
+  `sha256:864ccedf7e3238118fa74437e0277d2c3208231611fce44a8eec68b53c1e6c23`,
+  API `sha256:8975bc74107c3b89cae4b4d631bea5f2ec642f3b0afe46d5ba79f49c407ff91f`,
+  Core `sha256:9783ac044fbdc887e729022db9cdcd264d32076644d4c080e61c170e5e453a8b`,
+  and parser `sha256:a0b533aa9e4316db032189536947c483ae06626a0ec34cf86a2d1484219135b5`.
+  Exact parity is `3/3`, legacy integration `2/2`, parser lifecycle `3/3`, and
+  the expanded pinned check passes `28/28` in `193.9 s`. The built route/
+  viewport matrix passes `64/64`; no-JS, reduced motion, fallback, Presenter,
+  custom/PDF semantic result, log, temp cleanup, and zero-persistence evidence
+  is recorded in the durable redesign document. Art, frontend/security, and
+  UX/accessibility focused re-reviews each bind a final PASS to exact final3
+  with no material disagreement. Stage 6 is complete locally; Stage 7 has not
+  started and production remains Hosted 2.5.0/16 and unchanged.
+
 # สถานะงาน (16 ส.ค. 2569 — Concept C Production Web Live)
 
 ## Current productionization candidate
 
+- Hosted 3.0 implementation is active on branch
+  `codex/production-web-redesign`. Production and `core/VERSION` remain Hosted
+  `2.5.0`, while local Stage 1 contains an unexposed authority/timing
+  foundation under the bounded port-owned overlay. Stage 0 passed the complete
+  14-check native implementation/test
+  baseline and independent art, frontend/security, and UX/accessibility closeout
+  review on 2026-08-16. Stage 1 authority/timing implementation, rebuilt-image
+  verification, expanded 15-check baseline, and all three independent reviews
+  passed. Stage 2 approval/custom-text-preview implementation is complete:
+  the local port-owned overlay contains an encrypted content-stateless approval
+  engine, deterministic `pg-v1` protection, and an internal provider-free
+  custom-text preview handler. Its sixteen focused tests, including exact
+  initial/pre-mint/deadline timing boundaries and blocked/uncertain null timing,
+  concurrent one-use consumption, Token-only document tickets, sensitive-fact
+  cleanup, and single-worker fail-closed startup, pass. The check job now pins
+  exact Alpine `py3-cryptography=42.0.7-r0`, and the focused test passes in the
+  digest-pinned GitLab `check` job image; deploy/acceptance/ops do not inherit
+  that package. The Core runtime remains separately locked to
+  `cryptography==50.0.0`.
+  The final expanded 16-check baseline passed. Final local Linux image
+  `sha256:8b743aa18fd9f03741b99cc997ac590bb1f881b92277ead7401475e0dd1879a9`
+  matched all ten current gateway/auth/Hosted3 Python sources byte-for-byte; its
+  real provider-free Standard preview replaced synthetic Thai NAME/EMAIL/PHONE,
+  omitted raw input, produced deterministic pg-v1 output, and succeeded without
+  a provider credential. The same image rejects `UVICORN_WORKERS=2` before any
+  manifest-pinned application import.
+  Independent art-direction/scope, frontend/product-security, and UX/lifecycle
+  final re-reviews all passed. Stage 3 secretless text-layer PDF implementation/
+  test gate has passed locally again after the final transport/semantic
+  correction; all three independent closeout reviews passed. Stage 3 is complete
+  and Stage 4 queue/scheduler implementation has started. Its
+  Stage 3A history began with a hardened, still-unexposed parser candidate:
+  hash-locked pikepdf `10.10.0` with bundled qpdf `12.3.2`, pdfplumber `0.11.10`,
+  PDFium `5.12.1`, a bounded Unix-socket protocol, a deterministic fictional Thai
+  résumé PDF, fixed active-content/text-layer/raster/visible-text gates, and local
+  parser image
+  `sha256:6e1047529f4e1bda5a0e293d3deaa11ccbec8a2e85dda4537866b33d55b1aac5`.
+  The fixture renders cleanly and the parser returns one page, 31 immutable
+  segments, and `omitted_visual_page_numbers:[1]`. The first lifecycle review's
+  thread-timeout and swallowed-unlink blockers are fixed: each parse runs in a
+  killable child that is reaped before capacity is released, framing/body work is
+  time-bounded, worker output is reconstructed through a strict allowlist, and a
+  private-spool unlink failure stops parser PID 1 with exit `70`. Current source+
+  image tests pass `11/11`, container lifecycle tests pass `2/2`, and the real
+  parser output passes the final Stage 2 protector in Token mode with 11 detected
+  entities across eight types and no residual block. Invisible/clip-only render
+  modes `3` through `7`, transparent text, and recursively reachable page/Form clipping paths
+  that cannot be visibility-resolved are rejected under bounded depth/cycle
+  validation. The official Moby `seccomp/v0.2.3`
+  deny-by-default profile does not
+  allow `io_uring_setup`, and all Python dependency downloads remain hash-locked.
+  Independent art/product, frontend/security, and UX/lifecycle re-reviews all
+  passed against that exact image. Stage 3A is closed; Stage 3B Core Unix-socket
+  client and provider-free document-preview integration is now in progress.
+  Stage 3B found a value-free false `LOCATION` signal formed only across the
+  boundary of two joined protected segments. The outbound gate was retained;
+  the fictional achievement line was rewritten and the deterministic scenario
+  pin advanced to
+  `57ffcd9cddfe5abbe3b5b276ad93d22a549d386f01967344315a97cbafc51e6c`.
+  The provisional segment-aware Token path now preserves all 31 segments and
+  passes the combined gate with 12 detections across nine types and protected
+  digest `4e402d73c75b8699706690b7b4cb4a1c2e789d97c32daae1de4eb0999ab5d03f`.
+  This is not final Stage 3B image/reviewer evidence.
+  Core now also contains the strict streaming Unix-socket client, source-free
+  synthetic/uploaded document-preview DTO and approval service, segment-aware
+  Token protection, exact protected-size/timing caps, and a source-anchored
+  artifact validator that accepts only role/segment IDs and renders fixed Thai
+  headings plus escaped Markdown/plain text/semantic HTML with provenance.
+  Focused preview `4/4`, artifact `5/5`, real two-image UDS `4/4`, and real
+  parser-to-protector scenario tests pass. Compose now includes an internal
+  no-network, read-only, non-root, cap-dropped, seccomp/resource-bounded parser
+  with private work tmpfs and a socket-only volume mounted read-only by Core. An
+  expanded current-source parser corpus passes `16/16` in the pinned dependency
+  environment, including modes 3-7, recursive clipping, inert/active structures,
+  exact text/segment/page/dimension/raster limits, compressed/inline content,
+  cycles and resource bombs. That corpus found and fixed a direct-object wrapper-
+  identity reuse defect in the recursive object walker; the valid external-file-
+  reference regression now fails closed. This is not yet final rebuilt-image
+  evidence. The subsequent Stage 3C local implementation/test gate first passed
+  against Compose-built parser image
+  `sha256:a656da8b5ea16828f943931fe5bcb9d971ca112bd39b61c21e4f17e6b392c88b`
+  and Core image
+  `sha256:54df5b2206d8d9ec70480a995e69c856abf44ef6d8d104b5a6c50f2d5461647d`,
+  both labelled `stage3-final-local-contract`. Exact image evidence passes parser
+  `16/16`, lifecycle `3/3`, Unix-socket `4/4`, real scenario gate `1/1`, and
+  source/image parity `3/3`; the complete 19-command native check surface passes.
+  The four-service candidate has healthy parser/Core containers, exact no-network/
+  read-only/non-root/cap/seccomp/resource/socket controls, 31 segments and 30
+  separators through the real Compose socket, and zero fixture/ticket/synthetic-
+  secret markers in the bounded logs. That image pair is now superseded
+  intermediate evidence: Stage 3D preparation found that document tickets used
+  the custom-text prompt binding. That intermediate source selected bindings by
+  ticket kind and locked document branches to
+  `structure-protected-document-json-v1`; the later Stage 3D classification
+  protocol supersedes that document revision;
+  focused approval `16/16`, preview `6/6`, artifact `6/6`, and authority `10/10`
+  tests pass. Preview warnings now always disclose selectable-text-only/OCR/
+  visual-layout limits and add exact omitted pages when present. Their outcome
+  wording is status-aware: only success says detected PII was replaced, while
+  blocked/uncertain state that no usable protected result was returned and no
+  protected text was sent to Pathumma. Replacement image/parity/Compose evidence
+  now passes against parser image
+  `sha256:2413c8bf2f39163f26152055f1c4405515d2f6f8a3bdafcc6431eb79b571f335`
+  and Core image
+  `sha256:ab25c1e65c5c65ffdccbabb4c5f0daab03a6106072692b298a6210155eee173c`,
+  both labelled `stage3-final2-local-contract`: parser `16/16`, lifecycle `3/3`,
+  Unix socket `4/4`, parity `3/3`, scenario gate `1/1`, and the complete current
+  native check surface `20/20`. The exact healthy Compose runtime preserves the
+  parser isolation/resource controls and read-only Core socket mount; its real
+  source-free scenario produces 31 segments/30 separators, 12 detections across
+  nine types, the document-specific prompt binding, four truthful warnings, and
+  no protected marker in bounded logs. Independent Stage 3C closeout review is
+  in progress. The image pair is now superseded by the measured Stage 3D client/
+  cap correction described next; a final rebuild is required. This remains local
+  evidence.
+  An exact opt-in Stage 3D harness now locks the immutable protected-segment
+  request. Live Pathumma evidence showed that the proposed 80-segment envelope is
+  not usable: the generic 1,024-token client stopped non-finally, and a 4,096-token
+  document request still returned a truncated 3,701-byte JSON body. A later test
+  at the former 16,000-code-point/48-KiB internal hard stop returned a truncated
+  1,621-byte body. The provider-executable cap is therefore 8,000 protected code
+  points, 32 segments, and 9,120 encoded request bytes while the parser retains an
+  independent 80-segment safety bound. Repeated grouped-ID and role-vector live
+  tests exposed truncated, duplicate, missing, or off-by-one model results; AI
+  Guard did not repair or accept them. Current source uses
+  `structure-protected-document-classifications-v1`: Pathumma returns exact
+  `{segment_id,role}` rows in input order and AI Guard validates every position,
+  groups deterministically, and renders fixed headings. The real default résumé
+  passed at 31 segments/3,962 request bytes/5,827 ms. The 8,000-code-point edge
+  passed at 1 segment/8,126 request bytes/1,271 ms. The Thai-plus-Token 32-segment
+  edge reaches exactly 9,120 request bytes and passed three consecutive runs at
+  6,010/5,878/5,956 ms with exact 1,589-byte validated responses. No provider-
+  authored content or credential was emitted. Provider transport runs in a
+  killable child, streams the outer response under 32 KiB before parsing, retains
+  a separate 32-KiB extracted-response cap, and enforces an absolute parent-owned
+  200-second deadline. Focused preview and artifact/transport tests pass `7/7`
+  and `7/7`.
+  The following final3 image/parity/Compose result is now superseded because it
+  predates those request/response/deadline changes. It used parser image
+  `sha256:a2455a13f2e214b31f76bdca57950a301d219c4f6711e22102ae639217d2f65e`
+  and Core image
+  `sha256:05de433e87497cf8a4a42447cb4b58495551724aa6d1600f4230f577a8d29cfc`,
+  both labelled `stage3-final3-local-contract`: parser `16/16`, lifecycle `3/3`,
+  Unix socket `4/4`, parity `3/3`, real scenario `1/1`, preview `7/7`, artifact
+  `6/6`, and the full native check surface `20/20`. The healthy exact Compose
+  runtime reported the 32-segment/4,096-token contract, the executable 31-segment
+  scenario, unchanged isolation/socket controls, and zero bounded log marker hits.
+  A transient final4 rebuild produced parser image
+  `sha256:897b35f5e1be3c35bcc93249b8c0f1aa871013e8a7becea8234c93af71b74ef0`
+  and Core image
+  `sha256:a010149f1a804f26f50de8537b10162c981c03938ca8de800fbd9d5b2d2ebe09`,
+  both labelled `stage3-final4-local-contract`; parser `16/16`, lifecycle `3/3`,
+  Unix socket `4/4`, scenario `1/1`, parity `3/3`, and native `20/20` passed, but
+  those bytes predate the classification protocol and are not closeout evidence.
+  Final5 replacement images are parser
+  `sha256:afb81cbdd8cf409c8bf7c40401f0495295637df8571e9fe0d5eadd772b9df3c5`
+  and Core
+  `sha256:83645bfb64269ffde2fca8f30c1821c2e4c02e3a89bfb656edabbcc7a8a31c0b`,
+  both labelled `stage3-final5-local-contract`. Exact image evidence passes
+  parser `16/16`, lifecycle `3/3`, Unix socket `4/4`, scenario `1/1`, parity
+  `3/3`, authority `10/10`, approval `16/16`, preview `7/7`, artifact/transport
+  `7/7`, and native `20/20`. Both live boundaries also passed directly from the
+  final5 Core image: Thai-plus-Token 32 segments/9,120 bytes in 6,094 ms and the
+  8,000-code-point edge in 970 ms. The exact healthy Compose runtime retains the
+  parser no-network/read-only/non-root/cap/seccomp/resource/tmpfs controls and a
+  read-only Core socket mount; the real scenario preserves 31 segments/30
+  separators, 12 detections across nine types, 3,962 request bytes, and the
+  classification prompt, with zero bounded log marker hits. Independent review
+  then proved final5 could allocate a transparently decompressed HTTP body before
+  its wire limit and had no durable semantic-usefulness assertion for the default
+  résumé. Current source requests identity encoding, rejects every non-identity
+  response before iteration, caps raw wire bytes, and adds a protected opt-in
+  gate for the reviewed role distribution, fixed heading order, provenance, and
+  exact segment coverage. Final5 is therefore superseded. Final6 images are
+  parser
+  `sha256:2e9244ee0eb465313a414274d53418525c1e6d7387e6d9f55b1270345791a91c`
+  and Core
+  `sha256:21792b0e05d161907000e4c5cc8b7e8f655953d8efd62aef8f3fab8e8ea1255b`,
+  both labelled `stage3-final6-local-contract`. Exact-image parser `16/16`,
+  lifecycle `3/3`, Unix socket `4/4`, scenario `1/1`, parity `3/3`, preview
+  `7/7`, artifact/transport `7/7`, and native `20/20` pass. The gzip fixture is
+  rejected before raw-body iteration. Live exact-image boundaries pass at
+  32 segments/9,120 bytes in 6,040 ms and 8,000 code points in 1,169 ms. The
+  default résumé semantic gate passes in 5,702 ms with 31 segments rendered once
+  across seven fixed sections: identity 3, contact 6, experience 8, education 3,
+  skills 4, achievements 5, and other 2; provenance and fixed heading order pass
+  without emitting source/provider content. The exact healthy Compose pair uses
+  these digests, keeps parser `/work` and Core `/tmp` empty, returns one page/31
+  segments/30 separators, and has zero bounded sensitive-marker log hits. Stage
+  3's local implementation/test gate passes; independent art/product,
+  frontend/security, and UX/lifecycle reviewers each report a clear pass on
+  final6. Stage 3 is complete. No public route, deployed parser image, or
+  production evidence exists yet.
+  Stage 4A is complete and was limited to a provider-free, content-free
+  in-memory scheduler/capability foundation plus focused tests. Its local
+  implementation/test gate passes: independently derived AES-GCM
+  queue and claim envelopes bind exact authority/session/subject/boot/JTI/slot/
+  revision/deadline facts; full approval facts are only transient during strict
+  validation, active claim polls retain just the opaque claim-token binding, and
+  the running execution object is repr-suppressed with explicit cleanup. A
+  single-lock, two-slot scheduler bounds active rows
+  at 12 (eight Standard, four Priority), applies the exact global 3:1 claim-grant
+  sequence under contention, borrows idle slots, makes status read-only, moves a
+  first missed claim to the tail, expires a second miss, invalidates cancelled/
+  terminal capabilities. Priority active-row
+  ownership is per issued opaque subject, while status/claim/cancel remain bound
+  to the exact verified session. Claim dispatch now requires the entire 15-second
+  handoff to fit before queue expiry rather than issuing a token with a truncated
+  promise. The Stage 4A queue contract passes `15/15`,
+  including minimal active-poll memory and bounded terminal-history eviction
+  without false active saturation plus exact `15/14`-second handoff boundaries;
+  a foreground poll that crosses its deadline returns fixed `queue_expired`
+  while read-only status reports `expired` / `deadline_expired`.
+  approval remains `16/16`, check-only CI includes the new queue contract, and
+  the complete native surface passes `21/21`. At the Stage 4A closeout this was
+  local source/test evidence with no queue HTTP handler or provider/legacy
+  integration, and no Core image had been rebuilt for Stage 4. The fresh Stage 4A
+  native surface passed
+  `21/21`; independent art/product, frontend/security, and UX/lifecycle reviewers
+  each report a clear pass on the exact current bytes. Stage 4A is complete and
+  Stage 4B internal execute/compatibility integration is now in progress. It is
+  split into B1 internal queue HTTP/disconnect handling, B2 three queue-bound
+  execute services, and B3 legacy `/roundtrip` admission. B1 now has exact
+  internal join/status/claim/cancel handlers, value-free HTTP v2 errors, and an
+  ASGI-disconnect race that removes claim eligibility before selection. Initial
+  reviews found response-after-disconnect, slot leakage, partial-body, immediate-
+  error, double-response, and stale-deadline defects; those exact paths are now
+  covered by focused fixtures. The final transport review then proved that ASGI
+  cannot be used to confirm browser receipt: pinned Uvicorn returns silently from
+  `send()` after some peer losses and also emits a normal post-response
+  `http.disconnect` after successful responses. Both earlier watcher-based
+  confirmation designs are therefore superseded.
+  Current source uses execute-as-acknowledgement. A selected HTTP claim has at
+  least 20 seconds of server-side validity; its shared record/token/wire integer
+  deadline is rounded upward by less than one second, never truncated. At most
+  five seconds are budgeted for response transmission, leaving at least 15
+  seconds of server-side validity for the official client's immediate execute
+  request. This is not a claim about when browser receipt occurs. That
+  exact execute request is the only receipt evidence and atomically starts the
+  running provider state. No execute means no provider contact and, at expiry,
+  the normal first-miss tail demotion or second-miss terminal expiry. Explicit
+  send error, timeout, or controller cancellation still abandons the pending
+  claim at zero misses and retains fairness; a silent peer loss that ASGI cannot
+  distinguish is safely bounded by the less-than-21-second missed-claim rule. The watcher
+  is cancelled before the response so Uvicorn's normal completion sentinel cannot
+  revoke a valid claim. Connected queued timeout creates no claim. Non-claim
+  transport failures remain single-response passthroughs.
+  The focused HTTP suite passes `17/17` and the scheduler suite passes `20/20`,
+  including `.999` fractional grant and full `5+15` server-side boundary
+  fixtures. Prior `22/22` native runs predate these bytes and are historical; a
+  fresh exact-current native rerun passes `22/22`. Independent art/product,
+  frontend/security, and UX/lifecycle re-reviews each report a clear pass. B1 is
+  complete. B2 queue-bound execute-service integration is complete and B3
+  legacy `/roundtrip` queue admission is now in progress. The
+  current local overlay has an initial strict `ExecuteService` plus internal
+  handlers for custom text, pinned synthetic-document, and uploaded protected-
+  text execution. A current queue capability/claim must atomically enter running
+  before provider contact. Custom execution reproduces source/protected digests,
+  rescans before every bounded retry, and restores only through the transient
+  mapping. Synthetic execution reparses and revalidates the pinned PDF; uploaded
+  document execution accepts only approval-bound protected bytes. Both document
+  paths send only protected immutable segments, validate the content-free role
+  AST, render fixed Protected Markdown/plain text, and never restore PII. Fixed
+  failures release the slot with value-free reasons and clear approval/mapping/
+  artifact state. Receipts and document responses exclude source/original-token
+  pairs and mappings; custom execution intentionally returns reviewed protected
+  text plus a restored answer that may contain the caller's original PII, while
+  never returning the transient mapping object. Review then found that the
+  synthetic-document provider call blocked the ASGI loop and that an unrelated
+  late response failure could be misclassified as `residual_pii`; the old
+  `7bf5f768...`/`stage4b2-final2-local-contract` image is therefore superseded.
+  Current source offloads the complete synthetic path, locks a slow-provider
+  heartbeat, restricts `residual_pii` to the outbound gate, and reports unrelated
+  late failures as `internal_error`. The inherited custom provider adapter was
+  also post-buffer-only; current source replaces it with a killable child whose
+  parent owns a 60-second absolute deadline per attempt, requests identity
+  encoding, caps declared/chunked raw response bytes before JSON parsing, and
+  enforces 32,000 code points/96 KiB after parsing. Fixed retryable failures keep
+  the approved three-attempt maximum within the sub-200-second custom envelope.
+  Preview enforces the matching 96-KiB protected-payload cap before ticket mint
+  with fixed `422 provider_payload_too_large`; valid approvals cannot be stranded
+  by an execution-only byte limit. Malformed operator provider construction maps
+  to `provider_configuration`, separately from response-protocol failures.
+  The focused B2 source suite passes `9/9`,
+  including strict internal
+  HTTP routing and zero provider contact for changed source/digest, stale claim,
+  schema, and outbound-gate failures. CI has 23 native commands and the fresh
+  exact-current native surface passes `23/23`. Historical real-detector evidence
+  from the superseded image passed `1/1` with provider input containing no
+  original name/email/phone from the synthetic custom-text fixture and exact
+  restoration of that custom-text fixture afterward. This validates only the
+  custom-text restoration branch; the synthetic-document/PDF branch continues
+  to return protected artifacts without PII restoration. This is
+  historical local evidence only. The replacement Core image is
+  `sha256:cee123fe5ad397079d23ed1d78e9c1c8fcec574e39e2e22043259443db813d4c`
+  labelled `stage4b2-final3-local-contract`; the exact Stage-3 parser image is
+  `sha256:2e9244ee0eb465313a414274d53418525c1e6d7387e6d9f55b1270345791a91c`
+  labelled `stage3-final6-local-contract`. Exact parity passes `3/3`, focused
+  execute passes `9/9` inside the read-only/networkless Core image, real-detector
+  custom-text flow passes `1/1`, and invalid operator configuration maps to the
+  fixed configuration error in-image. The older parser tag failed parity and is
+  not counted. Independent art/product, frontend/security, and UX/lifecycle
+  reviewers each rechecked the exact replacement image/source/status and report
+  a clear pass; B2 has no remaining material disagreement. Nginx
+  continues to deny all 24 planned routes, and no public execute route, browser
+  UI, version bump, production image, or deployment is claimed. B3 local source
+  now wraps the existing vendored `/api/roundtrip` handler without editing
+  `core/app/**`: Priority-only calls wait up to five seconds for the same two
+  scheduler slots, retain the original FastAPI request/response and fixed
+  `429 rate_limited` contract, hold the slot across the complete legacy provider
+  call, and release it in `finally`. The internal entry stores no request body,
+  approval, or caller capability and participates in the shared 3:1 cursor,
+  capacities, owner limit, and pruning. The focused source contract now passes
+  `12/12`, and the exact current local Core image passes `2/2` read-only/
+  networkless byte-parity and real-FastAPI legacy-route checks, including
+  validation precedence, exact five-second `429 rate_limited` denial with zero
+  provider contact, headers/CORS behavior, provider error, disconnect,
+  cancellation, response-send lifecycle handling, and request-text-free Core
+  stdout logs. Independent review reproduced a validation-precedence blocker:
+  endpoint-body text/mode/provider checks could wait behind occupied slots. The
+  port-owned wrapper now runs those exact legacy checks before admission; focused
+  source and image fixtures prove immediate legacy errors, zero provider contact,
+  and no scheduler mutation. The rebuilt image resolves to
+  `sha256:706051f7d132d3ee18c4d7abc3e1b517ceec002fe8983d8bcf279ab4914fffdc`
+  with revision `stage4b3-final2-local-contract`; its image gate passes. The
+  prior final1 image/full-native evidence is superseded. The fresh
+  Docker-executor-style native surface passes all `24/24` commands, including
+  built Nginx/public-surface, secret, log, and Compose-isolation checks. The
+  native simulator now honors the check job's AES-GCM-specific `before_script`,
+  with a focused GitLab contract regression locking that behavior. The same
+  independent GPT-5.6 Sol backend/product/security reviewer reconciled the
+  correction and found no material blockers. Stage 4B3 is complete; Stage 4C
+  is now in progress as the exact-image, concurrency, lifecycle, integration,
+  and review closeout. The owner has authorized one consolidated independent
+  GPT-5.6 Sol reviewer at xhigh reasoning effort for this narrow non-UI Stage
+  4C closeout only, in place of the usual three reviewers to conserve quota.
+  This exception does not alter the three-reviewer requirement for the future
+  Stage 6 production UI. None of these local changes has been deployed.
+  The distinct Stage 4C Core candidate is
+  `sha256:2582ecba14300dd816a7b788f562d6c70325a3098bffd8adaa57a86d6bd6b1eb`
+  (`stage4c-final-local-contract`, created `2026-08-16T17:43:44.421095077Z`),
+  with the exact Stage 3 parser unchanged at
+  `sha256:2e9244ee0eb465313a414274d53418525c1e6d7387e6d9f55b1270345791a91c`
+  (`stage3-final6-local-contract`). The deterministic Stage 4C aggregate runs
+  59 existing behaviour tests across scheduler, HTTP claim lifecycle, execute,
+  and legacy compatibility and passes `4/4` on source and from the exact
+  read-only/no-network candidate image. Candidate parity passes `3/3`, legacy
+  FastAPI/slot integration `2/2`, the real-detector fake-provider custom
+  preview→queue→execute image probe `1/1`, and the full current pinned
+  Docker-executor-style check surface `25/25` in 54.6 seconds. It includes the
+  built 16-route Nginx boundary, denial of all 24 planned paths, Compose
+  isolation, source/build context, and value-free secret/log contracts; `git
+  diff --check` passes. This remains synthetic/local candidate evidence pending
+  the required one-reviewer consolidated Stage 4C closeout, not a deployment,
+  public exposure, UI change, version bump, or Stage 5 start.
+  The first consolidated review found a material verification gap rather than
+  an observed scheduler failure: cancel and execute were previously tested only
+  independently, and a 3:1 selection fixture used a fixed sleep. The corrected
+  overlay reports a valid capability invalidated by a winning cancel as
+  `queue_not_ready`; generic `queue_invalid` remains for forged or cross-bound
+  capability. A 16-round barrier-backed same-entry cancel/execute race now
+  proves either cancellation with no slot/provider authority or exactly one
+  running execution with `provider_already_running` cancellation. The 3:1 test
+  now waits for both contenders at the bounded eligibility seam. Scheduler is
+  `21/21`; the rebuilt candidate and every exact-image gate passed, and the
+  full final native surface reran `25/25` in 54.6 seconds. The same reviewer is
+  now performing the required focused re-review.
+  The same independent GPT-5.6 Sol/xhigh reviewer completed that focused
+  re-review without edits and issued a final **no material blocker** verdict.
+  It independently reproduced the corrected candidate digest, scheduler
+  `21/21`, exact-image Stage 4C aggregate `4/4` over 59 behaviours, parity
+  `3/3`, valid-cancelled-claim `queue_not_ready` versus tampered-capability
+  `queue_invalid`, and `git diff --check`. Stage 4C is complete with local,
+  synthetic evidence only. Production remains Hosted `2.5.0` with exactly 16
+  public routes; Nginx still denies all 24 planned Hosted 3 paths. No Stage 5
+  route exposure, UI work, version bump, production image, deployment, public
+  exposure, or live-provider/production validation occurred. Stage 5 is the
+  next safe stage and has not started.
+  Stage 0 added
+  only a machine-readable target fixture, a Hosted 3.0
+  contract fence, a bounded port-owned overlay prefix, and their CI requirements.
+  The approved ten-stage implementation and per-stage exit gates are authoritative
+  in `docs/production-web-redesign.md`. The local Standard/Priority authority and
+  timing foundation and provisional parser work exist only on the local branch.
+  No browser-accessible Standard entry/document preview, public PDF parser or
+  queue route, 40-route proxy, Hosted 3.0 UI, version bump, or deployment has occurred
+  yet. Nginx still denies all 24 planned canonical/alias routes.
 - Concept C production web is live at exact revision
   `dbcfe17b34744dc3e9a88e4099786a754fe903a6`. Feature Pipeline #36392 and
   protected-main check-only Pipeline #36393 passed, followed by complete

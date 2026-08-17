@@ -7,7 +7,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parent.parent
-CONTEXTS = ("core", "api", "web")
+CONTEXTS = ("core", "api", "web", "pdf-parser")
 FORBIDDEN_SENTINELS = (
     ".env",
     ".env.production",
@@ -70,6 +70,7 @@ def main() -> int:
         "--no-deps --require-hashes -r requirements-aift-security.lock",
         "COPY app ./app",
         "COPY pii_redactor ./pii_redactor",
+        "COPY aift_hosted3 ./aift_hosted3",
         "COPY verify_thainer_assets.py ./",
         "python verify_thainer_assets.py",
         "COPY aift_auth.py aift_gateway.py aift_report_policy.py healthcheck.py VERSION LICENSE NOTICE ./",
@@ -108,7 +109,7 @@ def main() -> int:
     web_dockerfile = (ROOT / "web" / "Dockerfile").read_text(encoding="utf-8")
     api_dockerfile = (ROOT / "api" / "Dockerfile").read_text(encoding="utf-8")
     for required in (
-        "home.css home.js app.html app.css app.js product.css privacy.html terms.html help.html downloads.html 404.html robots.txt sitemap.xml",
+        "home.css home.js app.html app.css hosted3-app.js product.css privacy.html terms.html help.html downloads.html developers.html 404.html robots.txt sitemap.xml",
         "assets/ai-guard-mark.svg assets/ai-guard-mark-one-color.svg assets/ai-guard-mark-inverse.svg assets/ai-guard-favicon.svg assets/ai-guard-favicon-inverse.svg",
         "assets/fonts/anuphan-thai.woff2 assets/fonts/anuphan-latin.woff2 assets/fonts/OFL-Anuphan.txt",
         "COPY healthcheck.sh /usr/local/bin/aift-healthcheck",

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hosted Web App — AI Guard Private Beta</title>
-<meta name="description" content="AI Guard Hosted 2.5.0 แบบ Private Beta สำหรับ Privacy Scan, Safe AI และ PDPA Report ผ่านรหัสเชิญ">
+<title>Hosted 3.0.0 Web App — AI Guard</title>
+<meta name="description" content="AI Guard Hosted 3.0.0: Standard access, Priority Invite, protected text, and text-layer PDF review.">
 <meta name="robots" content="noindex,nofollow">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="th_TH">
-<meta property="og:title" content="Hosted Web App — AI Guard Private Beta">
-<meta property="og:description" content="เข้าใช้เวิร์กโฟลว์ Hosted ด้วยรหัสเชิญ โดยเห็นขอบเขตข้อมูลก่อนกรอกข้อความ">
+<meta property="og:title" content="Hosted 3.0.0 Web App — AI Guard">
+<meta property="og:description" content="เริ่ม Standard access หรือ Priority Invite และเห็นขอบเขตข้อมูลก่อนกรอกข้อความ">
 <meta property="og:url" content="https://team08.aiforthai.in.th/app">
 <link rel="icon" href="/assets/ai-guard-favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/app.css">
@@ -27,6 +27,7 @@
       <a href="/privacy">ความเป็นส่วนตัว</a>
       <a href="/help">ช่วยเหลือ</a>
     </nav>
+    <details class="app-mobile-nav"><summary>เมนู</summary><nav aria-label="เมนูผลิตภัณฑ์สำหรับหน้าจอขนาดเล็ก"><a href="/">หน้าแรก</a><a href="/downloads#desktop">Desktop</a><a href="/app" aria-current="page">Hosted Web</a><a href="/privacy">ความเป็นส่วนตัว</a><a href="/help">ช่วยเหลือ</a><a href="/terms">ข้อกำหนด</a><a href="/developers">Contract &amp; evidence</a></nav></details>
     <span class="nav-proof">THAI PRIVACY · 2026</span>
   </div>
 </header>
@@ -40,493 +41,78 @@
 
 <div id="appControls" inert>
 
-<!-- Access and privacy gate. Marketing content lives on the separate Home route. -->
-<section class="hero-section" id="top" data-primary-channel="hosted">
-  <div class="concept-shell">
-    <div class="web-beta-panel" id="web-access">
-      <p class="web-beta-label">01 / HOSTED ACCESS · ไม่มี public signup</p>
-      <aside class="auth-card" id="authCard" aria-labelledby="accessTitle" tabindex="-1">
-        <div class="auth-brand">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <div>
-            <h1 id="accessTitle">Hosted Web App</h1>
-            <p>Private Beta 2.5.0 · ใช้รหัสเชิญที่ได้รับเท่านั้น · ไม่บันทึกรหัสเชิญลงพื้นที่จัดเก็บของเบราว์เซอร์</p>
-          </div>
-        </div>
-        <div class="auth-controls">
-          <label class="visually-hidden" for="accessCode">รหัสเชิญ</label>
-          <input id="accessCode" type="password" maxlength="128" autocomplete="off" inputmode="text" placeholder="รหัสเชิญ Private Beta">
-          <button id="loginBtn" class="primary primary-action" type="button">เข้าสู่ระบบ</button>
-          <button id="logoutBtn" class="secondary-action" type="button" hidden>ออกจากระบบและล้างข้อมูล</button>
-          <span id="authStatus" role="status" aria-live="polite">กำลังตรวจสอบสิทธิ์...</span>
-        </div>
+<!-- Hosted 3.0.0 workspace. It is intentionally authored inert: only
+     hosted3-app.js removes inert after a successful bootstrap. -->
+<section class="hosted3-workspace" aria-labelledby="hosted3Title">
+  <div class="hosted3-shell">
+    <p class="hosted3-kicker">HOSTED 3.0.0 · REVIEW BEFORE PROVIDER</p>
+    <div class="hosted3-page-title"><h1 id="hosted3Title">ปกป้องข้อความก่อนใช้ AI</h1><p class="hosted3-lede">เริ่ม Standard access ได้ทันที หรือใช้ Priority Invite ที่ออกให้คุณ ทั้งสองทางใช้ขั้นตอนและข้อจำกัดความปลอดภัยเดียวกัน</p></div>
+    <div class="hosted3-entry" id="h3Access">
+      <aside class="hosted3-boundary" aria-label="ขอบเขตข้อมูล Hosted">
+        <strong>ขอบเขตข้อมูลก่อนเริ่ม</strong>
+        <p>ข้อความและ PDF แบบมี text layer ผ่าน organizer proxy และ AI Guard Core เพื่อปกป้องและตรวจทาน</p>
+        <p>Pathumma ได้รับเฉพาะข้อความที่ปกป้องและอนุมัติแล้ว ไม่ได้รับ PDF, ข้อความต้นฉบับ หรือ mapping</p>
       </aside>
+      <div class="hosted3-actions" id="h3AuthorityActions">
+        <button class="primary" id="h3StartStandard" type="button">Start Standard access</button>
+        <button class="secondary-action" id="h3ShowPriority" type="button">Use Priority Invite</button>
+      </div>
+      <form class="hosted3-priority" id="h3PriorityForm" hidden novalidate>
+        <label for="h3Invite">Priority Invite ที่ออกให้</label>
+        <div><input id="h3Invite" type="password" autocomplete="off" maxlength="128"><button class="secondary-action" id="h3PrioritySubmit" type="submit">Continue</button></div>
+      </form>
+      <p class="hosted3-status" id="h3AuthorityStatus">ตรวจสอบ session โดยไม่เก็บข้อมูลส่วนตัวในเบราว์เซอร์</p>
     </div>
 
-    <nav class="journey-strip" id="how-it-works" aria-label="เส้นทางใช้งาน AI Guard">
-      <a class="journey-step" href="#privacy-scan"><small>01 · DETECT</small><strong>Privacy Scan</strong></a>
-      <a class="journey-step" href="#safe-ai"><small>02 · PROTECT</small><strong>Safe AI</strong></a>
-      <a class="journey-step" href="#pdpa-report"><small>03 · REVIEW</small><strong>PDPA Report</strong></a>
-      <a class="journey-step" href="/downloads#desktop"><small>LOCAL ALTERNATIVE</small><strong>ใช้ Desktop</strong></a>
-    </nav>
-    <p class="product-boundary"><strong>Hosted ไม่ใช่ local-only:</strong> ข้อความต้นฉบับถึง AI for Thai edge และเซิร์ฟเวอร์ Team 08 เพื่อการตรวจจับ Safe AI ส่งให้ Pathumma / thaillm-8b เฉพาะข้อความที่ปกป้องและตรวจซ้ำแล้ว โดยไม่ส่ง raw PII, vault/mapping หรือคู่ข้อมูลเดิมกับข้อมูลแทน หากข้อมูลต้องอยู่ในเครื่อง ให้ใช้ <a href="/downloads#desktop">Desktop 3.0.0</a></p>
-  </div>
-</section>
-
-<!-- Optional quick start coordinates the existing workflows; it adds no API route. -->
-<section class="guided-section" id="guided-demo" aria-labelledby="guidedTitle">
-  <div class="container">
-    <details class="guided-shell">
-      <summary id="guidedTitle">
-        <span class="guided-disclosure-copy"><small>QUICK START · ข้อมูลสังเคราะห์</small><b>ทดลองเส้นทางครบ 3 ขั้นตอนแบบแนะนำ</b><span>ตัวเลือกเสริมสำหรับผู้ใช้ใหม่ — จะไม่ส่งข้อมูลจนกว่าคุณกดเริ่ม</span></span>
-        <span class="guided-disclosure-action">เปิด Quick Start ↓</span>
-      </summary>
-      <div class="guided-top">
-        <div>
-          <p class="workflow-number">Quick Start · เส้นทางแนะนำ</p>
-          <h2>เรียนรู้ครบทั้ง 3 เวิร์กโฟลว์ในครั้งเดียว</h2>
-          <p>กดครั้งเดียวเพื่อใช้ตัวอย่างสังเคราะห์ แล้วเรียก Privacy Scan → Safe AI → PDPA Report ตามลำดับจริง ระบบจะหยุดอย่างปลอดภัยหากขั้นใดไม่ผ่าน และไม่สร้างผลสำเร็จจำลอง</p>
-        </div>
-        <span class="guided-badge">เรียก SAFE AI 1 ครั้งต่อรอบ</span>
+    <section class="hosted3-chooser" id="h3Chooser" hidden aria-labelledby="h3ChooserTitle"><span id="synthetic-demo" class="legacy-anchor" aria-hidden="true"></span>
+      <div class="hosted3-chooser-head"><div><p class="hosted3-kicker">ONE WORKSPACE</p><h2 id="h3ChooserTitle">เลือกงาน</h2></div><span id="h3ClassChip" class="hosted3-chip"></span><button id="h3EndAuthority" class="text-action" type="button">End access</button></div>
+      <div class="hosted3-task-grid" role="list">
+        <div role="listitem"><button class="hosted3-task featured" data-h3-task="pdf" type="button"><span>FEATURED</span><strong>PDF → Protected Markdown</strong><small>ส่งเฉพาะ PDF ที่คุณเลือก แล้วตรวจ protected extraction ก่อนเข้าคิว</small></button></div>
+        <div role="listitem"><button class="hosted3-task" data-h3-task="text" type="button"><span>TEXT</span><strong>Protect text for AI</strong><small>Token หรือ Surrogate แบบ reversible pseudonymization</small></button></div>
+        <div role="listitem"><button class="hosted3-task" data-h3-task="inspect" type="button"><span>INSPECT</span><strong>Inspect &amp; report</strong><small>ตรวจจับ Guard และรายงาน PDPA จากข้อความเดียวกัน</small></button></div>
       </div>
+    </section>
 
-      <div class="guided-layout">
-        <div class="guided-control">
-          <h3>พร้อมเริ่มเส้นทางปกป้องข้อมูล</h3>
-          <p>หากยังไม่เลือกสถานการณ์ ระบบจะใช้ตัวอย่างสมัครงานสังเคราะห์แบบกำหนดตายตัว โดยไม่ส่งอะไรจนกดเริ่ม</p>
-          <div class="guided-selection">
-            <small>สถานการณ์ที่เลือก</small>
-            <b id="guidedScenario">สมัครงาน / HR · ข้อมูลสังเคราะห์</b>
-          </div>
-          <div class="guided-actions">
-            <button id="guidedStart" class="primary primary-action" type="button">เริ่ม Quick Start</button>
-            <button id="guidedReset" class="secondary-action" type="button">หยุดและเริ่มใหม่</button>
-          </div>
-          <div class="guided-status" id="guidedStatus" role="status" aria-live="polite">เข้าสู่ระบบ แล้วกดเริ่มเพื่อเรียก API จริง</div>
-          <a class="guided-proof-link" id="guidedProofLink" href="#providerEvidenceCard" hidden>ดู “ข้อความที่ส่งให้ AI จริง” ↓</a>
-        </div>
+    <section class="hosted3-task-panel" id="h3PdfTask" hidden aria-labelledby="h3PdfTitle">
+      <div class="hosted3-panel-head"><button class="text-action h3-back" type="button">← งานทั้งหมด</button><h2 id="h3PdfTitle">PDF → Protected Markdown</h2></div>
+      <p class="hosted3-limit">รองรับเฉพาะ PDF ที่เลือกข้อความได้ PDF ต้นฉบับจะไม่เปลี่ยน ไม่มี PDF ที่ rebuild/redact และไม่รองรับ scan, image-only PDF, OCR, layout, ภาพ หรือแผนภาพ</p>
+      <label class="hosted3-file" for="h3Pdf"><span>เลือก PDF</span><input id="h3Pdf" type="file" accept="application/pdf"><small id="h3PdfMeta">ยังไม่เลือกไฟล์ · การเลือกไฟล์จะไม่อัปโหลดเอง</small></label>
+      <p class="hosted3-boundary compact"><strong>ก่อนอัปโหลด:</strong> raw PDF จะผ่าน organizer proxy และ AI Guard Core อาจมี bounded temporary spool และลบหลัง extraction แต่จะไม่ถูกส่งให้ Pathumma</p>
+      <button class="primary" id="h3PdfPreview" type="button">Upload &amp; extract</button>
+    </section>
 
-        <ol class="guided-steps" aria-label="สถานะ Quick Start">
-          <li class="guided-step" id="guidedStepScan" data-state="idle">
-            <span class="guided-step-index" aria-hidden="true">01</span>
-            <div><strong>Privacy Scan</strong><span>ตรวจจับและไฮไลต์ PII พร้อมสรุปประเภท</span></div>
-            <span class="guided-step-state" id="guidedStateScan">รอเริ่ม</span>
-          </li>
-          <li class="guided-step" id="guidedStepSafe" data-state="idle">
-            <span class="guided-step-index" aria-hidden="true">02</span>
-            <div><strong>Safe AI</strong><span>ส่งเฉพาะข้อความที่ปกป้องแล้วให้ AI ปลายทาง และหยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span></div>
-            <span class="guided-step-state" id="guidedStateSafe">รอเริ่ม</span>
-          </li>
-          <li class="guided-step" id="guidedStepReport" data-state="idle">
-            <span class="guided-step-index" aria-hidden="true">03</span>
-            <div><strong>PDPA Report</strong><span>สร้างคะแนนและเกรดที่ระบบคำนวณจริงก่อนให้ดาวน์โหลด</span></div>
-            <span class="guided-step-state" id="guidedStateReport">รอเริ่ม</span>
-          </li>
-        </ol>
-      </div>
+    <section class="hosted3-task-panel" id="h3TextTask" hidden aria-labelledby="h3TextTitle">
+      <div class="hosted3-panel-head"><button class="text-action h3-back" type="button">← งานทั้งหมด</button><h2 id="h3TextTitle">Protect text for AI</h2></div>
+      <label for="h3Text">ข้อความ <span id="h3TextCount">0 / 20,000</span></label>
+      <textarea id="h3Text" maxlength="20000" spellcheck="false" aria-describedby="h3TextBoundary" placeholder="วางข้อความที่ต้องการปกป้อง"></textarea>
+      <p class="hosted3-boundary compact" id="h3TextBoundary"><strong>ก่อนส่ง:</strong> ข้อความต้นฉบับจะถึง organizer proxy และ AI Guard เพื่อปกป้อง หากข้อมูลต้องอยู่บนอุปกรณ์ ให้ใช้ Desktop</p>
+      <fieldset class="hosted3-modes"><legend>รูปแบบ reversible pseudonymization</legend><label><input type="radio" name="h3Mode" value="token" checked> Token</label><label><input type="radio" name="h3Mode" value="surrogate"> Surrogate</label></fieldset>
+      <button class="primary" id="h3TextPreview" type="button">Preview protected text</button>
+    </section>
 
-      <div class="guided-summary">
-        <div class="metric-card"><b id="guidedPii">—</b><span>PII ที่ตรวจพบจริง</span></div>
-        <div class="metric-card"><b id="guidedMode">Token</b><span>รูปแบบการปกป้อง</span></div>
-        <div class="metric-card"><b id="guidedSafety">รอผล</b><span>ความปลอดภัยและการกู้คืน</span></div>
-        <div class="metric-card"><b id="guidedTiming">—</b><span>เวลารวมที่วัดในเบราว์เซอร์</span></div>
-      </div>
-    </details>
-  </div>
-</section>
+    <section class="hosted3-task-panel" id="h3InspectTask" hidden aria-labelledby="h3InspectTitle">
+      <div class="hosted3-panel-head"><button class="text-action h3-back" type="button">← งานทั้งหมด</button><h2 id="h3InspectTitle">Inspect &amp; report</h2></div>
+      <p>ตรวจจับ PII, ดู Guard heuristic, และสร้างรายงาน PDPA จากข้อความเดียวกัน Guard เป็นคำเตือนสำหรับคนตรวจ ไม่ใช่ตัวบล็อกหรือคะแนน privacy ใหม่</p>
+      <label for="h3InspectText">ข้อความ <span id="h3InspectCount">0 / 20,000</span></label><textarea id="h3InspectText" maxlength="20000" spellcheck="false" placeholder="ใช้ข้อมูลสังเคราะห์สำหรับการทดสอบ"></textarea>
+      <div class="hosted3-actions"><button class="secondary-action" id="h3Detect" type="button">Detect</button><button class="secondary-action" id="h3Guard" type="button">Guard</button><button class="primary" id="h3Report" type="button">Analyze report</button><button class="secondary-action" id="h3DownloadReport" type="button" hidden>Download PDPA report</button></div>
+      <div class="hosted3-evidence" id="h3InspectResult"></div>
+      <details class="hosted3-secondary" id="h3InspectEvidence"><summary>Sensitive Data Map and service evidence</summary><p class="hosted3-limit">แผนที่นี้แสดงเฉพาะประเภท จำนวน และตำแหน่งเชิงสัดส่วนจากผล Detect ปัจจุบัน ไม่แสดงค่าข้อมูล ส่วน Section 26 จะแสดงเฉพาะเมื่อ Core คืนธงจาก protected preview/result และไม่ใช่ข้อสรุปทางกฎหมาย</p><div id="h3InspectMap"><p>ยังไม่มีผล Detect สำหรับข้อความปัจจุบัน</p></div><p id="h3ServiceLiveness"><strong>Service liveness:</strong> กำลังตรวจสอบ · ไม่ใช่ provider readiness</p></details>
+      <details class="hosted3-secondary" id="h3SyntheticEvidence"><summary>Five synthetic scenarios and guided evidence</summary><p>These examples never submit until you choose Detect, Guard, or Analyze report.</p><div class="hosted3-actions"><button type="button" class="secondary-action" data-h3-sample="hr">HR</button><button type="button" class="secondary-action" data-h3-sample="healthcare">Healthcare</button><button type="button" class="secondary-action" data-h3-sample="education">Education</button><button type="button" class="secondary-action" data-h3-sample="customer">Customer service</button><button type="button" class="secondary-action" data-h3-sample="government">Government</button></div><p>Detect shows spans/counts; Guard is a non-blocking heuristic; the report is an automated review, not legal certification. Presenter and raw-versus-protected evidence appear only after the relevant result and are never a portable artifact.</p></details>
+    </section>
 
-<!-- Workflow 01: explicit scan action and truthful result fields -->
-<section class="section-shell" id="privacy-scan" aria-labelledby="privacyTitle">
-  <span id="web-app"></span>
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <p class="workflow-number">Workflow 01</p>
-        <h2 class="section-title" id="privacyTitle">Privacy Scan</h2>
-        <p class="section-sub">เลือกสถานการณ์สังเคราะห์หรือพิมพ์ข้อความ แล้วกดสแกนเพื่อเห็น PII ภาษาไทยที่ระบบตรวจพบจริง</p>
-      </div>
-      <span class="demo-label">● ตัวอย่างเพื่อทดลอง · ข้อมูลสังเคราะห์</span>
-    </div>
+    <section class="hosted3-preview" id="h3Preview" hidden aria-labelledby="h3PreviewTitle" tabindex="-1">
+      <p class="hosted3-kicker">EXACT REVIEW</p><h2 id="h3PreviewTitle">ตรวจข้อความที่ AI Guard จะส่งต่อ</h2>
+      <div class="hosted3-preview-grid"><div><h3>Protected payload</h3><pre id="h3Protected"></pre></div><div><h3>Outbound gate</h3><p id="h3Gate"></p><p id="h3PreviewMeta"></p></div></div>
+      <p class="hosted3-limit" id="h3PreviewWarning">AI Guard แทนที่เฉพาะ PII ที่ตรวจพบ ข้อมูลที่ไม่พบอาจยังอยู่ ต้องตรวจทานโดยมนุษย์</p>
+      <details class="hosted3-secondary" id="h3PreviewEvidence"><summary>Detected data and review signals</summary><div id="h3PreviewMap"></div><p id="h3PreviewSection26"></p><p id="h3PreviewGuard"></p></details>
+      <button class="primary" id="h3Approve" type="button">Approve and join queue; when admitted, AI Guard will send this exact protected text automatically</button><button class="secondary-action" id="h3DiscardPreview" type="button">Discard preview</button>
+    </section>
 
-    <div class="demo-studio">
-      <div class="scenario-gallery" aria-label="ตัวอย่างสังเคราะห์สำหรับทดลองใช้งาน">
-        <button class="scenario-card" type="button" data-scenario="hr" aria-pressed="false" data-sample="ใบสมัครงานสังเคราะห์: นางสาวอรุณี ตัวอย่าง สมัครตำแหน่งนักวิเคราะห์ ติดต่อ 081-000-1020 หรือ arunee@example.invalid ที่อยู่ 88/8 ถนนตัวอย่าง เขตบางรัก กรุงเทพมหานคร กรุณาสรุปผู้สมัคร 2 ประโยค โดยระบุชื่อ ตำแหน่ง เบอร์โทรศัพท์ และอีเมล">
-          <small>HR</small><b>สมัครงาน</b><span>คาดว่าอาจพบ: ชื่อ · โทรศัพท์ · อีเมล · ที่อยู่</span><span>ความเสี่ยง: ส่ง CV เข้า AI ภายนอก</span><span class="scenario-proof">จุดสาธิต: ปกป้องก่อนคัดกรอง</span>
-        </button>
-        <button class="scenario-card" type="button" data-scenario="healthcare" aria-pressed="false" data-sample="เวชระเบียนสังเคราะห์: ผู้ป่วยชื่อ นางสาวสมมุติ ทดสอบ เลขบัตรประชาชน 1-1017-00230-70-8 เกิดวันที่ 12 มีนาคม 2534 มีประวัติแพ้ยาปฏิชีวนะ ติดต่อ 082-000-2040 กรุณาสรุปเพื่อส่งต่อแพทย์ 2 ประโยค โดยระบุชื่อ วันเกิด ประวัติแพ้ยา และเบอร์โทรศัพท์">
-          <small>Healthcare</small><b>โรงพยาบาล</b><span>คาดว่าอาจพบ: ชื่อ · เลขประชาชน · วันเกิด · สุขภาพ</span><span>ความเสี่ยง: สรุปเวชระเบียนด้วย AI</span><span class="scenario-proof">จุดสาธิต: ดูผล PII/มาตรา 26 หลังเรียกจริง</span>
-        </button>
-        <button class="scenario-card" type="button" data-scenario="education" aria-pressed="false" data-sample="ข้อมูลนักเรียนสังเคราะห์: เด็กชายเรียนดี ตัวอย่าง รหัสนักศึกษา 65001234 ผู้ปกครองชื่อ นายทดสอบ ใจดี โทร 083-000-3060 โรงเรียนสาธิตตัวอย่าง กรุณาสรุปบันทึกนักเรียน 2 ประโยค โดยระบุชื่อนักเรียน รหัส ชื่อผู้ปกครอง และเบอร์โทรศัพท์">
-          <small>Education</small><b>โรงเรียน</b><span>คาดว่าอาจพบ: ชื่อ · รหัส · ผู้ปกครอง · โทรศัพท์</span><span>ความเสี่ยง: ส่งข้อมูลผู้เรียนให้ AI ช่วยสรุป</span><span class="scenario-proof">จุดสาธิต: ลดข้อมูลก่อน AI</span>
-        </button>
-        <button class="scenario-card" type="button" data-scenario="customer-service" aria-pressed="false" data-sample="บทสนทนาสังเคราะห์: ลูกค้าชื่อ คุณบริการ ดีมาก แจ้งหมายเลขโทรศัพท์ 084-000-4080 และอีเมล service@example.invalid เพื่อให้ติดต่อเรื่องคำสั่งซื้อ กรุณาร่างบันทึกส่งต่อ 2 ประโยค โดยระบุชื่อลูกค้า เบอร์โทรศัพท์ และอีเมล">
-          <small>Customer Service</small><b>บริการลูกค้า</b><span>คาดว่าอาจพบ: ชื่อ · โทรศัพท์ · อีเมล</span><span>ความเสี่ยง: ให้ AI ร่างคำตอบจากบทสนทนา</span><span class="scenario-proof">จุดสาธิต: ลดการเปิดเผยบริบท</span>
-        </button>
-        <button class="scenario-card" type="button" data-scenario="government" aria-pressed="false" data-sample="เอกสารราชการสังเคราะห์: ขอเชิญ นายประชาชน ตัวอย่าง บ้านเลขที่ 99/12 ถนนสาธิต ตำบลหาดใหญ่ อำเภอหาดใหญ่ จังหวัดสงขลา 90110 โทร 074-000-505 กรุณาสรุปหนังสือเชิญ 2 ประโยค โดยระบุชื่อผู้รับ ที่อยู่ และเบอร์โทรศัพท์">
-          <small>Government</small><b>เอกสารราชการ</b><span>คาดว่าอาจพบ: ชื่อ · ที่อยู่ · จังหวัด · โทรศัพท์</span><span>ความเสี่ยง: ใช้ AI ช่วยสรุปงานเอกสาร</span><span class="scenario-proof">จุดสาธิต: หลักฐานและรายงาน PDPA</span>
-        </button>
-      </div>
-      <p class="scenario-scroll-hint">เลื่อนเพื่อดูสถานการณ์เพิ่มเติม แล้วแตะเพื่อเลือกโดยยังไม่ส่งข้อมูล</p>
-      <div class="scenario-toolbar">
-        <span id="scenarioStatus">ยังไม่ใส่ข้อความ · Quick Start จะใช้ตัวอย่างสมัครงานสังเคราะห์เป็นค่าเริ่มต้น</span>
-        <button type="button" data-action="reset" id="resetDemo">↺ ล้างผลและเริ่มใหม่</button>
-      </div>
+    <section class="hosted3-queue" id="h3Queue" hidden aria-labelledby="h3QueueTitle" tabindex="-1"><p class="hosted3-kicker">QUEUE</p><h2 id="h3QueueTitle">รอสิทธิ์ส่ง protected payload</h2><div id="h3QueueFacts"></div><p>หน้านี้ต้องเปิดอยู่และอยู่เบื้องหน้า การสลับแท็บ/แอป, ย่อหน้าต่าง, lock โทรศัพท์ หรือ offline จะพัก eligibility โดยคง fairness age ก่อนถูกเลือก แต่ deadline ยังคงเดิน หาก claim สำหรับ automatic start ถูกออกแล้วแต่ handoff ไม่สำเร็จ ครั้งแรกจะย้ายคำขอไปท้ายคิว และครั้งที่สองจะหมดสิทธิ์โดยไม่มีการส่งให้ provider</p><button class="secondary-action" id="h3CancelQueue" type="button">Cancel queue</button><button class="text-action" id="h3ClearRunning" type="button" hidden>Clear this page</button></section>
 
-      <label class="input-label" for="editor">ข้อความสำหรับทั้ง 3 เวิร์กโฟลว์ <span id="characterCount">0 / 20,000 ตัวอักษร</span></label>
-      <p class="input-boundary" id="editorBoundary"><strong>ก่อนกรอกข้อความ:</strong> ข้อความต้นฉบับจะถึง AI for Thai edge, reverse proxy และเซิร์ฟเวอร์ AI Guard เพื่อการตรวจจับ หากข้อมูลต้องอยู่ในเครื่อง ให้ใช้ <a href="/downloads#desktop">Desktop 3.0.0</a> แทน ผลอัตโนมัติอาจพลาดและต้องมีคนตรวจทาน</p>
-      <textarea id="editor" maxlength="20000" spellcheck="false" aria-describedby="editorBoundary" placeholder="วางข้อความภาษาไทยที่ต้องการตรวจสอบ หรือเลือกตัวอย่างด้านบน"></textarea>
-      <p class="product-boundary"><strong>ก่อนส่ง:</strong> ข้อความนี้จะเข้าสู่เซิร์ฟเวอร์ AI Guard การสแกนอัตโนมัติไม่รับประกันการตรวจพบทุกกรณี หลีกเลี่ยงข้อมูลจริงที่มีความเสี่ยงสูงและตรวจทานผลเสมอ</p>
-      <div class="action-row">
-        <button id="scanBtn" class="primary primary-action" type="button">สแกนข้อมูลส่วนบุคคล</button>
-        <span class="status-line" id="meta" role="status" aria-live="polite">เลือกตัวอย่างหรือพิมพ์ข้อความเพื่อเริ่มต้น</span>
-      </div>
-      <div class="status-line" id="scanTiming">ยังไม่มีเวลาคำขอ</div>
-    </div>
+    <section class="hosted3-result" id="h3Result" hidden aria-labelledby="h3ResultTitle" tabindex="-1"><p class="hosted3-kicker">RESULT</p><h2 id="h3ResultTitle">Verified result</h2><p class="hosted3-limit" id="h3PresenterPrivateNotice" hidden>Presenter view ซ่อน custom restored result และ raw comparison โดยตั้งใจ กลับสู่หน้าปกติเพื่อตรวจข้อมูลส่วนตัว</p><div id="h3ResultBody"></div><details id="h3TextComparison"><summary>Raw-versus-protected working comparison</summary><p>On-screen review only. This comparison is never copied or exported and is hidden in Presenter view for custom input.</p><pre id="h3RawWorking"></pre><pre id="h3ProviderBound"></pre></details><details id="h3TextEvidence"><summary>Executive, provider, safety, timing, and glossary evidence</summary><section id="h3ExecutiveSummary" aria-labelledby="h3ExecutiveTitle"><h3 id="h3ExecutiveTitle">Executive summary</h3><p id="h3ExecutiveCopy">ยังไม่มีผลที่ผ่าน gate</p></section><dl class="hosted3-fact-grid" id="h3SafetyEvidence"><div><dt>Detected PII</dt><dd id="h3EvidencePii">—</dd></div><div><dt>Section 26 heuristic</dt><dd id="h3EvidenceSection26">—</dd></div><div><dt>Residual signal</dt><dd id="h3EvidenceResidual">—</dd></div><div><dt>Restoration / leftover</dt><dd id="h3EvidenceRestoration">—</dd></div><div><dt>Provider attempts</dt><dd id="h3EvidenceAttempts">—</dd></div><div><dt>Measured duration</dt><dd id="h3EvidenceDuration">—</dd></div></dl><p id="h3EvidenceFacts"></p><p>Token/Surrogate are reversible pseudonymization, not anonymization. Section 26 and Guard are review heuristics, not legal certification or a blocking privacy score. Residual or integrity failure never reveals a restored result.</p></details><details id="h3ProtectedExtraction"><summary>Protected extraction</summary><pre id="h3ResultProtected"></pre></details><details id="h3TechnicalReceipt"><summary>Technical receipt</summary><pre id="h3Receipt"></pre></details><div class="hosted3-actions"><button class="secondary-action" id="h3Present" type="button">Presenter view</button><button class="secondary-action" id="h3CopyArtifact" type="button">Copy protected artifact</button><button class="secondary-action" id="h3DownloadMd" type="button">Download .md</button><button class="secondary-action" id="h3DownloadTxt" type="button">Download .txt</button><button class="secondary-action" id="h3DownloadReceipt" type="button">Download receipt JSON</button></div></section>
 
-    <div class="privacy-grid">
-      <article class="pane">
-        <div class="pane-title"><span>ข้อความพร้อมจุดที่ตรวจพบ</span><span class="demo-label">PII HIGHLIGHT</span></div>
-        <div class="result-highlight pipeline-empty" id="highlight">ผลการไฮไลต์จะแสดงที่นี่หลังสแกน</div>
-      </article>
-      <aside class="card scan-summary">
-        <h3>สรุปผลการสแกน</h3>
-        <div class="summary-grid">
-          <div class="summary-box"><div class="value" id="piiCount">0</div><div class="label">รายการ PII</div></div>
-          <div class="summary-box"><div class="value" id="piiTypeCount">0</div><div class="label">ประเภทข้อมูล</div></div>
-        </div>
-        <div class="summary-detail" id="piiTypes">ยังไม่มีข้อมูลให้วิเคราะห์</div>
-        <div class="legend" id="legend"></div>
-        <div id="guardBar"></div>
-        <p class="summary-detail">Privacy Scan แสดงเฉพาะจำนวน ประเภท และตำแหน่งจากผลการตรวจจริง โดยไม่สร้างคะแนนหรือความเสี่ยงเพิ่มเติมเอง</p>
-      </aside>
-    </div>
-  </div>
-</section>
-
-<!-- Workflow 02: the primary protected-AI product path. -->
-<section class="section-shell alt" id="safe-ai" aria-labelledby="safeTitle" tabindex="-1">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <p class="workflow-number">Workflow 02 · เส้นทางหลัก</p>
-        <h2 class="section-title" id="safeTitle">Safe AI</h2>
-        <p class="section-sub">เห็นการเปลี่ยนผ่านตั้งแต่ข้อความต้นฉบับ จนถึงข้อความที่ AI ได้รับจริง และแสดงผลสุดท้ายเฉพาะเมื่อการตรวจความปลอดภัยผ่านครบ</p>
-      </div>
-      <details class="presentation-tools">
-        <summary>เครื่องมือนำเสนอและหลักฐานขั้นสูง</summary>
-        <div class="presentation-actions" aria-label="เครื่องมือสำหรับการนำเสนอ">
-          <span class="demo-label">PROTECTED BEFORE AI</span>
-          <button id="presenterModeBtn" type="button" aria-pressed="false" disabled>โหมดนำเสนอ</button>
-          <button id="fullscreenBtn" type="button" aria-pressed="false" disabled>แสดงหลักฐานเต็มจอ</button>
-        </div>
-      </details>
-    </div>
-
-    <div class="safe-hero">
-      <div class="mode-choice-grid" role="group" aria-label="เลือกรูปแบบการปกป้อง">
-        <button class="mode-card" id="modeTokenCard" type="button" data-mode-card="token" aria-pressed="true">
-          <strong>Token · ตรวจสอบง่าย</strong>
-          <span>placeholder แบบวงเล็บที่บอกประเภทข้อมูล แต่ไม่เปิดเผยค่าจริง</span>
-          <small>แนะนำเมื่อต้องการตรวจสอบ placeholder ได้ชัดเจน</small>
-        </button>
-        <button class="mode-card" id="modeSurrogateCard" type="button" data-mode-card="surrogate" aria-pressed="false">
-          <strong>Surrogate · อ่านเป็นธรรมชาติ</strong>
-          <span>แทนค่าจริงด้วยข้อมูลสมมุติที่รักษารูปแบบภาษาและกู้คืนได้ในคำขอเดียว</span>
-          <small>ทั้งสองแบบเป็น pseudonymization ไม่ใช่ anonymization</small>
-        </button>
-      </div>
-      <div class="safe-controls">
-        <label class="field" for="mode">รูปแบบการปกป้อง
-          <select id="mode" aria-describedby="modeDescription">
-            <option value="token">Token · placeholder แบบวงเล็บ (แนะนำ)</option>
-            <option value="surrogate">แทนที่ด้วยข้อมูลสมมุติ</option>
-          </select>
-        </label>
-        <div class="mode-help" id="modeDescription"><b>Token — แนะนำ:</b> placeholder แบบวงเล็บบอกประเภท แต่ไม่เปิดเผยค่าจริง เหมาะกับการกู้คืนภายในคำขอเดียว</div>
-        <span class="dest-badge">AI ปลายทาง <b>การเชื่อมต่อที่ได้รับอนุมัติ</b></span>
-        <button id="safeDemoBtn" class="secondary-action" type="button">ใช้ตัวอย่างสังเคราะห์</button>
-        <button id="send" class="primary primary-action" type="button">ปกป้องและส่งให้ Safe AI</button>
-      </div>
-
-      <div class="progress-panel" id="safeProgress" hidden>
-        <div class="progress-heading"><strong>ลำดับการปกป้อง</strong><span>ข้อความแสดงลำดับโดยประมาณ · ไม่ใช่เวลารายขั้นจากเซิร์ฟเวอร์</span></div>
-        <div class="progress-steps" aria-hidden="true">
-          <span class="progress-step" id="safeStage0">ตรวจหาข้อมูลส่วนบุคคล</span>
-          <span class="progress-step" id="safeStage1">ปกป้องข้อมูลสำคัญ</span>
-          <span class="progress-step" id="safeStage2">ส่งข้อความที่ปกป้องแล้ว</span>
-          <span class="progress-step" id="safeStage3">ตรวจคำตอบ</span>
-          <span class="progress-step" id="safeStage4">กู้คืนบริบท</span>
-        </div>
-      </div>
-
-      <div class="safe-outcome status-line" id="safeElapsed">ใส่ข้อความ แล้วกดปุ่มเพื่อเริ่มเส้นทางจริงผ่าน API</div>
-      <div class="visually-hidden" id="safeAnnouncement" role="status" aria-live="polite"></div>
-
-      <div class="pipeline" aria-label="เส้นทาง Safe AI สามขั้น">
-        <article class="pipeline-card">
-          <div class="pipeline-label"><small>01 · ORIGINAL</small><strong>ข้อความต้นฉบับ</strong><span>ข้อความที่ใช้กับคำขอนี้</span></div>
-          <div class="pipeline-body pipeline-empty" id="safeOriginal">กด “ใช้ตัวอย่างสังเคราะห์” เพื่อเริ่มได้ทันที</div>
-        </article>
-        <article class="pipeline-card provider-evidence" id="providerEvidenceCard">
-          <div class="pipeline-label"><small>02 · WHAT THE AI SAW</small><strong>ข้อความที่ส่งให้ AI จริง</strong><span>ข้อความที่ AI Guard ส่งต่อหลังปกป้องและตรวจซ้ำ</span><span class="evidence-ribbon">✓ จุดพิสูจน์สำคัญของ Safe AI</span></div>
-          <div class="pipeline-body pipeline-empty" id="masked">ยังไม่ได้ส่ง</div>
-        </article>
-        <article class="pipeline-card">
-          <div class="pipeline-label"><small>03 · RESTORED RESULT</small><strong>คำตอบที่กู้คืนอย่างปลอดภัย</strong><span id="providerTag" class="provider-tag" hidden></span></div>
-          <div class="pipeline-body pipeline-empty" id="restored">ยังไม่ได้ส่ง</div>
-        </article>
-      </div>
-
-      <div class="proof-callout" id="proofCallout">
-        <span class="proof-icon" aria-hidden="true">✓</span>
-        <div><strong id="proofStatus">รอผล Safe AI</strong><p id="proofMethod">เมื่อ Privacy Scan และ Safe AI ใช้ข้อความเดียวกัน เบราว์เซอร์จะเปรียบเทียบค่าที่ตรวจพบกับข้อความที่ส่งให้ AI โดยไม่แสดงข้อมูลจับคู่</p></div>
-      </div>
-
-      <div class="safe-metrics">
-        <div class="metric-card"><b id="safeCount">—</b><span>PII ที่ตรวจพบ</span></div>
-        <div class="metric-card"><b id="safeTypes">—</b><span id="safeTypeLabels">ประเภทข้อมูลที่ตรวจพบ</span></div>
-        <div class="metric-card"><b id="safeProtection">รอผล</b><span>สถานะการปกป้อง</span></div>
-        <div class="metric-card"><b id="safeRestoration">รอผล</b><span>สถานะการกู้คืน</span></div>
-      </div>
-
-      <section class="presentation-stage" id="presentationStage" aria-labelledby="presentationTitle" tabindex="-1" hidden>
-        <div class="presentation-stage-head">
-          <div>
-            <p class="workflow-number">สรุปการปกป้องสำหรับคำขอนี้</p>
-            <h3 id="presentationTitle">สรุปหลักฐานจากคำขอนี้</h3>
-            <p>รวมผลการตรวจ การปกป้อง ความเสี่ยงของคำสั่ง และรายงานจากข้อความชุดเดียวกัน โดยไม่ส่งคำขอ AI เพิ่ม</p>
-          </div>
-          <div>
-            <span class="demo-label" id="presentationScenario">ข้อมูลชุดปัจจุบัน</span>
-            <div class="fullscreen-only">
-              <button id="fullscreenExitBtn" type="button">ออกจากเต็มจอ</button>
-              <button id="presenterLogoutBtn" type="button">ออกจากระบบและล้างข้อมูล</button>
-            </div>
-          </div>
-        </div>
-
-        <section class="executive-summary" id="executiveSummary" aria-labelledby="executiveTitle" hidden>
-          <div class="executive-verdict">
-            <span class="executive-verdict-icon" aria-hidden="true">✓</span>
-            <div><strong id="executiveTitle">ปกป้องและกู้คืนผ่านสำหรับคำขอนี้</strong><p id="executiveNarrative">รอผลที่ตรวจสอบครบ</p></div>
-          </div>
-          <div class="executive-metrics">
-            <div class="executive-metric"><b id="executivePii">—</b><span>PII ที่ระบบตรวจพบ</span></div>
-            <div class="executive-metric"><b id="executiveProtection">—</b><span>รูปแบบ · ปลายทาง</span></div>
-            <div class="executive-metric"><b id="executivePromptRisk">—</b><span>Prompt Risk แบบเตือน</span></div>
-            <div class="executive-metric"><b id="executiveReport">รอรายงาน</b><span>คะแนน/เกรดจาก PDPA Report</span></div>
-          </div>
-        </section>
-
-        <section class="raw-protected-grid" id="rawProtectedComparison" aria-labelledby="comparisonTitle" hidden>
-          <h4 class="visually-hidden" id="comparisonTitle">เปรียบเทียบข้อความต้นฉบับกับข้อความที่ปกป้องแล้ว</h4>
-          <article class="comparison-card" id="comparisonRawCard">
-            <div class="comparison-head"><small>RAW · BEFORE</small><strong>ข้อความก่อนปกป้อง</strong></div>
-            <div class="comparison-shield">ซ่อนข้อความที่ผู้ใช้กรอกเองในโหมดนำเสนอ</div>
-            <div class="comparison-text" id="comparisonRaw"></div>
-          </article>
-          <article class="comparison-card protected">
-            <div class="comparison-head"><small>PROTECTED · WHAT THE AI SAW</small><strong>ข้อความที่ส่งให้ AI หลังปกป้อง</strong></div>
-            <div class="comparison-text" id="comparisonProtected"></div>
-          </article>
-          <div class="comparison-proof">
-            <span id="comparisonLengths">รอผลการเปรียบเทียบ</span>
-            <span id="comparisonDetectedProof">รอผลตรวจเทียบค่าที่ตรวจพบ</span>
-          </div>
-        </section>
-
-        <div class="evidence-duo">
-          <section class="judge-card" id="sensitiveDataMap" aria-labelledby="dataMapTitle" hidden>
-            <h4 id="dataMapTitle">แผนที่ข้อมูลอ่อนไหว · Sensitive Data Map</h4>
-            <p class="card-note" id="dataMapNote">แผนที่แสดงประเภทและตำแหน่งเชิงสัดส่วนเท่านั้น ไม่แสดงค่าข้อมูล</p>
-            <div class="data-map-list" id="dataMapList"></div>
-          </section>
-          <section class="judge-card" id="guardRiskPanel" aria-labelledby="guardRiskTitle" hidden>
-            <h4 id="guardRiskTitle">สัญญาณคำสั่งเสี่ยง · Prompt Risk</h4>
-            <p class="card-note">กฎ Guard ใช้เพื่อให้ผู้ใช้งานตรวจทานเท่านั้น ไม่ได้บล็อกคำขอหรือรับรองว่าข้อความปลอดภัย</p>
-            <div class="guard-risk-list" id="guardRiskList"></div>
-          </section>
-        </div>
-
-        <section class="receipt" id="protectionReceipt" aria-labelledby="receiptTitle" hidden>
-          <div class="receipt-head">
-            <div><h4 id="receiptTitle">ใบสรุปการปกป้อง · Protection Receipt</h4><p>หลักฐานบนหน้าจอจากผล API ที่ผ่าน gate สำหรับคำขอนี้</p></div>
-            <span class="demo-label">REQUEST-SCOPED</span>
-          </div>
-          <div class="receipt-grid">
-            <div class="receipt-item"><span>รูปแบบ</span><b id="receiptMode">—</b></div>
-            <div class="receipt-item"><span>ปลายทาง</span><b id="receiptProvider">—</b></div>
-            <div class="receipt-item"><span>PII / ประเภท</span><b id="receiptPii">—</b></div>
-            <div class="receipt-item"><span>ตรวจความปลอดภัย</span><b id="receiptSafety">—</b></div>
-            <div class="receipt-item"><span>สัญญาณตกค้าง</span><b id="receiptResidual">—</b></div>
-            <div class="receipt-item"><span>การกู้คืน</span><b id="receiptRestoration">—</b></div>
-            <div class="receipt-item"><span>หมวดอ่อนไหว ม.26</span><b id="receiptSection26">—</b></div>
-            <div class="receipt-item"><span>เวลารวมบนหน้าเว็บ</span><b id="receiptDuration">—</b></div>
-          </div>
-          <p class="receipt-note" id="receiptTypes">ยังไม่มีประเภทข้อมูล</p>
-          <p class="receipt-note">เป็นสรุปผลของคำขอนี้ ไม่ใช่หลักฐานเข้ารหัส ใบรับรอง PDPA หรือคำปรึกษากฎหมาย และไม่แสดง mapping หรือค่าคู่แทนที่</p>
-        </section>
-
-        <section class="restored-stage" id="executiveRestoredCard" aria-labelledby="executiveRestoredTitle" hidden>
-          <div class="comparison-head"><small>RESTORED · FINAL RESULT</small><strong id="executiveRestoredTitle">ผลลัพธ์ที่กู้คืนและผ่าน gate</strong></div>
-          <div class="comparison-shield">ซ่อนผลลัพธ์ของข้อความที่ผู้ใช้กรอกเองในโหมดนำเสนอ</div>
-          <div class="comparison-text" id="executiveRestored"></div>
-        </section>
-      </section>
-
-      <details class="advanced-evidence">
-        <summary>เปิดดูหลักฐานการปกป้องขั้นสูง<span>ผล API, residual signals, restoration gates และขอบเขตของคำขอนี้</span></summary>
-        <section class="evidence-panel" id="protectionEvidence" aria-labelledby="evidenceTitle">
-          <div class="evidence-panel-head">
-            <div><h3 id="evidenceTitle">หลักฐานการปกป้อง · Protection Evidence</h3><p>แสดงเฉพาะผลจาก API จริงและหลักการที่มีการทดสอบรองรับ</p></div>
-            <span class="demo-label">ไม่ส่งข้อมูลจับคู่ให้โมเดล</span>
-          </div>
-          <div class="evidence-grid">
-            <div class="evidence-item"><span>รูปแบบการปกป้อง</span><b id="safeMode">Token</b></div>
-            <div class="evidence-item"><span>โมเดลปลายทาง</span><b id="safeProvider">รอผล</b></div>
-            <div class="evidence-item"><span>สัญญาณ PII หลังตรวจซ้ำ</span><b id="safeResidual">รอผล</b></div>
-            <div class="evidence-item"><span>โทเคนตกค้างหลังการกู้คืน</span><b id="safeLeftover">รอผล</b></div>
-            <div class="evidence-item"><span>สถานะตรวจความปลอดภัย</span><b id="safeEvidenceSafety">รอผล</b></div>
-            <div class="evidence-item"><span>สถานะการกู้คืน</span><b id="safeEvidenceRestoration">รอผล</b></div>
-            <div class="evidence-item"><span>หมวดอ่อนไหว ม.26</span><b id="safeSection26">รอผล</b></div>
-            <div class="evidence-item"><span>เวลารวมบนหน้าเว็บ</span><b id="safeDuration">—</b></div>
-          </div>
-          <div class="safe-outcome" id="evidenceWarnings"><span class="chip ok-chip">ยังไม่มีข้อมูลความปลอดภัย</span></div>
-          <div class="trust-claims">
-            <span class="trust-claim">ข้อมูลจับคู่ไม่ถูกส่งให้โมเดล</span>
-            <span class="trust-claim">คีย์ของโมเดลอยู่ฝั่งเซิร์ฟเวอร์</span>
-            <span class="trust-claim">ไม่เก็บเนื้อหาผู้ใช้ในพื้นที่จัดเก็บของเบราว์เซอร์</span>
-            <span class="trust-claim">หยุดอย่างปลอดภัยเมื่อการตรวจไม่ผ่าน</span>
-          </div>
-        </section>
-      </details>
-      <div class="visually-hidden" id="evidenceSanitized">ยังไม่มีข้อมูล</div>
-    </div>
-
-    <details class="trust-details">
-      <summary>AI Guard ปกป้องข้อมูลอย่างไร</summary>
-      <div class="trust-details-content">
-        <div class="trust-diagram" aria-label="ข้อความไทย ตรวจจับ PII ปกปิด ส่งให้ AI ตรวจคำตอบ และกู้คืน">
-          <b>ข้อความไทย</b><span>→</span><b>ตรวจจับ PII</b><span>→</span><b>ปกปิด</b><span>→</span><b>โมเดล AI</b><span>→</span><b>ตรวจคำตอบ</b><span>→</span><b>กู้คืน</b>
-        </div>
-        <p>ข้อความต้นฉบับเดินทางถึงแพลตฟอร์มและเซิร์ฟเวอร์ AI Guard ก่อน จากนั้นจึงปกปิดและตรวจซ้ำก่อนส่งต่อจากเซิร์ฟเวอร์ไปยังโมเดลภาษา การจับคู่ใช้ชั่วคราวภายในคำขอเดียว ไม่ส่งให้โมเดล และ response ไม่คืน mapping หรือ token-bearing entity projection</p>
-        <p>การปกปิดเป็น pseudonymization ไม่ใช่ anonymization ถาวร ข้อความที่ปกปิดแล้วจึงยังต้องได้รับการดูแลตาม PDPA การตรวจจับอัตโนมัติมีโอกาสพลาดได้ จึงควรมี human review สำหรับงานความเสี่ยงสูง</p>
-        <p>หนึ่งการกด Safe AI เรียก <code>/roundtrip</code> หนึ่งครั้ง ฝั่งเซิร์ฟเวอร์อาจลอง provider เดิมซ้ำตาม retry policy ที่จำกัดไว้ แต่ไม่มีการ fallback ไป provider อื่น</p>
-      </div>
-    </details>
-
-    <details class="trust-details entity-glossary" id="entityGlossary">
-      <summary>อภิธานศัพท์ข้อมูลและการปกป้อง</summary>
-      <div class="trust-details-content">
-        <div class="glossary-grid">
-          <div class="glossary-item"><b>PII</b><span>ข้อมูลที่อาจระบุหรือเชื่อมโยงถึงบุคคลได้</span></div>
-          <div class="glossary-item"><b>Token</b><span>placeholder ที่บอกประเภทข้อมูล แต่ไม่เปิดเผยค่าจริง</span></div>
-          <div class="glossary-item"><b>Surrogate</b><span>ข้อมูลสมมุติรูปแบบใกล้เคียงจริง เพื่อช่วยให้โมเดลอ่านบริบทเป็นธรรมชาติ</span></div>
-          <div class="glossary-item"><b>Protected / Sanitized</b><span>ข้อความหลัง AI Guard ปกป้องและตรวจซ้ำก่อนส่งต่อ</span></div>
-          <div class="glossary-item"><b>Restored</b><span>คำตอบที่กู้คืนบริบทแล้วและผ่านเงื่อนไขความปลอดภัย</span></div>
-          <div class="glossary-item"><b>Residual</b><span>สัญญาณข้อมูลที่การตรวจซ้ำยังพบหลังปกป้อง</span></div>
-          <div class="glossary-item"><b>Prompt Risk</b><span>สัญญาณเตือนจากกฎ Guard เพื่อให้มนุษย์ตรวจทาน ไม่ใช่ตัวบล็อก</span></div>
-          <div class="glossary-item"><b>มาตรา 26</b><span>ธงหมวดข้อมูลอ่อนไหวที่ระบบรองรับ ไม่ใช่ข้อสรุปทางกฎหมาย</span></div>
-        </div>
-        <p class="glossary-detected" id="glossaryDetected">ประเภทที่พบในคำขอปัจจุบัน: ยังไม่มีผล</p>
-      </div>
-    </details>
-  </div>
-</section>
-
-<!-- Workflow 03: generate the score first, then let the user download -->
-<section class="section-shell" id="pdpa-report" aria-labelledby="reportTitle">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <p class="workflow-number">Workflow 03</p>
-        <h2 class="section-title" id="reportTitle">PDPA Report</h2>
-        <p class="section-sub">ประเมินข้อความชุดเดียวกัน ดูคะแนนและเกรดที่ระบบส่งกลับก่อน แล้วจึงเลือกดาวน์โหลดรายงานภาษาไทย</p>
-      </div>
-      <span class="demo-label">REPORT WITHOUT SOURCE TEXT</span>
-    </div>
-
-    <div class="report-layout">
-      <div class="report-explainer">
-        <h3>จากการตรวจจับ สู่หลักฐานที่สื่อสารได้</h3>
-        <p>รายงานสรุปความเสี่ยงจากจำนวนและหมวดข้อมูลที่ตรวจพบ เพื่อช่วยทีมคุยเรื่องการลดข้อมูลและ PDPA ด้วยภาษาที่เข้าใจร่วมกัน</p>
-        <ul>
-          <li>ไฟล์รายงานไม่ฝังข้อความต้นฉบับ</li>
-          <li>แสดงคะแนน เกรด และรายละเอียดที่ระบบคำนวณจริง</li>
-          <li>ไม่ใช้แทนคำปรึกษากฎหมายหรือการประเมินโดยมนุษย์</li>
-        </ul>
-      </div>
-
-      <div class="card report-card">
-        <h3>สรุปก่อนดาวน์โหลด</h3>
-        <p class="card-desc">กดวิเคราะห์เพื่อสร้างรายงานจากข้อความใน Privacy Scan ผลจะเก็บไว้ชั่วคราวเฉพาะในหน้านี้จนกว่าจะเปลี่ยนข้อความ เริ่มใหม่ หรือออกจากระบบ</p>
-        <div class="report-summary">
-          <div class="summary-box"><div class="value" id="reportScore">—</div><div class="label">คะแนนความเสี่ยง / 100</div></div>
-          <div class="summary-box"><div class="value" id="reportGrade">—</div><div class="label">เกรดที่ระบบส่งกลับ</div></div>
-        </div>
-        <div class="report-ready" id="reportScope">ยังไม่ได้สร้างรายงาน</div>
-        <div class="report-context" id="reportCategories">ประเภทข้อมูลจะแสดงจาก Privacy Scan ของข้อความเดียวกัน โดยไม่ใส่ข้อความต้นฉบับในสรุปนี้</div>
-        <div class="action-row">
-          <button id="reportBtn" class="primary primary-action" type="button">วิเคราะห์รายงาน PDPA</button>
-          <button id="reportDownloadBtn" class="secondary-action" type="button" hidden>ดาวน์โหลดรายงาน PDPA</button>
-        </div>
-        <div class="pdfmeta status-line" id="reportMeta" role="status" aria-live="polite"></div>
-        <div class="status-line" id="reportTiming">ยังไม่มีเวลาคำขอ</div>
-      </div>
-    </div>
-
-    <details class="trust-details">
-      <summary>ขอบเขตความเป็นส่วนตัวและข้อจำกัดที่ควรรู้</summary>
-      <div class="trust-details-content">
-        <p>หน้าเว็บและการตรวจสถานะเปิดอ่านได้ แต่การประมวลผลข้อความทุกเส้นต้องเข้าสู่ระบบผ่าน cookie แบบ HttpOnly ข้อมูลต้นฉบับวิ่งผ่าน reverse proxy และเซิร์ฟเวอร์ AI Guard ก่อนถูกปกปิด ไม่มีฐานข้อมูลผู้ใช้ และโค้ดหน้านี้ไม่ใช้พื้นที่จัดเก็บถาวรสำหรับเนื้อหาผู้ใช้ในเบราว์เซอร์</p>
-        <p>AI Guard ไม่รับประกันการตรวจพบ 100% หมวดอ่อนไหวตามมาตรา 26 ที่ระบบรองรับจะแสดงเป็น heuristic review signal ตามผลจริง ไม่ใช่คำตัดสินทางกฎหมาย และไม่ถูกปกปิดอัตโนมัติเพียงเพราะอยู่ในหมวดดังกล่าว</p>
-      </div>
-    </details>
-  </div>
-</section>
-
-<section class="product-links-section" id="product" aria-labelledby="productTitle">
-  <div class="container">
-    <div class="closing-cta">
-      <div>
-        <p class="workflow-number">เริ่มจากขอบเขตที่แข็งแรงกว่า</p>
-        <h2 id="productTitle">ใช้ Desktop เมื่อต้องการให้ข้อมูลและ vault อยู่บนอุปกรณ์</h2>
-        <p>AI Guard Desktop 3.0.0 มีไฟล์สำหรับ Windows x64, Linux x64 และ macOS Apple silicon ส่วน Chrome Extension ยังเป็น Manual / Developer installation และ Store ยังไม่เผยแพร่</p>
-      </div>
-      <div class="closing-actions">
-        <a href="/downloads#desktop">เลือกไฟล์ Desktop</a>
-        <a class="secondary" href="#web-access">เข้า Web App Private Beta</a>
-        <a class="secondary" href="/privacy">อ่านขอบเขตข้อมูล</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="enterprise-section" id="enterprise-value" aria-labelledby="enterpriseTitle">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <p class="workflow-number">สำหรับองค์กร · For Organizations</p>
-        <h2 class="section-title" id="enterpriseTitle">ชั้นปกป้องข้อมูลก่อนองค์กรใช้ AI</h2>
-        <p class="section-sub">ใช้ได้กับงาน HR สุขภาพ การศึกษา บริการลูกค้า และภาครัฐ โดยต้องตรวจทานผลและไม่ถือสัญญาณมาตรา 26 เป็นข้อสรุปทางกฎหมาย</p>
-      </div>
-      <span class="demo-label">Desktop local · Web hosted</span>
-    </div>
-    <div class="use-case-line" aria-label="บริบทตัวอย่าง">
-      <span>HR</span><span>Healthcare</span><span>Education</span><span>Customer Service</span><span>Government</span>
-    </div>
-
-    <details class="trust-details service-details" id="systemEvidence">
-      <summary>ดูสถานะและขอบเขตของ Hosted Web App</summary>
-      <div class="system-evidence" aria-label="สถานะบริการ">
-        <div class="system-evidence-intro"><h3>สถานะบริการ</h3><p>เป็นการตรวจ liveness ครั้งเดียวเมื่อเปิดหน้า ไม่ใช่การรับรองว่า AI ปลายทางพร้อมใช้งาน</p></div>
-        <div class="system-evidence-item"><span>สถานะบริการ</span><b id="serviceStatus">กำลังตรวจสอบ</b></div>
-        <div class="system-evidence-item"><span>เวอร์ชันผลิตภัณฑ์</span><b id="serviceVersion">—</b></div>
-        <div class="system-evidence-item"><span>รูปแบบการปกป้อง</span><b id="systemMode">Token</b></div>
-        <div class="system-evidence-item"><span>AI ปลายทาง</span><b>การเชื่อมต่อที่ได้รับอนุมัติ</b></div>
-        <div class="system-evidence-item"><span>ขอบเขตเวอร์ชัน Hosted</span><b>การลบ PII ใน PDF/OCR แบบสาธารณะ: ปิด</b></div>
-      </div>
-    </details>
+    <section class="hosted3-recovery" id="h3Recovery" hidden role="alert" tabindex="-1"><p id="h3RecoveryCopy"></p><button class="primary" id="h3RecoveryAction" type="button">Retry session check</button></section>
   </div>
 </section>
 
@@ -536,13 +122,13 @@
 
 <footer>
   <div class="container">
-    <strong>AI Guard</strong> · Desktop 3.0.0 Published · Hosted 2.5.0 Private Beta · Extension 3.0.0 Manual
-    <br><a href="/">หน้าแรก</a> · <a href="/privacy">ความเป็นส่วนตัวและความปลอดภัย</a> · <a href="/terms">ข้อกำหนด</a> · <a href="/help">ช่วยเหลือ/FAQ</a> · <a href="/downloads">Desktop และ Extension</a>
+    <strong>AI Guard</strong> · Desktop 3.0.0 Published · Hosted 3.0.0 · Extension 3.0.0 Manual
+    <br><a href="/">หน้าแรก</a> · <a href="/privacy">ความเป็นส่วนตัวและความปลอดภัย</a> · <a href="/terms">ข้อกำหนด</a> · <a href="/help">ช่วยเหลือ/FAQ</a> · <a href="/downloads">Desktop และ Extension</a> · <a href="/developers">Contract &amp; evidence</a>
   </div>
 </footer>
 
 <div class="visually-hidden" id="appAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script src="/app.js" defer></script>
+<script src="/hosted3-app.js" defer></script>
 </body>
 </html>

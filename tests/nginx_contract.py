@@ -73,7 +73,29 @@ PACE_SECONDS = 0.15
 
 ENDPOINTS = ["health", "detect", "guard", "roundtrip", "analyze-report"]
 AUTH_ENDPOINTS = ("login", "logout", "session")
-PUBLIC_ROUTE_COUNT = 16
+
+HOSTED3_FIXTURE = json.loads(
+    (REPO / "tests" / "fixtures" / "hosted3" / "contract.json").read_text(
+        encoding="utf-8"
+    )
+)
+HOSTED3_PLANNED = HOSTED3_FIXTURE["additive_canonical_routes"] + [
+    f"/v1{path}" for path in HOSTED3_FIXTURE["additive_canonical_routes"]
+]
+PUBLIC_ROUTE_COUNT = HOSTED3_FIXTURE["target_exact_route_count"]
+HOSTED3_AUTH = ("/auth/guest", "/auth/guest/end")
+HOSTED3_PROTECTED = {
+    "/guest/preview": ("POST", b'{"scenario_id":"fixture"}', "/api/guest/preview"),
+    "/guest/execute": ("POST", b'{"ticket":"fixture"}', "/api/guest/execute"),
+    "/protection-preview": ("POST", b'{"text":"fixture","mode":"token"}', "/api/protection-preview"),
+    "/protection-execute": ("POST", b'{"text":"fixture"}', "/api/protection-execute"),
+    "/document-preview": ("POST", b"%PDF-fixture", "/api/document-preview"),
+    "/document-execute": ("POST", b'{"protected_text":"fixture"}', "/api/document-execute"),
+    "/provider-queue/join": ("POST", b'{"ticket":"fixture"}', "/api/provider-queue/join"),
+    "/provider-queue/status": ("GET", None, "/api/provider-queue/status"),
+    "/provider-queue/claim": ("POST", b'{"queue_capability":"fixture","last_revision":1}', "/api/provider-queue/claim"),
+    "/provider-queue/cancel": ("POST", b"{}", "/api/provider-queue/cancel"),
+}
 
 # Paths that must not exist on this deployment. The first four are the routes
 # the core really serves and this deployment withholds; /api/health catches a
@@ -176,6 +198,29 @@ def get(
             )
     except urllib.error.HTTPError as e:
         return e.code, dict(e.headers), e.read().decode("utf-8", "replace")
+
+
+def call(
+    path: str,
+    *,
+    method: str,
+    data: bytes | None,
+    headers: dict[str, str] | None = None,
+) -> tuple[int, dict[str, str], str]:
+    """Call the built proxy without relying on a route count alone."""
+    time.sleep(PACE_SECONDS)
+    request_headers = {"Host": "team08.aiforthai.in.th"}
+    request_headers.update(headers or {})
+    if data is not None:
+        request_headers.setdefault(
+            "Content-Type", "application/pdf" if path.endswith("document-preview") else "application/json"
+        )
+    request = urllib.request.Request(BASE + path, data=data, headers=request_headers, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return response.status, dict(response.headers), response.read().decode("utf-8")
+    except urllib.error.HTTPError as error:
+        return error.code, dict(error.headers), error.read().decode("utf-8", "replace")
 
 
 def web_response(path: str) -> tuple[int, dict[str, str], str]:
@@ -362,7 +407,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
 
     home = (REPO / "web" / "index.html").read_text(encoding="utf-8")
     app_page = (REPO / "web" / "app.html").read_text(encoding="utf-8")
-    app_js = (REPO / "web" / "app.js").read_text(encoding="utf-8")
+    app_js = (REPO / "web" / "hosted3-app.js").read_text(encoding="utf-8")
     page = app_page + "\n" + app_js
     readme = (REPO / "README.md").read_text(encoding="utf-8")
     forbidden_claims = (
@@ -380,9 +425,9 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
             )
 
     required_boundaries = (
-        "ข้อความต้นฉบับเดินทางถึงแพลตฟอร์มและเซิร์ฟเวอร์ AI Guard ก่อน",
-        "ส่งต่อจากเซิร์ฟเวอร์ไปยังโมเดลภาษา",
-        "ไม่คืน mapping หรือ token-bearing entity projection",
+        "ข้อความและ PDF แบบมี text layer ผ่าน organizer proxy และ AI Guard Core",
+        "Pathumma ได้รับเฉพาะข้อความที่ปกป้องและอนุมัติแล้ว",
+        "ไม่ได้รับ PDF, ข้อความต้นฉบับ หรือ mapping",
     )
     for boundary in required_boundaries:
         if boundary not in page:
@@ -390,9 +435,9 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
                 f"hosted wording: required disclosure missing: {boundary!r}"
             )
     required_auth_claims = (
-        "การประมวลผลข้อความทุกเส้นต้องเข้าสู่ระบบ",
-        "HttpOnly",
-        "ไม่บันทึกรหัสเชิญลงพื้นที่จัดเก็บของเบราว์เซอร์",
+        "Start Standard access",
+        "Use Priority Invite",
+        "ไม่เก็บข้อมูลส่วนตัวในเบราว์เซอร์",
     )
     for claim in required_auth_claims:
         if claim not in page + readme:
@@ -402,7 +447,7 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
             failures.append(
                 f"frontend auth: credential storage primitive present: {forbidden_storage}"
             )
-    if 'id="accessCode"' not in page or 'autocomplete="off"' not in page:
+    if 'id="h3Invite"' not in page or 'autocomplete="off"' not in page:
         failures.append(
             "frontend auth: access-code input does not disable autocomplete"
         )
@@ -419,41 +464,36 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
     for required_projection in (
         "body.highlights",
         "body.detected_entity_count",
-        'fetch("/api/auth/login"',
-        "codePointRangeToUtf16(text, e.start, e.end)",
-        "body.authenticated === true",
-        'provider_configuration: "บริการ LLM ยังไม่พร้อม',
-        'ner_unavailable: "ระบบตรวจชื่อยังไม่พร้อม',
+        'api("/api/auth/login"',
+        "body.authenticated !== true",
         'body.safety.status === "pass"',
         'body.restoration.status === "complete"',
         "body.restoration.leftover_count === 0",
+        '!Object.hasOwn(body, "restored_text")',
     ):
         if required_projection not in page:
             failures.append(
                 f"frontend contract: strict/minimized field missing: {required_projection}"
             )
     for required_session_safety in (
-        "function clearSensitiveState()",
-        "function invalidateBusinessRequests()",
-        "function invalidateAuthCheck()",
-        "function setAuthMutationState(value)",
-        "authGeneration += 1;",
-        "controller.abort();",
-        "generation !== authCheckGeneration",
-        "generation !== authGeneration",
-        "generation !== detectGeneration || text !== editor.value",
-        "if (isStaleBusinessError(err)) return false;",
-        "complete = r.status === 204;",
-        "session บนเซิร์ฟเวอร์อาจยังอยู่",
+        "function resetSensitive(",
+        "function setAuthorityBusy(value)",
+        "state.generation += 1",
+        "state.inspectRequest += 1",
+        "state.claimAbort.abort()",
+        "function isCurrent(generation)",
+        "if (state.authorityMutation) return",
+        "setProviderRunning(true)",
+        "ไม่สามารถรับประกันการยกเลิก upstream",
     ):
         if required_session_safety not in page:
             failures.append(
                 "frontend session safety: missing stale-response/state-clear guard: "
                 f"{required_session_safety!r}"
             )
-    logout_start = page.find('logoutBtn.addEventListener("click"')
-    logout_invalidate = page.find("setAuthState(false", logout_start)
-    logout_request = page.find('fetch("/api/auth/logout"', logout_start)
+    logout_start = page.find("async function endAuthority()")
+    logout_invalidate = page.find("resetSensitive({ keepInputs: false })", logout_start)
+    logout_request = page.find("await api(path", logout_start)
     if not (
         logout_start >= 0
         and logout_invalidate > logout_start
@@ -463,9 +503,9 @@ def check_frontend_static_boundary(failures: list[str]) -> None:
             "frontend session safety: logout does not invalidate state before its request"
         )
     if (
-        page.count("if (authMutationInFlight) return;") < 2
-        or page.count("setAuthMutationState(true);") < 2
-        or page.count("setAuthMutationState(false);") < 2
+        page.count("if (state.authorityMutation) return;") < 3
+        or page.count("setAuthorityBusy(true);") < 3
+        or page.count("setAuthorityBusy(false);") < 3
     ):
         failures.append(
             "frontend session safety: login/logout mutations are not serialized"
@@ -543,11 +583,12 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
     web_config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
     expected_pages = {
         "/": "ปกป้องข้อมูลก่อน",
-        "/app": "Hosted Web App",
+        "/app": "Hosted 3.0.0 Web App",
         "/privacy": "ข้อมูลไปไหน",
         "/terms": "ใช้ได้เมื่อ",
         "/help": "แก้ปัญหา",
         "/downloads": "ข้อมูลอยู่ในเครื่อง",
+        "/developers": "Contract &amp;".replace("&amp;", "&"),
         "/robots.txt": "Disallow: /api/",
         "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
     }
@@ -565,6 +606,11 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
             'href="/assets/ai-guard-favicon.svg"' not in body
         ):
             failures.append(f"product page: {path} does not use the production favicon")
+        if path in {"/privacy", "/terms", "/help", "/downloads", "/developers"} and (
+            'href="/developers">Contract &amp; evidence</a>' not in body
+            and path != "/developers"
+        ):
+            failures.append(f"product page: {path} does not link Contract & evidence")
 
     static_assets = {
         "/assets/ai-guard-mark.svg": ("image/svg+xml", b"<svg"),
@@ -578,7 +624,7 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
         "/home.css": ("text/css", b"    @font-face"),
         "/home.js": ("application/javascript", b"document.documentElement.classList.add"),
         "/app.css": ("text/css", b"  @font-face"),
-        "/app.js": ("application/javascript", b'"use strict";'),
+        "/hosted3-app.js": ("application/javascript", b"(() => {"),
         "/product.css": ("text/css", b"@font-face"),
     }
     for path, (content_type, prefix) in static_assets.items():
@@ -612,6 +658,7 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
         "/terms.html",
         "/help.html",
         "/downloads.html",
+        "/developers.html",
         "/home.jsx",
         "/product.cssx",
         "/unknown.js",
@@ -646,6 +693,9 @@ def check_rate_and_log_policy(failures: list[str]) -> None:
     for required in (
         '"~(?:^|;[[:space:]]*)__Host-aift_session=v1\\.[0-9]{1,12}\\.([A-Za-z0-9_-]{22})\\.[A-Za-z0-9_-]{43}(?:;|$)" $1;',
         "$aift_duplicate_session_cookie",
+        "$aift_duplicate_standard_cookie",
+        "zone=document_global:1m rate=4r/m",
+        "zone=document_global_conn:1m",
         "zone=public_global:1m rate=30r/s",
         "zone=auth_global:1m rate=2r/s",
         "zone=provider_global:1m rate=6r/m",
@@ -714,6 +764,17 @@ def check_rate_and_log_policy(failures: list[str]) -> None:
     )
     if duplicate_status != 400:
         failures.append("abuse control: duplicate session authorities were not rejected")
+    duplicate_standard_status, _headers, _body = get(
+        "/guard",
+        headers={
+            "Cookie": "__Host-aift_guest="
+            + shaped_cookie("rotatedGuest".ljust(22, "r")).split("=", 1)[1]
+            + "; __Host-aift_guest="
+            + shaped_cookie("authenticatedGuest".ljust(22, "a")).split("=", 1)[1]
+        },
+    )
+    if duplicate_standard_status != 400:
+        failures.append("abuse control: duplicate Standard authorities were not rejected")
 
     # Exhaust the public control-plane bucket, then prove container liveness
     # uses the unexported listener and cannot be forced into a restart loop.
@@ -774,6 +835,72 @@ def check_auth_paths_are_port_owned(failures: list[str]) -> None:
                 )
             if seen["key"] or seen["contract"]:
                 failures.append(f"auth path: {path} received an internal core header")
+
+
+def check_hosted3_exact_routes_reach_only_approved_core_paths(failures: list[str]) -> None:
+    """Exercise every new canonical and alias route through the built proxy."""
+    for path in HOSTED3_AUTH:
+        for public_path in (path, "/v1" + path):
+            status, _headers, body = call(public_path, method="POST", data=b"{}")
+            if status != 200:
+                failures.append(f"stage5 auth: {public_path} returned {status}, expected 200")
+                continue
+            seen = json.loads(body)
+            if seen.get("path") != "/aift" + path or seen.get("key") or seen.get("contract"):
+                failures.append(f"stage5 auth: {public_path} did not isolate port-owned auth")
+    for index, (path, (method, data, upstream)) in enumerate(HOSTED3_PROTECTED.items()):
+        expected_body = None
+        cookie = (
+            "__Host-aift_guest=v1.1800001800."
+            + f"stage5{index}".ljust(22, "x")
+            + "."
+            + "s" * 43
+        )
+        for public_path in (path, "/v1" + path):
+            status, _headers, body = call(
+                public_path, method=method, data=data, headers={"Cookie": cookie}
+            )
+            if status != 200:
+                failures.append(f"stage5 route: {public_path} returned {status}, expected 200")
+                continue
+            seen = json.loads(body)
+            if seen.get("path") != upstream or seen.get("key") != TEST_KEY or seen.get("contract") != "2":
+                failures.append(f"stage5 route: {public_path} did not reach only {upstream}")
+            if expected_body is None:
+                expected_body = body
+            elif body != expected_body:
+                failures.append(f"stage5 parity: {path} and /v1 alias differ at proxy")
+
+    before = stub_log_lines()
+    status, headers, _body = call(
+        "/provider-queue/status",
+        method="GET",
+        data=b"x",
+        headers={"Cookie": "__Host-aift_guest=v1.1800001800." + "bodyless".ljust(22, "x") + "." + "s" * 43},
+    )
+    if status != 413 or "X-AIGuard-Server-Time-Ms" in headers:
+        failures.append("stage5 status: nonempty GET body was not headerless edge 413")
+    if stub_log_lines() != before:
+        failures.append("stage5 status: rejected body reached Core")
+
+    operation_map = (REPO / "api" / "default.conf.template").read_text(encoding="utf-8")
+    expected_operations = {
+        "/auth/guest": "auth_guest",
+        "/auth/guest/end": "auth_guest_end",
+        "/guest/preview": "guest_preview",
+        "/guest/execute": "guest_execute",
+        "/protection-preview": "protection_preview",
+        "/protection-execute": "protection_execute",
+        "/document-preview": "document_preview",
+        "/document-execute": "document_execute",
+        "/provider-queue/join": "provider_queue_join",
+        "/provider-queue/status": "provider_queue_status",
+        "/provider-queue/claim": "provider_queue_claim",
+        "/provider-queue/cancel": "provider_queue_cancel",
+    }
+    for path, operation in expected_operations.items():
+        if f"  {path} {operation};" not in operation_map or f"  /v1{path} {operation};" not in operation_map:
+            failures.append(f"stage5 logging: {path} does not have its value-free operation label")
 
 
 def check_allowlist_denies_at_the_proxy(failures: list[str]) -> None:
@@ -892,17 +1019,21 @@ def check_fixed_proxy_failures_and_timeout_policy(failures: list[str]) -> None:
         )
         if block is None or "proxy_read_timeout 200s;" not in block.group("body"):
             failures.append(f"timeout: {location} does not cover the shared 183s policy")
-    if config.count("proxy_read_timeout 200s;") != 2:
-        failures.append("timeout: provider deadline was widened beyond two roundtrip aliases")
+    if config.count("proxy_read_timeout 200s;") != 8:
+        failures.append("timeout: provider deadline is not limited to the two legacy and six Stage 5 execute aliases")
 
-    frontend = (REPO / "web" / "app.js").read_text(encoding="utf-8")
-    uncertain_lock = re.search(
-        r"const\s+PROVIDER_UNCERTAIN_LOCK_MS\s*=\s*(\d+)\s*;", frontend
-    )
-    if uncertain_lock is None or int(uncertain_lock.group(1)) < 200_000:
-        failures.append(
-            "timeout: browser uncertain-request lock is shorter than nginx's 200s roundtrip boundary"
-        )
+    frontend = (REPO / "web" / "hosted3-app.js").read_text(encoding="utf-8")
+    for marker in (
+        "setProviderRunning(true)",
+        "one unresolved provider-bound",
+        "ไม่สามารถรับประกันการยกเลิก upstream",
+    ):
+        if marker not in frontend and marker not in (
+            REPO / "docs" / "production-web-redesign.md"
+        ).read_text(encoding="utf-8"):
+            failures.append(
+                f"timeout: Hosted 3 caller lost unresolved-provider truth: {marker!r}"
+            )
 
 
 def main() -> int:
@@ -912,6 +1043,7 @@ def main() -> int:
         setup()
         check_prefix_is_re_added(failures)
         check_auth_paths_are_port_owned(failures)
+        check_hosted3_exact_routes_reach_only_approved_core_paths(failures)
         check_allowlist_denies_at_the_proxy(failures)
         check_key_is_injected(failures)
         check_request_target_stays_out_of_the_log(failures)
@@ -933,11 +1065,12 @@ def main() -> int:
         for failure in failures:
             print(f"  - {failure}", file=sys.stderr)
         return 1
-    if len(ENDPOINTS) * 2 + len(AUTH_ENDPOINTS) * 2 != PUBLIC_ROUTE_COUNT:
-        raise ContractFailure("public route count drifted from 16")
+    if len(ENDPOINTS) * 2 + len(AUTH_ENDPOINTS) * 2 + len(HOSTED3_AUTH) * 2 + len(HOSTED3_PROTECTED) * 2 != PUBLIC_ROUTE_COUNT:
+        raise ContractFailure("public route count drifted from the approved 40")
     print(
         f"nginx contract ok: {len(ENDPOINTS) * 2} paths proxied, "
-        f"{len(AUTH_ENDPOINTS) * 2} auth aliases isolated, "
+        f"{(len(AUTH_ENDPOINTS) + len(HOSTED3_AUTH)) * 2} auth aliases isolated, "
+        f"{len(HOSTED3_PROTECTED) * 2} Stage 5 paths route to approved Core targets, "
         f"{len(DENIED)} denied at the proxy, key/contract injected, api/web logs clean, "
         "web nginx syntax valid, hosted wording bounded, no-store set"
     )

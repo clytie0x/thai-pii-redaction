@@ -18,13 +18,18 @@ MODULE_PATH = REPO / "core" / "aift_auth.py"
 def load_module():
     if not MODULE_PATH.exists():
         raise AssertionError(f"missing auth gateway: {MODULE_PATH.relative_to(REPO)}")
-    spec = importlib.util.spec_from_file_location("aift_auth_under_test", MODULE_PATH)
-    if spec is None or spec.loader is None:
-        raise AssertionError("could not load auth gateway module")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    core = str(MODULE_PATH.parent)
+    sys.path.insert(0, core)
+    try:
+        spec = importlib.util.spec_from_file_location("aift_auth_under_test", MODULE_PATH)
+        if spec is None or spec.loader is None:
+            raise AssertionError("could not load auth gateway module")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.path.remove(core)
 
 
 class DummyApp:

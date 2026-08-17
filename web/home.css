@@ -714,6 +714,10 @@
       .trust-copy{padding-top:30px}
       .trust-grid{grid-template-columns:repeat(2,1fr)}
     }
+    @media(max-width:760px){
+      footer{padding:24px 20px;align-items:flex-start;flex-wrap:wrap;gap:12px 16px}
+      .footer-brand{width:100%;margin-right:0}
+    }
     @media(max-width:680px){
       .site-header{height:72px;padding:0 15px}
       .brand{font-size:17px}
@@ -805,7 +809,7 @@
       .closing{padding:82px 20px 78px}
       .closing h2{font-size:52px}
       .closing-actions{display:grid}
-      footer{align-items:flex-start;flex-wrap:wrap}
+      footer{padding:24px 20px;align-items:flex-start;flex-wrap:wrap;gap:12px 16px}
       .footer-brand{width:100%;margin-right:0}
     }
     @media(prefers-reduced-motion:reduce){

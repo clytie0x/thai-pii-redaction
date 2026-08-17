@@ -7,3 +7,5 @@ __pycache__/
 artifacts/
 tests/out/
 output/
+.playwright-cli/
+tmp/

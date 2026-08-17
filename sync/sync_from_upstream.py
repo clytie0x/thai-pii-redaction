@@ -135,8 +135,9 @@ def do_sync(upstream: Path) -> None:
 
     for p in _iter_files(CORE):
         rel = p.relative_to(CORE).as_posix()
-        # port-owned files inside core/ (Dockerfile, prewarm) are not vendored
-        if rel in PORT_OWNED:
+        # Port-owned overlay files inside core/ are not vendored. Prefixes are
+        # deliberately narrow so an unrelated extra file still fails --check.
+        if _is_port_owned(rel):
             continue
         files[rel] = _sha256(p)
 
@@ -169,7 +170,21 @@ PORT_OWNED = {
     "requirements-aift-security.in",
     "requirements-aift-security.lock",
     "verify_thainer_assets.py",
+    # Hosted has its own release channel/version. The upstream VERSION remains
+    # recorded in PORT_MANIFEST.json for provenance, but the deployed Hosted
+    # value is intentionally release-owned and checked by Stage 7 contracts.
+    "VERSION",
 }
+
+# Hosted-only code must live behind this one bounded package prefix. Vendored
+# app/ and pii_redactor/ remain hash-pinned to PORT_MANIFEST.json.
+PORT_OWNED_PREFIXES = ("aift_hosted3/",)
+
+
+def _is_port_owned(relative: str) -> bool:
+    return relative in PORT_OWNED or any(
+        relative.startswith(prefix) for prefix in PORT_OWNED_PREFIXES
+    )
 
 
 def _slice_hashes(upstream: Path) -> dict[str, str]:
@@ -233,11 +248,16 @@ def do_check(*, verify_upstream: bool = False) -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if manifest.get("upstream") != UPSTREAM_URL:
         _die("manifest points at an unexpected upstream repository")
-    want: dict[str, str] = manifest["files"]
+    manifest_files: dict[str, str] = manifest["files"]
+    want: dict[str, str] = {
+        relative: digest
+        for relative, digest in manifest_files.items()
+        if not _is_port_owned(relative)
+    }
     have = {
         p.relative_to(CORE).as_posix(): _sha256(p)
         for p in _iter_files(CORE)
-        if p.relative_to(CORE).as_posix() not in PORT_OWNED
+        if not _is_port_owned(p.relative_to(CORE).as_posix())
     }
     missing = sorted(set(want) - set(have))
     extra = sorted(set(have) - set(want))
@@ -251,8 +271,11 @@ def do_check(*, verify_upstream: bool = False) -> None:
             print(f"CHANGED  {k}", file=sys.stderr)
         _die("core/ does not match PORT_MANIFEST.json")
     if verify_upstream:
-        _verify_recorded_upstream(manifest, want)
-    print(f"check ok: {len(want)} files match commit {manifest['commit'][:12]}")
+        _verify_recorded_upstream(manifest, manifest_files)
+    print(
+        f"check ok: {len(want)} vendored files match commit {manifest['commit'][:12]}; "
+        "Hosted VERSION is release-owned and its upstream provenance remains in the manifest"
+    )
 
 
 def main() -> None:

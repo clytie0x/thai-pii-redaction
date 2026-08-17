@@ -26,6 +26,7 @@ INTENDED = {
     "APP_AIGUARD_API_KEY",
     "APP_AIFT_ACCESS_CODE",
     "APP_AIFT_COOKIE_SIGNING_KEY",
+    "APP_AIFT_PRIORITY_INVITES_JSON",
     "APP_TOKENMIND_API_KEY",
 }
 SYNTHETIC = {
@@ -108,7 +109,7 @@ def main() -> int:
     output = result.stdout + result.stderr
     if any(value in output for value in SYNTHETIC.values()):
         raise AssertionError("acceptance error output disclosed a secret value")
-    print("secret hygiene contract ok: argv value-free, mode/cleanup pinned, four-name allowlist")
+    print("secret hygiene contract ok: argv value-free, mode/cleanup pinned, five-name allowlist")
     return 0
 
 

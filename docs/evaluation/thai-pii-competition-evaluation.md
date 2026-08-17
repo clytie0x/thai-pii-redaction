@@ -1,14 +1,18 @@
 # AI Guard Thai PII competition evaluation
 
-Status: deterministic baseline complete on 2026-08-10. Detector/runtime source:
-`72e18bbe723adaf54c847e4b17c2177dfa60dd68` (production pipeline `#35744`, VERSION `2.5.0`).
+Status: deterministic baseline complete on 2026-08-10 and rerun against the
+Hosted 3.0.0 Stage 7 candidate on 2026-08-17. The immutable baseline source is
+`72e18bbe723adaf54c847e4b17c2177dfa60dd68`; the Stage 7 rerun used the current
+manifest-pinned detector bytes in Core image
+`sha256:40076754e43163641f5e5031917b4ae6a19e4421a8f9d28af35feb764729e367`
+with revision label `stage7-eval-local-contract`.
 
 > This is a deterministic synthetic/adversarial evaluation suite, not a
 > population-representative benchmark.
 
 No provider, Tokenmind, production credential, production request, or sourced real-person record
-was used. Public runtime behavior was not changed: the surface remains 16 routes and public PDF/OCR
-redaction remains disabled.
+was used. The Stage 7 rerun made zero network attempts and zero provider calls.
+Hosted 3.0.0 has 40 exact API locations; PDF redaction and OCR remain disabled.
 
 ## Evidence identity
 
@@ -20,6 +24,8 @@ redaction remains disabled.
 - Image revision label: `72e18bbe723adaf54c847e4b17c2177dfa60dd68`
 - Offline thainer asset-tree SHA-256:
   `bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315`
+- Hosted approval detector-code SHA-256:
+  `01bb7d890aa79cbc4f03a8c8da09c134e7e5074cfca3ef64960bf401c7391c64`
 - Canonical three-pass prediction SHA-256:
   `21486e458ce6e031748bcb2566c11e54cf08a524d22f89c8ec35a0d985ab06ce`
 - NER diagnostics: 414 chunks attempted, 414 succeeded, 0 skipped
@@ -29,6 +35,12 @@ redaction remains disabled.
 The full machine-readable evidence is
 `evaluation/thai_pii/baseline.72e18bbe.json`. It contains aggregate metrics and value-free
 case/offset/type diagnostics, not corpus text or reidentification pairs.
+The Stage 7 rerun artifact is kept under ignored local evidence at
+`output/evaluation/hosted-3.0.0-stage7.json`; it reproduced canonical prediction
+SHA-256 `21486e458ce6e031748bcb2566c11e54cf08a524d22f89c8ec35a0d985ab06ce`
+and the published aggregate metrics below. Stage 8 must rerun it against the
+exact clean release-candidate SHA rather than treating this local label as
+production evidence.
 
 ## Corpus design
 

@@ -1,8 +1,9 @@
-"""Static contract for the first hosted public route and product surface."""
+"""Static contract for the Stage 6 local Hosted caller surface."""
 
 from __future__ import annotations
 
 import re
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,7 +18,7 @@ def main() -> int:
     nginx = (ROOT / "api" / "default.conf.template").read_text(encoding="utf-8")
     frontend = "\n".join(
         (ROOT / "web" / name).read_text(encoding="utf-8")
-        for name in ("index.html", "app.html", "app.js")
+        for name in ("index.html", "app.html", "hosted3-app.js", "developers.html")
     )
     core = (ROOT / "core" / "app" / "server.py").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -25,7 +26,8 @@ def main() -> int:
     deploy_day = (ROOT / "docs" / "DEPLOY-DAY.md").read_text(encoding="utf-8")
 
     exact_routes = re.findall(r"^\s*location = (/[^ {]+) \{", nginx, re.MULTILINE)
-    require(len(exact_routes) == 16, f"expected 16 exact public routes, got {len(exact_routes)}")
+    hosted3 = json.loads((ROOT / "tests/fixtures/hosted3/contract.json").read_text(encoding="utf-8"))
+    require(len(exact_routes) == 40, f"expected 40 local Stage 5 routes, got {len(exact_routes)}")
     require(len(exact_routes) == len(set(exact_routes)), "duplicate public route")
     for path in ("/redact-pdf", "/v1/redact-pdf"):
         require(path not in exact_routes, f"public PDF route exposed: {path}")
@@ -40,8 +42,13 @@ def main() -> int:
     current_docs = "\n".join((readme, state, deploy_day))
     for claim in ("production-ready", "correctness", "resource acceptance"):
         require(claim in current_docs, f"current PDF quarantine documentation missing: {claim}")
-    require("16 routes" in current_docs, "current public route count is not documented")
-    print("public surface contract ok: 16 routes, public PDF denied, internal PDF retained")
+    require("40 routes" in current_docs, "Hosted 3.0.0 route count is not documented")
+    require("deployed production remains Hosted `2.5.0` with exactly 16 public locations" in state, "pre-release production boundary is not explicit")
+    for path in ("/auth/guest", "/protection-preview", "/document-preview", "/provider-queue/join", "/provider-queue/claim", "/provider-queue/cancel"):
+        require(f'"/api{path}"' in frontend, f"Stage 6 caller path missing {path}")
+    require('localStorage' not in frontend and 'sessionStorage' not in frontend, "Stage 6 browser persistence leaked")
+    require('href="/developers"' in frontend and 'same-origin application contract' in frontend, "developer reference is incomplete")
+    print("public surface contract ok: Hosted 3.0.0 release candidate uses the approved 40-route caller while deployed 2.5/16 remains explicit")
     return 0
 
 

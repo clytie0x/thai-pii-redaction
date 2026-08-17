@@ -32,12 +32,34 @@ default:
 check:
   stage: check
   interruptible: true
+  # The Hosted approval and queue contracts need AES-GCM. Keep this exact package out of
+  # deploy/acceptance/ops jobs; the Core image has its separate hash-locked pin.
+  before_script:
+    - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
+    - apk add --no-cache curl bash git nodejs py3-cryptography=42.0.7-r0 py3-httpx py3-yaml python3 >/dev/null
+    - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
   script:
     - python3 sync/sync_from_upstream.py --check --verify-upstream
     - python3 tests/auth_contract.py
+    - python3 tests/hosted3_authority_contract.py
+    - python3 tests/hosted3_approval_contract.py
+    - python3 tests/hosted3_document_contract.py
+    - python3 tests/hosted3_document_preview_contract.py
+    - python3 tests/hosted3_document_artifact_contract.py
+    - python3 tests/hosted3_pathumma_boundary_contract.py
+    - python3 tests/hosted3_provider_queue_contract.py
+    - python3 tests/hosted3_queue_http_contract.py
+    - python3 tests/hosted3_execute_contract.py
+    - python3 tests/hosted3_legacy_roundtrip_contract.py
+    - python3 tests/hosted3_stage4c_closeout_contract.py
     - node tests/frontend_session_contract.mjs
+    - node tests/hosted3_frontend_behavior_contract.mjs
     - python3 tests/public_surface_contract.py
     - python3 tests/hosted_core_contract.py
+    - python3 tests/hosted3_contract.py
+    - python3 tests/hosted3_stage5_contract.py
+    - python3 tests/hosted3_version_contract.py
+    - python3 tests/hosted3_rate_limit_contract.py
     - python3 tests/thai_pii_evaluation_contract.py
     - python3 tests/build_context_contract.py
     - python3 tests/secret_hygiene_contract.py
@@ -67,6 +89,7 @@ deploy:
       [ "${#APP_AIGUARD_API_KEY}" -ge 16 ] \
         && [ "${#APP_AIFT_ACCESS_CODE}" -ge 16 ] \
         && [ "${#APP_AIFT_COOKIE_SIGNING_KEY}" -ge 32 ] \
+        && [ -n "${APP_AIFT_PRIORITY_INVITES_JSON:-}" ] \
         && [ -n "${APP_TOKENMIND_API_KEY:-}" ] \
         || { echo "required protected application variables are missing or invalid"; exit 1; }
       [ "$APP_AIGUARD_API_KEY" != "$APP_AIFT_ACCESS_CODE" ] \
@@ -132,13 +155,14 @@ logs:
     - docker logs --tail=400 --timestamps "${TEAM}-web-1"
     - docker logs --tail=400 --timestamps "${TEAM}-api-1"
     - docker logs --tail=400 --timestamps "${TEAM}-core-1"
+    - docker logs --tail=400 --timestamps "${TEAM}-pdf-parser-1"
 
 ps:
   <<: *ops
   script:
     - |
       set -e
-      for service in web api core; do
+      for service in web api core pdf-parser; do
         actual=$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${TEAM}-${service}-1")
         [ "$actual" = "$CI_COMMIT_SHA" ] \
           || { echo "running image revision mismatch"; exit 1; }
@@ -157,20 +181,21 @@ restart:
         [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
           || { echo "refusing an outdated restart"; exit 1; }
       fi
-      for service in web api core; do
+      for service in web api core pdf-parser; do
         actual=$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${TEAM}-${service}-1")
         [ "$actual" = "$CI_COMMIT_SHA" ] \
           || { echo "refusing restart of a different revision"; exit 1; }
       done
-      docker restart "${TEAM}-core-1" "${TEAM}-api-1" "${TEAM}-web-1" >/dev/null
+      docker restart "${TEAM}-pdf-parser-1" "${TEAM}-core-1" "${TEAM}-api-1" "${TEAM}-web-1" >/dev/null
       echo "waiting for restart healthchecks..."
       for i in $(seq 1 40); do
+        parser_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-pdf-parser-1" 2>/dev/null || echo none)
         core_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-core-1" 2>/dev/null || echo none)
         api_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-api-1" 2>/dev/null || echo none)
         web_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-web-1" 2>/dev/null || echo none)
-        [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] && break
+        [ "$parser_st" = "healthy" ] && [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] && break
         sleep 5
       done
-      [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] \
+      [ "$parser_st" = "healthy" ] && [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] \
         || { echo "restart healthcheck timed out"; exit 1; }
       docker ps --filter "label=com.docker.compose.project=${TEAM}" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

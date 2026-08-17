@@ -190,17 +190,18 @@ def main() -> int:
     manifest = json.loads((ROOT / "sync" / "PORT_MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["commit"] == UPSTREAM
     assert len(manifest["files"]) == 75
-    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "2.5.0"
+    assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "3.0.0"
 
     current = "\n".join(path.read_text(encoding="utf-8") for path in CURRENT_DOCS)
     for required in (
         "44ef30b",
-        "16 routes",
+        "40 routes",
         "/redact-pdf",
         "/v1/redact-pdf",
         "APP_AIGUARD_API_KEY",
         "APP_AIFT_ACCESS_CODE",
         "APP_AIFT_COOKIE_SIGNING_KEY",
+        "APP_AIFT_PRIORITY_INVITES_JSON",
         "APP_TOKENMIND_API_KEY",
     ):
         assert required in current, required

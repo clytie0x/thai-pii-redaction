@@ -5,19 +5,22 @@ detection, masking/pseudonymization, the reversible vault/mapping, restoration,
 and deterministic PDPA report generation on the user's device.  Desktop 3.0.0
 does not expose a provider command.
 
-The secondary Hosted Web App is an invite-only private beta deployed for team08
-on the AI for Thai platform:
+The secondary Hosted 3.0.0 Web App runs for team08 on the AI for Thai platform:
 
 <https://team08.aiforthai.in.th>
 
 Hosted helps a user inspect Thai text for personal data, replace recognized
 values before an approved downstream AI request, validate the protected
-response, and restore context inside one request.  It has three workflows:
+response, and restore context inside one request. Standard access is available
+per signed browser session; an issued Priority Invite receives a higher service
+class without administrative access. It has three task groups:
 
 1. **Privacy Scan** — show counts, types, and spans returned by the detector.
 2. **Safe AI** — show the protected provider-bound input and reveal a restored
    answer only after the outbound-safety and restoration gates pass.
-3. **PDPA Report** — show the automated score/grade before an explicit download.
+3. **PDF → Protected Markdown / PDPA Report** — transform bounded text-layer PDF
+   into protected structured text, or show the automated score/grade before an
+   explicit download. PDF redaction and OCR remain unsupported.
 
 The home page first recommends Desktop, then offers Hosted as a separate trust
 boundary.  Quick Start, advanced evidence, and Presenter/fullscreen remain
@@ -36,12 +39,12 @@ as the primary user journey.
   [SHA256SUMS](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS)
   and verify GitHub provenance before proceeding.  The release is mutable, so
   a filename or tag alone is not an integrity check.
-- **Web App:** invite-only private beta.  Original text reaches the AI for Thai
-  edge and team service for detection.  When the user invokes Safe AI, only
-  policy-checked protected text is sent through the team backend to the single
-  approved Tokenmind/Pathumma `thaillm-8b` provider.  A shared invite gate is
-  retained to bound abuse and provider cost without introducing accounts or a
-  user database.
+- **Web App:** Hosted 3.0.0 provides Standard access per signed browser session
+  and Priority access per issued invite. Original text reaches the AI for Thai
+  edge and team service for detection. Only the exact reviewed, policy-checked
+  protected text may be admitted through the bounded queue to the single
+  approved Tokenmind/Pathumma `thaillm-8b` provider. There is no account or user
+  database and no provider fallback.
 - **Browser Extension:** the Chrome Web Store item is still a draft preparing
   for review and is not published, so no Store link is claimed.  The
   [3.0.0 ZIP](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip)
@@ -51,10 +54,11 @@ as the primary user journey.
   where page code may already observe or transmit it; the Side Panel is the
   stronger raw-entry boundary.  The separately certified ZIP SHA-256 is
   `feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670`.
-- **Public PDF redaction/OCR:** intentionally unsupported.  Both
-  `/redact-pdf` and `/v1/redact-pdf` return a fixed proxy-level 404 and there is
-  no upload UI.  Enabling it later requires separate correctness, provenance,
-  timeout, and resource acceptance.
+- **Hosted text-layer PDF:** Hosted 3.0.0 accepts bounded text-layer PDF to
+  produce Protected Markdown after exact-payload review. The source PDF remains
+  unchanged and never reaches Pathumma. PDF redaction/rebuilding, scanned or
+  image-only PDF, and OCR remain unsupported; `/redact-pdf` and
+  `/v1/redact-pdf` stay fixed proxy-level 404.
 
 Product documentation is served from `/privacy`, `/terms`, `/help`, and
 `/downloads`.  Those pages describe data flow, cookies, retention, acceptable
@@ -89,10 +93,11 @@ overclaim.
 
 ## Access and abuse controls
 
-The public pages and liveness endpoint are readable without a session.  Every
-text-processing route requires a signed session cookie minted from the invite
-code.  The cookie is `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, and has a
-maximum 30-minute lifetime.  Login/logout enforce same-origin browser context.
+The public pages and liveness endpoint are readable without a session. Every
+text-processing route requires either a signed Standard browser session or a
+signed session created from an issued Priority Invite. Cookies are `Secure`,
+`HttpOnly`, `SameSite=Strict`, `Path=/`, and have a maximum 30-minute lifetime.
+Authority creation and ending enforce same-origin browser context.
 
 Only SHA-256 token fingerprints and expiry times are retained in bounded
 process memory (maximum 256 active sessions).  Logout revokes the current token;
@@ -120,25 +125,27 @@ The browser permits one unresolved provider-bound request at a time.
 
 | Component | Boundary |
 |---|---|
-| `web/` | Read-only static nginx on loopback host port 20070. Concept C Home is isolated from the invite-only `/app` runtime; exact routes also serve Downloads, Privacy, Help, Terms, a branded human 404, local fonts/logos, security headers, and minimized logs. |
+| `web/` | Read-only static nginx on loopback host port 20070. Concept C Home is isolated from the `/app` runtime; exact routes also serve Developers, Downloads, Privacy, Help, Terms, a branded human 404, local fonts/logos, security headers, and minimized logs. |
 | `api/` | Read-only nginx on loopback host port 20071.  Re-adds the stripped `/api` prefix, exact allowlist, holds the inner service key, applies limits and fixed errors. |
 | `core/` | Non-root/read-only FastAPI container, internal network only.  Port-owned auth/report policy wraps a vendored upstream slice. |
+| `pdf-parser/` | Secretless, networkless, non-root parser on a Unix socket. It accepts one bounded text-layer PDF job, returns strict extracted segments/metadata, and cleans its volatile work directory before readmission. |
 | `sync/` | Pins 75 upstream files from `44ef30b0e8ea2021fc4ceec9d3b12dc9f64c750f` with per-file hashes. |
 | `evaluation/thai_pii/` | Sprint 3 deterministic synthetic/adversarial evidence; outside all runtime build contexts and provider-free. |
 
 The hosted image omits disabled Paddle OCR dependencies.  Its PyThaiNLP
 `thainer` asset tree is checked during build against the Sprint 3 SHA-256
 `bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315`, then
-runs offline.  The three containers are read-only, no-new-privileges, PID/memory
+runs offline.  The four containers are read-only, no-new-privileges, PID/memory
 /CPU bounded, use volatile tmpfs, and have a three-failure health watchdog that
 exits the service so Docker's bounded restart policy can recover it.  Graceful
 stop allows up to 210 seconds for a long provider operation.
 
 ## Public API
 
-The API proxy exposes exactly **16 routes**: the eight paths below and one
-`/v1` alias for each.  External callers use `/api/...`; the organizer strips
-that prefix and the API proxy restores it for core.
+The API proxy exposes exactly **40 routes**: 20 canonical paths and one exact
+`/v1` alias for each. External callers use `/api/...`; the organizer strips that
+prefix and the API proxy restores it for Core. The HTTP contract remains version
+2 for Hosted 3.0.0.
 
 | Method/path | Purpose |
 |---|---|
@@ -150,10 +157,16 @@ that prefix and the API proxy restores it for core.
 | `POST /guard` | Heuristic prompt-risk warning; it does not block by itself. |
 | `POST /roundtrip` | Detect → protect → policy-check → approved AI → validate → restore. |
 | `POST /analyze-report` | Automated PDPA risk report PDF; no source text in report summary. |
+| `POST /auth/guest`, `/auth/guest/end` | Start/end a bounded Standard browser authority. |
+| `POST /guest/preview`, `/guest/execute` | Preview/execute a server-owned synthetic scenario. |
+| `POST /protection-preview`, `/protection-execute` | Preview and execute approved custom protected text. |
+| `POST /document-preview`, `/document-execute` | Parse bounded text-layer PDF and produce protected artifacts. |
+| `POST /provider-queue/join`, `GET /provider-queue/status`, `POST /provider-queue/claim`, `POST /provider-queue/cancel` | Content-free bounded provider scheduler control plane. |
 
 Internal `/sanitize`, `/reidentify`, `/analyze`, docs/OpenAPI, and public PDF
-redaction/OCR are denied by exact-match routing.  The allowlist contract must
-remain 16 routes unless a separately reviewed product requirement changes it.
+redaction/OCR are denied by exact-match routing. The allowlist contract is 40
+exact routes; prefixes, near matches, implicit versions, and unknown methods fail
+closed.
 
 ## Local development and checks
 
@@ -163,6 +176,7 @@ Use synthetic values only:
 export APP_AIGUARD_API_KEY='synthetic-distinct-core-key'
 export APP_AIFT_ACCESS_CODE='synthetic-distinct-invite-code'
 export APP_AIFT_COOKIE_SIGNING_KEY='synthetic-distinct-cookie-signing-key-long'
+export APP_AIFT_PRIORITY_INVITES_JSON='[{"subject_id":"sub_AAAAAAAAAAAAAAAAAAAAAA","role":"priority_invite","enabled":true,"code_sha256":"bd589d9bfd76f29c18d8541750287a480badb3c2272b4f98af6c4439792c2687"}]'
 export APP_TOKENMIND_API_KEY='synthetic-provider-key-or-fake-override'
 docker compose -p team08 up -d --build
 curl -fsS http://127.0.0.1:20071/health
@@ -196,18 +210,24 @@ acceptance are non-interruptible and serialized by
 `resource_group: team08-production`.
 
 Deployment validates the latest remote main, builds exact-revision images,
-rechecks before mutation, health-gates all three services, and retains one exact
+rechecks before mutation, health-gates all four services, and retains one exact
 prior image/Compose set.  A failed post-mutation gate restores that prior stack.
 Acceptance then verifies the same exact SHA, synthetic auth/business/provider
 flows, route denial, logs, and the real public edge.  This rollback is repository
 hardening, not an official Participant Guide requirement.
 
-The four environment-scoped project variables are exactly:
+The Hosted 3.0.0 release source requires exactly five protected,
+environment-scoped variables:
 
 - `APP_AIGUARD_API_KEY`
 - `APP_AIFT_ACCESS_CODE`
 - `APP_AIFT_COOKIE_SIGNING_KEY`
+- `APP_AIFT_PRIORITY_INVITES_JSON`
 - `APP_TOKENMIND_API_KEY`
+
+The fifth value is the bounded Priority Invite registry. Release checks consume
+all five only from inherited protected, environment-scoped CI variables and do
+not print or retrieve their values.
 
 Values must never be printed, retrieved, compared outside the existing
 value-free deploy checks, placed in command arguments, or copied into evidence.

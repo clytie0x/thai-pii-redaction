@@ -41,6 +41,7 @@ ENV PYTHAINLP_OFFLINE=1
 COPY app ./app
 COPY pii_redactor ./pii_redactor
 COPY demo ./demo
+COPY aift_hosted3 ./aift_hosted3
 COPY aift_auth.py aift_gateway.py aift_report_policy.py healthcheck.py VERSION LICENSE NOTICE ./
 COPY licenses ./licenses
 

@@ -15,14 +15,16 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from http.cookies import SimpleCookie
 
 TEAM = os.environ.get("TEAM", "team08")
 PORT = os.environ.get("BASE_1", "20071")
+WEB_PORT = os.environ.get("BASE", "20070")
 BASE_URL = f"http://127.0.0.1:{PORT}"
-PUBLIC_HOST = f"{TEAM}.aiforthai.in.th"
+PUBLIC_HOST = os.environ.get("AIFT_PUBLIC_HOST", f"{TEAM}.aiforthai.in.th")
 CI_JOB_ID = os.environ.get("CI_JOB_ID", "").strip()
 EXPECTED_REVISION = os.environ.get("CI_COMMIT_SHA", "local-working-tree")
 DIRECT_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -31,6 +33,7 @@ APP_VARIABLES = (
     "APP_AIGUARD_API_KEY",
     "APP_AIFT_ACCESS_CODE",
     "APP_AIFT_COOKIE_SIGNING_KEY",
+    "APP_AIFT_PRIORITY_INVITES_JSON",
     "APP_TOKENMIND_API_KEY",
 )
 CLIENT_ACCESS_LOG = re.compile(
@@ -132,6 +135,8 @@ def _request(
     *,
     method: str = "GET",
     payload: dict | None = None,
+    raw_payload: bytes | None = None,
+    content_type: str = "application/json",
     cookie: str = "",
     origin: str = "",
     timeout: float = 30,
@@ -141,9 +146,14 @@ def _request(
     # bypassing the organizer edge, TLS, prefix stripping, and host publication.
     # Preserve the real public Host contract; test those edge behaviors later.
     headers = {"Host": PUBLIC_HOST}
+    if payload is not None and raw_payload is not None:
+        raise AcceptanceFailure("public request body configuration was invalid")
     if payload is not None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers["Content-Type"] = "application/json"
+        headers["Content-Type"] = content_type
+    elif raw_payload is not None:
+        body = raw_payload
+        headers["Content-Type"] = content_type
     if cookie:
         headers["Cookie"] = cookie
     if origin:
@@ -193,28 +203,53 @@ def _login() -> str:
     return f"__Host-aift_session={morsel.value}"
 
 
+def _start_standard() -> str:
+    status, headers, _body = _request("/auth/guest", method="POST", payload={})
+    if status != 201:
+        raise AcceptanceFailure("Standard authority start failed")
+    raw_cookie = headers.get("Set-Cookie", "")
+    parsed = SimpleCookie()
+    parsed.load(raw_cookie)
+    morsel = parsed.get("__Host-aift_guest")
+    if morsel is None or not all(
+        flag in raw_cookie for flag in ("Secure", "HttpOnly", "SameSite=Strict")
+    ):
+        raise AcceptanceFailure("Standard authority cookie was invalid")
+    return f"__Host-aift_guest={morsel.value}"
+
+
 def _verify_revisions() -> None:
     expected = {
         "web": (
             256 * 1024**2,
             500_000_000,
             128,
-            {"/var/cache/nginx": "size=32m", "/var/run": "size=4m", "/tmp": "size=4m"},
+            {
+                "/var/cache/nginx": "size=32m,uid=101,gid=101,mode=0755",
+                "/var/run": "size=4m,uid=101,gid=101,mode=0755",
+                "/tmp": "size=4m,uid=101,gid=101,mode=1777",
+            },
         ),
         "api": (
             256 * 1024**2,
             500_000_000,
             128,
             {
-                "/var/cache/nginx": "size=64m",
-                "/var/run": "size=4m",
-                "/tmp": "size=4m",
-                "/etc/nginx/conf.d": "size=4m",
+                "/var/cache/nginx": "size=64m,uid=101,gid=101,mode=0755",
+                "/var/run": "size=4m,uid=101,gid=101,mode=0755",
+                "/tmp": "size=4m,uid=101,gid=101,mode=1777",
+                "/etc/nginx/conf.d": "size=4m,uid=101,gid=101,mode=0755",
             },
         ),
         "core": (2 * 1024**3, 2_000_000_000, 256, {"/tmp": "size=128m,mode=1777"}),
+        "pdf-parser": (
+            512 * 1024**2,
+            1_000_000_000,
+            32,
+            {"/work": "rw,noexec,nosuid,nodev,size=64m,uid=1000,gid=1000,mode=0700"},
+        ),
     }
-    for service in ("web", "api", "core"):
+    for service in ("web", "api", "core", "pdf-parser"):
         container = f"{TEAM}-{service}-1"
         # Narrow projections only. A full Docker inspect includes Config.Env
         # and would unnecessarily retrieve production credential values.
@@ -258,9 +293,10 @@ def _verify_revisions() -> None:
             raise AcceptanceFailure("running volatile-storage policy mismatch")
         bindings = host.get("PortBindings") or {}
         expected_binding = {
-            "web": {"3000/tcp": [{"HostIp": "127.0.0.1", "HostPort": "20070"}]},
-            "api": {"8000/tcp": [{"HostIp": "127.0.0.1", "HostPort": "20071"}]},
+            "web": {"3000/tcp": [{"HostIp": "127.0.0.1", "HostPort": WEB_PORT}]},
+            "api": {"8000/tcp": [{"HostIp": "127.0.0.1", "HostPort": PORT}]},
             "core": {},
+            "pdf-parser": {},
         }[service]
         if bindings != expected_binding:
             raise AcceptanceFailure("running public-port boundary mismatch")
@@ -275,6 +311,143 @@ def _verify_revisions() -> None:
     )
     if set(core_host.get("CapDrop") or []) != {"ALL"}:
         raise AcceptanceFailure("running core capability policy mismatch")
+    parser_host = json.loads(
+        _run("docker", "inspect", "-f", "{{json .HostConfig}}", f"{TEAM}-pdf-parser-1")
+    )
+    if parser_host.get("NetworkMode") != "none":
+        raise AcceptanceFailure("running parser network isolation mismatch")
+
+
+def _claim_ready(capability: str, cookie: str) -> str:
+    revision = 0
+    for _attempt in range(4):
+        status, _headers, raw = _request(
+            "/provider-queue/claim",
+            method="POST",
+            payload={"queue_capability": capability, "last_revision": revision},
+            cookie=cookie,
+            timeout=35,
+        )
+        if status != 200:
+            raise AcceptanceFailure("provider queue claim failed")
+        body = _json(raw)
+        revision = body.get("revision", revision)
+        if body.get("state") == "claim_ready" and isinstance(
+            body.get("claim_token"), str
+        ):
+            return body["claim_token"]
+        if body.get("state") not in {"queued", "paused"}:
+            raise AcceptanceFailure("provider queue entered an unexpected state")
+        time.sleep(1)
+    raise AcceptanceFailure("provider queue did not issue a claim")
+
+
+def _join(ticket: str, cookie: str) -> tuple[str, str]:
+    status, _headers, raw = _request(
+        "/provider-queue/join",
+        method="POST",
+        payload={"ticket": ticket},
+        cookie=cookie,
+    )
+    if status != 201:
+        raise AcceptanceFailure("provider queue join failed")
+    body = _json(raw)
+    capability = body.get("queue_capability")
+    if not isinstance(capability, str):
+        raise AcceptanceFailure("provider queue capability missing")
+    return capability, _claim_ready(capability, cookie)
+
+
+def _verify_hosted3_paths(cookie: str) -> None:
+    source = "ผู้สมัครสังเคราะห์ สมชาย ใจดี ติดต่อ test@example.invalid"
+    status, headers, raw = _request(
+        "/protection-preview",
+        method="POST",
+        payload={"text": source, "mode": "token"},
+        cookie=cookie,
+    )
+    if status != 200 or headers.get("X-AIGuard-Service-Class") != "standard":
+        raise AcceptanceFailure("Hosted 3 custom preview failed")
+    preview = _json(raw)
+    protected = str(preview.get("protected_text", ""))
+    ticket = preview.get("ticket")
+    if not (
+        preview.get("can_execute") is True
+        and isinstance(ticket, str)
+        and "สมชาย" not in protected
+        and "test@example.invalid" not in protected
+    ):
+        raise AcceptanceFailure("Hosted 3 custom preview boundary failed")
+    capability, claim = _join(ticket, cookie)
+    status, _headers, raw = _request(
+        "/protection-execute",
+        method="POST",
+        payload={"text": source, "queue_capability": capability, "claim_token": claim},
+        cookie=cookie,
+        timeout=210,
+    )
+    if status != 200:
+        raise AcceptanceFailure("Hosted 3 custom execute failed")
+    result = _json(raw)
+    if not (
+        result.get("hosted_version") == "3.0.0"
+        and result.get("safety") == {"status": "pass", "residual_count": 0}
+        and (result.get("restoration") or {}).get("status") == "complete"
+        and (result.get("restoration") or {}).get("leftover_count") == 0
+        and isinstance(result.get("receipt"), dict)
+    ):
+        raise AcceptanceFailure("Hosted 3 custom result gates failed")
+
+    fixture = (
+        Path(__file__).resolve().parent.parent
+        / "pdf-parser/scenarios/hr-resume-pdf-structured-v1.pdf"
+    ).read_bytes()
+    status, _headers, raw = _request(
+        "/document-preview",
+        method="POST",
+        raw_payload=fixture,
+        content_type="application/pdf",
+        cookie=cookie,
+        timeout=30,
+    )
+    fixture = b""
+    if status != 200:
+        raise AcceptanceFailure("Hosted 3 document preview failed")
+    preview = _json(raw)
+    ticket = preview.get("ticket")
+    protected = preview.get("protected_text")
+    if not (
+        preview.get("can_execute") is True
+        and isinstance(ticket, str)
+        and isinstance(protected, str)
+        and protected
+    ):
+        raise AcceptanceFailure("Hosted 3 document preview gates failed")
+    capability, claim = _join(ticket, cookie)
+    status, _headers, raw = _request(
+        "/document-execute",
+        method="POST",
+        payload={
+            "protected_text": protected,
+            "queue_capability": capability,
+            "claim_token": claim,
+        },
+        cookie=cookie,
+        timeout=210,
+    )
+    protected = ""
+    if status != 200:
+        raise AcceptanceFailure("Hosted 3 document execute failed")
+    artifact = _json(raw)
+    if not (
+        artifact.get("hosted_version") == "3.0.0"
+        and artifact.get("source_kind") == "document_standard"
+        and isinstance(artifact.get("protected_markdown"), str)
+        and "PII was not restored" in artifact["protected_markdown"]
+        and "restored_text" not in artifact
+        and isinstance(artifact.get("receipt"), dict)
+    ):
+        raise AcceptanceFailure("Hosted 3 protected document artifact failed")
 
 
 def _verify_public_contract(cookie: str) -> None:
@@ -358,10 +531,10 @@ def _verify_report_probe() -> None:
         raise AcceptanceFailure("PDPA report route probe failed")
 
 
-def _verify_logs(cookie: str) -> None:
-    markers = [cookie, "สมชาย", "081-234-5678"]
+def _verify_logs(*cookies: str) -> None:
+    markers = [*cookies, "สมชาย", "081-234-5678", "test@example.invalid"]
     markers.extend(value for name in APP_VARIABLES if (value := os.environ.get(name, "")))
-    for service in ("web", "api", "core"):
+    for service in ("web", "api", "core", "pdf-parser"):
         logs = _run("docker", "logs", f"{TEAM}-{service}-1").decode(
             "utf-8", "replace"
         )
@@ -375,16 +548,23 @@ def main() -> int:
     try:
         with _reachable_api():
             _verify_revisions()
-            status, _headers, _body = _request("/health")
+            status, _headers, raw_health = _request("/health")
             if status != 200:
                 raise AcceptanceFailure("public health failed")
-            cookie = _login()
-            _verify_public_contract(cookie)
-            _verify_live_roundtrip(cookie)
+            if _json(raw_health).get("version") != "3.0.0":
+                raise AcceptanceFailure("public health version mismatch")
+
+            priority_cookie = _login()
+            status, headers, _body = _request(
+                "/auth/session", method="GET", cookie=priority_cookie
+            )
+            if status != 200 or headers.get("X-AIGuard-Service-Class") != "priority":
+                raise AcceptanceFailure("Priority authority verification failed")
+            _verify_public_contract(priority_cookie)
+            _verify_live_roundtrip(priority_cookie)
             _verify_report_probe()
-            _verify_logs(cookie)
             status, _headers, _body = _request(
-                "/auth/logout", method="POST", cookie=cookie
+                "/auth/logout", method="POST", cookie=priority_cookie
             )
             if status != 204:
                 raise AcceptanceFailure("caller logout failed")
@@ -392,12 +572,30 @@ def main() -> int:
                 "/detect",
                 method="POST",
                 payload={"text": "synthetic revoked-session probe"},
-                cookie=cookie,
+                cookie=priority_cookie,
             )
             if status != 401:
                 raise AcceptanceFailure("logged-out caller cookie remained usable")
-            cookie = ""
-        print("platform acceptance passed: auth, allowlist, live roundtrip, report, logs")
+
+            standard_cookie = _start_standard()
+            status, headers, _body = _request(
+                "/auth/session", method="GET", cookie=standard_cookie
+            )
+            if status != 200 or headers.get("X-AIGuard-Service-Class") != "standard":
+                raise AcceptanceFailure("Standard authority verification failed")
+            _verify_hosted3_paths(standard_cookie)
+            _verify_logs(priority_cookie, standard_cookie)
+            status, _headers, _body = _request(
+                "/auth/guest/end", method="POST", payload={}, cookie=standard_cookie
+            )
+            if status != 204:
+                raise AcceptanceFailure("Standard authority end failed")
+            priority_cookie = ""
+            standard_cookie = ""
+        print(
+            "platform acceptance passed: Priority legacy, Standard Hosted 3 text/PDF, "
+            "queue/provider/artifacts, allowlist, report, resources, logs"
+        )
         return 0
     except AcceptanceFailure as error:
         print(f"platform acceptance failed: {error}")

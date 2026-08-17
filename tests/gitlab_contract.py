@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import importlib.util
 from pathlib import Path
 
 import yaml
@@ -11,6 +12,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CI = ROOT / ".gitlab-ci.yml"
+RUNNER_SIMULATOR = ROOT / "tests" / "run_ci_local.py"
 BRANCH_PIPELINES = [
     {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"'},
     {"if": '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'},
@@ -31,14 +33,31 @@ APP_VARIABLES = {
     "APP_AIGUARD_API_KEY",
     "APP_AIFT_ACCESS_CODE",
     "APP_AIFT_COOKIE_SIGNING_KEY",
+    "APP_AIFT_PRIORITY_INVITES_JSON",
     "APP_TOKENMIND_API_KEY",
 }
 EXPECTED_CHECKS = {
     "python3 sync/sync_from_upstream.py --check --verify-upstream",
     "python3 tests/auth_contract.py",
+    "python3 tests/hosted3_authority_contract.py",
+    "python3 tests/hosted3_approval_contract.py",
+    "python3 tests/hosted3_document_contract.py",
+    "python3 tests/hosted3_document_preview_contract.py",
+    "python3 tests/hosted3_document_artifact_contract.py",
+    "python3 tests/hosted3_pathumma_boundary_contract.py",
+    "python3 tests/hosted3_provider_queue_contract.py",
+    "python3 tests/hosted3_queue_http_contract.py",
+    "python3 tests/hosted3_execute_contract.py",
+    "python3 tests/hosted3_legacy_roundtrip_contract.py",
+    "python3 tests/hosted3_stage4c_closeout_contract.py",
     "node tests/frontend_session_contract.mjs",
+    "node tests/hosted3_frontend_behavior_contract.mjs",
     "python3 tests/public_surface_contract.py",
     "python3 tests/hosted_core_contract.py",
+    "python3 tests/hosted3_contract.py",
+    "python3 tests/hosted3_stage5_contract.py",
+    "python3 tests/hosted3_version_contract.py",
+    "python3 tests/hosted3_rate_limit_contract.py",
     "python3 tests/thai_pii_evaluation_contract.py",
     "python3 tests/build_context_contract.py",
     "python3 tests/secret_hygiene_contract.py",
@@ -86,6 +105,17 @@ def _included_jobs(
     return {
         name for name in PUBLIC_JOBS if _matches(pipeline[name]["rules"], context)
     }
+
+
+def _load_runner_simulator():
+    spec = importlib.util.spec_from_file_location(
+        "aiguard_run_ci_local_contract",
+        RUNNER_SIMULATOR,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def main() -> int:
@@ -150,8 +180,18 @@ def main() -> int:
 
     assert set(pipeline["check"]["script"]) == EXPECTED_CHECKS
     check_commands = "\n".join(
-        [*pipeline["default"]["before_script"], *pipeline["check"]["script"]]
+        [*pipeline["check"]["before_script"], *pipeline["check"]["script"]]
     )
+    assert "py3-cryptography=42.0.7-r0" in check_commands
+    assert "py3-cryptography" not in "\n".join(pipeline["default"]["before_script"])
+    simulator = _load_runner_simulator()
+    assert "py3-cryptography=42.0.7-r0" in simulator.build_script(pipeline, "check")
+    assert "py3-cryptography" not in simulator.build_script(pipeline, "deploy")
+    for name in PRODUCTION_JOBS:
+        production_setup = pipeline[name].get(
+            "before_script", pipeline["default"]["before_script"]
+        )
+        assert "py3-cryptography" not in "\n".join(production_setup), name
     assert not APP_VARIABLES.intersection(re.findall(r"APP_[A-Z0-9_]+", check_commands))
     assert "TOKENMIND" not in check_commands.upper()
     assert "tests/platform_acceptance.py" not in check_commands
@@ -182,6 +222,8 @@ def main() -> int:
     assert "org.opencontainers.image.revision" in "\n".join(
         pipeline["restart"]["script"]
     )
+    for service in ("web", "api", "core", "pdf-parser"):
+        assert f"${{TEAM}}-{service}-1" in "\n".join(pipeline["logs"]["script"]), service
 
     deploy_commands = "\n".join(pipeline["deploy"]["script"])
     deploy_helper = (ROOT / "scripts" / "deploy_production.sh").read_text(
@@ -214,9 +256,12 @@ def main() -> int:
         '[[ "$ROLLBACK_READY" == 1 ]]',
         "refusing production mutation without a recoverable exact prior stack",
         "trap cleanup EXIT",
+        "OLD_SERVICES=(core api web)",
+        'wait_healthy "$CI_COMMIT_SHA" pdf-parser core api web',
     ):
         assert rollback_gate in deploy_helper, rollback_gate
     assert "APP_TOKENMIND_API_KEY" in deploy_helper
+    assert "APP_AIFT_PRIORITY_INVITES_JSON" in deploy_helper
     assert "set -Eeuo pipefail" in deploy_helper
 
     raw = CI.read_text(encoding="utf-8")
@@ -246,7 +291,7 @@ def main() -> int:
         "GitLab auto-protected the first remote `main`",
         "Ordinary pushes are check-only",
         "does not require a Protected runner",
-        "Exactly four project variables are configured",
+        "Historical production used four project variables",
         "Pipeline #35722",
         "declare no environment",
         "Build → Pipelines → Run pipeline",

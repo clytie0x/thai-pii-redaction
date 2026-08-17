@@ -2,11 +2,17 @@
 
 import os
 
-from app.access_logging import install_uvicorn_access_log_filter
+from aift_hosted3.runtime import require_single_worker
+
+require_single_worker()
+
+from app.access_logging import install_uvicorn_access_log_filter  # noqa: E402
 
 install_uvicorn_access_log_filter()
 
 from aift_auth import AuthGateway  # noqa: E402
+from aift_hosted3.legacy_roundtrip import install_legacy_roundtrip_admission  # noqa: E402
+from aift_hosted3.overlay import Hosted3Overlay  # noqa: E402
 from aift_report_policy import install_hosted_report_policy  # noqa: E402
 
 install_hosted_report_policy()
@@ -21,4 +27,6 @@ if os.environ.get("AIGUARD_AUDIT_STDOUT") == "1":
 
 core_app = _server.app
 
-app = AuthGateway(core_app)
+hosted3_overlay = Hosted3Overlay(core_app)
+install_legacy_roundtrip_admission(core_app, hosted3_overlay.provider_queue)
+app = AuthGateway(hosted3_overlay)
