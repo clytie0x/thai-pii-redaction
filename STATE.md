@@ -1,20 +1,20 @@
-# Status (2026-08-17 — Hosted 3.0.0 live; post-deploy focus correction pending)
+# Status (2026-08-17 — Hosted 3.0.0 deployed; Stage 9 complete)
 
 ## Current release boundary
 
 - Production is Hosted `3.0.0` with exactly 40 public locations at runtime
-  revision `827e0601b52f022e97e5be8da84e0ef8e39504cd`. HTTP contract remains 2.
-  Protected Pipeline #36537 passed check, deploy, mandatory acceptance, and all
-  three manual ops gates (logs #143191, exact revision/process #143192,
-  restart/recovery #143193). All four services restarted healthy with the exact
+  revision `f07745209e3da3b926eb6802f2ca2919e5b9fe9d`. HTTP contract remains 2.
+  Protected Pipeline #36540 passed check, deploy, mandatory acceptance, and all
+  three manual ops gates (logs #143199, exact revision/process #143200,
+  restart/recovery #143201). All four services restarted healthy with the exact
   runtime label; no rollback triggered.
-- Post-deploy UX review found one material accessibility regression in runtime
-  `827e0601…`: ordinary Standard/Priority success hides the clicked access
-  control and reveals the chooser without moving focus, leaving `body` active.
-  The reviewed descendant makes `#h3ChooserTitle` programmatically focusable and
-  focuses it for direct entry while preserving pending deep-link restoration.
-  Both direct service classes have executable focus assertions. This correction
-  is not deployed yet, so final Stage 9 closeout remains open.
+- Post-deploy UX review of `827e0601…` found ordinary Standard/Priority entry
+  lost focus when the access gate hid. Runtime `f0774520…` fixes that boundary:
+  direct entry and initial authenticated bootstrap focus the programmatically
+  focusable chooser heading, deep-link focus retains precedence, and routine
+  BFCache/visibility/online resampling preserves the active task/queue focus.
+  Public Chrome after restart verified `document.activeElement.id` equals
+  `h3ChooserTitle` with the chooser visible. Stage 9 is complete.
 - Desktop remains published at 3.0.0 and Extension remains 3.0.0 Manual. The
   Hosted migration does not change either sibling channel.
 - Audio, TTS, images, Vision, scanned/image-only PDF, and OCR remain excluded.

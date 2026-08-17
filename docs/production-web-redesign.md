@@ -3695,20 +3695,17 @@ Exit gate:
   organizer HTTP-redirect limitation is still reported honestly, and only then
   may Hosted `3.0.0` be called deployed.
 
-Current execution position: **The Stage 9 pipeline and ops gates passed, but
-post-deploy UX closeout found an ordinary authority-entry focus blocker and its
-correction is not deployed yet.** Hosted `3.0.0` is live at runtime revision
-`827e0601b52f022e97e5be8da84e0ef8e39504cd`, retains HTTP contract version 2,
-and exposes exactly 40 public API locations. Protected Pipeline #36537 passed
+Current execution position: **Stages 0 through 9 are complete.** Hosted `3.0.0`
+is deployed at exact runtime revision
+`f07745209e3da3b926eb6802f2ca2919e5b9fe9d`, retains HTTP contract version 2,
+and exposes exactly 40 public API locations. Protected Pipeline #36540 passed
 check, deploy, mandatory internal/public acceptance, value-safe logs, exact
-revision/process inspection, and restart/recovery. The later docs-only closeout
-commit does not change the deployed runtime revision. Direct Standard/Priority
-entry currently reveals the chooser but loses focus to `body`; the reviewed
-descendant focuses the programmatically focusable chooser heading while
-preserving deep-link destination precedence.
-`HOSTED3_IMPLEMENTATION_STAGE=stage9_postdeploy_fix`
+revision/process inspection, and restart/recovery. Post-restart public Chrome
+verified direct Standard authority focus on the chooser heading. The later
+docs-only closeout commit does not change the deployed runtime revision.
+`HOSTED3_IMPLEMENTATION_STAGE=stage9_complete`
 
-Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage9_postdeploy_fix`.
+Machine-checked implementation marker: `HOSTED3_IMPLEMENTATION_STAGE=stage9_complete`.
 
 Stage 8 closeout record:
 
@@ -3797,6 +3794,16 @@ Stage 8 closeout record:
   401 rows and eight deliberate navigation 404 rows. Organizer plain HTTP still
   returned the already accepted `PUBLIC_EDGE_WARNING`; HTTPS/TLS/HSTS remained
   valid. Hosted 3.0.0 may now be called deployed.
+- Post-deploy UX review of `827e0601…` found that ordinary Standard/Priority
+  success revealed the chooser but left focus on `body`. Exact descendant
+  `f07745209e3da3b926eb6802f2ca2919e5b9fe9d` limits chooser focus to direct
+  authority transitions and initial authenticated bootstrap, preserves pending
+  deep-link focus, and preserves active focus during same-authority BFCache and
+  visibility/online recovery. Pipeline #36540 passed check/deploy/acceptance;
+  manual logs Job #143199, exact revision/process Job #143200, and
+  restart/recovery Job #143201 passed. All four services restarted healthy and
+  labeled `f0774520…`. Public Chrome then verified direct Standard focus at
+  `#h3ChooserTitle` with the chooser visible. Stage 9 is complete.
 
 Stage 7 closeout evidence (local release migration only):
 
