@@ -400,7 +400,7 @@ def _custom_result_status(result: dict, *, expected_protected: str) -> str | Non
     provider_attempts = provider.get("attempt_count")
     receipt_attempts = receipt.get("provider_attempt_count")
     valid = bool(
-        result.get("hosted_version") == "3.0.1"
+        result.get("hosted_version") == "3.0.2"
         and result.get("source_kind") == "custom_standard"
         and safety == {"status": "pass", "residual_count": 0}
         and classified
@@ -508,7 +508,7 @@ def _verify_hosted3_document(cookie: str) -> None:
         raise AcceptanceFailure("Hosted 3 document execute failed")
     artifact = _json(raw)
     if not (
-        artifact.get("hosted_version") == "3.0.1"
+        artifact.get("hosted_version") == "3.0.2"
         and artifact.get("source_kind") == "document_standard"
         and isinstance(artifact.get("protected_markdown"), str)
         and "PII was not restored" in artifact["protected_markdown"]
@@ -646,7 +646,7 @@ def main() -> int:
             status, _headers, raw_health = _request("/health")
             if status != 200:
                 raise AcceptanceFailure("public health failed")
-            if _json(raw_health).get("version") != "3.0.1":
+            if _json(raw_health).get("version") != "3.0.2":
                 raise AcceptanceFailure("public health version mismatch")
 
             priority_cookie = _login()

@@ -46,7 +46,7 @@ def main() -> int:
 
     base_result = {
         "request_id": "req_complete",
-        "hosted_version": "3.0.1",
+        "hosted_version": "3.0.2",
         "source_kind": "custom_standard",
         "protected_text": "[NAME_1] [EMAIL_1]",
         "restored_text": "synthetic result",
@@ -57,7 +57,7 @@ def main() -> int:
         "receipt": {
             "restoration_status": "complete",
             "request_id": "req_complete",
-            "hosted_version": "3.0.1",
+            "hosted_version": "3.0.2",
             "source_kind": "custom_standard",
             "digest_match": True,
             "outbound_gate_status": "no_residual_signal_detected",
