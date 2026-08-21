@@ -50,7 +50,7 @@ from pii_redactor.stateless import (
 )
 
 try:
-    __version__ = _dist_version("aiguard")
+    __version__ = _dist_version("thaiguard")
 except PackageNotFoundError:  # running from a source tree without install
     __version__ = "0.0.0.dev0"
 

@@ -1,10 +1,10 @@
-"""`aiguard serve` — the zero-build local UI.
+"""`thaiguard serve` — the zero-build local UI.
 
 Starts the local FastAPI backend with the demo playground enabled and opens
 the browser at it, so trying aiguard on your own machine is one command::
 
-    pip install "aiguard[server]"
-    aiguard serve
+    pip install "thaiguard[server]"
+    thaiguard serve
 
 Everything runs in this one process; nothing leaves the machine. The server
 binds loopback only unless `--allow-remote` is passed explicitly — the local
@@ -78,11 +78,11 @@ def run_serve(args: argparse.Namespace) -> None:
         from app.server import app
     except ImportError:
         raise SystemExit(
-            "aiguard serve needs the server extra: pip install 'aiguard[server]'"
+            "thaiguard serve needs the server extra: pip install 'thaiguard[server]'"
         ) from None
 
     url = f"http://{args.host}:{args.port}" + ("" if args.no_demo else "/demo")
-    print(f"aiguard serving on {url} (Ctrl+C to stop)")
+    print(f"thaiguard serving on {url} (Ctrl+C to stop)")
     if not args.no_browser:
         # Fire after uvicorn has had a moment to bind; a missed open is only
         # a convenience loss, never an error.
@@ -95,7 +95,7 @@ def run_serve(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="aiguard-serve",
+        prog="thaiguard-serve",
         description="Run the local aiguard backend with the demo playground",
     )
     add_serve_arguments(parser)

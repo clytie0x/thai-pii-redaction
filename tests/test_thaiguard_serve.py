@@ -1,4 +1,4 @@
-"""`aiguard serve` — Tier-0 local UI entry point.
+"""`thaiguard serve` — Tier-0 local UI entry point.
 
 The binding guard is the security-relevant part: the local API's data-plane
 key is optional, so a non-loopback bind must be an explicit, keyed choice.
@@ -6,7 +6,7 @@ key is optional, so a non-loopback bind must be an explicit, keyed choice.
 
 import pytest
 
-from aiguard.serve import check_binding
+from thaiguard.serve import check_binding
 
 pytest.importorskip("fastapi")
 

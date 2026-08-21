@@ -182,7 +182,7 @@ def _read_version() -> str:
     try:
         from importlib.metadata import version
 
-        return version("aiguard")
+        return version("thaiguard")
     except Exception:
         return "0.0.0"
 

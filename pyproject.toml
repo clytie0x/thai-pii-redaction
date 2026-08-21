@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aiguard"
+name = "thaiguard"
 description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
 readme = "README.md"
 license = "Apache-2.0"
@@ -26,12 +26,12 @@ classifiers = [
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
-aiguard = "ai_guard:main"
-aiguard-mcp = "aiguard.mcp:main"
+thaiguard = "ai_guard:main"
+thaiguard-mcp = "thaiguard.mcp:main"
 
 [project.urls]
-Homepage = "https://github.com/Teerapat-Vatpitak/aiguard"
-Issues = "https://github.com/Teerapat-Vatpitak/aiguard/issues"
+Homepage = "https://github.com/Teerapat-Vatpitak/thaiguard"
+Issues = "https://github.com/Teerapat-Vatpitak/thaiguard/issues"
 
 [tool.setuptools.dynamic]
 version = { file = "VERSION" }
@@ -42,11 +42,11 @@ optional-dependencies.ml = { file = "requirements-ml.txt" }
 optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 
 [tool.setuptools]
-# `aiguard` is the public facade and the only import surface with a semver
+# `thaiguard` is the public facade and the only import surface with a semver
 # contract. `pii_redactor` and `app` ship as the internal engine and the
 # optional local HTTP server; they carry no cross-release stability promise.
 packages = [
-  "aiguard",
+  "thaiguard",
   "pii_redactor",
   "pii_redactor.detectors",
   "pii_redactor.anonymizer",

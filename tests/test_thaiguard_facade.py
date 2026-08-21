@@ -4,7 +4,7 @@ All PII values here are fabricated (checksum-valid where the type requires it),
 same policy as every other test in this repository.
 """
 
-import aiguard
+import thaiguard as aiguard
 
 SAMPLE = "ผมชื่อสมชาย ใจดี เบอร์โทร 081-234-5678 เลขบัตรประชาชน 1-1017-00230-70-8"
 

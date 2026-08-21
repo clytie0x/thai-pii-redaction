@@ -1,13 +1,13 @@
-"""MCP adapter — the aiguard toolset for AI agents.
+"""MCP adapter — the thaiguard toolset for AI agents.
 
 Run locally over stdio (full local privacy — text never leaves the machine)::
 
-    aiguard-mcp
+    thaiguard-mcp
 
 or as a shared HTTP endpoint (hosted convenience tier — callers' text reaches
 this server; state is one in-memory vault with a TTL, nothing on disk)::
 
-    aiguard-mcp --transport http --host 127.0.0.1 --port 8300
+    thaiguard-mcp --transport http --host 127.0.0.1 --port 8300
 
 Design rule (see docs/decisions/0003-mcp-no-plaintext-mapping.md): a tool
 result always enters the calling model's context, so no tool here ever
@@ -25,10 +25,10 @@ try:
     from mcp.server import MCPServer
 except ImportError as _error:  # pragma: no cover - exercised only without the extra
     raise ImportError(
-        "the MCP adapter needs the 'mcp' package: pip install 'aiguard[mcp]'"
+        "the MCP adapter needs the 'mcp' package: pip install 'thaiguard[mcp]'"
     ) from _error
 
-import aiguard
+import thaiguard
 from pii_redactor.guard.injection import scan_injection
 from pii_redactor.ingest.text_cleaner import clean_length_preserving
 from pii_redactor.session_service import (
@@ -52,11 +52,11 @@ def build_server(
     session_cap: int = _SESSION_CAP,
     session_ttl_s: int = _SESSION_TTL_S,
 ) -> MCPServer:
-    """Create the aiguard MCP server with its own in-memory session vault."""
+    """Create the thaiguard MCP server with its own in-memory session vault."""
     service = SessionService(cap=session_cap, ttl_s=session_ttl_s)
     server = MCPServer(
-        name="aiguard",
-        version=aiguard.__version__,
+        name="thaiguard",
+        version=thaiguard.__version__,
         instructions=(
             "Thai PII guard. Call sanitize before sending Thai text to any "
             "external model or service, send only sanitized_text onward, and "
@@ -73,7 +73,7 @@ def build_server(
         )
     )
     def detect_pii(text: str) -> dict[str, Any]:
-        entities = aiguard.detect(text)
+        entities = thaiguard.detect(text)
         counts: dict[str, int] = {}
         for entity in entities:
             counts[entity.data_type] = counts.get(entity.data_type, 0) + 1
@@ -154,7 +154,7 @@ def build_server(
         )
     )
     def pdpa_analyze(text: str) -> dict[str, Any]:
-        return aiguard.analyze(text)
+        return thaiguard.analyze(text)
 
     @server.tool(
         description=(
@@ -187,8 +187,8 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="aiguard-mcp",
-        description="aiguard MCP server (Thai PII guard toolset for AI agents)",
+        prog="ththaiguard-mcp",
+        description="thaiguard MCP server (Thai PII guard toolset for AI agents)",
     )
     parser.add_argument(
         "--transport",

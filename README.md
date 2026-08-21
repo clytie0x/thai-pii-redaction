@@ -1,37 +1,37 @@
-# aiguard
+# thaiguard
 
 Thai PII detection, anonymization, and PDF redaction for Python — mask
 personal data before it reaches an external AI, restore it locally.
 
 ```
-pip install aiguard
+pip install thaiguard
 ```
 
 ```python
-import aiguard
+import thaiguard
 
 text = "ผมชื่อสมชาย ใจดี เบอร์ 081-234-5678 บัตรประชาชน 1-2345-67890-12-3"
 
 # Detect: spans index into your text
-for entity in aiguard.detect(text):
+for entity in thaiguard.detect(text):
     print(entity.data_type, entity.span)
 
 # Mask -> send to an LLM -> restore
-masked = aiguard.anonymize(text, mode="surrogate")
+masked = thaiguard.anonymize(text, mode="surrogate")
 reply = call_your_llm(masked.text)  # only masked text leaves the process
-restored = aiguard.restore(reply, masked.mapping)
+restored = thaiguard.restore(reply, masked.mapping)
 
 # Multi-turn: the mapping never leaves the Session object
-with aiguard.Session(mode="token") as session:
+with thaiguard.Session(mode="token") as session:
     turn1 = session.anonymize(text)
     answer = call_your_llm(turn1.text)
     print(session.restore(answer).text)
 
 # PDPA risk analysis (no raw values in the result)
-aiguard.analyze(text)
+thaiguard.analyze(text)
 
-# Permanent PDF blackout (flattened; scanned PDFs need `pip install aiguard[ocr]`)
-aiguard.redact_pdf("input.pdf", "redacted.pdf")
+# Permanent PDF blackout (flattened; scanned PDFs need `pip install thaiguard[ocr]`)
+thaiguard.redact_pdf("input.pdf", "redacted.pdf")
 ```
 
 ## What it detects
@@ -48,7 +48,7 @@ a guess.
 
 - **Fail closed.** If a masked result would still carry residual PII
   (structured, text-based, or a bare 6+ digit run), `anonymize` raises
-  `aiguard.LeakBlockedError` instead of returning a partial mask.
+  `thaiguard.LeakBlockedError` instead of returning a partial mask.
 - **Local only.** Detection and masking run in-process. The library makes no
   network calls and keeps no state on disk.
 - **The mapping is yours to guard.** `anonymize` returns the
@@ -60,22 +60,22 @@ a guess.
 
 ## PDPA tooling (CLI)
 
-The `aiguard` console command carries the PDPA artifact generators —
+The `thaiguard` console command carries the PDPA artifact generators —
 processing receipt (มาตรา 39), breach assessment (มาตรา 37(4)), and DSAR
 locate (มาตรา 30) — each producing a value-free JSON + Thai PDF pair:
 
 ```
-aiguard report document.txt
-aiguard receipt issue document.txt -o receipt.json --pdf receipt.pdf
-aiguard breach assess ./leaked_files -o breach.json --pdf breach.pdf
-aiguard dsar locate ./documents --subject-file subject.txt -o dsar.json
+thaiguard report document.txt
+thaiguard receipt issue document.txt -o receipt.json --pdf receipt.pdf
+thaiguard breach assess ./leaked_files -o breach.json --pdf breach.pdf
+thaiguard dsar locate ./documents --subject-file subject.txt -o dsar.json
 ```
 
 ## Try it in a browser
 
 ```
-pip install "aiguard[server]"
-aiguard serve
+pip install "thaiguard[server]"
+thaiguard serve
 ```
 
 One process, loopback only, opens the playground at `http://127.0.0.1:8000/demo`
@@ -86,7 +86,7 @@ non-loopback bind requires an explicit `--allow-remote` **and**
 
 ## MCP server (for AI agents)
 
-`pip install aiguard[mcp]` adds `aiguard-mcp` — the same guard as a Model
+`pip install thaiguard[mcp]` adds `thaiguard-mcp` — the same guard as a Model
 Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
 `reidentify`, `pdpa_analyze`, `guard_prompt`, `close_session`. Run it over
 stdio for a local agent (text never leaves the machine) or `--transport http`
@@ -100,14 +100,14 @@ the very model context the guard exists to protect (see
 
 | Extra | Adds |
 |---|---|
-| `aiguard[server]` | Local FastAPI HTTP server (`app.server`) |
-| `aiguard[mcp]` | `aiguard-mcp` Model Context Protocol server |
-| `aiguard[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
-| `aiguard[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
+| `thaiguard[server]` | Local FastAPI HTTP server (`app.server`) |
+| `thaiguard[mcp]` | `thaiguard-mcp` Model Context Protocol server |
+| `thaiguard[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
+| `thaiguard[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
 
 ## Stability
 
-Only the `aiguard` module surface follows semver. `pii_redactor.*` and
+Only the `thaiguard` module surface follows semver. `pii_redactor.*` and
 `app.*` are internal; import them at your own risk.
 
 ## Provenance

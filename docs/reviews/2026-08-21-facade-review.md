@@ -36,7 +36,7 @@ a model context.
 |---|---|---|
 | Remove `native_broker_context` hooks from `leak_guard`/`session_service`/`stateless`/`aggregate` | 0.2.x | No-op without a broker; includes retiring its `os._exit(70)` landmine |
 | Cut `private_backend_bootstrap` + `session_control_auth` branches out of `app/server.py` | 0.2.x | The inert-default pin above holds until then |
-| Rename installed top-level packages (`app`, `ai_guard`, `pii_redactor`) under `aiguard.*` | before first PyPI publish | Top-level `app` is a collision magnet |
+| Rename installed top-level packages (`app`, `ai_guard`, `pii_redactor`) under `thaiguard.*` | before first PyPI publish | Top-level `app` is a collision magnet |
 | Per-caller API keys with fail-closed default for any agent-facing deployment | with the MCP/AIFT work | Current single-env-key, absent-key-open behavior is a localhost-era default |
 | Trim untested `app/worker` submodules from the wheel, or restore their tests | 0.2.x | Only `handler` is exercised today |
 | Freeze paper gold as file+checksum instead of a git-history reference | when research resumes | The old repo's history carries the frozen commit; this one cannot |

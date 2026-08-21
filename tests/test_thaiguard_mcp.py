@@ -12,7 +12,7 @@ import pytest
 
 pytest.importorskip("mcp")
 
-from aiguard.mcp import build_server
+from thaiguard.mcp import build_server
 
 THAI_NUMERAL_SAMPLE = "เบอร์โทรผมคือ ๐๘๑-๒๓๔-๕๖๗๘"
 

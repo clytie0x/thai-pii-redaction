@@ -598,7 +598,7 @@ def main():
     serve_parser = subparsers.add_parser(
         "serve", help="Run the local backend with the demo playground"
     )
-    from aiguard.serve import add_serve_arguments, run_serve
+    from thaiguard.serve import add_serve_arguments, run_serve
 
     add_serve_arguments(serve_parser)
     serve_parser.set_defaults(func=run_serve)
