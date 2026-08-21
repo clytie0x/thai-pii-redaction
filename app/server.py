@@ -687,11 +687,17 @@ def root():
 
 
 def _demo_page_path() -> Path:
-    """Resolve demo/playground.html next to the repo root or the frozen exe."""
+    """Resolve the demo playground page.
+
+    Ships as `app` package data (app/demo/playground.html), so an installed
+    wheel serves it too; a frozen exe finds it next to `sys._MEIPASS`.
+    """
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
-        return Path(meipass) / "demo" / "playground.html"
-    return Path(__file__).resolve().parent.parent / "demo" / "playground.html"
+        frozen = Path(meipass) / "demo" / "playground.html"
+        if frozen.is_file():
+            return frozen
+    return Path(__file__).resolve().parent / "demo" / "playground.html"
 
 
 @app.get("/demo", include_in_schema=False)

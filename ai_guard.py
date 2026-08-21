@@ -594,6 +594,15 @@ def main():
     )
     locate_parser.set_defaults(func=cmd_dsar_locate)
 
+    # serve subcommand — local backend + demo playground (needs [server] extra)
+    serve_parser = subparsers.add_parser(
+        "serve", help="Run the local backend with the demo playground"
+    )
+    from aiguard.serve import add_serve_arguments, run_serve
+
+    add_serve_arguments(serve_parser)
+    serve_parser.set_defaults(func=run_serve)
+
     args = parser.parse_args()
     args.func(args)
 

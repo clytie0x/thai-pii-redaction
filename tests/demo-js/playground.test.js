@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const page = readFileSync(resolve(import.meta.dirname, "..", "playground.html"), "utf8");
+const page = readFileSync(resolve(import.meta.dirname, "..", "..", "app", "demo", "playground.html"), "utf8");
 const markup = page.match(/<body>([\s\S]*?)<script>/i)?.[1];
 const script = page.match(/<script>\s*([\s\S]*?)<\/script>/i)?.[1];
 

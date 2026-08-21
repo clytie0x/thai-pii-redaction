@@ -62,6 +62,7 @@ py-modules = ["ai_guard"]
 # as black boxes wherever the machine has no Thai-capable TTF of its own.
 [tool.setuptools.package-data]
 pii_redactor = ["fonts/*.ttf"]
+app = ["demo/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -71,6 +71,19 @@ aiguard breach assess ./leaked_files -o breach.json --pdf breach.pdf
 aiguard dsar locate ./documents --subject-file subject.txt -o dsar.json
 ```
 
+## Try it in a browser
+
+```
+pip install "aiguard[server]"
+aiguard serve
+```
+
+One process, loopback only, opens the playground at `http://127.0.0.1:8000/demo`
+— paste Thai text, see detection highlights and masked output live. Nothing
+leaves the machine. (`--no-browser`, `--no-demo`, `--port` available; a
+non-loopback bind requires an explicit `--allow-remote` **and**
+`AIGUARD_API_KEY`, so the data plane is never silently open to a network.)
+
 ## MCP server (for AI agents)
 
 `pip install aiguard[mcp]` adds `aiguard-mcp` — the same guard as a Model

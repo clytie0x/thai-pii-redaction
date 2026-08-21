@@ -51,7 +51,7 @@ class TestSurfaceRegistries:
 
 class TestPlaygroundDropdown:
     def _options(self):
-        html = (Path(__file__).parent.parent / "demo" / "playground.html").read_text(
+        html = (Path(__file__).parent.parent / "app" / "demo" / "playground.html").read_text(
             encoding="utf-8"
         )
         select = re.search(r'<select id="provider">(.*?)</select>', html, re.DOTALL)
