@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aiguard"
+description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.11"
+authors = [{ name = "Teerapat Vatpitak" }]
+keywords = ["pii", "redaction", "thai", "pdpa", "privacy", "ner", "anonymization"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Natural Language :: Thai",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Text Processing :: Linguistic",
+]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[project.scripts]
+aiguard = "ai_guard:main"
+
+[project.urls]
+Homepage = "https://github.com/Teerapat-Vatpitak/aiguard"
+Issues = "https://github.com/Teerapat-Vatpitak/aiguard/issues"
+
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
+dependencies = { file = "requirements.txt" }
+optional-dependencies.server = { file = "requirements-web.txt" }
+optional-dependencies.ml = { file = "requirements-ml.txt" }
+optional-dependencies.ocr = { file = "requirements-ocr.txt" }
+
+[tool.setuptools]
+# `aiguard` is the public facade and the only import surface with a semver
+# contract. `pii_redactor` and `app` ship as the internal engine and the
+# optional local HTTP server; they carry no cross-release stability promise.
+packages = [
+  "aiguard",
+  "pii_redactor",
+  "pii_redactor.detectors",
+  "pii_redactor.anonymizer",
+  "pii_redactor.guard",
+  "pii_redactor.ingest",
+  "app",
+]
+py-modules = ["ai_guard"]
+
+# The Thai font travels with the package: a `pip install` user renders the
+# PDPA report and the processing receipt too, and without it Thai comes out
+# as black boxes wherever the machine has no Thai-capable TTF of its own.
+[tool.setuptools.package-data]
+pii_redactor = ["fonts/*.ttf"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".venv", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "RUF"]
+ignore = [
+  "E501",
+  "B008",
+  "RUF001",
+  "RUF002",
+  "RUF003",
+  # deferred, not endorsed — inherited from the source tree; tighten one at a time
+  "B904",
+  "B905",
+  "B007",
+  "RUF005",
+  "RUF007",
+  "RUF013",
+  "RUF059",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "E402", "F401", "F841", "RUF043"]
+"app/server.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
