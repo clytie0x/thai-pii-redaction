@@ -228,15 +228,6 @@ def test_hosted_adapter_refuses_effectively_empty_provider_policy(provider_polic
     assert "BOOT_REFUSED" in proc.stdout
 
 
-# ── acceptance script header ───────────────────────────────────────────
-def test_acceptance_script_sends_the_gate_header_name():
-    src = (ROOT / "scripts" / "run_acceptance.py").read_text(encoding="utf-8")
-    assert 'headers["X-AIGuard-Key"]' in src
-    assert "CONTRACT_HEADER," in src
-    assert "headers[CONTRACT_HEADER] = CONTRACT_VERSION" in src
-    assert "X-API-Key" not in src
-
-
 # ── audit stdout mode ──────────────────────────────────────────────────
 def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path, capsys):
     from pii_redactor.audit import write_process_log

@@ -15,7 +15,7 @@ jobs:
       - name: Install package (core + server extra)
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[server]" ruff
+          pip install -e ".[server]" ruff pytest
       - name: Lint
         run: |
           ruff check .

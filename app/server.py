@@ -176,9 +176,15 @@ def _read_version() -> str:
             return candidate.read_text(encoding="utf-8").strip()
         except OSError:
             continue
-    # Last-resort fallback, outside the single-source system by design:
-    # bump this literal at release time (scripts/bump_version.py does not).
-    return "3.0.0"
+    # Installed wheels carry no VERSION file; distribution metadata is the
+    # source of truth there. "0.0.0" means genuinely unknown, never a stale
+    # release number.
+    try:
+        from importlib.metadata import version
+
+        return version("aiguard")
+    except Exception:
+        return "0.0.0"
 
 
 __version__ = _read_version()

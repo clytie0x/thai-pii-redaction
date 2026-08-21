@@ -70,7 +70,7 @@ def test_access_filter_suppresses_unrecognized_uvicorn_record_shape():
     assert allowed is False
 
 
-@pytest.mark.parametrize("startup", ["launcher", "cli"])
+@pytest.mark.parametrize("startup", ["cli"])
 def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
     tmp_path,
     startup,

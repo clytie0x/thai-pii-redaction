@@ -26,14 +26,18 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass, field
+from dataclasses import replace as _dc_replace
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _dist_version
 from pathlib import Path
 
 from pii_redactor.detectors.aggregate import detect_all as _detect_all
+from pii_redactor.ingest.text_cleaner import clean as _clean
 from pii_redactor.ingest.text_cleaner import clean_length_preserving as _clean_lp
 from pii_redactor.models import Entity, EntityRegistry
 from pii_redactor.report import analyze_text as _analyze_text
+from pii_redactor.session_service import OutboundLeakError as _OutboundLeakError
+from pii_redactor.session_service import SessionExpiredError, _identity_finalize
 from pii_redactor.session_service import SessionService as _SessionService
 from pii_redactor.stateless import (
     StatelessLeakError,
@@ -57,6 +61,7 @@ __all__ = [
     "RedactionResult",
     "RestoreResult",
     "Session",
+    "SessionExpiredError",
     "analyze",
     "anonymize",
     "detect",
@@ -75,9 +80,13 @@ def detect(text: str) -> list[Entity]:
 
     Detection runs on a length-preserving normalization (Thai digits to
     Arabic only), so every ``Entity.span`` indexes directly into the caller's
-    ``text``.
+    ``text`` and ``Entity.original_text`` is the exact slice of it.
     """
-    return _detect_all(_clean_lp(text))
+    entities = _detect_all(_clean_lp(text))
+    return [
+        _dc_replace(entity, original_text=text[entity.span[0] : entity.span[1]])
+        for entity in entities
+    ]
 
 
 @dataclass
@@ -107,11 +116,15 @@ def anonymize(
     previous call's ``mapping`` as ``prior_mapping`` keeps token continuity
     across calls.
     """
+    # detection_text mirrors detect(): without the length-preserving Thai-digit
+    # normalization a Thai-numeral phone number is never detected — and never
+    # masked (the engine only applies it when the caller passes it in).
     result = _sanitize_stateless(
         text,
         mode=mode,
         salt=salt or secrets.token_hex(16),
         prior_mapping=prior_mapping,
+        detection_text=_clean_lp(text),
     )
     return AnonymizeResult(
         text=result.sanitized_text,
@@ -124,12 +137,29 @@ def anonymize(
 
 @dataclass
 class RestoreResult:
-    """A restored text plus counters describing how complete the restore was."""
+    """A restored text plus counters describing how complete the restore was.
+
+    ``generated_pii_count`` > 0 means the AI's reply contained values that look
+    like real PII but were never in the mapping — review before publishing.
+    ``foreign_replacement_count`` counts product-shaped tokens from some other
+    session; they are left untouched.
+    """
 
     text: str
     replaced_count: int
     leftover_pseudonyms: list[str]
     warnings: list[str] = field(default_factory=list)
+    generated_pii_count: int = 0
+    foreign_replacement_count: int = 0
+
+
+def _restore_warnings(warnings: list[str], generated: int, foreign: int) -> list[str]:
+    merged = list(warnings)
+    if generated and "ai_generated_pii" not in merged:
+        merged.append("ai_generated_pii")
+    if foreign and "foreign_replacement" not in merged:
+        merged.append("foreign_replacement")
+    return merged
 
 
 def restore(
@@ -144,14 +174,22 @@ def restore(
         text=result.restored_text,
         replaced_count=result.replaced_count,
         leftover_pseudonyms=list(result.leftover_pseudonyms),
-        warnings=list(result.warnings),
+        warnings=_restore_warnings(
+            result.warnings,
+            result.generated_pii_count,
+            result.foreign_replacement_count,
+        ),
+        generated_pii_count=result.generated_pii_count,
+        foreign_replacement_count=result.foreign_replacement_count,
     )
 
 
 def analyze(text: str) -> dict:
     """PDPA-oriented risk analysis: entity counts, Section 26 signals, and a
     re-identification risk score. The result contains no raw PII values."""
-    return _analyze_text(text)
+    # Full clean first — the analyzer is documented for cleaned text, and the
+    # result carries no spans, so offset-shifting normalization is safe here.
+    return _analyze_text(_clean(text).text)
 
 
 @dataclass
@@ -208,7 +246,11 @@ class Session:
     leaves this object: the same entity keeps the same pseudonym across
     turns, and ``restore`` works without the caller ever holding the mapping.
     The vault lives only in process memory and is dropped by ``close`` (also
-    called by ``with`` exit) or after ``ttl_s`` seconds idle.
+    called by ``with`` exit). ``ttl_s`` is enforced on access: a session idle
+    longer than that raises ``SessionExpiredError`` on the next call — there
+    is no background sweeper, so call ``close`` to drop the mapping promptly.
+
+    A blocked mask raises ``LeakBlockedError``, same as ``anonymize``.
     """
 
     def __init__(self, *, mode: str = "token", ttl_s: int = 1800):
@@ -217,7 +259,19 @@ class Session:
         self._session_id: str | None = None
 
     def anonymize(self, text: str) -> AnonymizeResult:
-        outcome = self._service.sanitize(text, mode=self._mode, session_id=self._session_id)
+        try:
+            outcome = self._service.sanitize_transaction(
+                text,
+                mode=self._mode,
+                session_id=self._session_id,
+                detection_text=_clean_lp(text),
+                finalize=_identity_finalize,
+            )
+        except _OutboundLeakError as error:
+            raise LeakBlockedError(
+                list(error.leak_types),
+                policy_categories=list(error.policy_categories),
+            ) from None
         self._session_id = outcome.session_id
         return AnonymizeResult(
             text=outcome.sanitized_text,
@@ -235,7 +289,13 @@ class Session:
             text=outcome.restored_text,
             replaced_count=outcome.replaced_count,
             leftover_pseudonyms=list(outcome.leftover_tokens),
-            warnings=list(outcome.warnings),
+            warnings=_restore_warnings(
+                outcome.warnings,
+                outcome.generated_pii_count,
+                outcome.foreign_replacement_count,
+            ),
+            generated_pii_count=outcome.generated_pii_count,
+            foreign_replacement_count=outcome.foreign_replacement_count,
         )
 
     def close(self) -> None:

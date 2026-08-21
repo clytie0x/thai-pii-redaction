@@ -1,0 +1,1 @@
+{"type": "process", "session_id": "c8115870-913c-49a5-954b-476edad88d78", "step": "api_sanitize", "timestamp": 1787322682.762577, "entity_count": 0, "validation_result": "blocked", "flags": ["leak_type:ORPHAN_DIGITS"], "latency_ms": 9.665250778198242}
