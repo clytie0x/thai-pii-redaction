@@ -18,7 +18,7 @@ for entity in aiguard.detect(text):
 
 # Mask -> send to an LLM -> restore
 masked = aiguard.anonymize(text, mode="surrogate")
-reply = call_your_llm(masked.text)          # only masked text leaves the process
+reply = call_your_llm(masked.text)  # only masked text leaves the process
 restored = aiguard.restore(reply, masked.mapping)
 
 # Multi-turn: the mapping never leaves the Session object

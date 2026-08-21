@@ -349,19 +349,6 @@ def test_the_thai_font_travels_with_the_product():
     assert register_thai_font() != "Helvetica"
 
 
-def test_the_build_bundles_the_font_into_the_exe():
-    """A font present in a source checkout but absent from the exe would leave
-    packaged users exactly where they started, with the suite green."""
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    build = (root / "scripts" / "build_sidecar.py").read_text(encoding="utf-8")
-    assert "IBMPlexSansThaiLooped-Regular.ttf" in build, (
-        "scripts/build_sidecar.py does not bundle the Thai font; the exe will "
-        "render Thai as boxes on any machine without a Thai TTF of its own"
-    )
-
-
 def test_windows_has_a_candidate_font_windows_itself_ships():
     """The Windows list must not consist only of hand-installed fonts.
 

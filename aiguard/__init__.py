@@ -37,7 +37,11 @@ from pii_redactor.report import analyze_text as _analyze_text
 from pii_redactor.session_service import SessionService as _SessionService
 from pii_redactor.stateless import (
     StatelessLeakError,
+)
+from pii_redactor.stateless import (
     restore_stateless as _restore_stateless,
+)
+from pii_redactor.stateless import (
     sanitize_stateless as _sanitize_stateless,
 )
 
@@ -213,9 +217,7 @@ class Session:
         self._session_id: str | None = None
 
     def anonymize(self, text: str) -> AnonymizeResult:
-        outcome = self._service.sanitize(
-            text, mode=self._mode, session_id=self._session_id
-        )
+        outcome = self._service.sanitize(text, mode=self._mode, session_id=self._session_id)
         self._session_id = outcome.session_id
         return AnonymizeResult(
             text=outcome.sanitized_text,
@@ -242,7 +244,7 @@ class Session:
             self._session_id = None
         self._service.close()
 
-    def __enter__(self) -> "Session":
+    def __enter__(self) -> Session:
         return self
 
     def __exit__(self, *exc_info) -> None:
