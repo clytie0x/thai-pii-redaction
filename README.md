@@ -71,11 +71,24 @@ aiguard breach assess ./leaked_files -o breach.json --pdf breach.pdf
 aiguard dsar locate ./documents --subject-file subject.txt -o dsar.json
 ```
 
+## MCP server (for AI agents)
+
+`pip install aiguard[mcp]` adds `aiguard-mcp` — the same guard as a Model
+Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
+`reidentify`, `pdpa_analyze`, `guard_prompt`, `close_session`. Run it over
+stdio for a local agent (text never leaves the machine) or `--transport http`
+for a shared endpoint. `sanitize` returns masked text plus an opaque
+`session_handle`; the pseudonym→original mapping stays in the server's
+memory and is never part of a tool result — a returned mapping would land in
+the very model context the guard exists to protect (see
+`docs/decisions/0003-mcp-no-plaintext-mapping.md`).
+
 ## Extras
 
 | Extra | Adds |
 |---|---|
 | `aiguard[server]` | Local FastAPI HTTP server (`app.server`) |
+| `aiguard[mcp]` | `aiguard-mcp` Model Context Protocol server |
 | `aiguard[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
 | `aiguard[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
 

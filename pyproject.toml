@@ -27,6 +27,7 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
 aiguard = "ai_guard:main"
+aiguard-mcp = "aiguard.mcp:main"
 
 [project.urls]
 Homepage = "https://github.com/Teerapat-Vatpitak/aiguard"
@@ -36,6 +37,7 @@ Issues = "https://github.com/Teerapat-Vatpitak/aiguard/issues"
 version = { file = "VERSION" }
 dependencies = { file = "requirements.txt" }
 optional-dependencies.server = { file = "requirements-web.txt" }
+optional-dependencies.mcp = { file = "requirements-mcp.txt" }
 optional-dependencies.ml = { file = "requirements-ml.txt" }
 optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 

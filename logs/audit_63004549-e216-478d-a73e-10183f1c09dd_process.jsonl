@@ -1,0 +1,1 @@
+{"type": "process", "session_id": "63004549-e216-478d-a73e-10183f1c09dd", "step": "api_sanitize", "timestamp": 1787324534.6493874, "entity_count": 0, "validation_result": "blocked", "flags": ["leak_type:THAI_ID"], "latency_ms": 2.6619434356689453}
