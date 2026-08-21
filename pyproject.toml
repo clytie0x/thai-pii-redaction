@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 authors = [{ name = "Teerapat Vatpitak" }]
 keywords = ["pii", "redaction", "thai", "pdpa", "privacy", "ner", "anonymization"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Natural Language :: Thai",
   "Operating System :: OS Independent",
