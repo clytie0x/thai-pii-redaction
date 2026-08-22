@@ -1,4 +1,6 @@
-"""Slice 3 pins the private HTTP-v2 lifecycle the Rust broker forwards to."""
+"""Pins the strict HTTP v2 session lifecycle: keyed sanitize/reidentify/
+delete-session against a fresh SessionService, and that fully stateless
+routes never create a session."""
 
 from __future__ import annotations
 
@@ -19,7 +21,7 @@ _V2_DATA_HEADERS = {
 
 
 @pytest.fixture
-def private_backend(monkeypatch, tmp_path):
+def keyed_client(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_API_KEY", "synthetic-data-authority")
     monkeypatch.setattr(server, "_BOOT_TOKEN", "synthetic-control-authority")
     monkeypatch.setattr(server, "_authorization_now", lambda: _NOW)
@@ -37,9 +39,9 @@ def _nested_keys(value: object) -> set[str]:
 
 
 def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimized(
-    private_backend,
+    keyed_client,
 ):
-    sanitized = private_backend.post(
+    sanitized = keyed_client.post(
         "/api/sanitize",
         headers=_V2_DATA_HEADERS,
         json={"text": "synthetic plain input", "mode": "token"},
@@ -56,7 +58,7 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
         "credentials",
     }.intersection(_nested_keys(body))
 
-    continued = private_backend.post(
+    continued = keyed_client.post(
         "/api/reidentify",
         headers=_V2_DATA_HEADERS,
         json={"session_id": backend_session_id, "text": body["sanitized_text"]},
@@ -64,7 +66,7 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
     assert continued.status_code == 200
     assert server.SERVICE.session_count == 1
 
-    unauthorized = private_backend.delete(
+    unauthorized = keyed_client.delete(
         f"/api/session/{backend_session_id}",
         headers={"X-AIGuard-Contract-Version": "2"},
     )
@@ -78,7 +80,7 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
         now=_NOW,
         nonce=b"synthetic-nonce!",
     )
-    disposed = private_backend.delete(
+    disposed = keyed_client.delete(
         f"/api/session/{backend_session_id}",
         headers={
             "X-AIGuard-Contract-Version": "2",
@@ -89,7 +91,7 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
     assert disposed.json() == {"deleted": True}
     assert server.SERVICE.session_count == 0
 
-    stale = private_backend.post(
+    stale = keyed_client.post(
         "/api/reidentify",
         headers=_V2_DATA_HEADERS,
         json={"session_id": backend_session_id, "text": "synthetic"},
@@ -98,19 +100,19 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
     assert stale.json()["error"]["code"] == "session_unavailable"
 
 
-def test_stateless_private_routes_do_not_invent_session_state(private_backend):
+def test_stateless_private_routes_do_not_invent_session_state(keyed_client):
     assert server.SERVICE.session_count == 0
-    detected = private_backend.post(
+    detected = keyed_client.post(
         "/api/detect",
         headers=_V2_DATA_HEADERS,
         json={"text": "synthetic plain input"},
     )
-    guarded = private_backend.post(
+    guarded = keyed_client.post(
         "/api/guard",
         headers=_V2_DATA_HEADERS,
         json={"text": "synthetic plain input"},
     )
-    roundtrip = private_backend.post(
+    roundtrip = keyed_client.post(
         "/api/roundtrip",
         headers=_V2_DATA_HEADERS,
         json={

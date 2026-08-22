@@ -1,37 +1,32 @@
-"""The pip-installed server profile keeps broker-era code inert.
+"""The pip-installed server profile carries no native-broker residue.
 
-`app.server` still carries the private-backend bootstrap and control-auth
-paths from the native-broker product. In this package they must stay dormant:
-no broker injects credentials here, so booting without that environment must
-yield a plain localhost server with `private_backend` off. This pins the
-inert default until the broker residue is removed outright (planned 0.2.x).
+`app.server` used to carry dormant private-backend bootstrap, control-auth,
+and detector-budget hooks left over from the native-broker product it was
+extracted from. Those modules and their call sites are removed outright
+(0.2.x item); this pins that they stay gone rather than creeping back in.
 """
 
-import importlib
 import sys
 
 import pytest
 
 
-def test_private_backend_bootstrap_is_inert_without_env(monkeypatch):
-    for name in (
-        "AIGUARD_PRIVATE_BACKEND_FD",
-        "AIGUARD_PRIVATE_BACKEND_KEY_FILE",
-        "AIGUARD_PRIVATE_BACKEND_CONTROL_FILE",
-    ):
-        monkeypatch.delenv(name, raising=False)
-    from app import private_backend_bootstrap
-
-    importlib.reload(private_backend_bootstrap)
-    assert private_backend_bootstrap.consume_private_backend_credentials() is None
+def test_private_backend_bootstrap_module_is_gone():
+    with pytest.raises(ModuleNotFoundError):
+        import app.private_backend_bootstrap
 
 
-def test_server_boots_with_private_backend_disabled():
+def test_native_broker_context_module_is_gone():
+    with pytest.raises(ModuleNotFoundError):
+        import pii_redactor.native_broker_context
+
+
+def test_server_has_no_private_backend_state():
     pytest.importorskip("fastapi")
     server = sys.modules.get("app.server")
     if server is None:
         import app.server as server
-    assert server.app.state.private_backend is False
+    assert not hasattr(server.app.state, "private_backend")
 
 
 def test_server_version_is_not_a_stale_release_literal():

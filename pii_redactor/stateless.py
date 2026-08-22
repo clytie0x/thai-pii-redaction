@@ -32,7 +32,6 @@ from pii_redactor.leak_guard import (
     scan_residual_signals,
 )
 from pii_redactor.models import AIResponse, Entity, EntityRegistry, ReplacementHighlight
-from pii_redactor.native_broker_context import NativeBrokerOperationError
 from pii_redactor.output_validator import PIILeakError as OutputPIILeakError
 from pii_redactor.output_validator import validate_output
 from pii_redactor.report import scan_section26
@@ -173,8 +172,6 @@ def sanitize_into_vault(
         failure_kind = "ner"
         failure_metadata = ner_failure_metadata(error)
         discard_exception_graph(error)
-    except NativeBrokerOperationError:
-        raise
     except Exception as error:
         failure_kind = "failed"
         discard_exception_graph(error)
@@ -366,8 +363,6 @@ def restore_stateless(
     except VaultTimeoutError as error:
         failure_kind = "timeout"
         discard_exception_graph(error)
-    except NativeBrokerOperationError:
-        raise
     except Exception as error:
         failure_kind = "failed"
         discard_exception_graph(error)
@@ -510,8 +505,6 @@ def sanitize_stateless(
             failure_kind = "ner"
             failure_metadata = ner_failure_metadata(error)
             discard_exception_graph(error)
-        except NativeBrokerOperationError:
-            raise
         except Exception as error:
             failure_kind = "failed"
             discard_exception_graph(error)

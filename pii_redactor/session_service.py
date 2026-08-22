@@ -35,7 +35,6 @@ from pii_redactor.models import (
     EntityRegistry,
     ReplacementHighlight,
 )
-from pii_redactor.native_broker_context import NativeBrokerOperationError
 from pii_redactor.output_validator import PIILeakError as OutputPIILeakError
 from pii_redactor.output_validator import validate_output
 from pii_redactor.report import scan_section26
@@ -566,8 +565,6 @@ class SessionService:
             failure_kind = "ner"
             failure = ner_failure_metadata(error)
             discard_exception_graph(error)
-        except NativeBrokerOperationError:
-            raise
         except Exception as error:
             failure_kind = "failed"
             discard_exception_graph(error)
@@ -793,8 +790,6 @@ class SessionService:
         except SessionExpiredError as error:
             failure_kind = "expired"
             discard_exception_graph(error)
-        except NativeBrokerOperationError:
-            raise
         except Exception as error:
             failure_kind = "failed"
             discard_exception_graph(error)
@@ -821,8 +816,6 @@ class SessionService:
         except SessionExpiredError as error:
             failure_kind = "expired"
             discard_exception_graph(error)
-        except NativeBrokerOperationError:
-            raise
         except Exception as error:
             failure_kind = "failed"
             discard_exception_graph(error)
