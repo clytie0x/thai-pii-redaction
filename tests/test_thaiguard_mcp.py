@@ -7,12 +7,13 @@ sanitize. All PII values are fabricated.
 """
 
 import asyncio
+import sys
 
 import pytest
 
 pytest.importorskip("mcp")
 
-from thaiguard.mcp import build_server
+from thaiguard.mcp import _CallerKeyMiddleware, build_server, main, parse_caller_keys
 
 THAI_NUMERAL_SAMPLE = "เบอร์โทรผมคือ ๐๘๑-๒๓๔-๕๖๗๘"
 
@@ -114,3 +115,96 @@ def test_tool_roster_is_exactly_the_documented_set():
         "guard_prompt",
         "close_session",
     }
+
+
+# --- per-caller API key gate (fail-closed for the shared HTTP transport) ---
+
+
+def test_parse_caller_keys_maps_secret_to_caller():
+    assert parse_caller_keys("agent-a:key-a,agent-b:key-b") == {
+        "key-a": "agent-a",
+        "key-b": "agent-b",
+    }
+
+
+def test_parse_caller_keys_empty_string_yields_no_keys():
+    assert parse_caller_keys("") == {}
+
+
+def test_parse_caller_keys_rejects_malformed_entry():
+    with pytest.raises(ValueError, match="malformed"):
+        parse_caller_keys("agent-a")
+
+
+def _asgi_status(app, headers):
+    sent = []
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/mcp",
+        "headers": headers,
+        "query_string": b"",
+    }
+    asyncio.run(app(scope, receive, send))
+    return next(message["status"] for message in sent if message["type"] == "http.response.start")
+
+
+def test_caller_key_middleware_rejects_missing_authorization():
+    async def inner(scope, receive, send):
+        raise AssertionError("inner app must not run without a valid key")
+
+    wrapped = _CallerKeyMiddleware(inner, {"secret-a": "agent-a"})
+    assert _asgi_status(wrapped, []) == 401
+
+
+def test_caller_key_middleware_rejects_wrong_key():
+    async def inner(scope, receive, send):
+        raise AssertionError("inner app must not run without a valid key")
+
+    wrapped = _CallerKeyMiddleware(inner, {"secret-a": "agent-a"})
+    assert _asgi_status(wrapped, [(b"authorization", b"Bearer nope")]) == 401
+
+
+def test_caller_key_middleware_admits_valid_key_and_tags_caller():
+    seen = {}
+
+    async def inner(scope, receive, send):
+        seen["caller_id"] = scope["state"]["caller_id"]
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    wrapped = _CallerKeyMiddleware(inner, {"secret-a": "agent-a"})
+    assert _asgi_status(wrapped, [(b"authorization", b"Bearer secret-a")]) == 200
+    assert seen["caller_id"] == "agent-a"
+
+
+def test_caller_key_middleware_passes_non_http_scopes_through():
+    calls = []
+
+    async def inner(scope, receive, send):
+        calls.append(scope["type"])
+
+    wrapped = _CallerKeyMiddleware(inner, {"secret-a": "agent-a"})
+    asyncio.run(wrapped({"type": "lifespan"}, None, None))
+    assert calls == ["lifespan"]
+
+
+def test_main_refuses_http_transport_without_any_keys(monkeypatch):
+    monkeypatch.delenv("AIGUARD_MCP_KEYS", raising=False)
+    monkeypatch.setattr(sys, "argv", ["thaiguard-mcp", "--transport", "http"])
+    with pytest.raises(SystemExit, match="AIGUARD_MCP_KEYS"):
+        main()
+
+
+def test_main_refuses_http_transport_with_malformed_keys(monkeypatch):
+    monkeypatch.setenv("AIGUARD_MCP_KEYS", "not-valid")
+    monkeypatch.setattr(sys, "argv", ["thaiguard-mcp", "--transport", "http"])
+    with pytest.raises(SystemExit, match="malformed"):
+        main()

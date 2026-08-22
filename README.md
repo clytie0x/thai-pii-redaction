@@ -89,12 +89,22 @@ non-loopback bind requires an explicit `--allow-remote` **and**
 `pip install thaiguard[mcp]` adds `thaiguard-mcp` — the same guard as a Model
 Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
 `reidentify`, `pdpa_analyze`, `guard_prompt`, `close_session`. Run it over
-stdio for a local agent (text never leaves the machine) or `--transport http`
-for a shared endpoint. `sanitize` returns masked text plus an opaque
-`session_handle`; the pseudonym→original mapping stays in the server's
-memory and is never part of a tool result — a returned mapping would land in
-the very model context the guard exists to protect (see
+stdio for a local agent (text never leaves the machine, no auth needed) or
+`--transport http` for a shared endpoint. `sanitize` returns masked text plus
+an opaque `session_handle`; the pseudonym→original mapping stays in the
+server's memory and is never part of a tool result — a returned mapping would
+land in the very model context the guard exists to protect (see
 `docs/decisions/0003-mcp-no-plaintext-mapping.md`).
+
+The HTTP transport is fail-closed: it refuses to start without
+`AIGUARD_MCP_KEYS="caller_id:key[,caller_id:key...]"` — one key per caller,
+checked with a constant-time comparison. There is no "unauthenticated for
+now" mode; a shared endpoint with no key would hand the PII guard to
+anything that can reach the port.
+
+```
+AIGUARD_MCP_KEYS="agent-a:key-a,agent-b:key-b" thaiguard-mcp --transport http --port 8300
+```
 
 ## Extras
 

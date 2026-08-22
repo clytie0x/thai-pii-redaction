@@ -1,13 +1,17 @@
 """MCP adapter — the thaiguard toolset for AI agents.
 
-Run locally over stdio (full local privacy — text never leaves the machine)::
+Run locally over stdio (full local privacy — text never leaves the machine,
+and stdio is only reachable by the parent process, so no auth is needed)::
 
     thaiguard-mcp
 
 or as a shared HTTP endpoint (hosted convenience tier — callers' text reaches
-this server; state is one in-memory vault with a TTL, nothing on disk)::
+this server; state is one in-memory vault with a TTL, nothing on disk). HTTP
+is reachable by anything that can open the port, so every caller must
+present a per-caller key — there is no unauthenticated fallback::
 
-    thaiguard-mcp --transport http --host 127.0.0.1 --port 8300
+    AIGUARD_MCP_KEYS="agent-a:key-a,agent-b:key-b" \\
+        thaiguard-mcp --transport http --host 127.0.0.1 --port 8300
 
 Design rule (see docs/decisions/0003-mcp-no-plaintext-mapping.md): a tool
 result always enters the calling model's context, so no tool here ever
@@ -19,6 +23,8 @@ facade, where the caller is code rather than a model context.
 
 from __future__ import annotations
 
+import hmac
+import os
 from typing import Any
 
 try:
@@ -45,6 +51,68 @@ _SESSION_TTL_S = 1800
 def _safe_leak_error(error: OutboundLeakError) -> ValueError:
     # Value-free by construction: leak_types are fixed category labels.
     return ValueError(f"sanitize blocked: residual risk {sorted(error.leak_types)}")
+
+
+def parse_caller_keys(raw: str) -> dict[str, str]:
+    """Parse ``AIGUARD_MCP_KEYS`` ("caller_id:key,caller_id2:key2") into {key: caller_id}."""
+    keys: dict[str, str] = {}
+    for entry in filter(None, (item.strip() for item in raw.split(","))):
+        caller_id, sep, secret = entry.partition(":")
+        if not sep or not caller_id or not secret:
+            raise ValueError(f"malformed AIGUARD_MCP_KEYS entry {entry!r}: expected caller_id:key")
+        keys[secret] = caller_id
+    return keys
+
+
+class _CallerKeyMiddleware:
+    """Fail-closed per-caller bearer-key gate for the shared HTTP transport.
+
+    Every request must carry ``Authorization: Bearer <key>`` matching one of
+    the configured per-caller keys — there is no unauthenticated path, unlike
+    the local FastAPI server's optional ``AIGUARD_API_KEY``. An MCP HTTP
+    endpoint hands the PII guard to any caller who can reach the port, so it
+    stays closed until a caller proves who it is.
+    """
+
+    def __init__(self, app: Any, keys_by_secret: dict[str, str]) -> None:
+        self._app = app
+        self._keys_by_secret = keys_by_secret
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self._app(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers") or [])
+        header = headers.get(b"authorization", b"").decode("latin-1")
+        prefix = "bearer "
+        supplied = header[len(prefix) :] if header.lower().startswith(prefix) else ""
+        caller_id = next(
+            (
+                owner
+                for secret, owner in self._keys_by_secret.items()
+                if supplied and hmac.compare_digest(supplied, secret)
+            ),
+            None,
+        )
+        if caller_id is None:
+            body = b'{"error":"invalid_token","error_description":"a valid Authorization: Bearer <key> is required"}'
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 401,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode()),
+                        (b"www-authenticate", b"Bearer"),
+                    ],
+                }
+            )
+            await send({"type": "http.response.body", "body": body})
+            return
+
+        scope["state"] = {**scope.get("state", {}), "caller_id": caller_id}
+        await self._app(scope, receive, send)
 
 
 def build_server(
@@ -183,11 +251,28 @@ def build_server(
     return server
 
 
+def run_http(server: MCPServer, *, host: str, port: int, caller_keys: dict[str, str]) -> None:
+    """Serve ``server`` over streamable-http behind the per-caller key gate.
+
+    Bypasses ``MCPServer.run("streamable-http", ...)``: the SDK's own auth
+    layer is OAuth-shaped (``AuthSettings`` requires an ``issuer_url`` and
+    stands up authorization-server discovery routes), which is the wrong
+    protocol for a static per-caller shared secret. Wrapping the Starlette
+    app with a small bearer-key ASGI middleware instead keeps the surface to
+    exactly one check: is this caller's key valid.
+    """
+    import uvicorn
+
+    starlette_app = server.streamable_http_app(host=host)
+    starlette_app.add_middleware(_CallerKeyMiddleware, keys_by_secret=caller_keys)
+    uvicorn.run(starlette_app, host=host, port=port, log_level="info")
+
+
 def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog="ththaiguard-mcp",
+        prog="thaiguard-mcp",
         description="thaiguard MCP server (Thai PII guard toolset for AI agents)",
     )
     parser.add_argument(
@@ -203,8 +288,20 @@ def main() -> None:
     server = build_server()
     if args.transport == "stdio":
         server.run("stdio")
-    else:
-        server.run("streamable-http", host=args.host, port=args.port)
+        return
+
+    try:
+        caller_keys = parse_caller_keys(os.environ.get("AIGUARD_MCP_KEYS", ""))
+    except ValueError as error:
+        raise SystemExit(str(error)) from None
+    if not caller_keys:
+        raise SystemExit(
+            "refusing to start --transport http without AIGUARD_MCP_KEYS: a "
+            "shared HTTP endpoint hands the PII guard to any caller who can "
+            'reach the port. Set AIGUARD_MCP_KEYS="caller_id:key[,caller_id:key...]" '
+            "with one key per caller."
+        )
+    run_http(server, host=args.host, port=args.port, caller_keys=caller_keys)
 
 
 if __name__ == "__main__":
