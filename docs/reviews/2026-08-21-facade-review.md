@@ -34,9 +34,14 @@ a model context.
 
 | Item | Target | Note |
 |---|---|---|
-| Remove `native_broker_context` hooks from `leak_guard`/`session_service`/`stateless`/`aggregate` | 0.2.x | No-op without a broker; includes retiring its `os._exit(70)` landmine |
-| Cut `private_backend_bootstrap` + `session_control_auth` branches out of `app/server.py` | 0.2.x | The inert-default pin above holds until then |
-| Rename installed top-level packages (`app`, `ai_guard`, `pii_redactor`) under `thaiguard.*` | before first PyPI publish | Top-level `app` is a collision magnet |
-| Per-caller API keys with fail-closed default for any agent-facing deployment | with the MCP/AIFT work | Current single-env-key, absent-key-open behavior is a localhost-era default |
 | Trim untested `app/worker` submodules from the wheel, or restore their tests | 0.2.x | Only `handler` is exercised today |
 | Freeze paper gold as file+checksum instead of a git-history reference | when research resumes | The old repo's history carries the frozen commit; this one cannot |
+
+## Resolved (2026-08-22)
+
+| Item | Resolution |
+|---|---|
+| Remove `native_broker_context` hooks from `leak_guard`/`session_service`/`stateless`/`aggregate` | Module deleted outright; every call site (all confirmed no-ops — nothing ever activated a broker context) removed from the four hot modules |
+| Cut `private_backend_bootstrap` + `session_control_auth` branches out of `app/server.py` | `private_backend_bootstrap.py` deleted along with its `app.state.private_backend` gating and every `NativeBroker*` handler in `server.py`. **`session_control_auth.py` was kept**, deliberately deviating from this table's literal wording: it is a signed, replay-resistant, target-bound HMAC session-disposal scheme whose `control_secret` can come from either the broker *or* the plain `AIGUARD_TOKEN` env var — it was never broker-only, and it carries ~20 real security regression tests. Removing it would have deleted working, tested access control for no reason tied to the broker's absence. |
+| Rename installed top-level packages (`app`, `ai_guard`, `pii_redactor`) under `thaiguard.*` | `app` → `thaiguard.server`, `pii_redactor` → `thaiguard.engine`, `ai_guard.py` → `thaiguard.cli`. Only the top-level `thaiguard` module surface (facade, CLI entry point) keeps a semver contract; `thaiguard.engine.*` and `thaiguard.server.*` are internal. See the rename commit for the three classes of sed-collateral-damage found and fixed (indented imports, string-literal module paths, mangled quoted path segments). |
+| Per-caller API keys with fail-closed default for any agent-facing deployment | `thaiguard-mcp --transport http` now refuses to start without `AIGUARD_MCP_KEYS="caller_id:key[,...]"` — no absent-key-open fallback. A hand-rolled constant-time bearer-key ASGI middleware gates the streamable-http app rather than the mcp SDK's OAuth-shaped `AuthSettings`/`token_verifier`, which needs a real issuer and stands up authorization-server discovery routes that don't apply to a static shared secret. stdio needs no key (process-local, not network-reachable). The local FastAPI server's single-env, absent-key-open `AIGUARD_API_KEY` is unchanged — it is loopback-only by default (`check_binding`) and opting into a remote bind already requires `--allow-remote` *and* a key, so its risk profile differs from a bare shared MCP endpoint. |
