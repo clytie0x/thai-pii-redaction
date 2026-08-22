@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from pii_redactor.audit import write_process_log, write_security_log
-from pii_redactor.models import EntityRegistry, ReverseResult, VaultRecord
-from pii_redactor.output_validator import PIILeakError, ValidationResult, validate_output
-from pii_redactor.session_vault import SessionVault
+from thaiguard.engine.audit import write_process_log, write_security_log
+from thaiguard.engine.models import EntityRegistry, ReverseResult, VaultRecord
+from thaiguard.engine.output_validator import PIILeakError, ValidationResult, validate_output
+from thaiguard.engine.session_vault import SessionVault
 
 
 def _make_vault(original: str = "safe text", pseudonym: str = "SAFE_PSEUDO") -> SessionVault:
@@ -478,7 +478,7 @@ class TestAuditLogSecurity:
     def test_audit_log_path_rejects_traversal(self, tmp_path):
         """A path-traversal session_id must not escape output_dir when it is
         interpolated into the log filename."""
-        from pii_redactor.audit import _log_path
+        from thaiguard.engine.audit import _log_path
 
         p = _log_path("../../etc/passwd", "process", str(tmp_path))
         assert p.parent == Path(str(tmp_path))
@@ -487,7 +487,7 @@ class TestAuditLogSecurity:
 
     def test_audit_log_path_keeps_uuid_intact(self, tmp_path):
         """Sanitizing must not mangle normal uuid/hyphen session ids."""
-        from pii_redactor.audit import _log_path
+        from thaiguard.engine.audit import _log_path
 
         sid = str(uuid.uuid4())
         p = _log_path(sid, "process", str(tmp_path))

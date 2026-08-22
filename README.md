@@ -100,15 +100,18 @@ the very model context the guard exists to protect (see
 
 | Extra | Adds |
 |---|---|
-| `thaiguard[server]` | Local FastAPI HTTP server (`app.server`) |
+| `thaiguard[server]` | Local FastAPI HTTP server (`thaiguard.server.server`) |
 | `thaiguard[mcp]` | `thaiguard-mcp` Model Context Protocol server |
 | `thaiguard[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
 | `thaiguard[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
 
 ## Stability
 
-Only the `thaiguard` module surface follows semver. `pii_redactor.*` and
-`app.*` are internal; import them at your own risk.
+Only the `thaiguard` module surface follows semver — `detect`, `anonymize`,
+`restore`, `analyze`, `redact_pdf`, `Session`, `Entity`, `LeakBlockedError`,
+`SessionExpiredError`, and the result dataclasses. `thaiguard.engine.*`
+(detection/masking core) and `thaiguard.server.*` (local HTTP server) are
+internal; import them at your own risk.
 
 ## Provenance
 

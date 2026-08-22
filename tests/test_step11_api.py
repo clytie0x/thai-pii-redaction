@@ -10,7 +10,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    from app.server import app
+    from thaiguard.server.server import app
 
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -26,7 +26,7 @@ pytestmark = pytest.mark.skipif(
 def client():
     from fastapi.testclient import TestClient
 
-    from app.server import app
+    from thaiguard.server.server import app
 
     return TestClient(
         app,
@@ -242,8 +242,8 @@ def test_sanitize_token_mode_unchanged(client):
 
 
 def test_shutdown_endpoint_returns_ack(monkeypatch):
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     called = {}
 
@@ -286,8 +286,8 @@ def test_sanitize_api_stage_failure_preserves_complete_session_state(
 ):
     from fastapi import HTTPException
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
@@ -338,9 +338,9 @@ def test_sanitize_api_stage_failure_preserves_complete_session_state(
 def test_blocked_sanitize_audit_failure_drops_retained_exception(monkeypatch):
     from fastapi import HTTPException
 
-    import app.server as server
-    import pii_redactor.session_service as session_module
-    from pii_redactor.session_service import SessionService
+    import thaiguard.engine.session_service as session_module
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     retained_error = RuntimeError("synthetic blocked audit failure")
     service = SessionService()
@@ -370,8 +370,8 @@ def test_blocked_sanitize_audit_failure_drops_retained_exception(monkeypatch):
 def test_untrusted_downstream_http_exception_becomes_fixed_500(monkeypatch, hostile_detail):
     from fastapi import HTTPException
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     private_marker = "SYNTHETIC_PRIVATE_HTTP_DETAIL"
     service = SessionService()
@@ -423,8 +423,8 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
 ):
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
@@ -472,10 +472,10 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
 def test_blocked_sanitize_audit_is_safe_and_non_authorizing(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    import pii_redactor.session_service as service_module
-    from pii_redactor.models import Entity
-    from pii_redactor.session_service import SessionService
+    import thaiguard.engine.session_service as service_module
+    import thaiguard.server.server as server
+    from thaiguard.engine.models import Entity
+    from thaiguard.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
@@ -527,9 +527,9 @@ def test_detector_independent_sanitize_block_is_safe_and_transactional(
 ):
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    import pii_redactor.session_service as service_module
-    from pii_redactor.session_service import SessionService
+    import thaiguard.engine.session_service as service_module
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
@@ -577,7 +577,7 @@ def test_inspection_routes_do_not_apply_outbound_digit_policy(client, path):
 
 
 def test_sanitize_writes_one_audit_record(tmp_path, monkeypatch):
-    import app.server as server
+    import thaiguard.server.server as server
 
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
 
@@ -604,7 +604,7 @@ def test_sanitize_writes_one_audit_record(tmp_path, monkeypatch):
 
 
 def test_audit_log_endpoint_returns_safe_records(tmp_path, monkeypatch):
-    import app.server as server
+    import thaiguard.server.server as server
 
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
     from fastapi.testclient import TestClient

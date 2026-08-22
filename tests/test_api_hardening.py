@@ -7,7 +7,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    import app.server as server
+    import thaiguard.server.server as server
 
     DEPS = True
 except ImportError:

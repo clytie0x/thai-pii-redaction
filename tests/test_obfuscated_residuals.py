@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from pii_redactor.ai_client import AIProvider, PreSendValidationError, send_to_ai
-from pii_redactor.leak_guard import OutboundGuardContext, scan_residual_signals
-from pii_redactor.models import EntityRegistry
-from pii_redactor.session_vault import SessionVault
-from pii_redactor.stateless import (
+from thaiguard.engine.ai_client import AIProvider, PreSendValidationError, send_to_ai
+from thaiguard.engine.leak_guard import OutboundGuardContext, scan_residual_signals
+from thaiguard.engine.models import EntityRegistry
+from thaiguard.engine.session_vault import SessionVault
+from thaiguard.engine.stateless import (
     StatelessLeakError,
     StatelessSanitizeResult,
     restore_stateless,
@@ -89,7 +89,7 @@ def test_unrelated_hidden_characters_and_grouped_text_remain_exact(text):
 
 
 def test_session_sanitize_blocks_single_spaced_iban_without_publishing_state():
-    from pii_redactor.session_service import OutboundLeakError, SessionService
+    from thaiguard.engine.session_service import OutboundLeakError, SessionService
 
     service = SessionService()
 
@@ -114,8 +114,8 @@ def test_http_sanitize_and_roundtrip_block_before_provider(text, monkeypatch):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     calls: list[str] = []
     monkeypatch.setattr(server, "SERVICE", SessionService())
@@ -166,8 +166,8 @@ def test_http_reidentify_warns_for_generated_obfuscated_pii(monkeypatch, tmp_pat
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_BOOT_TOKEN", None)
@@ -208,8 +208,8 @@ def test_http_roundtrip_marks_forged_obfuscated_provider_output_unsafe(
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     calls: list[str] = []
     generated = "ตอบกลับ 099\u2066-999-9999"
@@ -260,8 +260,8 @@ def test_http_reidentify_preserves_safe_security_view_negatives(
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    import app.server as server
-    from pii_redactor.session_service import SessionService
+    import thaiguard.server.server as server
+    from thaiguard.engine.session_service import SessionService
 
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_BOOT_TOKEN", None)
@@ -292,7 +292,7 @@ def test_http_reidentify_preserves_safe_security_view_negatives(
 
 @pytest.mark.parametrize("text", OBFUSCATED_STRUCTURED_PII)
 def test_worker_post_sanitize_guard_blocks_forged_output_before_handoff(text, monkeypatch):
-    import app.worker.handler as handler
+    import thaiguard.server.worker.handler as handler
 
     calls: list[str] = []
     forged = StatelessSanitizeResult(

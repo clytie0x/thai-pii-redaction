@@ -50,7 +50,7 @@ def _subject_file(tmp_path: Path, lines: list[str]) -> Path:
 
 
 def test_dsar_locate_happy_path_prints_thai_summary_and_json_keys(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -82,7 +82,7 @@ def test_dsar_locate_happy_path_prints_thai_summary_and_json_keys(tmp_path, caps
 def test_dsar_locate_weak_only_match_marked_in_stdout(tmp_path, capsys):
     """F2: a file that matches ONLY on NAME must be marked in the CLI summary,
     not presented identically to an id-backed match."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, ["สมชาย ใจดี"])
     doc = tmp_path / "doc.txt"
@@ -96,7 +96,7 @@ def test_dsar_locate_weak_only_match_marked_in_stdout(tmp_path, capsys):
 
 
 def test_dsar_locate_id_backed_match_not_marked_weak_in_stdout(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -111,7 +111,7 @@ def test_dsar_locate_id_backed_match_not_marked_weak_in_stdout(tmp_path, capsys)
 def test_dsar_locate_zero_match_exits_0_and_says_so_plainly(tmp_path, capsys):
     """Zero matched files is a valid DSAR outcome, not a failure -- exit stays
     0 and the summary says so in words, not a bare "0"."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -132,7 +132,7 @@ def test_dsar_locate_partial_failure_exits_2_lists_failed_basenames(tmp_path, ca
     plain one -- both are checked, plus `tmp_path.name` (unaffected by the
     doubling), so this test cannot pass vacuously the way a plain
     `str(tmp_path) not in captured.err` check could."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     good = tmp_path / "good.txt"
@@ -155,7 +155,7 @@ def test_dsar_locate_partial_failure_exits_2_lists_failed_basenames(tmp_path, ca
 
 
 def test_dsar_locate_empty_input_exits_1(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     empty_dir = tmp_path / "empty"
@@ -183,7 +183,7 @@ def test_dsar_locate_empty_subject_file_exits_1_no_value_echoed(tmp_path, capsys
     even before the fix. The `str(tmp_path)`/doubled-backslash/`tmp_path.name`
     checks are what actually exercise the scrub (same style as the sibling
     missing-subject-file test at the bottom of this section)."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [])
     doc = tmp_path / "doc.txt"
@@ -206,7 +206,7 @@ def test_dsar_locate_blank_only_subject_file_exits_1_no_value_echoed(tmp_path, c
     """Same M1 gap as the empty-file test above: blank-only lines never put
     `ID_A` in memory either, so the path assertions are what actually pin the
     scrub."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, ["", "   ", "\t"])
     doc = tmp_path / "doc.txt"
@@ -238,7 +238,7 @@ def test_dsar_locate_missing_subject_file_exits_1_and_scrubs_the_real_path(tmp_p
     too. This is the confirmed top-level-failure-line leak the reviewer
     flagged: the CLI's generic exception handler must scrub this path even
     though it never enters `args.paths`."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = tmp_path / "does-not-exist.txt"
     doc = tmp_path / "doc.txt"
@@ -262,12 +262,12 @@ def test_dsar_locate_missing_subject_file_exits_1_and_scrubs_the_real_path(tmp_p
 
 
 def test_dsar_locate_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
-    """Now that pii_redactor/dsar_pdf.py (Task 3) exists, --pdf is a happy
+    """Now that thaiguard/engine/dsar_pdf.py (Task 3) exists, --pdf is a happy
     path: both the PDF and the JSON land on disk and the CLI reports both.
     (Until Task 3 landed, this same scenario exercised the "renderer missing"
     error path -- see test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing
     below for that failure mode, faked via a monkeypatched absent module.)"""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -290,9 +290,9 @@ def test_dsar_locate_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
 
 
 def test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing(tmp_path, monkeypatch, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
-    monkeypatch.setitem(sys.modules, "pii_redactor.dsar_pdf", None)
+    monkeypatch.setitem(sys.modules, "thaiguard.engine.dsar_pdf", None)
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -314,14 +314,14 @@ def test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing(tmp_path, monk
 
 
 def test_dsar_locate_pdf_write_failure_leaves_no_json_behind(tmp_path, monkeypatch, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     def _boom(payload, path):
         raise OSError("disk full")
 
-    fake_module = types.ModuleType("pii_redactor.dsar_pdf")
+    fake_module = types.ModuleType("thaiguard.engine.dsar_pdf")
     fake_module.render_dsar_pdf = _boom
-    monkeypatch.setitem(sys.modules, "pii_redactor.dsar_pdf", fake_module)
+    monkeypatch.setitem(sys.modules, "thaiguard.engine.dsar_pdf", fake_module)
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -346,14 +346,14 @@ def test_dsar_locate_json_write_failure_deletes_pdf_already_written(tmp_path, mo
     JSON write fails (here, -o points into a directory that does not exist).
     The complete PDF this run wrote must not be left behind for a run that
     reports a hard failure."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     def _ok(payload, path):
         Path(path).write_bytes(b"%PDF-fake")
 
-    fake_module = types.ModuleType("pii_redactor.dsar_pdf")
+    fake_module = types.ModuleType("thaiguard.engine.dsar_pdf")
     fake_module.render_dsar_pdf = _ok
-    monkeypatch.setitem(sys.modules, "pii_redactor.dsar_pdf", fake_module)
+    monkeypatch.setitem(sys.modules, "thaiguard.engine.dsar_pdf", fake_module)
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -383,7 +383,7 @@ def test_dsar_locate_subject_values_never_leak_across_stdout_stderr_json(tmp_pat
     """One consolidated privacy probe across a run that actually matches on
     every identifier type -- the subject values must never appear in stdout,
     stderr, or the written JSON bytes."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A, PHONE_1, EMAIL_1])
     doc = tmp_path / "doc.txt"
@@ -409,7 +409,7 @@ def test_dsar_locate_subject_values_never_leak_across_stdout_stderr_json(tmp_pat
 def test_dsar_locate_missing_subject_file_arg_exits_1_through_real_main(tmp_path, monkeypatch):
     """`dsar locate <path>` with no `--subject-file` is a usage error at the
     INNER parser level -- must exit 1, not argparse's stock 2."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
@@ -421,7 +421,7 @@ def test_dsar_locate_missing_subject_file_arg_exits_1_through_real_main(tmp_path
 
 
 def test_dsar_locate_no_paths_exits_1_through_real_main(tmp_path, monkeypatch):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     monkeypatch.setattr(sys, "argv", ["ai_guard", "dsar", "locate", "--subject-file", str(subject)])
@@ -435,7 +435,7 @@ def test_dsar_alone_with_no_verb_exits_1_through_real_main(monkeypatch):
     """`ai_guard.py dsar` with no sub-subcommand is a usage error at the
     OUTER parser level (dsar_parser's own required-subcommand check fires
     before locate_parser is ever reached) -- must also exit 1."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     monkeypatch.setattr(sys, "argv", ["ai_guard", "dsar"])
 
@@ -445,7 +445,7 @@ def test_dsar_alone_with_no_verb_exits_1_through_real_main(monkeypatch):
 
 
 def test_dsar_locate_partial_failure_exits_2_through_real_main(tmp_path, monkeypatch):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     subject = _subject_file(tmp_path, [ID_A])
     good = tmp_path / "good.txt"
@@ -466,7 +466,7 @@ def test_dsar_locate_partial_failure_exits_2_through_real_main(tmp_path, monkeyp
 def test_receipt_alone_with_no_verb_still_exits_2_after_dsar_added(monkeypatch):
     """Guard against the dsar-only exit-code remap leaking onto other verbs
     built from the same shared top-level subparsers action."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     monkeypatch.setattr(sys, "argv", ["ai_guard", "receipt"])
 
@@ -477,7 +477,7 @@ def test_receipt_alone_with_no_verb_still_exits_2_after_dsar_added(monkeypatch):
 
 def test_breach_alone_with_no_verb_still_exits_1_after_dsar_added(monkeypatch):
     """Breach's own pre-existing remap must be unaffected by adding dsar's."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     monkeypatch.setattr(sys, "argv", ["ai_guard", "breach"])
 

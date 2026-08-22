@@ -13,7 +13,7 @@ this module exports:
                                        this process)
 
 plus the ``Entity`` dataclass and the result dataclasses above. Everything
-under ``pii_redactor.*`` is the internal engine and carries no stability
+under ``thaiguard.engine.*`` is the internal engine and carries no stability
 contract between releases.
 
 Privacy note: ``anonymize`` hands the pseudonym→original mapping back to the
@@ -31,21 +31,21 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _dist_version
 from pathlib import Path
 
-from pii_redactor.detectors.aggregate import detect_all as _detect_all
-from pii_redactor.ingest.text_cleaner import clean as _clean
-from pii_redactor.ingest.text_cleaner import clean_length_preserving as _clean_lp
-from pii_redactor.models import Entity, EntityRegistry
-from pii_redactor.report import analyze_text as _analyze_text
-from pii_redactor.session_service import OutboundLeakError as _OutboundLeakError
-from pii_redactor.session_service import SessionExpiredError, _identity_finalize
-from pii_redactor.session_service import SessionService as _SessionService
-from pii_redactor.stateless import (
+from thaiguard.engine.detectors.aggregate import detect_all as _detect_all
+from thaiguard.engine.ingest.text_cleaner import clean as _clean
+from thaiguard.engine.ingest.text_cleaner import clean_length_preserving as _clean_lp
+from thaiguard.engine.models import Entity, EntityRegistry
+from thaiguard.engine.report import analyze_text as _analyze_text
+from thaiguard.engine.session_service import OutboundLeakError as _OutboundLeakError
+from thaiguard.engine.session_service import SessionExpiredError, _identity_finalize
+from thaiguard.engine.session_service import SessionService as _SessionService
+from thaiguard.engine.stateless import (
     StatelessLeakError,
 )
-from pii_redactor.stateless import (
+from thaiguard.engine.stateless import (
     restore_stateless as _restore_stateless,
 )
-from pii_redactor.stateless import (
+from thaiguard.engine.stateless import (
     sanitize_stateless as _sanitize_stateless,
 )
 
@@ -211,9 +211,9 @@ def redact_pdf(input_path: str | Path, output_path: str | Path) -> RedactionResu
     fails before writing output rather than guessing. Scanned/hybrid pages
     need the ``aiguard[ocr]`` extra.
     """
-    from pii_redactor.ingest.file_detector import detect_source_type
-    from pii_redactor.ingest.text_extractor import extract
-    from pii_redactor.redactor import redact_pdf as _redact
+    from thaiguard.engine.ingest.file_detector import detect_source_type
+    from thaiguard.engine.ingest.text_extractor import extract
+    from thaiguard.engine.redactor import redact_pdf as _redact
 
     in_path = Path(input_path)
     out_path = Path(output_path)

@@ -5,8 +5,8 @@ import uuid
 
 import pytest
 
-import pii_redactor.leak_guard as leak_guard_module
-from pii_redactor.leak_guard import (
+import thaiguard.engine.leak_guard as leak_guard_module
+from thaiguard.engine.leak_guard import (
     OutboundGuardContext,
     OutboundPolicyError,
     enforce_outbound_policy,
@@ -14,8 +14,8 @@ from pii_redactor.leak_guard import (
     scan_outbound_leaks,
     scan_residual_signals,
 )
-from pii_redactor.models import Entity, VaultRecord
-from pii_redactor.session_vault import SessionVault
+from thaiguard.engine.models import Entity, VaultRecord
+from thaiguard.engine.session_vault import SessionVault
 
 
 def _vault(pairs):

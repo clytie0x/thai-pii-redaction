@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
-from app.access_logging import UvicornAccessLogFilter
-from app.session_control_auth import make_session_disposal_authorization
+from thaiguard.server.access_logging import UvicornAccessLogFilter
+from thaiguard.server.session_control_auth import make_session_disposal_authorization
 
 pytest.importorskip("fastapi")
 pytest.importorskip("uvicorn")
@@ -70,10 +70,8 @@ def test_access_filter_suppresses_unrecognized_uvicorn_record_shape():
     assert allowed is False
 
 
-@pytest.mark.parametrize("startup", ["cli"])
 def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
     tmp_path,
-    startup,
 ):
     port = _unused_loopback_port()
     base_url = f"http://127.0.0.1:{port}"
@@ -81,28 +79,18 @@ def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
     synthetic_pii = "โทร 0812345678"
     query_authority = "synthetic-query-authority"
     repository_root = Path(__file__).resolve().parents[1]
-    child_code = (
-        "import sys, uvicorn; "
-        "from app.server import app; "
-        "from launcher import _uvicorn_log_config; "
-        "uvicorn.run(app, host='127.0.0.1', port=int(sys.argv[1]), "
-        "log_level='info', log_config=_uvicorn_log_config())"
-    )
-    if startup == "launcher":
-        command = [sys.executable, "-c", child_code, str(port)]
-    else:
-        command = [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "app.server:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-            "--log-level",
-            "info",
-        ]
+    command = [
+        sys.executable,
+        "-m",
+        "uvicorn",
+        "thaiguard.server.server:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+        "--log-level",
+        "info",
+    ]
     environment = os.environ.copy()
     environment.update(
         {

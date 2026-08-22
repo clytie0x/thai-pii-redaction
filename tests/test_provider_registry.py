@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pii_redactor.ai_client import PROVIDER_FACTORIES, get_provider_factories
+from thaiguard.engine.ai_client import PROVIDER_FACTORIES, get_provider_factories
 
 EXPECTED = {"fake", "pathumma", "tokenmind", "ollama", "claude"}
 
@@ -36,14 +36,14 @@ class TestCanonicalRegistry:
 
 class TestSurfaceRegistries:
     def test_worker_surface_has_tokenmind(self):
-        from app.worker import handler
+        from thaiguard.server.worker import handler
 
         assert "tokenmind" in handler._PROVIDER_FACTORIES
         assert set(handler._PROVIDER_FACTORIES) == EXPECTED
 
     def test_server_surface_has_tokenmind(self):
         pytest.importorskip("fastapi")
-        from app import server
+        from thaiguard.server import server
 
         assert "tokenmind" in server._PROVIDER_FACTORIES
         assert set(server._PROVIDER_FACTORIES) == EXPECTED
@@ -51,9 +51,9 @@ class TestSurfaceRegistries:
 
 class TestPlaygroundDropdown:
     def _options(self):
-        html = (Path(__file__).parent.parent / "app" / "demo" / "playground.html").read_text(
-            encoding="utf-8"
-        )
+        html = (
+            Path(__file__).parent.parent / "thaiguard" / "server" / "demo" / "playground.html"
+        ).read_text(encoding="utf-8")
         select = re.search(r'<select id="provider">(.*?)</select>', html, re.DOTALL)
         assert select, "provider dropdown missing"
         return re.findall(r'<option value="([^"]+)"', select.group(1))

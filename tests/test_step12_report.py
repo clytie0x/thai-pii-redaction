@@ -1,5 +1,5 @@
-from pii_redactor.reid_risk import ReidRiskResult, assess_reid_risk
-from pii_redactor.report import PDPAReport, analyze_text, generate_report
+from thaiguard.engine.reid_risk import ReidRiskResult, assess_reid_risk
+from thaiguard.engine.report import PDPAReport, analyze_text, generate_report
 
 
 def test_reid_risk_no_qi():
@@ -113,8 +113,8 @@ def test_analyze_text_matches_the_canonical_fallback_detector():
 
 
 def test_analyze_text_runs_detection_once(monkeypatch):
-    import pii_redactor.report as report_module
-    from pii_redactor.models import Entity
+    import thaiguard.engine.report as report_module
+    from thaiguard.engine.models import Entity
 
     calls = []
 

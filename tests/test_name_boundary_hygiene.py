@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import pytest
 
-import pii_redactor.detectors.tb_detector as tbd
-from pii_redactor.detectors.name_context import detect_name_context
-from pii_redactor.models import Entity
+import thaiguard.engine.detectors.tb_detector as tbd
+from thaiguard.engine.detectors.name_context import detect_name_context
+from thaiguard.engine.models import Entity
 
 
 def _hygiene_texts(entity_text: str) -> list[str]:
@@ -250,7 +250,7 @@ def test_second_person_in_a_wide_crf_span_stays_covered():
 
 
 def test_second_person_stays_covered_through_detect_all():
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     ents = detect_all(GUARANTOR_TWO_PERSON_TEXT)
     for value in ("ไพโรจน์ สุขสมบูรณ์", "เพ็ญศรี ทองอินทร์"):

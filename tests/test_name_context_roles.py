@@ -12,8 +12,8 @@ COMPOUNDS (ตารางสอบ, เลขครุภัณฑ์), never n
 
 from __future__ import annotations
 
-from pii_redactor.detectors.name_context import detect_name_context
-from pii_redactor.detectors.tb_detector import detect_tb
+from thaiguard.engine.detectors.name_context import detect_name_context
+from thaiguard.engine.detectors.tb_detector import detect_tb
 
 
 def ctx_names(text: str) -> set[str]:
@@ -205,8 +205,8 @@ def test_record_name_relabels_but_never_uncovers():
     Swapping it for the shorter NAME would drop already-masked characters,
     which recall > precision does not allow.
     """
-    from pii_redactor.detectors.aggregate import _prefer_record_names
-    from pii_redactor.models import Entity
+    from thaiguard.engine.detectors.aggregate import _prefer_record_names
+    from thaiguard.engine.models import Entity
 
     def entity(data_type: str, start: int, end: int, redact_type: str = "TB") -> Entity:
         return Entity(

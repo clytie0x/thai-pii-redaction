@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import pytest
 
-import pii_redactor.detectors.tb_detector as tbd
-from pii_redactor.detectors.name_context import is_glued_name_run
+import thaiguard.engine.detectors.tb_detector as tbd
+from thaiguard.engine.detectors.name_context import is_glued_name_run
 
 OCR_LABEL_FIRST_SPAN = "เดือนปีเกิด\n\nกิตติ พรดี\nพิมพ์ใจ แสนดี"
 

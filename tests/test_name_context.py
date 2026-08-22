@@ -1,7 +1,7 @@
 """Context-based name detection (recall booster) + integration with detect_tb."""
 
-from pii_redactor.detectors.name_context import detect_name_context
-from pii_redactor.detectors.tb_detector import detect_tb
+from thaiguard.engine.detectors.name_context import detect_name_context
+from thaiguard.engine.detectors.tb_detector import detect_tb
 
 
 def _names(text, fn=detect_name_context):

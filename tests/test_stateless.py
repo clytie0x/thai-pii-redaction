@@ -4,8 +4,8 @@ from dataclasses import asdict
 
 import pytest
 
-from pii_redactor.scan_common import canonical_value
-from pii_redactor.stateless import (
+from thaiguard.engine.scan_common import canonical_value
+from thaiguard.engine.stateless import (
     StatelessLeakError,
     StatelessSanitizeResult,
     restore_stateless,
@@ -35,7 +35,7 @@ def test_no_original_pii_survives_in_the_output():
 
 def test_repeated_token_calls_use_distinct_generation_namespaces(monkeypatch):
     """Independent token calls must not mint the same token identity."""
-    import pii_redactor.session_vault as vault_mod
+    import thaiguard.engine.session_vault as vault_mod
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))
@@ -108,8 +108,8 @@ def test_prior_mapping_reuses_the_token_rather_than_minting_a_second_one():
 
 
 def test_prior_mapping_keeps_one_namespace_for_new_tokens(monkeypatch):
-    import pii_redactor.session_vault as vault_mod
-    from pii_redactor.anonymizer.token_generator import token_namespace_from_candidate
+    import thaiguard.engine.session_vault as vault_mod
+    from thaiguard.engine.anonymizer.token_generator import token_namespace_from_candidate
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))
@@ -129,8 +129,8 @@ def test_prior_mapping_keeps_one_namespace_for_new_tokens(monkeypatch):
 
 
 def test_prior_mapping_keeps_namespace_when_next_turn_contains_only_new_pii(monkeypatch):
-    import pii_redactor.session_vault as vault_mod
-    from pii_redactor.anonymizer.token_generator import token_namespace_from_candidate
+    import thaiguard.engine.session_vault as vault_mod
+    from thaiguard.engine.anonymizer.token_generator import token_namespace_from_candidate
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))
@@ -163,8 +163,8 @@ def test_prior_mapping_continues_same_type_ordinal_for_new_value():
 
 
 def test_ambiguous_prior_namespaces_do_not_select_either_chain(monkeypatch):
-    import pii_redactor.session_vault as vault_mod
-    from pii_redactor.anonymizer.token_generator import (
+    import thaiguard.engine.session_vault as vault_mod
+    from thaiguard.engine.anonymizer.token_generator import (
         generate_token,
         token_namespace_from_candidate,
     )
@@ -190,7 +190,7 @@ def test_ambiguous_prior_namespaces_do_not_select_either_chain(monkeypatch):
 
 
 def test_prior_mapping_reuses_valid_namespaced_token(monkeypatch):
-    import pii_redactor.session_vault as vault_mod
+    import thaiguard.engine.session_vault as vault_mod
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))
@@ -240,8 +240,8 @@ def test_malformed_token_seed_is_not_reused_or_allowed_to_select_namespace(
     monkeypatch,
     malicious_token,
 ):
-    import pii_redactor.session_vault as vault_mod
-    from pii_redactor.anonymizer.token_generator import token_namespace_from_candidate
+    import thaiguard.engine.session_vault as vault_mod
+    from thaiguard.engine.anonymizer.token_generator import token_namespace_from_candidate
 
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: "a" * 25)
 
@@ -263,8 +263,8 @@ def test_malformed_token_seed_is_not_reused_or_allowed_to_select_namespace(
 
 
 def test_residual_bearing_token_seed_cannot_select_namespace(monkeypatch):
-    import pii_redactor.session_vault as vault_mod
-    from pii_redactor.anonymizer.token_generator import token_namespace_from_candidate
+    import thaiguard.engine.session_vault as vault_mod
+    from thaiguard.engine.anonymizer.token_generator import token_namespace_from_candidate
 
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: "a" * 25)
     malicious_token = f"[อีเมล_{'f' * 25}_{'n' * 20}_1101700207031]"
@@ -286,8 +286,8 @@ def test_residual_bearing_token_seed_cannot_select_namespace(monkeypatch):
 
 
 def test_wrong_label_token_seed_cannot_select_namespace(monkeypatch):
-    import pii_redactor.session_vault as vault_mod
-    from pii_redactor.anonymizer.token_generator import (
+    import thaiguard.engine.session_vault as vault_mod
+    from thaiguard.engine.anonymizer.token_generator import (
         generate_token,
         token_namespace_from_candidate,
     )
@@ -317,7 +317,7 @@ def test_wrong_label_token_seed_cannot_select_namespace(monkeypatch):
 
 
 def test_valid_same_type_seed_is_reused_after_wrong_label_seed_for_same_original():
-    from pii_redactor.anonymizer.token_generator import generate_token
+    from thaiguard.engine.anonymizer.token_generator import generate_token
 
     wrong_label = generate_token(
         "PHONE",

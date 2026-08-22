@@ -18,15 +18,15 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 
-from pii_redactor.models import Entity
-from pii_redactor.receipt import (
+from thaiguard.engine.models import Entity
+from thaiguard.engine.receipt import (
     RECEIPT_SCHEMA,
     build_receipt,
     result_digest,
     verify_receipt,
 )
-from pii_redactor.receipt_pdf import render_receipt
-from pii_redactor.thai_pdf_text import register_thai_font
+from thaiguard.engine.receipt_pdf import render_receipt
+from thaiguard.engine.thai_pdf_text import register_thai_font
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -103,7 +103,7 @@ def test_digest_survives_hash_randomization_across_processes(tmp_path):
 
     script = (
         "import sys;"
-        "from pii_redactor.receipt import process_for_receipt, result_digest;"
+        "from thaiguard.engine.receipt import process_for_receipt, result_digest;"
         "print(result_digest(process_for_receipt(sys.argv[1]).entities))"
     )
     digests = []
@@ -164,7 +164,7 @@ def test_receipt_records_source_result_and_environment(tmp_path):
 
 
 def test_receipt_counts_agree_with_the_detection_it_describes(tmp_path):
-    from pii_redactor.receipt import process_for_receipt
+    from thaiguard.engine.receipt import process_for_receipt
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -422,7 +422,7 @@ def test_receipt_pdf_does_not_promise_more_than_it_can_keep(tmp_path):
 
 
 def test_cli_issue_then_verify_round_trip(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -442,7 +442,7 @@ def test_cli_issue_then_verify_round_trip(tmp_path, capsys):
 
 
 def test_cli_issue_writes_a_pdf_when_asked(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -456,7 +456,7 @@ def test_cli_issue_writes_a_pdf_when_asked(tmp_path, capsys):
 
 
 def test_cli_issue_prints_the_receipt_when_no_output_given(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -469,7 +469,7 @@ def test_cli_issue_prints_the_receipt_when_no_output_given(tmp_path, capsys):
 
 def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
     """A receipt is evidence someone kept; clobbering one needs to be asked for."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -485,7 +485,7 @@ def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
 
 
 def test_cli_issue_overwrites_when_asked(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -506,7 +506,7 @@ def test_cli_issue_overwrites_when_asked(tmp_path, capsys):
 
 
 def test_cli_verify_exits_1_when_the_document_does_not_match(tmp_path, capsys):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -524,7 +524,7 @@ def test_cli_verify_exits_1_when_the_document_does_not_match(tmp_path, capsys):
 def test_cli_issue_writes_nothing_when_a_destination_is_unwritable(tmp_path, capsys):
     """A bad --pdf path used to surface only after the JSON had landed, so the
     run ended with a success line, a raw traceback, and half a receipt."""
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -546,7 +546,7 @@ def test_cli_issue_writes_nothing_when_a_destination_is_unwritable(tmp_path, cap
 
 
 def test_cli_verify_exits_1_on_an_unreadable_receipt(tmp_path):
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -559,7 +559,7 @@ def test_cli_verify_exits_1_on_an_unreadable_receipt(tmp_path):
 
 
 def test_cli_parser_exposes_receipt_issue_and_verify():
-    import ai_guard
+    from thaiguard import cli as ai_guard
 
     assert hasattr(ai_guard, "cmd_receipt_issue")
     assert hasattr(ai_guard, "cmd_receipt_verify")

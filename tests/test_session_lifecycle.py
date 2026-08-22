@@ -9,15 +9,15 @@ from dataclasses import dataclass
 
 import pytest
 
-import pii_redactor.session_service as service_module
-from pii_redactor.models import VaultRecord
-from pii_redactor.session_service import (
+import thaiguard.engine.session_service as service_module
+from thaiguard.engine.models import VaultRecord
+from thaiguard.engine.session_service import (
     DisposalAuthorizationError,
     RestoreTransactionError,
     SessionExpiredError,
     SessionService,
 )
-from pii_redactor.session_vault import SessionVault
+from thaiguard.engine.session_vault import SessionVault
 
 
 @dataclass

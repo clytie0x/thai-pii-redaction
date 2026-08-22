@@ -15,7 +15,7 @@ from benchmark.types import (
     GoldSpan,
     Sample,
 )
-from pii_redactor.detectors.aggregate import detect_all
+from thaiguard.engine.detectors.aggregate import detect_all
 
 
 # ── types ──────────────────────────────────────────────────────────────
@@ -35,8 +35,8 @@ def test_detect_all_finds_thai_id_and_dedupes():
 
 
 # ── dedupe_spans: FP wins over TB on overlap ───────────────────────────
-from pii_redactor.detectors.aggregate import dedupe_spans
-from pii_redactor.models import Entity
+from thaiguard.engine.detectors.aggregate import dedupe_spans
+from thaiguard.engine.models import Entity
 
 
 def _ent(redact_type, data_type, span, score=1.0):
@@ -225,7 +225,7 @@ def test_gen_phone_covers_thai_written_formats():
     were absent entirely."""
     import random
 
-    from pii_redactor.anonymizer.fp_generator import _gen_phone
+    from thaiguard.engine.anonymizer.fp_generator import _gen_phone
 
     seen = {_gen_phone(random.Random(seed)) for seed in range(400)}
 

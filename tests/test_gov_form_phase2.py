@@ -25,8 +25,8 @@ from benchmark.data.probe.gov_forms.generate_inputs import (
 )
 from benchmark.data.probe.gov_forms.sanitize_download import sanitize_pdf
 from benchmark.probe_document import load_expectations
-from pii_redactor.ingest.file_detector import detect_source_type
-from pii_redactor.ingest.text_extractor import extract
+from thaiguard.engine.ingest.file_detector import detect_source_type
+from thaiguard.engine.ingest.text_extractor import extract
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmark" / "data" / "probe" / "gov_forms"

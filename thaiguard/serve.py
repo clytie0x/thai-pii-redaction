@@ -75,7 +75,7 @@ def run_serve(args: argparse.Namespace) -> None:
     try:
         import uvicorn
 
-        from app.server import app
+        from thaiguard.server.server import app
     except ImportError:
         raise SystemExit(
             "thaiguard serve needs the server extra: pip install 'thaiguard[server]'"

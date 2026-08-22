@@ -4,7 +4,7 @@ import time
 from dataclasses import fields
 from uuid import uuid4
 
-from pii_redactor.models import (
+from thaiguard.engine.models import (
     AIResponse,
     Entity,
     EntityRegistry,

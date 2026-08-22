@@ -13,11 +13,11 @@ from pathlib import Path
 
 import pytest
 
-import pii_redactor.detectors.tb_detector as tbd
-from pii_redactor.detectors.aggregate import detect_all
-from pii_redactor.detectors.tb_detector import detect_tb
-from pii_redactor.ingest.text_cleaner import clean
-from pii_redactor.session_service import SessionService
+import thaiguard.engine.detectors.tb_detector as tbd
+from thaiguard.engine.detectors.aggregate import detect_all
+from thaiguard.engine.detectors.tb_detector import detect_tb
+from thaiguard.engine.ingest.text_cleaner import clean
+from thaiguard.engine.session_service import SessionService
 
 FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "prompts" / "02_medical_consult.txt"
 V2_HEADERS = {"X-AIGuard-Contract-Version": "2"}
@@ -64,7 +64,7 @@ def test_issue_82_fixture_round_trips_through_api_and_session(monkeypatch):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from app import server
+    from thaiguard.server import server
 
     text, expected_name = _fixture_text_and_name()
     expected_clean = clean(text).text

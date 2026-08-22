@@ -1,4 +1,4 @@
-"""Tests for pii_redactor/dsar.py -- the DSAR (PDPA มาตรา 30) locate core.
+"""Tests for thaiguard/engine/dsar.py -- the DSAR (PDPA มาตรา 30) locate core.
 
 All PII values below are fabricated. Thai national ids are computed to pass
 the real mod-11 checksum (see `is_valid_thai_id`); the same values used in
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from pii_redactor.dsar import (
+from thaiguard.engine.dsar import (
     NoFilesAssessedError,
     NoSubjectIdentifiersError,
     _classify_subject_line,
@@ -20,7 +20,7 @@ from pii_redactor.dsar import (
 )
 
 # Fabricated, checksum-valid Thai national ids (verified against
-# pii_redactor.detectors.thai_id.is_valid_thai_id) -- same values
+# thaiguard.engine.detectors.thai_id.is_valid_thai_id) -- same values
 # tests/test_breach_assessment.py uses.
 ID_A = "1101700230708"
 ID_B = "1101200012345"
@@ -219,8 +219,8 @@ def test_match_ignores_detectors_label_organization_on_a_name(tmp_path, monkeypa
     detector call is monkeypatched here to a fixed single-entity result so
     this test pins the matching logic itself rather than depending on the
     CRF's non-deterministic behavior on any particular sentence."""
-    import pii_redactor.dsar as dsar_module
-    from pii_redactor.models import Entity
+    import thaiguard.engine.dsar as dsar_module
+    from thaiguard.engine.models import Entity
 
     subject = _subject_file(tmp_path, ["สมชาย ใจดี"])
     doc = _write(tmp_path, "doc.txt", "บริษัท สมชาย ใจดี จำกัด")

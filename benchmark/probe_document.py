@@ -716,8 +716,8 @@ def _measure_render_ocr(
     document: Path,
 ) -> dict[str, Any]:
     """OCR a redacted PDF without keeping its text."""
-    from pii_redactor.ingest.ocr_processor import OCRUnavailableError
-    from pii_redactor.ingest.text_extractor import extract
+    from thaiguard.engine.ingest.ocr_processor import OCRUnavailableError
+    from thaiguard.engine.ingest.text_extractor import extract
 
     try:
         text, _words, meta = extract(document, "pdf_hybrid")
@@ -923,11 +923,11 @@ def measure_redaction(
             "values": [],
         }
 
-    from pii_redactor.detectors.aggregate import detect_all
-    from pii_redactor.ingest.file_detector import detect_source_type
-    from pii_redactor.ingest.text_extractor import extract
-    from pii_redactor.models import EntityRegistry
-    from pii_redactor.redactor import redact_pdf
+    from thaiguard.engine.detectors.aggregate import detect_all
+    from thaiguard.engine.ingest.file_detector import detect_source_type
+    from thaiguard.engine.ingest.text_extractor import extract
+    from thaiguard.engine.models import EntityRegistry
+    from thaiguard.engine.redactor import redact_pdf
 
     entities = detect_all(detect_text)
     fp_count = sum(entity.redact_type == "FP" for entity in entities)
@@ -1186,9 +1186,9 @@ def probe(
 ) -> dict[str, Any]:
     """Run all six measurements over one document. Never raises on a missing
     optional dependency; the affected measurement reports its own skip."""
-    from pii_redactor.ingest.file_detector import detect_source_type
-    from pii_redactor.ingest.text_cleaner import clean_length_preserving
-    from pii_redactor.ingest.text_extractor import extract
+    from thaiguard.engine.ingest.file_detector import detect_source_type
+    from thaiguard.engine.ingest.text_cleaner import clean_length_preserving
+    from thaiguard.engine.ingest.text_extractor import extract
 
     document = Path(document)
     render_scale = min(float(render_scale), MAX_RENDER_SCALE)
@@ -1216,7 +1216,7 @@ def probe(
     ocr = _measure_source_ocr(values, text, source_type, ocr_error, meta)
 
     if detect_text:
-        from pii_redactor.detectors.aggregate import detect_all
+        from thaiguard.engine.detectors.aggregate import detect_all
 
         entities = detect_all(detect_text)
     else:

@@ -1,7 +1,7 @@
 """Tests for the dependency-light Thai prompt-injection warning guard."""
 
-import pii_redactor.guard.injection as injection_guard
-from pii_redactor.guard.injection import GuardFinding, scan_injection, to_wire
+import thaiguard.engine.guard.injection as injection_guard
+from thaiguard.engine.guard.injection import GuardFinding, scan_injection, to_wire
 
 
 class TestDetects:

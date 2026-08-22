@@ -17,7 +17,7 @@ import pytest
 
 from benchmark.gold import load_gold
 from benchmark.scorer import score
-from pii_redactor.detectors.aggregate import detect_all
+from thaiguard.engine.detectors.aggregate import detect_all
 
 
 @pytest.mark.skipif(

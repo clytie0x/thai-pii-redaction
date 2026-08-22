@@ -2,7 +2,7 @@
 
 import pytest
 
-import pii_redactor.detectors.tb_detector as tbd
+import thaiguard.engine.detectors.tb_detector as tbd
 
 
 class SpyNER:

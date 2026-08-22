@@ -5,15 +5,15 @@ import uuid
 
 import pytest
 
-from pii_redactor.models import (
+from thaiguard.engine.models import (
     AIResponse,
     Entity,
     EntityRegistry,
     ReverseResult,
     VaultRecord,
 )
-from pii_redactor.reverse_mapper import reverse_map
-from pii_redactor.session_vault import SessionVault, VaultTimeoutError
+from thaiguard.engine.reverse_mapper import reverse_map
+from thaiguard.engine.session_vault import SessionVault, VaultTimeoutError
 
 
 def _make_ai_response(text: str) -> AIResponse:
@@ -261,9 +261,9 @@ def test_audit_summary_keeps_only_replacement_count():
     import time as _t
     import uuid as _u
 
-    from pii_redactor.models import AIResponse, EntityRegistry, VaultRecord
-    from pii_redactor.reverse_mapper import reverse_map
-    from pii_redactor.session_vault import SessionVault
+    from thaiguard.engine.models import AIResponse, EntityRegistry, VaultRecord
+    from thaiguard.engine.reverse_mapper import reverse_map
+    from thaiguard.engine.session_vault import SessionVault
 
     vault = SessionVault()
     vault.write(

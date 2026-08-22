@@ -28,7 +28,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase.ttfonts import ShapedStr
 from reportlab.pdfgen import canvas
 
-from pii_redactor.thai_pdf_text import (
+from thaiguard.engine.thai_pdf_text import (
     contains_thai,
     draw_text,
     register_thai_font,
@@ -246,13 +246,13 @@ def test_exported_pdf_keeps_every_character_of_a_stacked_word(tmp_path):
     (see `test_draw_text_actually_puts_ink_on_the_page`) would have shipped
     through this exact path with every text-level assertion here still green,
     also that the rendered page actually has ink on it, not just a correct
-    text layer. Exercises the real export() path (pii_redactor/exporter.py),
+    text layer. Exercises the real export() path (thaiguard/engine/exporter.py),
     which is what actually ships to users, rather than calling draw_text
     directly.
     """
-    from pii_redactor.exporter import export
-    from pii_redactor.models import ReverseResult
-    from pii_redactor.output_validator import ValidationResult
+    from thaiguard.engine.exporter import export
+    from thaiguard.engine.models import ReverseResult
+    from thaiguard.engine.output_validator import ValidationResult
 
     body = "ผู้ป่วยอยู่ที่บ้านเลขที่ 42 เที่ยงนี้"
     out = tmp_path / "shaped.pdf"
@@ -292,9 +292,9 @@ def test_pdf_modules_never_draw_unshaped_text():
     draw = re.compile(r"\.draw(?:Centred|Right)?String\s*\(")
     offenders = []
     for rel in (
-        "pii_redactor/report_pdf.py",
-        "pii_redactor/exporter.py",
-        "pii_redactor/receipt_pdf.py",
+        "thaiguard/engine/report_pdf.py",
+        "thaiguard/engine/exporter.py",
+        "thaiguard/engine/receipt_pdf.py",
     ):
         src = (root / rel).read_text(encoding="utf-8")
         for n, line in enumerate(src.splitlines(), 1):
@@ -321,7 +321,7 @@ def test_the_reportlab_rise_defect_is_repaired():
     working when reportlab moves the code, and goes red if an upgrade changes
     the shape of what is being patched.
     """
-    from pii_redactor.thai_pdf_text import _rise_state_is_lost
+    from thaiguard.engine.thai_pdf_text import _rise_state_is_lost
 
     assert not _rise_state_is_lost(), (
         "setRise no longer agrees with the operator it emitted — either the "
@@ -341,7 +341,7 @@ def test_the_thai_font_travels_with_the_product():
     """
     from pathlib import Path
 
-    from pii_redactor.thai_pdf_text import FONT_CANDIDATES, register_thai_font
+    from thaiguard.engine.thai_pdf_text import FONT_CANDIDATES, register_thai_font
 
     bundled = Path(FONT_CANDIDATES[0])
     assert bundled.is_file(), f"the bundled font is not on disk: {bundled}"
@@ -366,7 +366,7 @@ def test_windows_has_a_candidate_font_windows_itself_ships():
     """
     from pathlib import PureWindowsPath
 
-    from pii_redactor.thai_pdf_text import FONT_CANDIDATES, WINDOWS_STOCK_FONT_FILES
+    from thaiguard.engine.thai_pdf_text import FONT_CANDIDATES, WINDOWS_STOCK_FONT_FILES
 
     windows = [c for c in FONT_CANDIDATES if c.lower().startswith("c:\\windows\\fonts")]
     assert windows, "no Windows font candidate at all"

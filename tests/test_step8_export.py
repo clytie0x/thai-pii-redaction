@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from pii_redactor.exporter import ExportError, ExportResult, export
-from pii_redactor.models import ReverseResult
-from pii_redactor.output_validator import ValidationResult
+from thaiguard.engine.exporter import ExportError, ExportResult, export
+from thaiguard.engine.models import ReverseResult
+from thaiguard.engine.output_validator import ValidationResult
 
 
 def _make_validation_result(halt: bool = False, l2_ok: bool = True) -> ValidationResult:

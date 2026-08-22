@@ -26,7 +26,7 @@ classifiers = [
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
-thaiguard = "ai_guard:main"
+thaiguard = "thaiguard.cli:main"
 thaiguard-mcp = "thaiguard.mcp:main"
 
 [project.urls]
@@ -42,27 +42,30 @@ optional-dependencies.ml = { file = "requirements-ml.txt" }
 optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 
 [tool.setuptools]
-# `thaiguard` is the public facade and the only import surface with a semver
-# contract. `pii_redactor` and `app` ship as the internal engine and the
-# optional local HTTP server; they carry no cross-release stability promise.
+# `thaiguard`'s top-level module (thaiguard/__init__.py, cli.py, mcp.py,
+# serve.py) is the public facade and the only import surface with a semver
+# contract. `thaiguard.engine` and `thaiguard.server` ship the internal
+# engine and the optional local HTTP server; they carry no cross-release
+# stability promise. Everything lives under the `thaiguard` distribution
+# name so nothing installs a generic top-level import name (`app`,
+# `pii_redactor`) that could collide with an unrelated package.
 packages = [
   "thaiguard",
-  "pii_redactor",
-  "pii_redactor.detectors",
-  "pii_redactor.anonymizer",
-  "pii_redactor.guard",
-  "pii_redactor.ingest",
-  "app",
-  "app.worker",
+  "thaiguard.engine",
+  "thaiguard.engine.detectors",
+  "thaiguard.engine.anonymizer",
+  "thaiguard.engine.guard",
+  "thaiguard.engine.ingest",
+  "thaiguard.server",
+  "thaiguard.server.worker",
 ]
-py-modules = ["ai_guard"]
 
 # The Thai font travels with the package: a `pip install` user renders the
 # PDPA report and the processing receipt too, and without it Thai comes out
 # as black boxes wherever the machine has no Thai-capable TTF of its own.
 [tool.setuptools.package-data]
-pii_redactor = ["fonts/*.ttf"]
-app = ["demo/*.html"]
+"thaiguard.engine" = ["fonts/*.ttf"]
+"thaiguard.server" = ["demo/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -95,7 +98,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011", "E402", "F401", "F841", "RUF043"]
-"app/server.py" = ["E402"]
+"thaiguard/server/server.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

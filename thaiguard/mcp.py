@@ -29,9 +29,9 @@ except ImportError as _error:  # pragma: no cover - exercised only without the e
     ) from _error
 
 import thaiguard
-from pii_redactor.guard.injection import scan_injection
-from pii_redactor.ingest.text_cleaner import clean_length_preserving
-from pii_redactor.session_service import (
+from thaiguard.engine.guard.injection import scan_injection
+from thaiguard.engine.ingest.text_cleaner import clean_length_preserving
+from thaiguard.engine.session_service import (
     OutboundLeakError,
     SessionExpiredError,
     SessionService,

@@ -18,12 +18,12 @@ be able to switch the guard off.
 
 import pytest
 
-from pii_redactor import stateless as stateless_module
-from pii_redactor.detectors.ner_failure import NERFailureError
-from pii_redactor.detectors.tb_detector import detect_tb
-from pii_redactor.leak_guard import scan_outbound_leaks, scan_residual_signals
-from pii_redactor.session_vault import SessionVault, VaultTimeoutError
-from pii_redactor.stateless import (
+from thaiguard.engine import stateless as stateless_module
+from thaiguard.engine.detectors.ner_failure import NERFailureError
+from thaiguard.engine.detectors.tb_detector import detect_tb
+from thaiguard.engine.leak_guard import scan_outbound_leaks, scan_residual_signals
+from thaiguard.engine.session_vault import SessionVault, VaultTimeoutError
+from thaiguard.engine.stateless import (
     StatelessLeakError,
     StatelessProcessingError,
     restore_stateless,
@@ -39,7 +39,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("pii_redactor.", "app.")):
+        if module.startswith(("thaiguard.engine.", "thaiguard.server.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames

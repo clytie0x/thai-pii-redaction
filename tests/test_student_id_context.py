@@ -10,8 +10,8 @@ codes, payment references, or order numbers into STUDENT_ID.
 
 from __future__ import annotations
 
-from pii_redactor.detectors.aggregate import detect_all
-from pii_redactor.detectors.fp_detector import detect_fp
+from thaiguard.engine.detectors.aggregate import detect_all
+from thaiguard.engine.detectors.fp_detector import detect_fp
 
 
 def _types_for(text: str, value: str, ents) -> set[str]:

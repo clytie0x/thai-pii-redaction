@@ -5,8 +5,8 @@ fix can never silently regress. Recall > precision governs: a leaked national
 ID or phone number in a chat paste is the product's worst failure mode.
 """
 
-from pii_redactor.detectors.fn_scanner import scan_fn
-from pii_redactor.detectors.fp_detector import detect_fp
+from thaiguard.engine.detectors.fn_scanner import scan_fn
+from thaiguard.engine.detectors.fp_detector import detect_fp
 
 # A checksum-valid Thai national ID (mod-11). Standalone detection works today;
 # the leak was that gluing it to Thai script hid it from every detector.
@@ -108,7 +108,7 @@ def _make_pdf(tmp_path, name, pages):
 
 
 def test_mixed_pdf_with_scanned_page_is_hybrid(tmp_path):
-    from pii_redactor.ingest.file_detector import detect_source_type
+    from thaiguard.engine.ingest.file_detector import detect_source_type
 
     path = _make_pdf(
         tmp_path,
@@ -124,14 +124,14 @@ def test_mixed_pdf_with_scanned_page_is_hybrid(tmp_path):
 
 
 def test_fully_scanned_pdf_is_hybrid(tmp_path):
-    from pii_redactor.ingest.file_detector import detect_source_type
+    from thaiguard.engine.ingest.file_detector import detect_source_type
 
     path = _make_pdf(tmp_path, "scan.pdf", [("image",)])
     assert detect_source_type(path) == "pdf_hybrid"
 
 
 def test_text_pdf_with_blank_page_is_not_forced_to_ocr(tmp_path):
-    from pii_redactor.ingest.file_detector import detect_source_type
+    from thaiguard.engine.ingest.file_detector import detect_source_type
 
     path = _make_pdf(
         tmp_path,

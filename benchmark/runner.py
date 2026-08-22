@@ -29,8 +29,8 @@ def predict_samples(
     first load. Reset it (and restore afterward) so switching engines in one
     process actually takes effect and the benchmark never pollutes other tests.
     """
-    from pii_redactor.detectors import tb_detector
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors import tb_detector
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     env_by_engine = {
         "crf": "thainer",
@@ -63,7 +63,7 @@ def predict_samples(
 def run_benchmark(
     engine: str = "crf", seed: int = 42, size: int = 200, source: str = "synthetic"
 ) -> dict:
-    from pii_redactor.detectors.tb_detector import NERChunkDiagnostics
+    from thaiguard.engine.detectors.tb_detector import NERChunkDiagnostics
 
     samples = load_gold() if source == "gold" else build_corpus(seed=seed, size=size)
     diagnostics = NERChunkDiagnostics()
@@ -139,15 +139,15 @@ def run_strategy_comparison(source: str = "synthetic", seed: int = 42, size: int
     singleton, as run_benchmark does), composes union/route per sample, and
     scores all four with the shared scorer.
     """
-    from pii_redactor.detectors import tb_detector
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors import tb_detector
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     from .strategies import route_entities, union_entities
 
     samples = load_gold() if source == "gold" else build_corpus(seed=seed, size=size)
 
     def _run(engine_env: str):
-        from pii_redactor.detectors.tb_detector import NERChunkDiagnostics
+        from thaiguard.engine.detectors.tb_detector import NERChunkDiagnostics
 
         prev_ner = dict(tb_detector._ner_cache)
         prev_env = os.environ.get("AIGUARD_NER_ENGINE")

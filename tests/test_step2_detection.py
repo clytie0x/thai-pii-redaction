@@ -2,9 +2,9 @@
 
 import pytest
 
-from pii_redactor.detectors.fp_detector import detect_fp
-from pii_redactor.detectors.thai_id import is_valid_thai_id
-from pii_redactor.models import Entity
+from thaiguard.engine.detectors.fp_detector import detect_fp
+from thaiguard.engine.detectors.thai_id import is_valid_thai_id
+from thaiguard.engine.models import Entity
 
 # ---------------------------------------------------------------------------
 # Thai ID tests
@@ -224,7 +224,7 @@ def test_detect_fp_span_min_2():
 
 
 def test_detect_all_recovers_a_name_in_repeated_id_records():
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     text = "สมชาย ใจดี\n1312271505581\nมาลี รักดี\n4951607747108"
     names = {entity.original_text for entity in detect_all(text) if entity.data_type == "NAME"}
@@ -233,7 +233,7 @@ def test_detect_all_recovers_a_name_in_repeated_id_records():
 
 
 def test_detect_all_recovers_a_repeated_ocr_co_applicant():
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     text = "สมชาย ใจดี\n1312271505581\nและ...มาลิรักดี\nแถะ...มาลิรักดิ\n4951607747108"
     names = {entity.original_text for entity in detect_all(text) if entity.data_type == "NAME"}
@@ -248,7 +248,7 @@ def test_ocr_co_applicant_recovers_a_name_written_with_a_space():
     non-Thai characters — so the whole common case of this rule's own target
     class was missed, which is the recall-negative direction.
     """
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     text = "สมชาย ใจดี\n1312271505581\nและ ( ) สมหญิง รักดี\nแถะ ( ) สมหญิง รักดิ\n4951607747108"
     names = {entity.original_text for entity in detect_all(text) if entity.data_type == "NAME"}
@@ -257,7 +257,7 @@ def test_ocr_co_applicant_recovers_a_name_written_with_a_space():
 
 
 def test_record_name_rule_rejects_form_prose():
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     text = (
         "สมชาย ใจดี\n1312271505581\n"
@@ -272,7 +272,7 @@ def test_record_name_rule_rejects_form_prose():
 
 
 def test_ocr_co_applicant_rule_rejects_repeated_form_prose():
-    from pii_redactor.detectors.aggregate import detect_all
+    from thaiguard.engine.detectors.aggregate import detect_all
 
     text = "สมชาย ใจดี\n1312271505581\nและ...เอกสารแนบ\nแถะ...เอกสารแนบ\n4951607747108"
     names = {entity.original_text for entity in detect_all(text) if entity.data_type == "NAME"}
@@ -352,8 +352,8 @@ def test_detect_fp_intl_phone():
 # TB detector tests
 # ---------------------------------------------------------------------------
 
-from pii_redactor.detectors.fn_scanner import scan_fn
-from pii_redactor.detectors.tb_detector import detect_tb
+from thaiguard.engine.detectors.fn_scanner import scan_fn
+from thaiguard.engine.detectors.tb_detector import detect_tb
 
 
 def test_detect_tb_returns_list():
@@ -821,7 +821,7 @@ def test_fp_nothing_unmasked_by_relabel():
 
 def _fake_ner_detect(text, bio_tokens, monkeypatch):
     """Run detect_tb with a fake engine that returns fixed BIO tokens."""
-    import pii_redactor.detectors.tb_detector as tbd
+    import thaiguard.engine.detectors.tb_detector as tbd
 
     class FakeNER:
         def tag(self, chunk):
@@ -880,7 +880,7 @@ def test_tb_ner_failure_is_logged_not_silent(monkeypatch, caplog):
     production caller (server, worker, pipeline, receipt, leak_guard) runs."""
     import logging
 
-    import pii_redactor.detectors.tb_detector as tbd
+    import thaiguard.engine.detectors.tb_detector as tbd
 
     secret = "SYNTHETIC-PII-DO-NOT-LOG"
 
@@ -890,7 +890,7 @@ def test_tb_ner_failure_is_logged_not_silent(monkeypatch, caplog):
 
     monkeypatch.setitem(tbd._ner_cache, "thainer", BoomNER())
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "thainer")
-    with caplog.at_level(logging.WARNING, logger="pii_redactor.detectors.tb_detector"):
+    with caplog.at_level(logging.WARNING, logger="thaiguard.engine.detectors.tb_detector"):
         # must not raise — detection degrades, does not crash
         tbd.detect_tb("วันนี้อากาศดีมากเลยครับ ไปเที่ยวกันเถอะ")
     joined = "\n".join(r.getMessage() for r in caplog.records)
@@ -903,7 +903,7 @@ def test_tb_ner_failure_counts_into_diagnostics(monkeypatch, caplog):
     and the exception message still never reaches the log."""
     import logging
 
-    import pii_redactor.detectors.tb_detector as tbd
+    import thaiguard.engine.detectors.tb_detector as tbd
 
     secret = "SYNTHETIC-PII-DO-NOT-LOG"
 
@@ -913,7 +913,7 @@ def test_tb_ner_failure_counts_into_diagnostics(monkeypatch, caplog):
 
     monkeypatch.setitem(tbd._ner_cache, "thainer", BoomNER())
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "thainer")
-    with caplog.at_level(logging.WARNING, logger="pii_redactor.detectors.tb_detector"):
+    with caplog.at_level(logging.WARNING, logger="thaiguard.engine.detectors.tb_detector"):
         diagnostics = tbd.NERChunkDiagnostics()
         tbd.detect_tb("วันนี้อากาศดีมากเลยครับ ไปเที่ยวกันเถอะ", diagnostics=diagnostics)
     joined = "\n".join(r.getMessage() for r in caplog.records)
@@ -926,8 +926,8 @@ def test_explicit_tner_failure_aborts_instead_of_skipping(monkeypatch, caplog):
     detections while the offline/default engines retain their resilient skip."""
     import logging
 
-    import pii_redactor.detectors.tb_detector as tbd
-    from pii_redactor.detectors.tner_client import TnerUnavailableError
+    import thaiguard.engine.detectors.tb_detector as tbd
+    from thaiguard.engine.detectors.tner_client import TnerUnavailableError
 
     secret = "SYNTHETIC-TNER-BODY-DO-NOT-LOG"
 
@@ -941,7 +941,7 @@ def test_explicit_tner_failure_aborts_instead_of_skipping(monkeypatch, caplog):
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "tner")
     diagnostics = tbd.NERChunkDiagnostics()
 
-    with caplog.at_level(logging.WARNING, logger="pii_redactor.detectors.tb_detector"):
+    with caplog.at_level(logging.WARNING, logger="thaiguard.engine.detectors.tb_detector"):
         with pytest.raises(tbd.NERFailureError) as excinfo:
             tbd.detect_tb(
                 "วันนี้อากาศดีมากเลยครับ ไปเที่ยวกันเถอะ",
@@ -958,8 +958,8 @@ def test_explicit_tner_failure_aborts_instead_of_skipping(monkeypatch, caplog):
 
 
 def test_explicit_tner_later_chunk_failure_discards_earlier_candidates(monkeypatch):
-    import pii_redactor.detectors.tb_detector as tbd
-    from pii_redactor.detectors.tner_client import TnerIncompleteError
+    import thaiguard.engine.detectors.tb_detector as tbd
+    from thaiguard.engine.detectors.tner_client import TnerIncompleteError
 
     calls = []
 
@@ -991,7 +991,7 @@ def test_explicit_tner_later_chunk_failure_discards_earlier_candidates(monkeypat
 
 
 def test_explicit_tner_missing_configuration_has_zero_failed_chunks(monkeypatch):
-    import pii_redactor.detectors.tb_detector as tbd
+    import thaiguard.engine.detectors.tb_detector as tbd
 
     monkeypatch.setattr(tbd, "_ner_cache", {})
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "tner")
@@ -1007,7 +1007,7 @@ def test_explicit_tner_missing_configuration_has_zero_failed_chunks(monkeypatch)
 
 
 def test_tb_chunk_diagnostics_count_success_without_global_state(monkeypatch):
-    import pii_redactor.detectors.tb_detector as tbd
+    import thaiguard.engine.detectors.tb_detector as tbd
 
     class EmptyNER:
         def tag(self, chunk):

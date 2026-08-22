@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from pii_redactor.detectors import tb_detector
-from pii_redactor.detectors.aggregate import detect_all
-from pii_redactor.models import Entity
+from thaiguard.engine.detectors import tb_detector
+from thaiguard.engine.detectors.aggregate import detect_all
+from thaiguard.engine.models import Entity
 
 
 class _FakeEngine:
@@ -38,7 +38,7 @@ def test_selected_but_absent_engine_fails_loud(monkeypatch):
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
     monkeypatch.delenv("AIGUARD_FINETUNED_MODEL_DIR", raising=False)
     tb_detector._finetuned_cache.pop("engine", None)
-    from pii_redactor.detectors.finetuned_engine import FinetunedEngineUnavailableError
+    from thaiguard.engine.detectors.finetuned_engine import FinetunedEngineUnavailableError
 
     with pytest.raises(FinetunedEngineUnavailableError):
         tb_detector.detect_tb("นายสมชาย ใจดี")
@@ -126,7 +126,7 @@ def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
 
 
 def test_relabel_helper_contract():
-    from pii_redactor.detectors.aggregate import _relabel_student_ids
+    from thaiguard.engine.detectors.aggregate import _relabel_student_ids
 
     tb = [Entity("x", "TB", "STUDENT_ID", (5, 13), 0.9, "66019901")]
     kept = [Entity("y", "FP", "ID_NUMBER", (5, 13), 0.8, "66019901")]

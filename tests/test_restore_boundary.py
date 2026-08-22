@@ -17,7 +17,7 @@ class TestWorkerRestoreBoundary:
         }
 
     def test_roundtrip_restore_defect_is_restore_failed(self, monkeypatch):
-        from app.worker import handler
+        from thaiguard.server.worker import handler
 
         def boom(text, *, mapping):
             raise RuntimeError("internal defect")
@@ -29,7 +29,7 @@ class TestWorkerRestoreBoundary:
         assert "internal defect" not in result["error"]["message"]
 
     def test_op_restore_defect_is_restore_failed(self, monkeypatch):
-        from app.worker import handler
+        from thaiguard.server.worker import handler
 
         def boom(text, *, mapping):
             raise RuntimeError("internal defect")
@@ -46,7 +46,7 @@ class TestServerRestoreBoundary:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from app.server import app
+        from thaiguard.server.server import app
 
         return TestClient(
             app,
@@ -55,7 +55,7 @@ class TestServerRestoreBoundary:
         )
 
     def test_restore_defect_is_clean_500(self, client, monkeypatch):
-        from app import server
+        from thaiguard.server import server
 
         def boom(text, *, mapping):
             raise RuntimeError("internal defect detail")
@@ -70,8 +70,8 @@ class TestServerRestoreBoundary:
         assert "internal defect detail" not in resp.text
 
     def test_non_string_provider_return_is_502(self, client, monkeypatch):
-        from app import server
-        from pii_redactor.ai_client import AIProvider
+        from thaiguard.engine.ai_client import AIProvider
+        from thaiguard.server import server
 
         class Broken(AIProvider):
             def complete(self, system, user, *, timeout=30.0):
@@ -88,8 +88,8 @@ class TestServerRestoreBoundary:
     def test_provider_protocol_error_is_502_not_500(self, client, monkeypatch):
         # spec testing item 4: empty/protocol-violating content must surface as
         # 502 on the HTTP path (the first spec draft had this inverted)
-        from app import server
-        from pii_redactor.ai_client import AIProvider, ProviderProtocolError
+        from thaiguard.engine.ai_client import AIProvider, ProviderProtocolError
+        from thaiguard.server import server
 
         class Protocol(AIProvider):
             def complete(self, system, user, *, timeout=30.0):

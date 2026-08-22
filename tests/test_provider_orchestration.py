@@ -7,14 +7,14 @@ from collections.abc import Callable
 import httpx
 import pytest
 
-from pii_redactor import ai_client
-from pii_redactor.ai_client import (
+from thaiguard.engine import ai_client
+from thaiguard.engine.ai_client import (
     AIProvider,
     ProviderCallError,
     ProviderProtocolError,
     complete_provider_with_retry_policy,
 )
-from pii_redactor.leak_guard import OutboundPolicyError
+from thaiguard.engine.leak_guard import OutboundPolicyError
 
 MASKED_TEXT = "synthetic masked text"
 SYSTEM_PROMPT = "synthetic system prompt"

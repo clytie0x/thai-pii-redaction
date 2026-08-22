@@ -8,13 +8,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from pii_redactor.ingest.file_detector import (
+from thaiguard.engine.ingest.file_detector import (
     detect_source_type,
     page_needs_ocr,
     validate_encoding,
 )
-from pii_redactor.ingest.text_extractor import extract
-from pii_redactor.models import WordBbox
+from thaiguard.engine.ingest.text_extractor import extract
+from thaiguard.engine.models import WordBbox
 
 # ---------------------------------------------------------------------------
 # file_detector tests
@@ -93,7 +93,7 @@ def test_extract_hybrid_without_ocr_deps_raises(tmp_path, monkeypatch):
     a real scanned-shape PDF: the check is per page now, so handing this a
     non-PDF would only prove the argument was mis-routed.)
     """
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     path = _make_hybrid_test_pdf(tmp_path)
     monkeypatch.setattr(ocr_processor, "is_available", lambda: False)
@@ -145,7 +145,7 @@ def test_extract_pdf_text_returns_bboxes(tmp_path):
 
 
 def test_pdf_text_fallback_discards_retained_exception_graph(tmp_path, monkeypatch):
-    from pii_redactor.ingest import text_extractor
+    from thaiguard.engine.ingest import text_extractor
 
     retained_error = RuntimeError("synthetic text-map extraction failure")
     retained: dict[str, weakref.ReferenceType] = {}
@@ -190,7 +190,7 @@ def test_pdf_text_fallback_discards_retained_exception_graph(tmp_path, monkeypat
 
 
 def test_pdf_extraction_error_drops_extracted_input_graph(tmp_path, monkeypatch):
-    from pii_redactor.ingest import text_extractor
+    from thaiguard.engine.ingest import text_extractor
 
     marker = "synthetic-provenance-marker"
     retained_error = RuntimeError(marker)
@@ -333,7 +333,7 @@ def test_tiny_logo_degrades_loudly_without_optional_ocr(tmp_path, monkeypatch):
     returns both human_review and ocr_warnings, so this is a surfaced limit,
     not a silent one. Failing closed stays for the case that earns it below.
     """
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     path = _make_text_pdf_with_tiny_logo(tmp_path)
     monkeypatch.setattr(ocr_processor, "is_available", lambda: False)
@@ -353,7 +353,7 @@ def test_extract_surfaces_ocr_engine_retry_warnings_in_meta(tmp_path, monkeypatc
     """A bare-RuntimeError engine retry inside ocr_page must never be silent:
     the page-level warning reaches extract() meta warnings, which is what the
     acceptance harness counts into evidence (warning_count)."""
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     retry_warning = "page 1: OCR attempt 1 raised RuntimeError; retried once"
     path = _make_hybrid_test_pdf(tmp_path)
@@ -377,8 +377,8 @@ def test_extract_surfaces_ocr_engine_retry_warnings_in_meta(tmp_path, monkeypatc
 
 
 def test_hybrid_drops_the_same_text_from_the_same_place(tmp_path, monkeypatch):
-    from pii_redactor.detectors.aggregate import detect_all
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.detectors.aggregate import detect_all
+    from thaiguard.engine.ingest import ocr_processor
 
     phone = "081-234-5678"
     ocr_line = f"โทร {phone}"
@@ -410,8 +410,8 @@ def test_hybrid_drops_the_same_text_from_the_same_place(tmp_path, monkeypatch):
 
 
 def test_partial_overlay_cannot_hide_structured_ocr_text(tmp_path, monkeypatch):
-    from pii_redactor.detectors.aggregate import detect_all
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.detectors.aggregate import detect_all
+    from thaiguard.engine.ingest import ocr_processor
 
     phone = "081-234-5678"
     path = _make_partial_overlay_scan_pdf(tmp_path)
@@ -436,7 +436,7 @@ def test_partial_overlay_cannot_hide_structured_ocr_text(tmp_path, monkeypatch):
 
 
 def test_extract_pdf_hybrid_returns_3_tuple_with_meta(tmp_path, monkeypatch):
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     pdf_path = _make_hybrid_test_pdf(tmp_path)
     fake_words = [WordBbox(text="สวัสดี", page=1, x=0, y=0, width=10, height=10)]
@@ -464,7 +464,7 @@ def test_extract_pdf_hybrid_returns_3_tuple_with_meta(tmp_path, monkeypatch):
 
 
 def test_extract_pdf_hybrid_merges_text_layer_and_ocr_on_one_page(tmp_path, monkeypatch):
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     pdf_path = _make_mixed_page_pdf(tmp_path)
     fake_words = [WordBbox(text="OCR image text", page=1, x=20, y=30, width=80, height=10)]
@@ -495,7 +495,7 @@ def test_extract_pdf_hybrid_merges_text_layer_and_ocr_on_one_page(tmp_path, monk
 
 
 def test_extract_pdf_hybrid_keeps_ocr_line_boundaries_in_range(tmp_path, monkeypatch):
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     pdf_path = _make_mixed_page_pdf(tmp_path)
     ocr_text = "บรรทัดหนึ่ง\nเลข 1234567890123"
@@ -530,7 +530,7 @@ def test_extract_pdf_hybrid_keeps_ocr_line_boundaries_in_range(tmp_path, monkeyp
 
 
 def test_extract_pdf_hybrid_human_review_propagates(tmp_path, monkeypatch):
-    from pii_redactor.ingest import ocr_processor
+    from thaiguard.engine.ingest import ocr_processor
 
     pdf_path = _make_hybrid_test_pdf(tmp_path)
     monkeypatch.setattr(ocr_processor, "is_available", lambda: True)
@@ -554,7 +554,7 @@ def test_extract_pdf_hybrid_human_review_propagates(tmp_path, monkeypatch):
 # text_cleaner tests (Task 4)
 # ---------------------------------------------------------------------------
 
-from pii_redactor.ingest.text_cleaner import CleanResult, clean
+from thaiguard.engine.ingest.text_cleaner import CleanResult, clean
 
 
 def test_clean_whitespace_normalization():
@@ -642,7 +642,7 @@ def test_clean_sample_thai():
 # quality_validator tests (Task 5)
 # ---------------------------------------------------------------------------
 
-from pii_redactor.ingest.quality_validator import QualityResult, validate
+from thaiguard.engine.ingest.quality_validator import QualityResult, validate
 
 
 def test_validate_returns_quality_result():
@@ -706,7 +706,7 @@ def test_validate_pdf_hybrid_good_confidence():
 def test_clean_length_preserving_converts_thai_digits_without_moving_offsets():
     """The redact-pdf path needs Thai numerals converted but offsets intact,
     because word bboxes are indexed by character position."""
-    from pii_redactor.ingest.text_cleaner import clean_length_preserving
+    from thaiguard.engine.ingest.text_cleaner import clean_length_preserving
 
     raw = "โทร ๐๘๑-๒๓๔-๕๖๗๘  ครับ​"
     out = clean_length_preserving(raw)
@@ -718,8 +718,8 @@ def test_clean_length_preserving_converts_thai_digits_without_moving_offsets():
 
 
 def test_thai_numeral_phone_is_detected_after_length_preserving_clean():
-    from pii_redactor.detectors.fp_detector import detect_fp
-    from pii_redactor.ingest.text_cleaner import clean_length_preserving
+    from thaiguard.engine.detectors.fp_detector import detect_fp
+    from thaiguard.engine.ingest.text_cleaner import clean_length_preserving
 
     cleaned = clean_length_preserving("ติดต่อ ๐๘๑-๒๓๔-๕๖๗๘")
     assert [e for e in detect_fp(cleaned) if e.data_type == "PHONE"]

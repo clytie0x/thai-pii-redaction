@@ -8,8 +8,8 @@ names), never raw text or entity values — the PII-free property is structural
 import pypdfium2 as pdfium
 import pytest
 
-from pii_redactor.report_pdf import render_pdpa_report
-from pii_redactor.thai_pdf_text import register_thai_font
+from thaiguard.engine.report_pdf import render_pdpa_report
+from thaiguard.engine.thai_pdf_text import register_thai_font
 
 requires_thai_font = pytest.mark.skipif(
     register_thai_font() == "Helvetica",
@@ -45,7 +45,7 @@ ANALYSIS = {
 
 
 def _text_of(pdf_bytes: bytes) -> str:
-    # pypdfium2, not pdfplumber: draw_text() (pii_redactor/thai_pdf_text.py) draws
+    # pypdfium2, not pdfplumber: draw_text() (thaiguard/engine/thai_pdf_text.py) draws
     # an invisible real-character layer plus the visible shaped glyphs on affected
     # lines. pdfminer/pdfplumber discards text render mode entirely at the LTChar
     # layer and re-sorts characters by x-position, so it interleaves the two

@@ -12,8 +12,8 @@ every word of it becomes a document-wide redaction fragment.
 
 from __future__ import annotations
 
-from pii_redactor.detectors.aggregate import detect_all, merge_address_spans
-from pii_redactor.detectors.fp_detector import detect_fp
+from thaiguard.engine.detectors.aggregate import detect_all, merge_address_spans
+from thaiguard.engine.detectors.fp_detector import detect_fp
 
 
 def _spans_of(ents, dtype):

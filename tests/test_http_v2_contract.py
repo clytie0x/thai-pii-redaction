@@ -13,9 +13,13 @@ pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-import app.server as server
-import pii_redactor.stateless as stateless_module
-from app.http_v2 import (
+import thaiguard.engine.stateless as stateless_module
+import thaiguard.server.server as server
+from thaiguard.engine.detectors.ner_failure import NERFailureError
+from thaiguard.engine.models import Entity
+from thaiguard.engine.session_service import RestoreOutcome, SessionService
+from thaiguard.engine.session_vault import SessionVault
+from thaiguard.server.http_v2 import (
     AnalyzeResponse,
     HealthResponse,
     PdfWarning,
@@ -26,10 +30,6 @@ from app.http_v2 import (
     SanitizeResponse,
     error_payload,
 )
-from pii_redactor.detectors.ner_failure import NERFailureError
-from pii_redactor.models import Entity
-from pii_redactor.session_service import RestoreOutcome, SessionService
-from pii_redactor.session_vault import SessionVault
 
 V2_HEADERS = {"X-AIGuard-Contract-Version": "2"}
 V2_RESPONSE_HEADER = "X-AIGuard-Contract-Version"

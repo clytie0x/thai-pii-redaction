@@ -10,8 +10,8 @@ pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient
 
-import app.server as server
-from pii_redactor.session_service import SessionService
+import thaiguard.server.server as server
+from thaiguard.engine.session_service import SessionService
 
 _NOW = 1_800_000_000.0
 _V2_DATA_HEADERS = {

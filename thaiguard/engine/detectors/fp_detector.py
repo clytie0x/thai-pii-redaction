@@ -1,0 +1,1076 @@
+"""Format-preserving (FP) PII detector using regex + checksum validation."""
+
+from __future__ import annotations
+
+import re
+import uuid
+
+from thaiguard.engine.detectors.thai_id import is_valid_thai_id
+from thaiguard.engine.models import Entity
+
+# ---------------------------------------------------------------------------
+# Checksum helpers
+# ---------------------------------------------------------------------------
+
+
+def _luhn_check(digits: str) -> bool:
+    """Return True if digits pass the Luhn algorithm."""
+    if not digits:
+        return False
+    try:
+        total = 0
+        for i, ch in enumerate(reversed(digits)):
+            n = int(ch)
+            if i % 2 == 1:
+                n *= 2
+                if n > 9:
+                    n -= 9
+            total += n
+        return total % 10 == 0
+    except Exception:
+        return False
+
+
+def _iban_check(iban: str) -> bool:
+    """Return True if the IBAN passes the mod-97 check."""
+    try:
+        # Move first 4 chars to end
+        rearranged = iban[4:] + iban[:4]
+        # Replace letters with digits: A=10, B=11, ... Z=35
+        digits = ""
+        for ch in rearranged:
+            if ch.isalpha():
+                digits += str(ord(ch.upper()) - ord("A") + 10)
+            else:
+                digits += ch
+        return int(digits) % 97 == 1
+    except Exception:
+        return False
+
+
+def _date_sanity(day: int, month: int) -> bool:
+    """Return True if day is 1-31 and month is 1-12."""
+    return 1 <= day <= 31 and 1 <= month <= 12
+
+
+# ---------------------------------------------------------------------------
+# Entity factory
+# ---------------------------------------------------------------------------
+
+
+def _make_entity(data_type: str, match: re.Match, text: str, score: float = 1.0) -> Entity:
+    start, end = match.start(1), match.end(1)
+    return Entity(
+        entity_id=str(uuid.uuid4()),
+        redact_type="FP",
+        data_type=data_type,
+        span=(start, end),
+        score=score,
+        original_text=text[start:end],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Deduplication
+# ---------------------------------------------------------------------------
+
+
+def _deduplicate(
+    entities: list[Entity], single_char_ok: frozenset[tuple[int, int]] = frozenset()
+) -> list[Entity]:
+    """Remove overlapping spans; prefer higher score, then first occurrence.
+
+    Score is the PRIMARY key (DET-2). The old code sorted by (start, -score),
+    i.e. earliest-start-wins, which contradicted this docstring and let a
+    low-score VEHICLE_PLATE ("ปชช 1", 0.9) that started before a checksum-valid
+    THAI_ID/PHONE/BANK/CREDIT_CARD (1.0) evict the real number via the greedy
+    keep — leaking it entirely. A separator after the plate's first digit group
+    (the normal way Thai IDs/phones are written) made this the common case, not
+    an edge one. Sorting score-first keeps the checksum-backed number; ties fall
+    back to earliest start so same-score ordering is unchanged.
+
+    `single_char_ok` exempts specific spans from the 2-char floor: a 1-digit
+    house/moo number anchored by its own label and a sibling address fragment
+    (see step 11) is real address structure, not a stray NER character."""
+    sorted_ents = sorted(entities, key=lambda e: (-e.score, e.span[0]))
+    kept: list[Entity] = []
+    for ent in sorted_ents:
+        if (ent.span[1] - ent.span[0]) < 2 and ent.span not in single_char_ok:
+            continue
+        overlaps = any(not (ent.span[1] <= k.span[0] or ent.span[0] >= k.span[1]) for k in kept)
+        if not overlaps:
+            kept.append(ent)
+    return sorted(kept, key=lambda e: e.span[0])
+
+
+# ---------------------------------------------------------------------------
+# BANK vs PHONE context disambiguation
+# ---------------------------------------------------------------------------
+
+
+def _rightmost_cue(pattern: re.Pattern, ctx: str) -> int:
+    """End offset of the cue nearest the number (rightmost match in ctx), or -1."""
+    end = -1
+    for m in pattern.finditer(ctx):
+        end = m.end()
+    return end
+
+
+def _disambiguate_bank_phone(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Resolve spans that are ambiguously PHONE and BANK_ACCOUNT.
+
+    A 10-digit number starting 06-09 matches both the mobile PHONE and the
+    BANK_ACCOUNT patterns and, on a score tie, PHONE wins deduplication. When
+    both candidates share a span, the cue nearest the number in the preceding
+    ~30 chars decides: a bank cue keeps BANK, a phone cue keeps PHONE, a tie
+    favours BANK, and no cue at all leaves the default (PHONE) untouched.
+    """
+    types_by_span: dict[tuple[int, int], set[str]] = {}
+    for e in candidates:
+        types_by_span.setdefault(e.span, set()).add(e.data_type)
+
+    drop_phone: set[tuple[int, int]] = set()
+    drop_bank: set[tuple[int, int]] = set()
+    for span, types in types_by_span.items():
+        if "PHONE" not in types or "BANK_ACCOUNT" not in types:
+            continue
+        ctx = text[max(0, span[0] - _CUE_WINDOW) : span[0]]
+        bank = _rightmost_cue(_BANK_CUE_RE, ctx)
+        phone = _rightmost_cue(_PHONE_CUE_RE, ctx)
+        if bank < 0 and phone < 0:
+            continue
+        if bank >= phone:
+            drop_phone.add(span)
+        else:
+            drop_bank.add(span)
+
+    if not drop_phone and not drop_bank:
+        return candidates
+    out: list[Entity] = []
+    for e in candidates:
+        if e.data_type == "PHONE" and e.span in drop_phone:
+            continue
+        if e.data_type == "BANK_ACCOUNT" and e.span in drop_bank:
+            continue
+        out.append(e)
+    return out
+
+
+def _bank_separators_nonstandard(raw: str) -> bool:
+    """True when the separator layout matches no Thai bank-account format.
+
+    Accepted layouts: bare digits, the fully separated xxx-x-xxxxx-x, and the
+    xxxxxxx-xxx shape. Anything else ("2569-004512") is a formatted document
+    number wearing ten digits.
+    """
+    positions: list[int] = []
+    digits = 0
+    for ch in raw:
+        if ch.isdigit():
+            digits += 1
+        else:
+            positions.append(digits)
+    return bool(positions) and positions != [3, 4, 9] and positions != [7]
+
+
+def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Resolve spans that are ambiguously STUDENT_ID and BANK_ACCOUNT.
+
+    A 10-digit student id also matches _RE_BANK_ACCOUNT_2. BANK_ACCOUNT is
+    emitted at score 1.0 and needs no cue, while STUDENT_ID is cue-gated at 0.8,
+    so dedup handed every 10-digit id to BANK_ACCOUNT even with an explicit
+    student cue right in front of it -- on the gold set, 0 of 8 kept their type.
+
+    Same rule as _disambiguate_bank_phone: the nearer cue decides, and a bank
+    cue at least as near as the student evidence keeps BANK (a student's own
+    bank account is still a bank account). The student side is measured by
+    _student_evidence's anchor distance — not the person-word regex alone —
+    because since the 2026-07-28 review a STUDENT_ID candidate can be created
+    by an id-introducer tier whose person word is absent or far away.
+    """
+    types_by_span: dict[tuple[int, int], set[str]] = {}
+    for e in candidates:
+        types_by_span.setdefault(e.span, set()).add(e.data_type)
+
+    drop_bank: set[tuple[int, int]] = set()
+    drop_student: set[tuple[int, int]] = set()
+    for span, types in types_by_span.items():
+        if "STUDENT_ID" not in types or "BANK_ACCOUNT" not in types:
+            continue
+        ctx = text[max(0, span[0] - _CUE_WINDOW) : span[0]]
+        bank = _rightmost_cue(_BANK_CUE_RE, ctx)
+        bank_dist = len(ctx) - bank if bank >= 0 else None
+        student_dist = _student_evidence(text, span[0], span[1])
+        if bank_dist is not None and (student_dist is None or bank_dist <= student_dist):
+            drop_student.add(span)
+        else:
+            drop_bank.add(span)
+
+    if not drop_bank and not drop_student:
+        return candidates
+    out: list[Entity] = []
+    for e in candidates:
+        if e.data_type == "BANK_ACCOUNT" and e.span in drop_bank:
+            continue
+        if e.data_type == "STUDENT_ID" and e.span in drop_student:
+            continue
+        out.append(e)
+    return out
+
+
+def _student_evidence(text: str, start: int, end: int) -> int | None:
+    """Return the distance to a student cue, or ``None``.
+
+    A compound code word blocks a match. Tier 1 uses a person cue before the
+    number. Tier 2 uses one after it. Tier 3 needs an ID cue on the same line
+    and an education cue nearby. A closer bank, phone, or sales cue wins.
+    """
+    line_start = text.rfind("\n", 0, start) + 1
+
+    intro_ctx = text[max(line_start, start - _STUDENT_INTRO_WINDOW) : start]
+    if _STUDENT_BLOCKER_RE.search(intro_ctx):
+        return None
+
+    # Tier 1 — person cue before, nearest-wins vs commerce.
+    ctx = text[max(0, start - _STUDENT_PERSON_WINDOW) : start]
+    person = _rightmost_cue(_STUDENT_CUE_RE, ctx)
+    competing = _rightmost_cue(_NON_STUDENT_NUM_CUE_RE, ctx)
+    if person >= 0 and person > competing:
+        return len(ctx) - person
+
+    # Tier 2 — person cue after the digits. Any commerce cue in the front
+    # window vetoes it ("ใบเสร็จเลขที่ 68123456 นักศึกษาต้องเก็บไว้" — the
+    # receipt label owns the digits), and so does a bank/phone cue in front.
+    if competing < 0:
+        front = text[max(0, start - _CUE_WINDOW) : start]
+        front_owned = (
+            _rightmost_cue(_BANK_CUE_RE, front) >= 0 or _rightmost_cue(_PHONE_CUE_RE, front) >= 0
+        )
+        if not front_owned:
+            after = text[end : end + _STUDENT_AFTER_WINDOW]
+            m_person = _STUDENT_CUE_RE.search(after)
+            if m_person:
+                m_commerce = _NON_STUDENT_NUM_CUE_RE.search(after)
+                if not m_commerce or m_person.start() < m_commerce.start():
+                    return m_person.start() + 1
+
+    # Tier 3 — id-introducer + education context.
+    intro = _rightmost_cue(_STUDENT_INTRO_RE, intro_ctx)
+    if intro >= 0:
+        veto_ctx = text[max(line_start, start - _CUE_WINDOW) : start]
+        if not _NON_STUDENT_NUM_CUE_RE.search(veto_ctx):
+            edu_ctx = text[max(0, start - _EDU_WINDOW) : min(len(text), end + _EDU_WINDOW)]
+            if _EDU_CONTEXT_RE.search(edu_ctx):
+                return len(intro_ctx) - intro
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Compiled patterns
+# ---------------------------------------------------------------------------
+
+# Numeric PII uses digit-boundary lookarounds (?<!\d)...(?!\d) instead of \b.
+# In Unicode-aware regex a Thai letter is a "word" character, so \b does NOT
+# fire between Thai script and a digit -- a value glued to Thai text (e.g.
+# "เลขบัตรประชาชน1101700230708") slipped past every \b-anchored pattern. The
+# digit-boundary lookarounds still reject a value embedded in a longer number
+# while allowing letter/Thai adjacency (recall > precision).
+_RE_THAI_ID = re.compile(r"(?<!\d)(\d{1}[-\s]?\d{4}[-\s]?\d{5}[-\s]?\d{2}[-\s]?\d{1})(?!\d)")
+_RE_CREDIT_CARD = re.compile(r"(?<!\d)(\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4})(?!\d)")
+# Total length is bounded 15-34 to match real IBANs (shortest is Norway at 15,
+# longest is 34) -- the old {4,30} lower bound made the total minimum 8, which
+# let a 9-char passport-length string ([A-Z]{2}\d{7}) both match the shape AND
+# occasionally pass mod-97 by chance, stealing the span from PASSPORT even with
+# an explicit passport cue right in front of it. Do not loosen this again.
+_RE_IBAN = re.compile(r"\b([A-Z]{2}\d{2}[A-Z0-9]{11,30})\b")
+# EMAIL needs the same Thai-adjacency handling as the numeric PII above: \b
+# does NOT fire between Thai script and an ASCII letter (both are word chars
+# in Unicode regex), so a label glued to the value ("อีเมลmanop.d@x.com")
+# clipped the local part to ".d@x.com" — the identifying half went out
+# unmasked. Same lookaround idiom as PASSPORT below. The trailing lookahead
+# deliberately allows "." so a sentence-final period does not unmatch the
+# whole address ("ส่งมาที่ a@b.com."), while still refusing to end inside a
+# longer alnum/hyphen run.
+_RE_EMAIL = re.compile(
+    r"(?<![a-zA-Z0-9._%+\-])([a-zA-Z0-9][a-zA-Z0-9._%+\-]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"
+    r"(?![a-zA-Z0-9\-])"
+)
+_RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\d)")
+# Thai landlines are 9 digits (not 10). Two written shapes, both 9 digits:
+#   Bangkok    02-XXX-XXXX  (2-digit area, then 3+4)
+#   provincial 0XX-XXX-XXX  (3-digit area, then 3+3)
+# The old pattern demanded a third area digit before the first separator, so it
+# needed 10 digits and missed every standard landline (DET-1). Mobile numbers
+# (0[6-9], 10 digits) stay with _RE_PHONE_MOBILE; the [2-7] second digit here
+# never collides with them.
+# The separator after the leading 0 is optional in both patterns because Thai
+# organisations also split after the trunk prefix (0-2123-4567, 0-81-234-5678)
+# rather than after the area code. Requiring adjacency there missed that whole
+# shape -- and detect_fp is what the pre-send leak guard runs, so those numbers
+# went out unmasked.
+# That trunk-prefix separator is [- ], NOT [-\s]: `\s` matches a newline, which
+# would let a lone '0' ending a table row fuse with the digits on the next row.
+# The interior separators keep [-\s] (a wrapped number is still one number), but
+# a leading zero has no such excuse: a false entity spanning rows still causes
+# irreversible interval-based PDF masking across both rows.
+_RE_PHONE_LANDLINE = re.compile(
+    r"(?<!\d)(0[- ]?(?:2[-\s]?\d{3}[-\s]?\d{4}|[3-7]\d[-\s]?\d{3}[-\s]?\d{3}))(?!\d)"
+)
+# +66 form drops the national leading 0, so a Thai number carries 8 (landline)
+# or 9 (mobile) digits after +66 -- e.g. +66 81 234 5678 is 9. The old pattern
+# only matched 8, missing every mobile and leaking it to the STUDENT_ID
+# catch-all. Allow an optional single separator between any two digits.
+_RE_PHONE_INTL = re.compile(r"(?<![a-zA-Z0-9_])(\+66[-\s]?\d(?:[-\s]?\d){7,8})(?!\d)")
+_RE_BANK_ACCOUNT_1 = re.compile(r"(?<!\d)(\d{3}[-\s]?\d{1}[-\s]?\d{5}[-\s]?\d{1})(?!\d)")
+_RE_BANK_ACCOUNT_2 = re.compile(r"(?<!\d)(\d{7}[-\s]?\d{3})(?!\d)")
+_RE_DATE = re.compile(
+    # day-first (dd/mm/yyyy or dd/mm/yy) OR ISO year-first (yyyy-mm-dd).
+    # The year-first alternative must come after so the day-first form still
+    # wins for short years; the digit-boundary lookarounds keep both anchored.
+    r"(?<!\d)(\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|\d{4}[/\-]\d{1,2}[/\-]\d{1,2})(?!\d)"
+)
+# Thai-month dates ("16 สิงหาคม 2508") had no FP pattern, so the CRF was the
+# only path and it drops the year token in digit-dense context — three gold
+# birth dates shipped with the Buddhist year unmasked. Day + full month name +
+# year ALL required: no day means a month reference ("เดือนกันยายน 2568"), no
+# year means a period endpoint ("ระหว่างวันที่ 1 เมษายน ถึง ..." — measured
+# as a new negative-slice FP when the year was optional), and "มอก.
+# 2540-2555" has no month at all. Separators are literal spaces (a newline
+# between tokens is two lines, not one date). Routed through the same
+# เกิด-cue gate as numeric dates, so the honest DATE/DATE_OF_BIRTH split is
+# preserved.
+_THAI_MONTHS = (
+    "มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม"
+)
+_RE_DATE_THAI_MONTH = re.compile(
+    rf"(?<!\d)(\d{{1,2}} (?:{_THAI_MONTHS}) (?:พ\.?ศ\.? ?)?\d{{4}})(?!\d)"
+)
+# The trailing (?!\d) is load-bearing (DET-2): without it, this pattern bit the
+# first 1-4 digits of a LONGER number after a Thai-consonant abbreviation
+# (e.g. "ปชช 1101...", "กทม 0812..."), and _deduplicate's earlier-start-wins
+# rule then dropped the overlapping checksum-valid THAI_ID/PHONE, leaking the
+# rest. A real plate never sits inside a longer digit run, so requiring a
+# non-digit right boundary costs no recall. No leading (?<!\d): new-format
+# plates carry a leading digit ("1กก 1234") that is re-attached AFTER matching
+# (see step 8) — putting a digit-led alternative in the pattern itself loses
+# to an earlier overlapping bogus match that eats the digit ("ทะเบียน 2กท":
+# the rejected "น 2" consumes the 2 before the real plate can start on it).
+_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}\s*\d{1,4})(?!\d)")
+# Passport is alphanumeric, so it needs the same Thai-adjacency handling as the
+# numeric PII above: \b does NOT fire between a Thai letter and "A" (both are
+# word characters in Unicode regex), so a passport glued to Thai text (e.g.
+# "หนังสือเดินทางเลขที่AB1234567") slipped past. Alnum-boundary lookarounds still
+# reject a value embedded in a longer alphanumeric run while allowing Thai/space
+# adjacency.
+_RE_PASSPORT_TH = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2}\d{7})(?![A-Za-z0-9_])")
+_RE_PASSPORT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{1,2}\d{6,9})(?![A-Za-z0-9_])")
+_RE_STUDENT_ID = re.compile(r"(?<!\d)(\d{8,12})(?!\d)")
+# Dashed student-id shape, label-gated at the call site (see step 10b).
+_RE_STUDENT_ID_DASHED = re.compile(r"(?<!\d)(\d{2}-\d{2}-\d{4})(?!\d)")
+_STUDENT_LABEL_RE = re.compile(r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)")
+
+# Thai address components. The NER side only ever recognises place NAMES it has
+# seen (province, district), which is the LEAST identifying part of an address
+# line -- "กรุงเทพมหานคร" was masked while "99 ซอยลาดพร้าว 71" went out intact.
+# These patterns key on the structure instead: a label word followed by its
+# value. The label itself is not captured (group 1 is the value), so the output
+# still reads as an address with the identifying part removed.
+# Form fields commonly separate that label and value with an ASCII or
+# full-width colon (``ที่อยู่: 99`` / ``ที่อยู่：99``); keeping it outside
+# group 1 preserves the exact value-only span used by text replacement.
+# The ที่อยู่ label carries a closed list of fixed suffixes (ที่อยู่ปัจจุบัน /
+# ที่อยู่ตามทะเบียนบ้าน / ที่อยู่ที่ติดต่อได้): each is a standard Thai form
+# field whose house number previously fell through because the label was not
+# adjacent to the digits. สถานที่เช่า and ที่ตั้งสำนักงานใหญ่ are the contract/
+# registration variants of the same field. Closed list, not a bounded free-text
+# gap — "ที่อยู่เดิมราคา 88" must never capture.
+_RE_HOUSE_NO = re.compile(
+    r"(?:บ้านเลขที่|เลขที่|ทะเบียนบ้าน|ที่อยู่(?:ปัจจุบัน|ตามทะเบียนบ้าน|ที่ติดต่อได้)?"
+    r"|สถานที่เช่า|ที่ตั้งสำนักงานใหญ่)\s*[:：]?\s*(\d{1,4}(?:\s*[/-]\s*\d{1,4})?)(?!\d)"
+)
+# Some form rows start with the house number and put the street cue after it.
+_RE_HOUSE_BEFORE_STREET = re.compile(
+    r"(?<!\d)(\d{1,4}(?:\s*[/-]\s*\d{1,4})?)\s+(?=(?:ถนน|ถ\.|ซอย|ซ\.|ตรอก))"
+)
+# Condo/building rows put the room number first ("123/456 คอนโดริเวอร์ไซด์").
+# Slash-form ONLY: a bare number before a building word is usually a quantity
+# ("จำนวน 88 หมู่บ้าน"), but the N/M shape has no counting reading in Thai.
+_RE_HOUSE_BEFORE_BUILDING = re.compile(
+    r"(?<!\d)(\d{1,4}\s*/\s*\d{1,4})\s+(?=(?:คอนโด|อาคาร|หมู่บ้าน|ตึก|นิคม|หมู่))"
+)
+_RE_YEAR_PREFIX = re.compile(r"(?:ปี(?:งบประมาณ|ภาษี)?|พ\.?\s*ศ\.?)\s*$")
+# Captures the soi/road NAME plus its number ("ลาดพร้าว 71"): the name alone
+# identifies a neighbourhood and the number narrows it to one lane, so masking
+# only the digits would leave the person locatable.
+_RE_SOI_ROAD = re.compile(r"(?:ซอย|ซ\.|ถนน|ถ\.)\s*([ก-๛A-Za-z0-9]+(?:\s*\d{1,4})?)(?!\d)")
+# Industrial-estate NAME after its designator, same value-only idiom as
+# _RE_SOI_ROAD — the estate name pins a workplace to one gate. The lookahead
+# keeps การนิคมอุตสาหกรรมแห่งประเทศไทย (the state agency) out.
+_RE_ESTATE = re.compile(r"นิคมอุตสาหกรรม\s*(?!แห่งประเทศไทย)([ก-๛A-Za-z0-9]+)")
+_RE_MOO = re.compile(r"(?:หมู่ที่|หมู่|ม\.)\s*(\d{1,3})(?!\d)")
+# Sub-district / district / province NAMES. The CRF recognises the well-known
+# ones (it masked "กรุงเทพมหานคร") but misses the rest, and a sub-district plus
+# a postal code narrows a person to a few streets. Structure again, not a
+# gazetteer: whatever follows the administrative label is the value.
+# The negative lookbehind is load-bearing: without it อำเภอ matched inside
+# นายอำเภอ (a job title, not an address), producing an FP ADDRESS span that
+# dedupe_spans then used to evict the TB NAME span the CRF had correctly found
+# -- so adding an address detector made a NAME leak. Same for เขต in ผู้อำนวยการเขต.
+# เขต(?!บริการ|พื้นที่): เขตพื้นที่การศึกษา is the education-service-area
+# agency term (สพท.), never a residential district — no Bangkok เขต starts
+# with พื้นที่, so the exception costs no recall (same closed-list pattern as
+# เขตบริการ).
+_RE_ADMIN_AREA = re.compile(
+    r"(?:แขวง|ตำบล|ต\.|(?<!นาย)(?<!ปลัด)(?<!รอง)(?<!ท่าน)(?:อำเภอ|เขต(?!บริการ|พื้นที่))|อ\.|จังหวัด|จ\.)\s*([ก-๛]{2,})"
+)
+# The 77 provinces — a fixed national list, not corpus tuning. A bare province
+# ends most Thai addresses ("อำเภอเมือง ขอนแก่น") and no label-keyed pattern
+# can reach it, so 4 of 7 gold address_varied documents shipped it unmasked.
+# Adjacency-gated at the call site: only within a short window AFTER an
+# admin-area capture, so a province in prose ("จะไปเที่ยวชลบุรี") never fires.
+# Longest-first so สมุทรสงคราม cannot be clipped by a shorter sibling.
+_PROVINCES = (
+    "กระบี่",
+    "กรุงเทพมหานคร",
+    "กาญจนบุรี",
+    "กาฬสินธุ์",
+    "กำแพงเพชร",
+    "ขอนแก่น",
+    "จันทบุรี",
+    "ฉะเชิงเทรา",
+    "ชลบุรี",
+    "ชัยนาท",
+    "ชัยภูมิ",
+    "ชุมพร",
+    "เชียงราย",
+    "เชียงใหม่",
+    "ตรัง",
+    "ตราด",
+    "ตาก",
+    "นครนายก",
+    "นครปฐม",
+    "นครพนม",
+    "นครราชสีมา",
+    "นครศรีธรรมราช",
+    "นครสวรรค์",
+    "นนทบุรี",
+    "นราธิวาส",
+    "น่าน",
+    "บึงกาฬ",
+    "บุรีรัมย์",
+    "ปทุมธานี",
+    "ประจวบคีรีขันธ์",
+    "ปราจีนบุรี",
+    "ปัตตานี",
+    "พระนครศรีอยุธยา",
+    "พะเยา",
+    "พังงา",
+    "พัทลุง",
+    "พิจิตร",
+    "พิษณุโลก",
+    "เพชรบุรี",
+    "เพชรบูรณ์",
+    "แพร่",
+    "ภูเก็ต",
+    "มหาสารคาม",
+    "มุกดาหาร",
+    "แม่ฮ่องสอน",
+    "ยโสธร",
+    "ยะลา",
+    "ร้อยเอ็ด",
+    "ระนอง",
+    "ระยอง",
+    "ราชบุรี",
+    "ลพบุรี",
+    "ลำปาง",
+    "ลำพูน",
+    "เลย",
+    "ศรีสะเกษ",
+    "สกลนคร",
+    "สงขลา",
+    "สตูล",
+    "สมุทรปราการ",
+    "สมุทรสงคราม",
+    "สมุทรสาคร",
+    "สระแก้ว",
+    "สระบุรี",
+    "สิงห์บุรี",
+    "สุโขทัย",
+    "สุพรรณบุรี",
+    "สุราษฎร์ธานี",
+    "สุรินทร์",
+    "หนองคาย",
+    "หนองบัวลำภู",
+    "อ่างทอง",
+    "อำนาจเจริญ",
+    "อุดรธานี",
+    "อุตรดิตถ์",
+    "อุทัยธานี",
+    "อุบลราชธานี",
+)
+_RE_PROVINCE = re.compile("(" + "|".join(sorted(_PROVINCES, key=len, reverse=True)) + ")")
+_PROVINCE_ADJACENCY_WINDOW = 20
+_THAI_LETTER_RE = re.compile(r"[ก-๛]")
+# Sibling window for the 1-digit house/moo exemption (see step 11).
+_ADDR_SIBLING_WINDOW = 40
+# A bare 5-digit run is far too common to mask on sight (quantities, years in
+# tables, reference numbers), so the postal code is only claimed when an address
+# cue sits close in front of it.
+_RE_POSTAL_CODE = re.compile(r"(?<!\d)(\d{5})(?!\d)")
+# HN (เวชระเบียน) is the primary identifier inside a Thai health record and is
+# typically 5-9 digits -- below the 8-digit floor the generic numeric catch-all
+# starts at, so it was invisible to every detector. Requires its own cue, which
+# also makes the MEDICAL_ID label honest rather than a guess.
+_RE_MEDICAL_ID = re.compile(
+    r"(?<![A-Za-z])(?:HN|เวชระเบียน|ผู้ป่วยเลขที่)\s*[:：]?\s*(\d{4,9})(?!\d)", re.IGNORECASE
+)
+
+_SEP_RE = re.compile(r"[-\s]")
+_THAI_CHAR_RE = re.compile(r"[฀-๿]")
+
+# BANK-vs-PHONE disambiguation cues. A 10-digit number starting 06-09 matches
+# both the mobile PHONE and the BANK_ACCOUNT patterns, so the surrounding text
+# is the only signal. `บัญชี` already covers เลขบัญชี / เลขที่บัญชี as a
+# substring, so the alternation stays minimal.
+_BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
+_PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|มือถือ|ติดต่อ")
+
+# Honest-label cues (Horizon-2 #10). "เกิด" as substring covers วันเกิด /
+# เกิดวันที่ / เกิดเมื่อ — but NOT เกิดเหตุ/เหตุเกิด, which are incident
+# phrasings that never introduce a birth date (a traffic-accident date was
+# labeled a birthday and the surrogate generator fabricated a fake DOB for an
+# accident report). English birth labels (date of birth / DOB) are a real
+# register on Thai visa/passport paperwork. Student/passport cues gate the
+# wide catch-alls so a business PO/invoice number stops masquerading as a
+# passport or student id -- it is still masked, as the generic ID_NUMBER.
+_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
+# Address cue for the postal code. The window is wider than _CUE_WINDOW because
+# a postal code sits at the END of the address line, so the nearest cue is a
+# whole district/province name away ("แขวงวังทองหลาง กรุงเทพมหานคร 10310").
+_POSTAL_CUE_RE = re.compile(r"รหัสไปรษณีย์|จังหวัด|แขวง|ตำบล|อำเภอ|เขต(?!บริการ)|กรุงเทพ|ที่อยู่")
+_POSTAL_CUE_WINDOW = 45
+# Two or more OTHER bare five-digit groups this close mean an enumeration —
+# but only when nothing except enumeration glue (whitespace, comma, slash,
+# และ/หรือ) sits between the codes. Thai words between them mean distinct
+# addresses sharing one line ("แขวงบางรัก 10500 ตำบลสุเทพ 50200 ..."), where
+# every code is real PII — the adversarial review caught the middle one
+# shipping unmasked under a distance-only sibling rule.
+_POSTAL_SIBLING_WINDOW = 25
+_POSTAL_GLUE_RE = re.compile(r"(?:\s|,|/|และ|หรือ)*")
+# Cues that mean "this number identifies an enrolled person". นักเรียน/ผู้เรียน
+# were missing, so a school pupil's id fell through to the generic ID_NUMBER
+# while a university student's did not. Bare "รหัส" is deliberately NOT here: it
+# also labels รหัสสินค้า / รหัสวิชา / รหัสหลักสูตร / รหัสไปรษณีย์, and those are
+# still masked as ID_NUMBER anyway, so admitting them would buy no redaction
+# safety and cost an honest label.
+_STUDENT_CUE_RE = re.compile(r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student", re.IGNORECASE)
+# Compound code words: "รหัสX" names a non-student code and blocks every
+# student tier, even with education words nearby (a course code in a syllabus
+# is still a course code). Kept literal and short on purpose — each entry is a
+# distinct document-field name, not a topic word.
+_STUDENT_BLOCKER_RE = re.compile(
+    r"รหัส(?:ราย)?วิชา|รหัสหลักสูตร|รหัสเอกสาร|รหัสพนักงาน|รหัสอ้างอิง|รหัสชำระ"
+    r"|รหัสสินค้า|รหัสรายการ|รหัสสั่งซื้อ|รหัสโครงการ|รหัสครุภัณฑ์|รหัสผ่าน"
+)
+# Bare id-introducers for tier 3. \bid\b needs the ASCII boundary so it does
+# not fire inside "paid"/"provider".
+_STUDENT_INTRO_RE = re.compile(r"รหัสประจำตัว|เลขประจำตัว|รหัส|\bid\b", re.IGNORECASE)
+# Education-context tokens: deliberately the narrow list that survived the
+# adversarial review — no คณะ (คณะกรรมการ), no วิชา alone (วิชาชีพ/วิชาการ),
+# no สอบ family (civil-service exams), no มหาวิทยาลัย/โรงเรียน (ambient org
+# context), no ทะเบียน (vehicle/civil registries), no คัดเลือก (hiring).
+_EDU_CONTEXT_RE = re.compile(
+    r"นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ลงทะเบียนเรียน|ภาคเรียน|สหกิจศึกษา"
+    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย",
+    re.IGNORECASE,
+)
+_STUDENT_PERSON_WINDOW = 60  # tier 1: person cue before the digits
+_STUDENT_AFTER_WINDOW = 45  # tier 2: person cue after the digits
+_STUDENT_INTRO_WINDOW = 20  # tier 3: introducer must be this close, same line
+_EDU_WINDOW = 100  # tier 3: education token within this many chars either side
+# Words that introduce a number which is not a student identifier. A bare
+# person-word is weak evidence: "นักเรียนสั่งซื้อสินค้ารหัส 88910423" is an
+# order number in a sentence about a pupil. Same nearest-cue-wins rule as the
+# bank/phone and bank/student pairs above -- whichever cue sits closer to the
+# digits decides what they are.
+_NON_STUDENT_NUM_CUE_RE = re.compile(
+    r"ราคา|ยอด|จำนวนเงิน|ใบเสร็จ|ใบแจ้งหนี้|ใบกำกับ|สินค้า|สั่งซื้อ|คำสั่งซื้อ|ออเดอร์|invoice|order",
+    re.IGNORECASE,
+)
+_PASSPORT_CUE_RE = re.compile(r"พาสปอร์ต|หนังสือเดินทาง|passport", re.IGNORECASE)
+
+# A KNOWN document-code prefix glued straight onto the digits
+# ("PO-2569-004512", "SKU-8891042376") marks the whole token as one
+# organizational code. A closed list, one entry per observed false positive —
+# NOT any letters- prefix: the adversarial review (2026-08-03) showed the
+# generic form silences real accounts written as SCB-/KBANK-/A/C-<digits> in
+# payment chat and org-issued personal ids (EMP-...), which keep the
+# recall-first base behavior instead. Checksum-backed types are never
+# affected either way.
+_GLUED_CODE_PREFIX_RE = re.compile(r"(?:PO|RC|TX|SKU|ITM)-\Z", re.IGNORECASE)
+_GLUED_PREFIX_LOOKBACK = 12
+
+
+def _glued_code_prefix(text: str, start: int) -> bool:
+    return bool(_GLUED_CODE_PREFIX_RE.search(text[max(0, start - _GLUED_PREFIX_LOOKBACK) : start]))
+
+
+# Field labels that introduce an organizational number (procurement project,
+# ISSN serial, patent application) — full field names, not topic words, the
+# same philosophy as the student blockers (bare โครงการ AND bare สิทธิบัตร
+# are topic words and deliberately absent: "เงินรางวัลสิทธิบัตรจะโอนเข้า
+# <บัญชี>" is a royalty transfer, caught by the adversarial review when the
+# first cut used the bare word). Nearest-cue-wins against the bank cue.
+# Unlike the recall-first ID_NUMBER demotions, these labels are positive
+# evidence the number identifies a document, so nothing is emitted at all.
+_ORG_NUM_CUE_RE = re.compile(r"เลขที่โครงการ|ISSN|คำขอรับสิทธิบัตร|สิทธิบัตรเลขที่", re.IGNORECASE)
+
+
+def _org_number_cued(text: str, start: int) -> bool:
+    ctx = text[max(0, start - _CUE_WINDOW) : start]
+    org = _rightmost_cue(_ORG_NUM_CUE_RE, ctx)
+    return org >= 0 and org > _rightmost_cue(_BANK_CUE_RE, ctx)
+
+
+def _cue_before(cue_re: re.Pattern, text: str, start: int) -> bool:
+    return bool(cue_re.search(text[max(0, start - _CUE_WINDOW) : start]))
+
+
+# A vehicle plate glued to Thai text (e.g. "ทะเบียนรถขก 4471") is normally
+# suppressed by the mid-word guard below, which rejects any plate preceded by a
+# Thai char. A plate cue in the ~15 chars before the match marks a real plate
+# and relaxes that guard.
+_PLATE_CUE_RE = re.compile(r"ทะเบียน")
+_PLATE_CUE_WINDOW = 15
+# ทะเบียน continued by one of these words is a civil-registration compound
+# (ทะเบียนบ้าน / ทะเบียนสมรส / ทะเบียนราษฎร / ทะเบียนหย่า), a closed class
+# that never introduces a plate. Such an occurrence must not cue: it relaxed
+# the mid-word guard and turned house numbers into plates ("ทะเบียนบ้าน 203"
+# -> "น 203"). Any unblocked occurrence in the window still cues, so a second
+# ทะเบียนรถ beside a blocked compound wins.
+_PLATE_CUE_BLOCKED_CONTINUATIONS = ("บ้าน", "สมรส", "ราษฎร", "หย่า")
+# Uncued-only word-lead stopwords: all-consonant Thai prose words that
+# precede a number (amounts, exit times, copy counts). One entry per observed
+# false positive, same closed-list philosophy as _GLUED_CODE_PREFIX_RE.
+# Unlike _PLATE_STOPWORDS these ARE relaxed by a cue, because a 3-letter
+# motorcycle series can legally spell them ("ทะเบียน ยอด 1234").
+_PLATE_UNCUED_LEAD_STOPWORDS = frozenset({"ยอด", "ออก", "รวม"})
+# A plate is below the checksum-backed types (1.0) and above the generic
+# numeric catch-alls (0.8). The re-attached new-format variant sits a hair
+# above a plain plate so it wins `_deduplicate` against the candidate whose
+# trailing digit it just claimed — see step 8.
+_PLATE_SCORE = 0.9
+_PLATE_REATTACHED_SCORE = 0.91
+
+
+def _plate_cue_before(text: str, start: int) -> bool:
+    """A plate cue in the window whose continuation is not civil registration."""
+    for cue in _PLATE_CUE_RE.finditer(text, max(0, start - _PLATE_CUE_WINDOW), start):
+        if not text.startswith(_PLATE_CUE_BLOCKED_CONTINUATIONS, cue.end()):
+            return True
+    return False
+
+
+# A cue glued straight onto the plate lets [ก-ฮ]{1,3} eat the cue word's own
+# tail consonant ("ทะเบียนรถขก 4471" -> "ถขก 4471"): over-masking, but the
+# wrong left edge. The full cue-word forms locate where the cue really ends so
+# the overlap can be trimmed off the match.
+_PLATE_CUE_TRIM_RE = re.compile(r"ทะเบียน(?:รถ(?:ยนต์|จักรยานยนต์)?)?")
+
+
+def _trim_glued_plate_cue(text: str, start: int, end: int) -> int:
+    """Return the plate start with any glued cue-word overlap removed."""
+    for cue in _PLATE_CUE_TRIM_RE.finditer(text, max(0, start - _PLATE_CUE_WINDOW), end):
+        if cue.start() <= start < cue.end() <= end and _PLATE_LEAD_RE.match(text[cue.end() : end]):
+            return cue.end()
+    return start
+
+
+# The loose plate pattern ([ก-ฮ]{1,3}\s*\d{1,4}) also matches common Thai
+# locality words that are all-consonant and precede a number -- most notably
+# "ซอย N" (Soi/lane N) in addresses. Reject a match whose leading consonant run
+# is such a word; real plate prefixes (กข, ถขก, ...) are not words.
+_PLATE_STOPWORDS = frozenset({"ซอย", "ถนน"})
+# Ministry/agency abbreviations used in Thai government document references
+# ("ที่ ศธ 0521/..."). Uncued plate-shaped matches with these prefixes are
+# document numbers; an explicit plate cue overrides (they are also legal
+# plate letter pairs).
+_MINISTRY_DOC_CODES = frozenset(
+    {
+        "ศธ",
+        "กค",
+        "มท",
+        "นร",
+        "สธ",
+        "กษ",
+        "ตช",
+        "อว",
+        "คค",
+        "ทส",
+        "พณ",
+        "รง",
+        "วธ",
+        "พม",
+        "ยธ",
+        "ดศ",
+        "กต",
+        "กห",
+        "ปช",
+    }
+)
+_PLATE_LEAD_RE = re.compile(r"[ก-ฮ]{1,3}")
+# Look back this many characters. Thai runs words together with no spaces, and
+# the disambiguating cue can sit a whole clause before the number (e.g.
+# "บัญชีธนาคารกสิกรไทย เลขที่ 0731122334"), so the window is generous.
+_CUE_WINDOW = 30
+
+
+# ---------------------------------------------------------------------------
+# Main detector
+# ---------------------------------------------------------------------------
+
+
+def detect_fp(text: str) -> list[Entity]:
+    """
+    Detect format-preserving PII entities in text using regex + checksum.
+
+    Returns list of Entity objects (redact_type="FP", score=1.0).
+    Sorted by span start (ascending).
+    Deduplicated: no overlapping spans (keep highest-score; for same score, keep first).
+    Span chokepoint: reject any span where (end - start) < 2 chars.
+    """
+    candidates: list[Entity] = []
+
+    # 1. THAI_ID
+    for m in _RE_THAI_ID.finditer(text):
+        raw = _SEP_RE.sub("", m.group(1))
+        if len(raw) == 13 and is_valid_thai_id(raw):
+            candidates.append(_make_entity("THAI_ID", m, text, score=1.0))
+
+    # 2. CREDIT_CARD
+    for m in _RE_CREDIT_CARD.finditer(text):
+        raw = _SEP_RE.sub("", m.group(1))
+        if len(raw) == 16 and _luhn_check(raw):
+            candidates.append(_make_entity("CREDIT_CARD", m, text, score=1.0))
+
+    # 3. IBAN
+    for m in _RE_IBAN.finditer(text):
+        if _iban_check(m.group(1)):
+            candidates.append(_make_entity("IBAN", m, text, score=1.0))
+
+    # 4. EMAIL
+    for m in _RE_EMAIL.finditer(text):
+        candidates.append(_make_entity("EMAIL", m, text, score=1.0))
+
+    # 5. PHONE (mobile, landline, international)
+    for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE, _RE_PHONE_INTL):
+        for m in pattern.finditer(text):
+            candidates.append(_make_entity("PHONE", m, text, score=1.0))
+
+    # 6. BANK_ACCOUNT (two patterns). Both shapes match any contiguous
+    # 10-digit run, uncued, at 1.0 — which fabricated a bank account out of
+    # "รหัส <10 digits>" (a coded reference that is anything BUT an account:
+    # the writer just called it a code). When a bare id-introducer directly
+    # precedes the digits, no bank cue is in the window, and the student tiers
+    # produce nothing either, emit the honest ID_NUMBER instead. When the
+    # student tiers DO fire, still emit BANK_ACCOUNT and let
+    # _disambiguate_bank_student resolve the pair by cue distance.
+    # A partially separated match (separators in positions that are neither
+    # the full Thai xxx-x-xxxxx-x layout nor the xxxxxxx-xxx shape) is a
+    # formatted document number, not an account format — "2569-004512" is a
+    # year-prefixed receipt number. Without a bank cue it is demoted to the
+    # honest ID_NUMBER (still masked, per recall-first: an outright rejection
+    # would leave hand-separated real accounts completely unmasked).
+    for pattern in (_RE_BANK_ACCOUNT_1, _RE_BANK_ACCOUNT_2):
+        for m in pattern.finditer(text):
+            start = m.start(1)
+            line_start = text.rfind("\n", 0, start) + 1
+            intro_ctx = text[max(line_start, start - _STUDENT_INTRO_WINDOW) : start]
+            bank_cued = _rightmost_cue(_BANK_CUE_RE, text[max(0, start - _CUE_WINDOW) : start]) >= 0
+            if not bank_cued and (_glued_code_prefix(text, start) or _org_number_cued(text, start)):
+                continue
+            if not bank_cued and _bank_separators_nonstandard(m.group(1)):
+                candidates.append(_make_entity("ID_NUMBER", m, text, score=0.8))
+            elif (
+                not bank_cued
+                and _STUDENT_INTRO_RE.search(intro_ctx)
+                and not _STUDENT_BLOCKER_RE.search(intro_ctx)
+                and _student_evidence(text, start, m.end(1)) is None
+            ):
+                candidates.append(_make_entity("ID_NUMBER", m, text, score=0.8))
+            else:
+                candidates.append(_make_entity("BANK_ACCOUNT", m, text, score=1.0))
+
+    # 7. DATE (generic) / DATE_OF_BIRTH (only with a birth cue nearby)
+    for m in _RE_DATE.finditer(text):
+        raw = m.group(1)
+        parts = re.split(r"[/\-]", raw)
+        if len(parts) == 3:
+            try:
+                # ISO year-first (yyyy-mm-dd) vs day-first (dd-mm-yyyy): a
+                # 4-digit leading field means the day/month are the last two.
+                if len(parts[0]) == 4:
+                    day, month = int(parts[2]), int(parts[1])
+                else:
+                    day, month = int(parts[0]), int(parts[1])
+                if _date_sanity(day, month):
+                    dtype = (
+                        "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
+                    )
+                    candidates.append(_make_entity(dtype, m, text, score=1.0))
+            except ValueError:
+                pass
+
+    # 7b. Thai-month dates, same เกิด-cue routing as the numeric shapes.
+    for m in _RE_DATE_THAI_MONTH.finditer(text):
+        day = int(m.group(1).split(" ", 1)[0])
+        if not 1 <= day <= 31:
+            continue
+        dtype = "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
+        candidates.append(_make_entity(dtype, m, text, score=1.0))
+
+    # 8. VEHICLE_PLATE
+    # Reject matches where the Thai consonants are mid-word (preceded by a Thai
+    # char) -- unless a plate cue (ทะเบียน..., civil-registration compounds
+    # excluded) just before it marks a real plate glued to the label text.
+    # Uncued matches also reject government document references: a slash on
+    # either side ("ที่ ศธ 0521/ว 118") or a ministry abbreviation prefix —
+    # both are หนังสือราชการ numbering, not plates. Uncued matches further
+    # reject prose word-leads (ยอด/ออก/รวม) and digits continuing as
+    # [.,]<digit> — the integer part of a thousands-grouped amount or a clock
+    # time ("ยอด 2,500", "ออก 17.40 น."), never a plate, which is quoted
+    # whole. The cue always wins every uncued guard because ministry codes
+    # and the word-leads are also legal plate letter series ("ทะเบียนรถ
+    # กค 0409" is a real plate).
+    for m in _RE_VEHICLE_PLATE.finditer(text):
+        start = m.start(1)
+        lead = _PLATE_LEAD_RE.match(m.group(1))
+        if lead and lead.group() in _PLATE_STOPWORDS:
+            continue
+        plate_cued = _plate_cue_before(text, start)
+        if start > 0 and _THAI_CHAR_RE.match(text[start - 1]) and not plate_cued:
+            continue
+        if not plate_cued:
+            before = text[:start].rstrip()
+            after = text[m.end(1) :].lstrip()
+            if before.endswith("/") or after.startswith("/"):
+                continue
+            if lead and lead.group() in _MINISTRY_DOC_CODES:
+                continue
+            if lead and lead.group() in _PLATE_UNCUED_LEAD_STOPWORDS:
+                continue
+            nxt = text[m.end(1) : m.end(1) + 2]
+            if len(nxt) == 2 and nxt[0] in ".," and nxt[1].isdigit():
+                continue
+        end = m.end(1)
+        score = _PLATE_SCORE
+        if plate_cued and start > 0 and _THAI_CHAR_RE.match(text[start - 1]):
+            start = _trim_glued_plate_cue(text, start, end)
+        elif (
+            lead is not None
+            and len(lead.group()) == 2
+            and start > 0
+            and text[start - 1].isdigit()
+            and (start < 2 or not text[start - 2].isdigit())
+        ):
+            # New-format plate: a SINGLE digit directly before exactly two
+            # letters is part of the registration ("2กท 8899") and shipped
+            # unmasked — a real partial leak. A digit with more digits behind
+            # it ("25กค ...") is the tail of a longer number and stays out.
+            start -= 1
+            # Re-attaching moves the span left ONTO the digit an earlier
+            # candidate already ate ("รถ 2" in "รถ 2กท 8899"), so the two now
+            # overlap and `_deduplicate`'s earlier-start tiebreak kept the junk
+            # one — the whole registration shipped unmasked (2026-08-04 review,
+            # a regression against base). An earlier candidate can only end on
+            # that digit by mis-parsing the plate's own prefix as its trailing
+            # number, so the re-attached span must outrank it. Still strictly
+            # below the checksum-backed types (1.0), which keep winning.
+            score = _PLATE_REATTACHED_SCORE
+        candidates.append(
+            Entity(
+                entity_id=str(uuid.uuid4()),
+                redact_type="FP",
+                data_type="VEHICLE_PLATE",
+                span=(start, end),
+                score=score,
+                original_text=text[start:end],
+            )
+        )
+
+    # 9. PASSPORT — Thai format always; the general catch-all only with a cue,
+    # otherwise it is a generic reference number (still masked as ID_NUMBER).
+    for m in _RE_PASSPORT_TH.finditer(text):
+        candidates.append(_make_entity("PASSPORT", m, text, score=1.0))
+    for m in _RE_PASSPORT.finditer(text):
+        if _cue_before(_PASSPORT_CUE_RE, text, m.start(1)):
+            candidates.append(_make_entity("PASSPORT", m, text, score=1.0))
+        elif not _glued_code_prefix(text, m.start(1)):
+            candidates.append(_make_entity("ID_NUMBER", m, text, score=0.8))
+
+    # 10. STUDENT_ID when the tiered evidence fires (person cue nearest-wins,
+    # person cue after the digits, or id-introducer + education context);
+    # otherwise the honest generic ID_NUMBER (low priority; dedup handles
+    # overlap).
+    for m in _RE_STUDENT_ID.finditer(text):
+        has_student = _student_evidence(text, m.start(1), m.end(1)) is not None
+        if not has_student and (
+            _glued_code_prefix(text, m.start(1)) or _org_number_cued(text, m.start(1))
+        ):
+            continue
+        dtype = "STUDENT_ID" if has_student else "ID_NUMBER"
+        candidates.append(_make_entity(dtype, m, text, score=0.8))
+
+    # 10b. Dashed student ids ("รหัสนักศึกษา 68-01-4429"): the bare \d{8,12}
+    # run cannot match a separated value, and the TB layer reads the shape as
+    # DATE. Only an explicit student label with nothing but whitespace/colon
+    # between it and the value qualifies — "รหัสนักศึกษา วันที่ 01-02-2568"
+    # must stay a date. The FP candidate then outranks the TB DATE in
+    # dedupe_spans (FP tier first).
+    for m in _RE_STUDENT_ID_DASHED.finditer(text):
+        lead = text[max(0, m.start(1) - 25) : m.start(1)]
+        label = None
+        for lm in _STUDENT_LABEL_RE.finditer(lead):
+            label = lm
+        if label is not None and re.fullmatch(r"[\s:]*", lead[label.end() :]):
+            candidates.append(_make_entity("STUDENT_ID", m, text, score=0.9))
+
+    # 11. ADDRESS components (house number, soi/road, estate, moo). Scored
+    # above the generic numeric catch-alls (0.8) so an address value keeps its
+    # honest ADDRESS label instead of being swallowed as ID_NUMBER, but below
+    # the checksum-backed types (1.0) which must always win an overlap.
+    # House numbers behind a bare "เลขที่" reject N/<Buddhist year> — that is
+    # document numbering (คำสั่งที่ 27/2569); the explicit บ้านเลขที่/ที่อยู่
+    # labels keep the old behavior.
+    # `addr_candidates` feeds two adjacency gates below: the 1-digit
+    # house/moo exemption (a lone digit is address structure only when a
+    # labelled sibling fragment sits nearby) and the province gazetteer.
+    addr_candidates: list[Entity] = []
+    single_digit_addr: list[Entity] = []
+
+    def _addr_candidate(ent: Entity) -> Entity:
+        addr_candidates.append(ent)
+        candidates.append(ent)
+        return ent
+
+    for m in _RE_HOUSE_NO.finditer(text):
+        if m.group(0).startswith("เลขที่") and "/" in m.group(1):
+            tail = m.group(1).split("/")[-1].strip()
+            if tail.isdigit() and 2400 <= int(tail) <= 2699:
+                continue
+        # A value that continues as "-<digit>" is the head of a larger
+        # formatted number ("เลขที่ 2569-004512", a receipt number), not a
+        # house number — leave the digits to the numeric detectors.
+        nxt = text[m.end(1) : m.end(1) + 2]
+        if len(nxt) == 2 and nxt[0] in "-/" and nxt[1].isdigit():
+            continue
+        ent = _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+        # Only the unambiguous house label earns the 1-digit exemption; bare
+        # เลขที่/ที่อยู่ label 1-digit values stay under the floor
+        # ("ใบเสร็จเลขที่ 7", "ผู้เช่าที่อยู่ 5 ปีแล้ว").
+        if m.end(1) - m.start(1) < 2 and m.group(0).startswith("บ้านเลขที่"):
+            single_digit_addr.append(ent)
+    for pattern in (_RE_HOUSE_BEFORE_STREET, _RE_HOUSE_BEFORE_BUILDING):
+        for m in pattern.finditer(text):
+            raw = re.sub(r"\s", "", m.group(1))
+            prefix = text[max(0, m.start() - 20) : m.start()]
+            if raw.isdigit() and 2400 <= int(raw) <= 2699 and _RE_YEAR_PREFIX.search(prefix):
+                continue
+            _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+    for pattern in (_RE_SOI_ROAD, _RE_ESTATE):
+        for m in pattern.finditer(text):
+            _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+    for m in _RE_MOO.finditer(text):
+        ent = _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+        # หมู่/หมู่ที่ only — the ม. abbreviation also writes school grades
+        # ("ชั้น ม.5") and stays under the floor.
+        if m.end(1) - m.start(1) < 2 and m.group(0).startswith("หมู่"):
+            single_digit_addr.append(ent)
+    admin_value_spans: list[tuple[int, int]] = []
+    for m in _RE_ADMIN_AREA.finditer(text):
+        # A label glued to a preceding Thai word is compound prose
+        # ("ต่างจังหวัด", "ในเขต...") and may not capture across a newline —
+        # the next line's first word is a new context, not the label's value.
+        # A label standing alone keeps the newline reach: forms put the label
+        # and value on separate lines.
+        if (
+            m.start() > 0
+            and _THAI_CHAR_RE.match(text[m.start() - 1])
+            and "\n" in text[m.start() : m.start(1)]
+        ):
+            continue
+        _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+        admin_value_spans.append((m.start(1), m.end(1)))
+
+    # 11b. Province gazetteer (closed 77-entry national list): a bare province
+    # name ends most Thai addresses and no label keys it. Standalone (no Thai
+    # letter glued on either side) and only within a short same-line window
+    # AFTER an admin-area capture — a province in prose never fires. Provinces
+    # do not anchor each other, so an enumeration cannot cascade. Without an
+    # anchor nothing can be accepted, so the 77-way scan is skipped outright —
+    # it was the measurable share of the restore path's Layer-1 rescan cost.
+    for m in _RE_PROVINCE.finditer(text) if admin_value_spans else ():
+        s, t = m.start(1), m.end(1)
+        if s > 0 and _THAI_LETTER_RE.match(text[s - 1]):
+            continue
+        if t < len(text) and _THAI_LETTER_RE.match(text[t]):
+            continue
+        if any(e.span[0] < t and s < e.span[1] for e in addr_candidates):
+            continue
+        if any(
+            0 <= s - a_end <= _PROVINCE_ADJACENCY_WINDOW and "\n" not in text[a_end:s]
+            for _, a_end in admin_value_spans
+        ):
+            _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+
+    # 12. POSTAL_CODE — only with an address cue in front (see _RE_POSTAL_CODE).
+    # A run of >=3 five-digit groups chained by nothing but enumeration glue
+    # is a coverage list (service-area postcodes), not the tail of an address
+    # — one address ends in exactly one postcode. Runs are built by ADJACENT
+    # gluing, so Thai words between codes (three drop-off addresses on one
+    # courier line) break the chain and every real code stays claimed.
+    # Matches are collected once from the full text, which also keeps the
+    # (?<!\d)/(?!\d) boundaries honest — an endpos-bounded rescan truncated a
+    # six-digit neighbor into a phantom five-digit sibling (review finding).
+    postal_matches = list(_RE_POSTAL_CODE.finditer(text))
+    run_lengths: list[int] = []
+    run_len = 1
+    for prev, cur in zip(postal_matches, postal_matches[1:]):
+        gap = text[prev.end(1) : cur.start(1)]
+        if len(gap) <= _POSTAL_SIBLING_WINDOW and _POSTAL_GLUE_RE.fullmatch(gap):
+            run_len += 1
+        else:
+            run_lengths.extend([run_len] * run_len)
+            run_len = 1
+    run_lengths.extend([run_len] * run_len)
+    for m, run in zip(postal_matches, run_lengths):
+        if run >= 3:
+            continue
+        ctx = text[max(0, m.start(1) - _POSTAL_CUE_WINDOW) : m.start(1)]
+        if not _POSTAL_CUE_RE.search(ctx):
+            continue
+        _addr_candidate(_make_entity("POSTAL_CODE", m, text, score=0.85))
+
+    # A 1-digit house/moo value survives the 2-char floor only with a sibling
+    # address fragment nearby — "บ้านเลขที่ 7 หมู่ที่ 9 ต.แม่เหียะ" is address
+    # structure; a lone "ทหารหมู่ 5" is not.
+    single_char_ok: set[tuple[int, int]] = set()
+    for ent in single_digit_addr:
+        s, t = ent.span
+        for other in addr_candidates:
+            if other is ent:
+                continue
+            if (
+                other.span[0] - t <= _ADDR_SIBLING_WINDOW
+                and s - other.span[1] <= _ADDR_SIBLING_WINDOW
+            ):
+                single_char_ok.add(ent.span)
+                break
+
+    # 13. MEDICAL_ID (HN) — cue-gated, so the label is earned rather than assumed.
+    for m in _RE_MEDICAL_ID.finditer(text):
+        candidates.append(_make_entity("MEDICAL_ID", m, text, score=0.9))
+
+    candidates = _disambiguate_bank_student(text, candidates)
+    candidates = _disambiguate_bank_phone(text, candidates)
+    return _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))

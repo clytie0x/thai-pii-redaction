@@ -4,7 +4,7 @@ Six small generic changes that let a hosted port run the same core:
 AIGUARD_ALLOWED_HOSTS, AIGUARD_PROVIDERS, the acceptance-script header fix,
 the audit-dir boot check, AIGUARD_AUDIT_STDOUT, and the redact-pdf/text work
 caps. Env-driven import-time behavior is tested in a subprocess so this
-process's `app.server` module stays untouched.
+process's `thaiguard.server.server` module stays untouched.
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 
-from app import server
-from app.server import app
+from thaiguard.server import server
+from thaiguard.server.server import app
 
 ROOT = Path(__file__).resolve().parent.parent
 V2_HEADERS = {"X-AIGuard-Contract-Version": "2"}
@@ -40,7 +40,7 @@ def test_parse_csv_env_splits_strips_and_drops_empties():
 
 
 def test_default_trusted_hosts_unchanged_when_env_unset(client):
-    # this process imported app.server without the env var -> exact old default
+    # this process imported thaiguard.server.server without the env var -> exact old default
     assert client.get("/api/health").status_code == 200
     foreign = TestClient(app, base_url="http://evil.example")
     assert foreign.get("/api/health").status_code == 400
@@ -53,7 +53,7 @@ def test_env_allowed_host_is_accepted_in_fresh_process():
         "import os\n"
         "os.environ['AIGUARD_ALLOWED_HOSTS'] = 'team08.aiforthai.in.th'\n"
         "from fastapi.testclient import TestClient\n"
-        "from app.server import app\n"
+        "from thaiguard.server.server import app\n"
         "c = TestClient(app, base_url='http://team08.aiforthai.in.th')\n"
         "assert c.get('/api/health').status_code == 200\n"
         "local = TestClient(app, base_url='http://localhost')\n"
@@ -73,7 +73,7 @@ def test_provider_allowlist_env_narrows_surface_in_fresh_process():
         "import os\n"
         "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
         "from fastapi.testclient import TestClient\n"
-        "from app.server import app\n"
+        "from thaiguard.server.server import app\n"
         "c = TestClient(app, base_url='http://localhost')\n"
         "h = {'X-AIGuard-Contract-Version': '2'}\n"
         "r = c.post('/api/roundtrip', headers=h, json={'text': 'ทดสอบข้อความธรรมดา', 'mode': 'token', 'provider': 'tokenmind'})\n"
@@ -94,7 +94,7 @@ def test_unknown_provider_name_fails_the_boot_loudly():
         "import os\n"
         "os.environ['AIGUARD_PROVIDERS'] = 'typo_provider'\n"
         "try:\n"
-        "    import app.server\n"
+        "    import thaiguard.server.server\n"
         "except ValueError as e:\n"
         "    assert 'typo_provider' in str(e)\n"
         "    print('BOOT_REFUSED')\n"
@@ -125,7 +125,7 @@ def test_hosted_adapter_exposes_only_allowlisted_v2_routes():
         "os.environ['AIGUARD_API_KEY'] = 'synthetic-hosted-key'\n"
         "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
         "from fastapi.testclient import TestClient\n"
-        "from app.hosted import app\n"
+        "from thaiguard.server.hosted import app\n"
         "paths = {getattr(route, 'path', None) for route in app.routes}\n"
         "expected = {'/api/health', '/api/detect', '/api/analyze', '/api/guard', '/api/sanitize', '/api/reidentify', '/api/roundtrip'}\n"
         "assert paths == expected, paths\n"
@@ -157,7 +157,7 @@ def test_hosted_explicit_tner_missing_configuration_fails_closed():
         "os.environ['AIGUARD_NER_ENGINE'] = 'tner'\n"
         "os.environ.pop('AIFORTHAI_API_KEY', None)\n"
         "from fastapi.testclient import TestClient\n"
-        "from app.hosted import app\n"
+        "from thaiguard.server.hosted import app\n"
         "c = TestClient(app, base_url='http://localhost')\n"
         "h = {'X-AIGuard-Contract-Version': '2', 'X-AIGuard-Key': 'synthetic-hosted-key'}\n"
         "r = c.post('/api/detect', headers=h, json={'text': 'ข้อความทดสอบ'})\n"
@@ -184,7 +184,7 @@ def test_hosted_adapter_refuses_missing_authority_or_provider_policy(missing_nam
         "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
         f"os.environ.pop({missing_name!r})\n"
         "try:\n"
-        "    import app.hosted\n"
+        "    import thaiguard.server.hosted\n"
         "except RuntimeError as error:\n"
         f"    assert {missing_name!r} in str(error)\n"
         "    print('BOOT_REFUSED')\n"
@@ -209,10 +209,10 @@ def test_hosted_adapter_refuses_effectively_empty_provider_policy(provider_polic
         "os.environ['AIGUARD_API_KEY'] = 'synthetic-hosted-key'\n"
         f"os.environ['AIGUARD_PROVIDERS'] = {provider_policy!r}\n"
         "try:\n"
-        "    import app.hosted\n"
+        "    import thaiguard.server.hosted\n"
         "except RuntimeError as error:\n"
         "    assert 'AIGUARD_PROVIDERS' in str(error)\n"
-        "    assert 'app.server' not in sys.modules\n"
+        "    assert 'thaiguard.server.server' not in sys.modules\n"
         "    print('BOOT_REFUSED')\n"
         "else:\n"
         "    print('BOOT_ACCEPTED')\n"
@@ -230,7 +230,7 @@ def test_hosted_adapter_refuses_effectively_empty_provider_policy(provider_polic
 
 # ── audit stdout mode ──────────────────────────────────────────────────
 def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path, capsys):
-    from pii_redactor.audit import write_process_log
+    from thaiguard.engine.audit import write_process_log
 
     monkeypatch.setenv("AIGUARD_AUDIT_STDOUT", "1")
     path = write_process_log(
@@ -250,7 +250,7 @@ def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path,
 
 
 def test_audit_file_mode_unchanged_without_env(monkeypatch, tmp_path):
-    from pii_redactor.audit import write_security_log
+    from thaiguard.engine.audit import write_security_log
 
     monkeypatch.delenv("AIGUARD_AUDIT_STDOUT", raising=False)
     path = write_security_log(

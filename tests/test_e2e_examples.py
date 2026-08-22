@@ -16,7 +16,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    from app.server import app
+    from thaiguard.server.server import app
 
     DEPS = True
 except ImportError:
@@ -32,7 +32,7 @@ PROMPTS = sorted((EXAMPLES / "prompts").glob("*.txt"))
 def client():
     from fastapi.testclient import TestClient
 
-    from app.server import app
+    from thaiguard.server.server import app
 
     return TestClient(
         app,

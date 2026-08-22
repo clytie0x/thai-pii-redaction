@@ -7,7 +7,7 @@ invisible/shaped layers corrupt pdfplumber's character-position sort), a
 fixture values.
 
 All PII values below are fabricated. The Thai national id is computed to pass
-the real mod-11 checksum (see pii_redactor.detectors.thai_id.is_valid_thai_id)
+the real mod-11 checksum (see thaiguard.engine.detectors.thai_id.is_valid_thai_id)
 so the FP detector actually fires on it, matching tests/test_dsar.py.
 """
 
@@ -16,9 +16,9 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 
-from pii_redactor.dsar import locate_subject
-from pii_redactor.dsar_pdf import render_dsar_pdf
-from pii_redactor.thai_pdf_text import register_thai_font
+from thaiguard.engine.dsar import locate_subject
+from thaiguard.engine.dsar_pdf import render_dsar_pdf
+from thaiguard.engine.thai_pdf_text import register_thai_font
 
 requires_thai_font = pytest.mark.skipif(
     register_thai_font() == "Helvetica",

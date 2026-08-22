@@ -7,7 +7,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    import app.server as server
+    import thaiguard.server.server as server
 
     DEPS = True
 except ImportError:
@@ -315,7 +315,7 @@ def test_unset_api_key_emits_pii_free_warning(monkeypatch, caplog):
     monkeypatch.setattr(server, "_API_KEY", None)
     caplog.clear()
 
-    with caplog.at_level(logging.WARNING, logger="app.server"):
+    with caplog.at_level(logging.WARNING, logger="thaiguard.server.server"):
         server._warn_if_api_key_unset()
 
     assert "AIGUARD_API_KEY is not configured" in caplog.text
@@ -327,7 +327,7 @@ def test_configured_api_key_emits_no_warning(monkeypatch, caplog):
     monkeypatch.setattr(server, "_API_KEY", API_KEY)
     caplog.clear()
 
-    with caplog.at_level(logging.WARNING, logger="app.server"):
+    with caplog.at_level(logging.WARNING, logger="thaiguard.server.server"):
         server._warn_if_api_key_unset()
 
     assert caplog.text == ""

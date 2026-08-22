@@ -22,7 +22,7 @@ from benchmark.gold import (
 )
 from benchmark.runner import run_benchmark
 from benchmark.scorer import score
-from pii_redactor.detectors.fp_detector import detect_fp
+from thaiguard.engine.detectors.fp_detector import detect_fp
 
 _TITLE_CUES = ("นาย", "นาง", "นางสาว", "น.ส.", "ด.ช.", "ด.ญ.", "เด็กชาย", "เด็กหญิง")
 _INTRO_CUES = ("ลงชื่อ", "ผมชื่อ", "ดิฉันชื่อ", "ชื่อ")

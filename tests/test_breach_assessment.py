@@ -1,4 +1,4 @@
-"""Tests for pii_redactor/breach.py — the breach-assessment aggregation core.
+"""Tests for thaiguard/engine/breach.py — the breach-assessment aggregation core.
 
 All PII values below are fabricated. Thai national ids are computed to pass
 the real mod-11 checksum (see `is_valid_thai_id`) so the FP detector actually
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from pii_redactor.breach import (
+from thaiguard.engine.breach import (
     NoFilesAssessedError,
     _canonical_value,
     _max_risk_grade,
@@ -19,7 +19,7 @@ from pii_redactor.breach import (
 )
 
 # Fabricated, checksum-valid Thai national ids (verified against
-# pii_redactor.detectors.thai_id.is_valid_thai_id).
+# thaiguard.engine.detectors.thai_id.is_valid_thai_id).
 ID_A = "1101700230708"
 ID_B = "1101200012345"
 ID_C = "3101999123453"

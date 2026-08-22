@@ -9,8 +9,8 @@ import re
 
 import pytest
 
-from pii_redactor.reverse_mapper import count_foreign_tokens
-from pii_redactor.stateless import restore_stateless
+from thaiguard.engine.reverse_mapper import count_foreign_tokens
+from thaiguard.engine.stateless import restore_stateless
 
 _BRACKET_TOKEN = re.compile(r"\[[^\[\]\r\n]{1,128}\]")
 
@@ -87,7 +87,7 @@ class TestFlagFlow:
         assert not any(w.startswith("foreign_tokens:") for w in out.warnings)
 
     def test_flag_not_filtered_by_session_service_noisy_prefixes(self):
-        from pii_redactor.session_service import _NOISY_PREFIXES
+        from thaiguard.engine.session_service import _NOISY_PREFIXES
 
         assert not "foreign_tokens:9".startswith(_NOISY_PREFIXES)
 
@@ -106,7 +106,7 @@ class TestSessionReidentifyForeignTokens:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from app.server import app
+        from thaiguard.server.server import app
 
         return TestClient(
             app,
@@ -166,7 +166,7 @@ class TestEmptyMappingRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from app import server
+        from thaiguard.server import server
 
         monkeypatch.setitem(
             server._PROVIDER_FACTORIES,
@@ -199,7 +199,7 @@ class TestEmptyMappingRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from app import server
+        from thaiguard.server import server
 
         monkeypatch.setitem(
             server._PROVIDER_FACTORIES,

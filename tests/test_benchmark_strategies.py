@@ -9,7 +9,7 @@ import pytest
 from benchmark.gold import load_gold
 from benchmark.runner import render_strategy_table, run_strategy_comparison
 from benchmark.strategies import route_entities, union_entities
-from pii_redactor.models import Entity
+from thaiguard.engine.models import Entity
 
 
 def _ent(dtype, span, redact="TB", score=0.85):
