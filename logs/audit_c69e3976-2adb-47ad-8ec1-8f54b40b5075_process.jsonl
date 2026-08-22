@@ -1,1 +1,0 @@
-{"type": "process", "session_id": "c69e3976-2adb-47ad-8ec1-8f54b40b5075", "step": "api_redact_pdf", "timestamp": 1787325554.623344, "entity_count": 1, "validation_result": "pass", "flags": ["source_type:pdf_hybrid"], "latency_ms": 125.63252449035645}

@@ -1,1 +1,0 @@
-{"type": "process", "session_id": "5731157f-a436-4954-902e-a41cd8d3a7ac", "step": "api_sanitize", "timestamp": 1787322585.198736, "entity_count": 0, "validation_result": "blocked", "flags": ["leak_type:PHONE"], "latency_ms": 2.5014877319335938}

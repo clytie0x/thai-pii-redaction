@@ -1,1 +1,0 @@
-{"type": "process", "session_id": "f29d94d3-084a-4868-bc11-1807c0833adb", "step": "api_roundtrip", "timestamp": 1787325984.9484303, "entity_count": 3, "validation_result": "pass", "flags": ["provider:transient-500"], "latency_ms": 29.79898452758789}

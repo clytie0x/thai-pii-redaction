@@ -1,1 +1,0 @@
-{"type": "process", "session_id": "1c74db47-f40b-4fa5-bb4a-e5f4217abe34", "step": "api_sanitize", "timestamp": 1787322727.838685, "entity_count": 0, "validation_result": "blocked", "flags": ["leak_type:IBAN"], "latency_ms": 3.6394596099853516}
