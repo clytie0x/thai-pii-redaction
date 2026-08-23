@@ -4,6 +4,9 @@ Returns CHARACTER-OFFSET spans from the fast tokenizer's offset mapping (the
 word/BIO ``.tag()`` reconstruction was built for PyThaiNLP, not subword models).
 Weights live outside the repo (``AMPRANG_FINETUNED_MODEL_DIR``); long inputs use a
 token-window stride since a product chunk plus margins can exceed the model window.
+The training lane (train.py, generate_data.py, calibrate_thresholds.py, label space,
+threshold calibration) stays in the predecessor repo's ``training/``:
+https://github.com/Teerapat-Vatpitak/thai-pii-redaction/tree/main/training
 """
 
 from __future__ import annotations

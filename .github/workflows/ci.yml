@@ -66,3 +66,37 @@ jobs:
       - run: python scripts/prewarm_ner.py
       - run: python -c "import amprang; print(amprang.__version__)"
       - run: python -m pytest -q
+
+  # The Dockerfile is the only artifact that packages [server] for a host;
+  # build it, confirm the no-key start is refused, and that a keyed start
+  # answers /api/health and masks a request.
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: docker build -t amprang-ci .
+      - name: No key -> refuses to bind
+        run: |
+          set +e
+          out=$(docker run --rm amprang-ci 2>&1)
+          code=$?
+          set -e
+          echo "$out"
+          test $code -ne 0
+          echo "$out" | grep -q "without AMPRANG_API_KEY"
+      - name: Keyed -> health and sanitize
+        run: |
+          docker run -d --rm --name amprang-ci -p 8000:8000 -e AMPRANG_API_KEY=ci-key amprang-ci
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8000/api/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:8000/api/health | grep -q '"status":"ok"'
+          body=$(curl -s -X POST http://127.0.0.1:8000/api/sanitize \
+            -H 'Content-Type: application/json' -H 'X-Amprang-Contract-Version: 2' -H 'X-Amprang-Key: ci-key' \
+            --data-binary '{"text":"ผมชื่อสมชาย ใจดี เบอร์ 081-234-5678","mode":"token"}')
+          echo "$body"
+          echo "$body" | grep -q '"PHONE":1'
+          echo "$body" | grep -q '"NAME":1'
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8000/api/sanitize \
+            -H 'Content-Type: application/json' -H 'X-Amprang-Contract-Version: 2' \
+            --data-binary '{"text":"x","mode":"token"}')
+          test "$code" = "401"
+          docker stop amprang-ci

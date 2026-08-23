@@ -15,7 +15,9 @@ First release of amprang, extracted from
 [thai-pii-redaction](https://github.com/Teerapat-Vatpitak/thai-pii-redaction)
 (AI Guard 3.0.0). The detection engine, the gold benchmark corpus, and the
 PDPA tooling carried over; the browser-extension, desktop, and native-broker
-storefronts did not.
+storefronts did not. History before the extraction (1.x–3.0.0) lives in
+[that repository's CHANGELOG](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/blob/main/CHANGELOG.md)
+and is not repeated here.
 
 ### Added
 
@@ -42,6 +44,11 @@ storefronts did not.
   agreement (`scripts/check_release.py`), builds and smoke-tests the wheel,
   publishes to PyPI via trusted publishing, and creates the GitHub Release.
   CI runs on Ubuntu and Windows plus a core-only (no extras) install.
+- `Dockerfile` for `amprang[server]`: non-root, model pre-warmed at build,
+  refuses to start without `AMPRANG_API_KEY`; CI builds and smoke-tests it.
+- `docs/standards-mapping.md` (ISO/IEC 20889 and มรด. 6:2566 correspondence),
+  `scripts/blind_freeze.py` carried over from
+  the predecessor; `.pre-commit-config.yaml`, `.editorconfig`.
 
 ### Changed
 

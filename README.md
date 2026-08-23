@@ -84,6 +84,14 @@ leaves the machine. (`--no-browser`, `--no-demo`, `--port` available; a
 non-loopback bind requires an explicit `--allow-remote` **and**
 `AMPRANG_API_KEY`, so the data plane is never silently open to a network.)
 
+For a host instead of a laptop, the repository's `Dockerfile` packages the
+same server; it refuses to start without `AMPRANG_API_KEY` (the data plane is
+never silently open):
+
+```
+docker build -t amprang . && docker run --rm -p 8000:8000 -e AMPRANG_API_KEY=change-me amprang
+```
+
 ## MCP server (for AI agents)
 
 `pip install amprang[mcp]` adds `amprang-mcp` — the same guard as a Model
