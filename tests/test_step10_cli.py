@@ -1,4 +1,4 @@
-"""Tests for CLI: cli.py and demo_cli.py."""
+"""Tests for CLI: cli.py."""
 
 import pytest
 
@@ -101,14 +101,6 @@ def test_ai_guard_argparse_help():
     assert hasattr(cli, "main")
     assert hasattr(cli, "cmd_sanitize")
     assert hasattr(cli, "cmd_report")
-
-
-def test_demo_cli_imports():
-    """demo_cli.py should import cleanly."""
-    import demo_cli
-
-    assert hasattr(demo_cli, "main")
-    assert callable(demo_cli.main)
 
 
 def test_ai_guard_sanitize_with_phone_number(tmp_path, capsys):

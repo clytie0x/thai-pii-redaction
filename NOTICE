@@ -3,45 +3,54 @@ Copyright 2026 Amprang contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-This product bundles or depends on the following third-party components,
-each under its own permissive license:
+The name "Amprang" and any associated logos are not covered by the Apache
+License (see Section 6, Trademarks). Forks and derived works may use the
+code under Apache-2.0 but may not present themselves as Amprang.
+
+This product depends on the following third-party components, each under its
+own permissive license (none is redistributed inside this package; pip
+installs them from their own distributions):
 
 - pypdfium2 (Apache-2.0 / BSD-3-Clause) — wraps Google PDFium (BSD-3-Clause),
   used for PDF page rendering and text extraction.
 - reportlab (BSD-3-Clause) — used to build PDF output.
+- uharfbuzz (Apache-2.0) — HarfBuzz shaping so stacked Thai marks render
+  correctly in generated PDFs.
 - pdfplumber (MIT) — used for text-layer word bounding boxes.
-- Pillow (HPND / MIT-CMU) — image drawing for redaction.
+- Pillow (MIT-CMU) — image drawing for redaction.
 - PyThaiNLP (Apache-2.0) — Thai tokenization and NER library code.
 - python-crfsuite (MIT) — CRF sequence labeling for the thainer NER engine.
+- regex (Apache-2.0 AND CNRI-Python) — Unicode-aware pattern matching.
+- httpx (BSD-3-Clause) — HTTP client for the optional LLM providers.
 
-The packaged desktop build (Amprang.exe) additionally bundles a trained model
-file, which is licensed separately from the PyThaiNLP library above and requires
-attribution:
+NER model (downloaded by PyThaiNLP on first use, not bundled in this package):
 
 - Thai NER model `thai-ner-1-4.crfsuite` (Creative Commons Attribution 4.0
   International, CC BY-4.0) — Copyright Wannaphong Phatthiyaphaibun.
   Source: https://github.com/wannaphong/thai-ner/
   License: https://creativecommons.org/licenses/by/4.0/
-  The file is redistributed unmodified; its SHA256 is pinned in
-  scripts/build_sidecar.py.
+  Deployments that redistribute the model file must carry this attribution.
 
-Bundled fonts (self-hosted WOFF2 in desktop/src/fonts/ and extension/fonts/,
-used for the application UI; TrueType in pii_redactor/fonts/, used to draw Thai
-text into generated PDFs):
-- IBM Plex Sans Thai Looped (SIL Open Font License 1.1) — Copyright 2017 IBM Corp.
-- IBM Plex Mono (SIL Open Font License 1.1) — Copyright 2017 IBM Corp.
+Bundled font (amprang/engine/fonts/, used to draw Thai text into generated
+PDFs — PDPA report, processing receipt, breach and DSAR artifacts):
+
+- IBM Plex Sans Thai Looped (SIL Open Font License 1.1) — Copyright 2017 IBM
+  Corp. with Reserved Font Name "Plex".
   Source: https://github.com/IBM/plex
-  License text: licenses/OFL-1.1.txt (OFL-1.1 requires the license to travel
-  with the font files).
-  pii_redactor/fonts/IBMPlexSansThaiLooped-Regular.ttf is the same face in a
-  container reportlab can read, converted from the WOFF2 already vendored here
-  (desktop/src/fonts/IBMPlexSansThaiLooped-Regular.woff2, SHA-256
-  893f879fdc6ad2a1e4d09a6210f161bf0b132d9d266078f322441ec289572905). Container
-  change only — the design, the name table and all 520 glyphs are unmodified.
+  License text: amprang/engine/fonts/OFL-1.1.txt (OFL-1.1 requires the
+  license to travel with the font file; it ships inside the wheel).
+  The TTF is the upstream face converted from WOFF2 to a container reportlab
+  can read — container change only; the design, the name table and all 520
+  glyphs are unmodified.
 
-Optional components (installed separately, not part of the core distribution):
-- sentence-transformers / torch — optional semantic Section-26 detector.
-- paddleocr / paddlepaddle / opencv — optional scanned-PDF OCR.
+Optional components (installed separately via extras, not part of the core
+distribution):
 
-PyMuPDF (AGPL) is NO LONGER used; it was replaced by the permissive libraries
-above so this project can be distributed under the Apache-2.0 license.
+- fastapi / uvicorn / python-multipart (`amprang[server]`) — local HTTP server.
+- mcp (`amprang[mcp]`) — Model Context Protocol server.
+- torch / transformers / sentencepiece / sentence-transformers (`amprang[ml]`)
+  — optional WangchanBERTa NER engine and semantic Section-26 detector.
+- paddleocr / paddlepaddle (`amprang[ocr]`) — optional scanned-PDF OCR.
+
+PyMuPDF (AGPL) is NOT used; it was replaced by the permissive libraries above
+so this project can be distributed under the Apache-2.0 license.

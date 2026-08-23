@@ -63,8 +63,10 @@ packages = [
 # The Thai font travels with the package: a `pip install` user renders the
 # PDPA report and the processing receipt too, and without it Thai comes out
 # as black boxes wherever the machine has no Thai-capable TTF of its own.
+# The font is SIL OFL-1.1, which requires its license text to travel with the
+# font file, so OFL-1.1.txt ships alongside it.
 [tool.setuptools.package-data]
-"amprang.engine" = ["fonts/*.ttf"]
+"amprang.engine" = ["fonts/*.ttf", "fonts/OFL-1.1.txt"]
 "amprang.server" = ["demo/*.html"]
 
 [tool.pytest.ini_options]
