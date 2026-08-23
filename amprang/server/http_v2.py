@@ -231,6 +231,8 @@ _SECTION26_ORDER = (
     "CRIMINAL_RECORD",
     "DISABILITY",
     "LABOR_UNION",
+    "GENETIC",
+    "BIOMETRIC",
 )
 RECOMMENDATION_TEMPLATES = {
     "direct": {
@@ -387,6 +389,8 @@ class SanitizeResponse(StrictDTO):
             "CRIMINAL_RECORD",
             "DISABILITY",
             "LABOR_UNION",
+            "GENETIC",
+            "BIOMETRIC",
         ]
     ]
     guard_findings: list[GuardFinding]
@@ -445,6 +449,8 @@ class RoundtripResponse(StrictDTO):
             "CRIMINAL_RECORD",
             "DISABILITY",
             "LABOR_UNION",
+            "GENETIC",
+            "BIOMETRIC",
         ]
     ]
     guard_findings: list[GuardFinding]
@@ -562,6 +568,8 @@ class AnalyzeResponse(StrictDTO):
             "CRIMINAL_RECORD",
             "DISABILITY",
             "LABOR_UNION",
+            "GENETIC",
+            "BIOMETRIC",
         ]
     ]
     reidentification: ReidProjection
@@ -654,6 +662,8 @@ class RedactPdfResponse(StrictDTO):
             "CRIMINAL_RECORD",
             "DISABILITY",
             "LABOR_UNION",
+            "GENETIC",
+            "BIOMETRIC",
         ]
     ]
     redacted_pdf_b64: str

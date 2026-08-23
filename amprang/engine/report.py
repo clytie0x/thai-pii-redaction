@@ -31,6 +31,12 @@ _SECTION26_KEYWORDS = {
     "CRIMINAL_RECORD": re.compile(r"(?:คดี|ต้องโทษ|จำคุก|ประวัติอาชญากรรม|ถูกฟ้อง)", re.UNICODE),
     "DISABILITY": re.compile(r"(?:ทุพพลภาพ|ความพิการ|คนพิการ)", re.UNICODE),
     "LABOR_UNION": re.compile(r"(?:สหภาพแรงงาน|สมาคมลูกจ้าง)", re.UNICODE),
+    # "ยีน(?!ส์)" keeps the gene keyword from matching ยีนส์ (jeans).
+    "GENETIC": re.compile(r"(?:พันธุกรรม|ดีเอ็นเอ|DNA|จีโนม|โครโมโซม|ยีน(?!ส์))", re.UNICODE),
+    "BIOMETRIC": re.compile(
+        r"(?:ข้อมูลชีวภาพ|ชีวมิติ|ไบโอเมตริก|ลายนิ้วมือ|ม่านตา|สแกน(?:ใบหน้า|นิ้ว)|จดจำใบหน้า)",
+        re.UNICODE,
+    ),
 }
 
 

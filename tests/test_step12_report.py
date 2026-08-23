@@ -63,6 +63,44 @@ def test_generate_report_section26_religion():
     assert "RELIGION" in result.section26_flags
 
 
+def test_generate_report_section26_genetic():
+    text = "ผลตรวจดีเอ็นเอยืนยันความสัมพันธ์ทางสายเลือด"
+    result = generate_report(text)
+    assert "GENETIC" in result.section26_flags
+
+
+def test_generate_report_section26_biometric():
+    text = "อาคารนี้ต้องสแกนลายนิ้วมือก่อนเข้า"
+    result = generate_report(text)
+    assert "BIOMETRIC" in result.section26_flags
+
+
+def test_section26_genetic_keyword_ignores_jeans():
+    # "ยีนส์" (jeans) must not trip the gene keyword "ยีน".
+    result = generate_report("เขาใส่กางเกงยีนส์ตัวโปรดไปทำงาน")
+    assert "GENETIC" not in result.section26_flags
+
+
+def test_section26_covers_all_ten_statutory_categories():
+    """PDPA Section 26 enumerates ten sensitive-data categories; the keyword
+    scan must know every one of them, so a missing category is a test failure
+    rather than a silent legal-coverage gap."""
+    from amprang.engine.report import _SECTION26_KEYWORDS
+
+    assert set(_SECTION26_KEYWORDS) == {
+        "RACE_ETHNICITY",
+        "POLITICAL_OPINION",
+        "RELIGION",
+        "SEXUAL_BEHAVIOR",
+        "CRIMINAL_RECORD",
+        "HEALTH",
+        "DISABILITY",
+        "LABOR_UNION",
+        "GENETIC",
+        "BIOMETRIC",
+    }
+
+
 def test_generate_report_recommendations_not_empty_with_pii():
     text = "โทรหา 081-234-5678"
     result = generate_report(text)

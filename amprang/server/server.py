@@ -693,6 +693,8 @@ _SECTION26_CATEGORIES = (
     "CRIMINAL_RECORD",
     "DISABILITY",
     "LABOR_UNION",
+    "GENETIC",
+    "BIOMETRIC",
 )
 _GUARD_CATEGORIES = {
     "instruction_override",
