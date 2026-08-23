@@ -38,6 +38,10 @@ storefronts did not.
   so Thai renders in generated PDFs on machines without a Thai-capable TTF.
 - Decision records: Python owns all logic (0001), the product is one pip
   package (0002), MCP tools never return the mapping (0003).
+- Release pipeline: `release.yml` gates a `v*` tag on VERSION/CHANGELOG
+  agreement (`scripts/check_release.py`), builds and smoke-tests the wheel,
+  publishes to PyPI via trusted publishing, and creates the GitHub Release.
+  CI runs on Ubuntu and Windows plus a core-only (no extras) install.
 
 ### Changed
 
@@ -47,6 +51,10 @@ storefronts did not.
 
 ### Fixed
 
+- PDPA artifacts (receipt, breach assessment, DSAR) record the installed
+  package version instead of `"unknown"` when amprang is a pip-installed
+  wheel; one shared `amprang.engine.environment` replaces three private
+  copies.
 - `anonymize` and `Session.anonymize` normalize Thai digits before detection
   so a Thai-numeral phone number is masked instead of passing through
   silently (independent review, 2026-08-21).
@@ -58,6 +66,8 @@ storefronts did not.
 - Native-broker and private-backend code paths; the vault lives in the
   process that uses it.
 - `demo_cli.py`; use the `amprang` CLI or `amprang serve` instead.
+- PyInstaller frozen-executable lookups (`sys._MEIPASS`, `%APPDATA%` log
+  dir) left over from the predecessor's desktop build.
 
 [Unreleased]: https://github.com/Teerapat-Vatpitak/amprang/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Teerapat-Vatpitak/amprang/releases/tag/v0.1.0

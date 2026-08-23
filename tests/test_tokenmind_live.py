@@ -1,8 +1,7 @@
 """Live smoke against the real Tokenmind endpoint. Skipped without env.
 
-A skip is NOT passing evidence (spec test 13) -- the recorded acceptance path
-is scripts/run_acceptance.py --live-tokenmind, whose evidence file reports
-`blocked` when the credentials are absent instead of green.
+A skip is NOT passing evidence: a green run needs TOKENMIND_BASE_URL and
+TOKENMIND_API_KEY set, so treat a skipped run as "not exercised".
 """
 
 import os

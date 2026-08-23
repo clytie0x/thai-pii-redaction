@@ -183,8 +183,8 @@ class TokenmindProvider(AIProvider):
     Requires TOKENMIND_BASE_URL (must end in /v1; https unless
     TOKENMIND_ALLOW_HTTP=1) and TOKENMIND_API_KEY. Model is hardcoded: the
     gateway has exactly one text model, and an env override would invite
-    pointing it at the ptm-tts-1/ptm-asr-1 audio models. Spec:
-    docs/superpowers/specs/2026-07-27-tokenmind-provider-design.md.
+    pointing it at the ptm-tts-1/ptm-asr-1 audio models. See
+    docs/decisions/2026-07-28-tokenmind-detector-and-aift-port.md.
     """
 
     MODEL = "thaillm-8b"

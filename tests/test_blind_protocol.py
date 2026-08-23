@@ -229,11 +229,9 @@ def test_llm_benchmark_paths_never_reference_blind():
         "benchmark/llm_strategy.py",
         "benchmark/llm_providers.py",
         "scripts/run_llm_benchmark.py",
-        "scripts/run_llm_benchmark_all.ps1",
     ):
         path = root / rel
-        if not path.exists():
-            continue
+        assert path.exists(), f"{rel} moved; update this guard so it keeps covering it"
         text = path.read_text(encoding="utf-8")
         assert "blind" not in text.lower(), f"{rel} must not touch the blind set"
 

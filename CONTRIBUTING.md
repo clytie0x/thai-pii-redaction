@@ -34,8 +34,11 @@ python -m benchmark --source gold
 ```
 
 Recall regressions on the gold corpus are not merged, even when precision
-improves. A business date labeled `DATE` instead of being dropped is the
-honest-label rule in action; see README "Design promises".
+improves. Proposing or relabeling a gold document has its own workflow in
+[docs/benchmark-contribution.md](docs/benchmark-contribution.md) and follows
+[docs/annotation-guidelines.md](docs/annotation-guidelines.md). A business
+date labeled `DATE` instead of being dropped is the honest-label rule in
+action; see README "Design promises".
 
 ## Rules that are not up for debate in a PR
 

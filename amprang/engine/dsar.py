@@ -28,14 +28,13 @@ own content is never quoted or excerpted.
 from __future__ import annotations
 
 import re
-import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from amprang.engine.detectors.aggregate import detect_all
-from amprang.engine.detectors.tb_detector import _resolve_engine_name
+from amprang.engine.environment import environment as _environment
 from amprang.engine.ingest.file_detector import detect_source_type
 from amprang.engine.ingest.text_cleaner import clean
 from amprang.engine.ingest.text_extractor import extract
@@ -211,44 +210,6 @@ class DsarResult:
             },
             "environment": self.environment,
         }
-
-
-def _read_version() -> str:
-    """The product version, or "unknown" when the VERSION file is unreachable.
-
-    Same fallback chain as `breach.py`/`receipt.py` (frozen exe's `_MEIPASS`,
-    then the repo root next to this file) so a packaged build reports the
-    same version a breach assessment or receipt issued from the same build
-    would.
-    """
-    candidates = []
-    meipass = getattr(sys, "_MEIPASS", None)
-    if meipass:
-        candidates.append(Path(meipass) / "VERSION")
-    candidates.append(Path(__file__).resolve().parent.parent.parent / "VERSION")
-    for candidate in candidates:
-        try:
-            return candidate.read_text(encoding="utf-8").strip()
-        except OSError:
-            continue
-    return "unknown"
-
-
-def _detector_version() -> str:
-    try:
-        from importlib.metadata import version
-
-        return f"pythainlp {version('pythainlp')}"
-    except Exception:
-        return "unknown"
-
-
-def _environment() -> dict:
-    return {
-        "product_version": _read_version(),
-        "ner_engine": _resolve_engine_name(),
-        "detector_version": _detector_version(),
-    }
 
 
 def _classify_subject_line(line: str) -> str | None:

@@ -31,6 +31,8 @@ amprang-mcp = "amprang.mcp:main"
 
 [project.urls]
 Homepage = "https://github.com/Teerapat-Vatpitak/amprang"
+Changelog = "https://github.com/Teerapat-Vatpitak/amprang/blob/main/CHANGELOG.md"
+Security = "https://github.com/Teerapat-Vatpitak/amprang/blob/main/SECURITY.md"
 Issues = "https://github.com/Teerapat-Vatpitak/amprang/issues"
 
 [tool.setuptools.dynamic]

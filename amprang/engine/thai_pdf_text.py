@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import logging
 import re
-import sys
 from pathlib import Path
 
 from reportlab.pdfbase import pdfmetrics
@@ -43,18 +42,11 @@ logger = logging.getLogger(__name__)
 
 
 def _bundled_font() -> str:
-    """Path to the Thai font that travels with the product.
-
-    Looked up next to a PyInstaller-frozen executable first (the exe carries it
-    via `--add-data`), then beside this source file. Returned as a plain string
-    whether or not it exists, because `FONT_CANDIDATES` is a list of paths to
-    try and a missing one simply falls through -- the same as every other entry.
+    """Path to the Thai font that travels with the package, beside this source
+    file. Returned as a plain string whether or not it exists, because
+    `FONT_CANDIDATES` is a list of paths to try and a missing one simply falls
+    through -- the same as every other entry.
     """
-    meipass = getattr(sys, "_MEIPASS", None)
-    if meipass:
-        frozen = Path(meipass) / "amprang" / "engine" / "fonts" / _BUNDLED_FONT_FILE
-        if frozen.exists():
-            return str(frozen)
     return str(Path(__file__).resolve().parent / "fonts" / _BUNDLED_FONT_FILE)
 
 

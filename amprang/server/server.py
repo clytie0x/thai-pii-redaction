@@ -21,12 +21,12 @@ import os
 import re
 import secrets
 import shutil
-import sys
 import tempfile
 import threading
 import time
 import uuid
 from functools import wraps
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Annotated
 
@@ -141,39 +141,14 @@ def _contain_public_errors(func):
 
 
 def _read_version() -> str:
-    """Read the product version from the single-source `VERSION` file at repo
-    root (Horizon-1 #5 — one file, everything else derives from it).
+    """The installed amprang version, or an honest "0.0.0" outside any install.
 
-    Checked in order:
-    1. Next to a PyInstaller-frozen executable (`sys._MEIPASS`) -- `VERSION` is
-       bundled via `--add-data` in `scripts/build_sidecar.py`.
-    2. Next to this source file, three levels up
-       (`amprang/server/server.py` -> repo root) -- the dev / from-source /
-       core-only-install path.
-
-    Falls back to distribution metadata, then a hardcoded 0.0.0, if VERSION
-    can't be found anywhere (e.g. an installed wheel, which carries no
-    VERSION file).
+    Distribution metadata is the single source once the package is installed
+    (editable or wheel); a stale hardcoded release literal is never acceptable.
     """
-    candidates = []
-    meipass = getattr(sys, "_MEIPASS", None)
-    if meipass:
-        candidates.append(Path(meipass) / "VERSION")
-    candidates.append(Path(__file__).resolve().parent.parent.parent / "VERSION")
-
-    for candidate in candidates:
-        try:
-            return candidate.read_text(encoding="utf-8").strip()
-        except OSError:
-            continue
-    # Installed wheels carry no VERSION file; distribution metadata is the
-    # source of truth there. "0.0.0" means genuinely unknown, never a stale
-    # release number.
     try:
-        from importlib.metadata import version
-
         return version("amprang")
-    except Exception:
+    except PackageNotFoundError:
         return "0.0.0"
 
 
@@ -556,16 +531,8 @@ def root():
 
 
 def _demo_page_path() -> Path:
-    """Resolve the demo playground page.
-
-    Ships as `app` package data (app/demo/playground.html), so an installed
-    wheel serves it too; a frozen exe finds it next to `sys._MEIPASS`.
-    """
-    meipass = getattr(sys, "_MEIPASS", None)
-    if meipass:
-        frozen = Path(meipass) / "demo" / "playground.html"
-        if frozen.is_file():
-            return frozen
+    """Resolve the demo playground page, shipped as `amprang.server` package
+    data (amprang/server/demo/playground.html) so an installed wheel serves it."""
     return Path(__file__).resolve().parent / "demo" / "playground.html"
 
 
@@ -573,8 +540,7 @@ def _demo_page_path() -> Path:
 def demo_page():
     """Demo playground — off unless AMPRANG_DEMO=1 (backend stays API-only).
 
-    Read dynamically (not at import) so one process can flip it in tests and
-    the packaged exe's default stays "off" without a rebuild.
+    Read dynamically (not at import) so one process can flip it in tests.
     """
     if os.environ.get("AMPRANG_DEMO") != "1":
         raise FastAPIHTTPException(status_code=404, detail="Not Found")
@@ -634,11 +600,8 @@ def _check_audit_dir_writable() -> None:
 
 
 def _get_audit_log_dir() -> str:
-    """Audit log directory. Frozen exe -> %APPDATA%/Amprang/logs; source -> ./logs."""
-    if getattr(sys, "frozen", False):
-        log_dir = Path.home() / "AppData" / "Roaming" / "Amprang" / "logs"
-    else:
-        log_dir = Path.cwd() / "logs"
+    """Audit log directory: ./logs under the current working directory."""
+    log_dir = Path.cwd() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     return str(log_dir)
 

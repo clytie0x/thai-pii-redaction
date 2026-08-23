@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability (private)
+    url: https://github.com/Teerapat-Vatpitak/amprang/security/advisories/new
+    about: Never open a public issue with exploit details or real PII. See SECURITY.md.
+  - name: Contributing guide
+    url: https://github.com/Teerapat-Vatpitak/amprang/blob/main/CONTRIBUTING.md
+    about: Dev setup, the exact test and lint commands CI runs, and PR conventions.
+  - name: Decision records
+    url: https://github.com/Teerapat-Vatpitak/amprang/blob/main/docs/decisions/README.md
+    about: Check whether an idea is already decided, accepted, or deliberately out of scope.

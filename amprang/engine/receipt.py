@@ -11,12 +11,11 @@ from __future__ import annotations
 import datetime as _dt
 import hashlib
 import json
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from amprang.engine.detectors.aggregate import detect_all
-from amprang.engine.detectors.tb_detector import _resolve_engine_name
+from amprang.engine.environment import environment as _environment
 from amprang.engine.ingest.file_detector import detect_source_type
 from amprang.engine.ingest.text_cleaner import clean
 from amprang.engine.ingest.text_extractor import extract
@@ -65,28 +64,6 @@ class VerifyResult:
     recomputed: dict = field(default_factory=dict)
 
 
-def _read_version() -> str:
-    """The product version, or "unknown" when the VERSION file is unreachable.
-
-    Deliberately does NOT carry a fallback literal the way `app/server.py` does.
-    A third hardcoded copy of the version would be one more thing for
-    `scripts/check_version.py` to police, and a receipt that guesses its own
-    version is worse than one that admits it does not know: the guess would be
-    silently wrong on exactly the frozen builds where it matters.
-    """
-    candidates = []
-    meipass = getattr(sys, "_MEIPASS", None)
-    if meipass:
-        candidates.append(Path(meipass) / "VERSION")
-    candidates.append(Path(__file__).resolve().parent.parent.parent / "VERSION")
-    for candidate in candidates:
-        try:
-            return candidate.read_text(encoding="utf-8").strip()
-        except OSError:
-            continue
-    return "unknown"
-
-
 def process_for_receipt(path: str | Path) -> ProcessedSource:
     """Ingest, clean and detect — the single path both issuing and verifying run.
 
@@ -127,31 +104,6 @@ def _source_fingerprint(path: Path) -> tuple[str, int]:
             digest.update(chunk)
             size += len(chunk)
     return digest.hexdigest(), size
-
-
-def _detector_version() -> str:
-    """The PyThaiNLP release that produced the detection result.
-
-    `requirements.txt` carries a loose `>=` floor, so two machines reporting
-    the same `product_version` can be running different CRF models. Without
-    this field a genuine version difference surfaces as a `result_mismatch`
-    with an EMPTY list of differences -- the likeliest explanation would be
-    the one thing the receipt could not see.
-    """
-    try:
-        from importlib.metadata import version
-
-        return f"pythainlp {version('pythainlp')}"
-    except Exception:
-        return "unknown"
-
-
-def _environment() -> dict:
-    return {
-        "product_version": _read_version(),
-        "ner_engine": _resolve_engine_name(),
-        "detector_version": _detector_version(),
-    }
 
 
 def _claims(processed: ProcessedSource, sha256: str, size: int) -> dict:

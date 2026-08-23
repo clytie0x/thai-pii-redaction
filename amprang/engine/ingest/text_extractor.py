@@ -393,8 +393,8 @@ def _extract_pdf_hybrid(path: Path) -> tuple[str, list[WordBbox], dict]:
     # Routing sends a page here as soon as it carries a raster image, even one
     # sitting beside a full text layer (a letterhead logo). Refusing the whole
     # document when the OCR extra is missing would take PDF redaction away from
-    # every core-only install — including the packaged exe, which ships without
-    # requirements-ocr.txt — for documents it used to read fine. So the refusal
+    # every core-only install (no `amprang[ocr]` extra) for documents it used to
+    # read fine. So the refusal
     # is made per page and only where it is true: a raster page with no usable
     # text layer really cannot be read, while one that has a text layer falls
     # back to it, loudly (warning + human_review), because whatever the image
