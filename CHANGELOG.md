@@ -9,7 +9,7 @@ when they change shape.
 
 ## [Unreleased]
 
-## [0.1.0] — unreleased
+## [0.1.0] — 2026-08-23
 
 First release of amphrang, extracted from
 [thai-pii-redaction](https://github.com/Teerapat-Vatpitak/thai-pii-redaction)
