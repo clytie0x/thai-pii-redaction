@@ -1146,7 +1146,10 @@ def _detect_tb_impl(
     if not text or not text.strip():
         return []
 
-    # Step 1: Sentence tokenization with cumulative offsets
+    # Step 1: Sentence tokenization with cumulative offsets. crfcut is ~28% of
+    # detect time; line-break units were measured instead (2026-08-23): same
+    # output on all 252 gold docs, 18% faster, but on the คร.1 OCR regression
+    # they lost a name the crfcut grouping recovers. Recall wins; crfcut stays.
     raw_sentences = sent_tokenize(text, engine="crfcut")
     if not raw_sentences:
         return []
