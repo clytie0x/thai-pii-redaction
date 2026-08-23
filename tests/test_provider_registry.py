@@ -35,12 +35,6 @@ class TestCanonicalRegistry:
 
 
 class TestSurfaceRegistries:
-    def test_worker_surface_has_tokenmind(self):
-        from amprang.server.worker import handler
-
-        assert "tokenmind" in handler._PROVIDER_FACTORIES
-        assert set(handler._PROVIDER_FACTORIES) == EXPECTED
-
     def test_server_surface_has_tokenmind(self):
         pytest.importorskip("fastapi")
         from amprang.server import server

@@ -59,7 +59,6 @@ packages = [
   "amprang.engine.guard",
   "amprang.engine.ingest",
   "amprang.server",
-  "amprang.server.worker",
 ]
 
 # The Thai font travels with the package: a `pip install` user renders the
@@ -106,3 +105,4 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "double"
+

@@ -7,39 +7,6 @@ restore_stateless on the next line was bare (spec: explicit scope, both paths).
 import pytest
 
 
-class TestWorkerRestoreBoundary:
-    def _job(self, operation, payload):
-        return {
-            "contract_version": 1,
-            "job_id": "j1",
-            "operation": operation,
-            "payload": payload,
-        }
-
-    def test_roundtrip_restore_defect_is_restore_failed(self, monkeypatch):
-        from amprang.server.worker import handler
-
-        def boom(text, *, mapping):
-            raise RuntimeError("internal defect")
-
-        monkeypatch.setattr(handler, "restore_stateless", boom)
-        result = handler.handle_job(self._job("roundtrip", {"text": "สวัสดีครับ", "provider": "fake"}))
-        assert result["status"] == "error"
-        assert result["error"]["type"] == "restore_failed"
-        assert "internal defect" not in result["error"]["message"]
-
-    def test_op_restore_defect_is_restore_failed(self, monkeypatch):
-        from amprang.server.worker import handler
-
-        def boom(text, *, mapping):
-            raise RuntimeError("internal defect")
-
-        monkeypatch.setattr(handler, "restore_stateless", boom)
-        result = handler.handle_job(self._job("restore", {"text": "x", "mapping": {"[ชื่อ_1]": "ก"}}))
-        assert result["status"] == "error"
-        assert result["error"]["type"] == "restore_failed"
-
-
 class TestServerRestoreBoundary:
     @pytest.fixture()
     def client(self):

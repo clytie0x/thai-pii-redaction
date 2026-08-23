@@ -34,13 +34,13 @@ a model context.
 
 | Item | Target | Note |
 |---|---|---|
-| Trim untested `app/worker` submodules from the wheel, or restore their tests | 0.2.x | Only `handler` is exercised today |
 | Freeze paper gold as file+checksum instead of a git-history reference | when research resumes | The old repo's history carries the frozen commit; this one cannot |
 
 ## Resolved (2026-08-22)
 
 | Item | Resolution |
 |---|---|
+| Trim untested `app/worker` submodules from the wheel, or restore their tests | Removed outright (2026-08-23): nothing in `amprang.server` imported the queue worker, only three tests reached `handler`, and the behaviours they pinned (post-sanitize guard, restore boundary, provider registry parity) are pinned on the server surface by their sibling tests. It stays in git history should the AI for Thai deployment need a queue worker. |
 | Remove `native_broker_context` hooks from `leak_guard`/`session_service`/`stateless`/`aggregate` | Module deleted outright; every call site (all confirmed no-ops — nothing ever activated a broker context) removed from the four hot modules |
 | Cut `private_backend_bootstrap` + `session_control_auth` branches out of `app/server.py` | `private_backend_bootstrap.py` deleted along with its `app.state.private_backend` gating and every `NativeBroker*` handler in `server.py`. **`session_control_auth.py` was kept**, deliberately deviating from this table's literal wording: it is a signed, replay-resistant, target-bound HMAC session-disposal scheme whose `control_secret` can come from either the broker *or* the plain `AMPRANG_TOKEN` env var — it was never broker-only, and it carries ~20 real security regression tests. Removing it would have deleted working, tested access control for no reason tied to the broker's absence. |
 | Rename installed top-level packages (`app`, `ai_guard`, `pii_redactor`) under `amprang.*` | `app` → `amprang.server`, `pii_redactor` → `amprang.engine`, `ai_guard.py` → `amprang.cli`. Only the top-level `amprang` module surface (facade, CLI entry point) keeps a semver contract; `amprang.engine.*` and `amprang.server.*` are internal. See the rename commit for the three classes of sed-collateral-damage found and fixed (indented imports, string-literal module paths, mangled quoted path segments). |

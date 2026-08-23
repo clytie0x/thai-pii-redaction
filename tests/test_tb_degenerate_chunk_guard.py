@@ -200,17 +200,21 @@ def test_degenerate_chunk_line_retag_offsets_map_to_original_text(monkeypatch):
 
 
 def test_degenerate_chunk_logs_label_and_length_only_no_text(monkeypatch, caplog):
-    """The warning must name the unmapped label and the chunk length, and
-    must NOT embed any text content (PII-free logs, per project invariant)."""
+    """The log line must name the unmapped label and the chunk length, and
+    must NOT embed any text content (PII-free logs, per project invariant).
+    It is INFO, not WARNING: the re-tag is a successful recovery, not a
+    condition the caller can act on, and a library must not spam stderr on
+    ordinary documents."""
     ner = DegenerateWholeChunkNER(target_line="สมชาย ใจดี", whole_label="LAW")
     _with_engine(monkeypatch, ner)
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 
-    with caplog.at_level(logging.WARNING, logger="amprang.engine.detectors.tb_detector"):
+    with caplog.at_level(logging.INFO, logger="amprang.engine.detectors.tb_detector"):
         tbd.detect_tb(text)
 
     degenerate_records = [r for r in caplog.records if "Degenerate whole-chunk" in r.message]
     assert len(degenerate_records) == 1
+    assert degenerate_records[0].levelno == logging.INFO
     message = degenerate_records[0].message
     assert "LAW" in message
     assert str(len(text)) in message

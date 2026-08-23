@@ -66,6 +66,8 @@ storefronts did not.
 - Native-broker and private-backend code paths; the vault lives in the
   process that uses it.
 - `demo_cli.py`; use the `amprang` CLI or `amprang serve` instead.
+- `amprang.server.worker` queue worker (unused by the server; see
+  docs/reviews/2026-08-21-facade-review.md).
 - PyInstaller frozen-executable lookups (`sys._MEIPASS`, `%APPDATA%` log
   dir) left over from the predecessor's desktop build.
 

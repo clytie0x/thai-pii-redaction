@@ -946,7 +946,7 @@ def _ner_candidates(
                     and overlap >= _DEGENERATE_COVERAGE_RATIO * core_len
                     and (LABEL_MAP.get(sp_label) is None or crosses_lines)
                 ):
-                    _LOG.warning(
+                    _LOG.info(
                         "Degenerate whole-chunk NER span (label=%s, chunk_chars=%d); "
                         "re-tagging chunk line-by-line",
                         "remote" if fail_closed else sp_label,

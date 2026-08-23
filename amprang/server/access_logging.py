@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import re
-from copy import deepcopy
 
 _UVICORN_ACCESS_LOGGER = "uvicorn.access"
 _FILTER_NAME = "amprang_sensitive_route"
@@ -62,20 +61,3 @@ def install_uvicorn_access_log_filter() -> None:
     logger = logging.getLogger(_UVICORN_ACCESS_LOGGER)
     if not any(isinstance(item, UvicornAccessLogFilter) for item in logger.filters):
         logger.addFilter(_ACCESS_FILTER)
-
-
-def uvicorn_log_config() -> dict:
-    """Return the launcher log configuration with sensitive-route redaction."""
-    from uvicorn.config import LOGGING_CONFIG
-
-    config = deepcopy(LOGGING_CONFIG)
-    filters = config.setdefault("filters", {})
-    filters[_FILTER_NAME] = {"()": UvicornAccessLogFilter}
-    access_handler = config.get("handlers", {}).get("access")
-    if not isinstance(access_handler, dict):
-        raise RuntimeError("Uvicorn access logging configuration is unavailable")
-    handler_filters = list(access_handler.get("filters", []))
-    if _FILTER_NAME not in handler_filters:
-        handler_filters.append(_FILTER_NAME)
-    access_handler["filters"] = handler_filters
-    return config
