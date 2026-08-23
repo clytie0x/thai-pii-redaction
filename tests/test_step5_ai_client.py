@@ -7,15 +7,15 @@ from abc import ABC
 import httpx
 import pytest
 
-from thaiguard.engine.ai_client import (
+from amprang.engine.ai_client import (
     AIProvider,
     FakeLLMProvider,
     PreSendValidationError,
     ProviderCallError,
     send_to_ai,
 )
-from thaiguard.engine.models import AIResponse, EntityRegistry, VaultRecord
-from thaiguard.engine.session_vault import SessionVault, VaultTimeoutError
+from amprang.engine.models import AIResponse, EntityRegistry, VaultRecord
+from amprang.engine.session_vault import SessionVault, VaultTimeoutError
 
 SYNTHETIC_AUTHORIZATION = "Bearer synthetic-provider-credential"
 SYNTHETIC_OUTBOUND_TEXT = "synthetic-outbound-text"
@@ -122,7 +122,7 @@ def _product_traceback_locals(error: BaseException) -> list[dict[str, object]]:
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("thaiguard.engine.", "thaiguard.server.")):
+        if module.startswith(("amprang.engine.", "amprang.server.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -259,7 +259,7 @@ def test_provider_rollback_cannot_resurrect_a_cleared_vault():
 
 
 def test_complete_provider_call_rejects_poisoned_http_status_metadata():
-    from thaiguard.engine.ai_client import complete_provider_call
+    from amprang.engine.ai_client import complete_provider_call
 
     private_number = 1101700230708
     request = httpx.Request("POST", "https://provider.invalid/v1/complete")
@@ -510,7 +510,7 @@ def test_send_to_ai_translates_provider_failures_without_retaining_raw_graph(
     provider_error,
     expected_calls,
 ):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     monkeypatch.setattr(client_module, "_sleep", lambda _seconds: None)
     calls = 0
@@ -560,7 +560,7 @@ def test_send_to_ai_translates_provider_failures_without_retaining_raw_graph(
 
 
 def test_send_to_ai_contains_post_provider_failure_and_rolls_back(monkeypatch):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     vault, _ = _make_vault_with_record(
         original=SYNTHETIC_VAULT_ORIGINAL,
@@ -734,7 +734,7 @@ def test_send_to_ai_does_not_inspect_legacy_retry_capability():
 
 
 def test_retry_validation_failure_survives_rollback_exception_group(monkeypatch):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     rollback_group, rollback_child = _credential_exception_group("rollback failed")
     validation_error = PreSendValidationError(
@@ -818,7 +818,7 @@ def test_retry_validation_failure_survives_rollback_exception_group(monkeypatch)
 
 
 def test_exhausted_retries_survive_rollback_exception_group(monkeypatch):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     rollback_group, rollback_child = _credential_exception_group("rollback failed")
     provider_calls = 0
@@ -889,7 +889,7 @@ def test_exhausted_retries_survive_rollback_exception_group(monkeypatch):
 
 def test_send_to_ai_5xx_is_retried_and_rescanned_before_each_outer_attempt(monkeypatch):
     """Plain-provider retries get a fresh outer guard check."""
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     vault = SessionVault()
     registry = EntityRegistry(entities=[], fp_count=0, tb_count=0)
@@ -917,7 +917,7 @@ def test_send_to_ai_5xx_is_retried_and_rescanned_before_each_outer_attempt(monke
 
 
 def test_send_to_ai_discards_retained_provider_call_error(monkeypatch):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     retained_error = ProviderCallError(
         category="timeout",
@@ -950,7 +950,7 @@ def test_send_to_ai_discards_retained_provider_call_error(monkeypatch):
 
 
 def test_send_to_ai_clamps_requested_attempts_to_three(monkeypatch):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     provider_calls = 0
 
@@ -1068,7 +1068,7 @@ class TestPathummaProvider:
     """
 
     def test_requires_api_key(self, monkeypatch):
-        from thaiguard.engine.ai_client import PathummaProvider
+        from amprang.engine.ai_client import PathummaProvider
 
         monkeypatch.delenv("AIFORTHAI_API_KEY", raising=False)
         with pytest.raises(ValueError):
@@ -1077,8 +1077,8 @@ class TestPathummaProvider:
     def test_complete_posts_form_data_not_json(self, monkeypatch):
         import httpx
 
-        from thaiguard.engine import ai_client
-        from thaiguard.engine.ai_client import PathummaProvider
+        from amprang.engine import ai_client
+        from amprang.engine.ai_client import PathummaProvider
 
         monkeypatch.setenv("AIFORTHAI_API_KEY", "test-key")
         captured = {}
@@ -1102,8 +1102,8 @@ class TestPathummaProvider:
     def test_http_error_propagates(self, monkeypatch):
         import httpx
 
-        from thaiguard.engine import ai_client
-        from thaiguard.engine.ai_client import PathummaProvider
+        from amprang.engine import ai_client
+        from amprang.engine.ai_client import PathummaProvider
 
         monkeypatch.setenv("AIFORTHAI_API_KEY", "test-key")
 

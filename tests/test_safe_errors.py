@@ -3,7 +3,7 @@
 import subprocess
 import sys
 
-from thaiguard.engine.safe_errors import discard_exception_graph
+from amprang.engine.safe_errors import discard_exception_graph
 
 
 class HostileException(RuntimeError):
@@ -62,7 +62,7 @@ def test_discard_clears_exception_group_members():
 
 def test_discard_keeps_exception_group_repr_valid_in_subprocess():
     code = """
-from thaiguard.engine.safe_errors import discard_exception_graph
+from amprang.engine.safe_errors import discard_exception_graph
 member = ValueError("SYNTHETIC_CHILD_PRIVATE_VALUE")
 group = ExceptionGroup("SYNTHETIC_GROUP_PRIVATE_VALUE", [member])
 discard_exception_graph(group)

@@ -5,7 +5,7 @@ import sys
 
 
 def main():
-    print("AI Guard Demo — Thai PII Redaction Pipeline")
+    print("Amprang Demo — Thai PII Redaction Pipeline")
     # EOF differs by platform: Windows console = Ctrl+Z then Enter; Unix = Ctrl+D.
     eof_hint = "Ctrl+Z then Enter" if sys.platform == "win32" else "Ctrl+D"
     print(f"Paste text below ({eof_hint} to finish):")
@@ -15,8 +15,8 @@ def main():
         print("No input provided.", file=sys.stderr)
         sys.exit(1)
 
-    from thaiguard.engine.ai_client import FakeLLMProvider
-    from thaiguard.engine.pipeline import run_pipeline
+    from amprang.engine.ai_client import FakeLLMProvider
+    from amprang.engine.pipeline import run_pipeline
 
     try:
         result = run_pipeline(text=text, provider=FakeLLMProvider())

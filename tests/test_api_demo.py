@@ -2,18 +2,18 @@
 
 /api/detect    — detection-only, no session, offsets align with input text
 /api/roundtrip — stateless mask -> LLM -> restore in one request
-/demo          — gated behind AIGUARD_DEMO=1
+/demo          — gated behind AMPRANG_DEMO=1
 """
 
 import httpx
 import pytest
 
-from thaiguard.engine.thai_pdf_text import register_thai_font
+from amprang.engine.thai_pdf_text import register_thai_font
 
 try:
     from fastapi.testclient import TestClient
 
-    from thaiguard.server.server import app
+    from amprang.server.server import app
 
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -70,7 +70,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("thaiguard.engine.", "thaiguard.server.")):
+        if module.startswith(("amprang.engine.", "amprang.server.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -97,12 +97,12 @@ def _capture_json_render_errors(monkeypatch):
 def client():
     from fastapi.testclient import TestClient
 
-    from thaiguard.server.server import app
+    from amprang.server.server import app
 
     return TestClient(
         app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
 
 
@@ -131,7 +131,7 @@ class TestDetect:
         assert client.post("/api/detect", json={"text": "  "}).status_code == 400
 
     def test_detect_creates_no_session(self, client):
-        import thaiguard.server.server as server
+        import amprang.server.server as server
 
         before = len(server.SERVICE._sessions)
         client.post("/api/detect", json={"text": THAI_TEXT})
@@ -178,7 +178,7 @@ class TestRoundtrip:
     def test_roundtrip_provider_constructor_exception_graph_is_safe(self, monkeypatch):
         from fastapi import HTTPException
 
-        import thaiguard.server.server as server
+        import amprang.server.server as server
 
         class CredentialBearingConstructorError(ValueError):
             def __init__(self):
@@ -233,7 +233,7 @@ class TestRoundtrip:
         )
 
     def test_roundtrip_no_mapping_left_serverside(self, client):
-        import thaiguard.server.server as server
+        import amprang.server.server as server
 
         before = len(server.SERVICE._sessions)
         client.post(
@@ -250,7 +250,7 @@ class TestRoundtrip:
         assert resp.status_code == 400
 
     def test_roundtrip_provider_failure_502(self, client, monkeypatch):
-        import thaiguard.server.server as server
+        import amprang.server.server as server
 
         class BoomProvider:
             def __init__(self):
@@ -274,8 +274,8 @@ class TestRoundtrip:
         monkeypatch,
         failure_kind,
     ):
-        import thaiguard.engine.ai_client as client_module
-        import thaiguard.server.server as server
+        import amprang.engine.ai_client as client_module
+        import amprang.server.server as server
 
         calls = []
         backoffs = []
@@ -328,8 +328,8 @@ class TestRoundtrip:
         monkeypatch,
         status_code,
     ):
-        import thaiguard.engine.ai_client as client_module
-        import thaiguard.server.server as server
+        import amprang.engine.ai_client as client_module
+        import amprang.server.server as server
 
         calls = []
         backoffs = []
@@ -371,8 +371,8 @@ class TestRoundtrip:
         client,
         monkeypatch,
     ):
-        import thaiguard.engine.ai_client as client_module
-        import thaiguard.server.server as server
+        import amprang.engine.ai_client as client_module
+        import amprang.server.server as server
 
         calls = []
         backoffs = []
@@ -411,9 +411,9 @@ class TestRoundtrip:
         client,
         monkeypatch,
     ):
-        import thaiguard.engine.ai_client as client_module
-        import thaiguard.server.server as server
-        from thaiguard.engine.leak_guard import OutboundPolicyError
+        import amprang.engine.ai_client as client_module
+        import amprang.server.server as server
+        from amprang.engine.leak_guard import OutboundPolicyError
 
         provider_calls = []
         validation_calls = []
@@ -462,9 +462,9 @@ class TestRoundtrip:
     def test_roundtrip_discards_retained_provider_call_error(self, monkeypatch):
         from fastapi import HTTPException
 
-        import thaiguard.engine.ai_client as client_module
-        import thaiguard.server.server as server
-        from thaiguard.engine.ai_client import ProviderCallError
+        import amprang.engine.ai_client as client_module
+        import amprang.server.server as server
+        from amprang.engine.ai_client import ProviderCallError
 
         retained_error = ProviderCallError(
             category="malformed",
@@ -500,7 +500,7 @@ class TestRoundtrip:
         assert retained_error.__dict__ == {}
 
     def test_roundtrip_render_failure_is_fixed_and_scrubs_provider_body(self, client, monkeypatch):
-        import thaiguard.server.server as server
+        import amprang.server.server as server
 
         private_marker = "SYNTHETIC_RENDER_PROVIDER_BODY"
         captured = _capture_json_render_errors(monkeypatch)
@@ -532,7 +532,7 @@ class TestRoundtrip:
     ):
         from fastapi import HTTPException
 
-        import thaiguard.server.server as server
+        import amprang.server.server as server
 
         request = httpx.Request(
             "POST",
@@ -600,8 +600,8 @@ class TestRoundtrip:
     ):
         from fastapi import HTTPException
 
-        import thaiguard.server.server as server
-        from thaiguard.engine.stateless import StatelessSanitizeResult
+        import amprang.server.server as server
+        from amprang.engine.stateless import StatelessSanitizeResult
 
         residual = "เลขบัตรประชาชน 1101700230708"
         forged = StatelessSanitizeResult(
@@ -658,8 +658,8 @@ class TestRoundtrip:
     ):
         from fastapi import HTTPException
 
-        import thaiguard.server.server as server
-        from thaiguard.engine.stateless import StatelessSanitizeResult
+        import amprang.server.server as server
+        from amprang.engine.stateless import StatelessSanitizeResult
 
         forged = StatelessSanitizeResult(
             sanitized_text="safe text",
@@ -745,8 +745,8 @@ class TestRoundtrip:
         assert body["warnings"] == []
 
     def test_roundtrip_leak_blocked_422(self, client, monkeypatch):
-        import thaiguard.server.server as server
-        from thaiguard.engine.stateless import StatelessLeakError
+        import amprang.server.server as server
+        from amprang.engine.stateless import StatelessLeakError
 
         def boom_sanitize(*args, **kwargs):
             raise StatelessLeakError(["THAI_ID"])
@@ -761,8 +761,8 @@ class TestRoundtrip:
         assert "สมชาย" not in resp.text
 
     def test_roundtrip_orphan_digits_block_before_provider(self, client, monkeypatch):
-        import thaiguard.engine.stateless as stateless_module
-        import thaiguard.server.server as server
+        import amprang.engine.stateless as stateless_module
+        import amprang.server.server as server
 
         calls = []
 
@@ -806,8 +806,8 @@ class TestRoundtrip:
         monkeypatch,
         residual,
     ):
-        import thaiguard.server.server as server
-        from thaiguard.engine.stateless import StatelessSanitizeResult
+        import amprang.server.server as server
+        from amprang.engine.stateless import StatelessSanitizeResult
 
         calls = []
 
@@ -845,9 +845,9 @@ class TestRoundtrip:
 def test_sanitize_residual_error_graph_drops_request_and_staged_vault(monkeypatch):
     from fastapi import HTTPException
 
-    import thaiguard.engine.session_service as session_module
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.engine.session_service as session_module
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     service = SessionService()
     monkeypatch.setattr(server, "SERVICE", service)
@@ -877,7 +877,7 @@ def test_sanitize_residual_error_graph_drops_request_and_staged_vault(monkeypatc
 def test_roundtrip_tail_failure_drops_retained_sensitive_graph(monkeypatch, stage):
     from fastapi import HTTPException
 
-    import thaiguard.server.server as server
+    import amprang.server.server as server
 
     retained_error = RuntimeError("synthetic roundtrip tail failure")
 
@@ -924,8 +924,8 @@ def test_roundtrip_tail_failure_drops_retained_sensitive_graph(monkeypatch, stag
 def test_reidentify_encoding_failure_is_fixed_and_scrubs_restored_text(client, monkeypatch):
     import json
 
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     private_marker = "SYNTHETIC_RENDER_RESTORED_TEXT"
     service = SessionService()
@@ -953,22 +953,22 @@ def test_reidentify_encoding_failure_is_fixed_and_scrubs_restored_text(client, m
 
 class TestDemoGate:
     def test_demo_404_by_default(self, client, monkeypatch):
-        monkeypatch.delenv("AIGUARD_DEMO", raising=False)
+        monkeypatch.delenv("AMPRANG_DEMO", raising=False)
         assert client.get("/demo").status_code == 404
 
     def test_demo_served_when_enabled(self, client, monkeypatch):
-        monkeypatch.setenv("AIGUARD_DEMO", "1")
+        monkeypatch.setenv("AMPRANG_DEMO", "1")
         resp = client.get("/demo")
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
-        assert "AI Guard" in resp.text
+        assert "Amprang" in resp.text
         assert "ข้อมูลจริงไม่เคยออกจากเครื่องฝั่งผู้ใช้" not in resp.text
         assert "ข้อมูลจริงไม่ถูกส่งต่อไปยังโมเดลปลายทาง" not in resp.text
         assert "ก่อนเรียกโมเดล demo จะบล็อก residual PII" in resp.text
         assert "ผลลัพธ์ไม่ถูกนำไปแสดงหรือใช้งาน" in resp.text
 
     def test_roundtrip_failure_uses_safe_local_copy(self, client, monkeypatch):
-        monkeypatch.setenv("AIGUARD_DEMO", "1")
+        monkeypatch.setenv("AMPRANG_DEMO", "1")
 
         resp = client.get("/demo")
 

@@ -5,9 +5,9 @@ import uuid
 
 import pytest
 
-from thaiguard.engine.detectors.fp_detector import detect_fp
-from thaiguard.engine.models import VaultRecord
-from thaiguard.engine.session_vault import SessionVault, VaultTimeoutError
+from amprang.engine.detectors.fp_detector import detect_fp
+from amprang.engine.models import VaultRecord
+from amprang.engine.session_vault import SessionVault, VaultTimeoutError
 
 
 def _make_record(
@@ -242,7 +242,7 @@ def test_vault_idle_timeout():
 )
 def test_standalone_vault_idle_boundary_is_half_open(monkeypatch, elapsed, expired):
     clock = {"now": 1000.0}
-    monkeypatch.setattr("thaiguard.engine.session_vault.time.monotonic", lambda: clock["now"])
+    monkeypatch.setattr("amprang.engine.session_vault.time.monotonic", lambda: clock["now"])
     vault = SessionVault(idle_timeout_s=10)
     clock["now"] += elapsed
 
@@ -255,7 +255,7 @@ def test_standalone_vault_idle_boundary_is_half_open(monkeypatch, elapsed, expir
 
 def test_lifecycle_managed_vault_has_no_independent_idle_expiry(monkeypatch):
     clock = {"now": 1000.0}
-    monkeypatch.setattr("thaiguard.engine.session_vault.time.monotonic", lambda: clock["now"])
+    monkeypatch.setattr("amprang.engine.session_vault.time.monotonic", lambda: clock["now"])
     vault = SessionVault(idle_timeout_s=None)
     clock["now"] += 10_000
 
@@ -499,7 +499,7 @@ def test_clone_preserves_safe_seed_audit_without_sharing_mutable_state():
 
 
 def test_clear_invalidates_token_namespace_before_vault_reuse(monkeypatch):
-    import thaiguard.engine.session_vault as vault_mod
+    import amprang.engine.session_vault as vault_mod
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))

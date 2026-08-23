@@ -1,4 +1,4 @@
-"""Tests for thaiguard/engine/dsar.py -- the DSAR (PDPA มาตรา 30) locate core.
+"""Tests for amprang/engine/dsar.py -- the DSAR (PDPA มาตรา 30) locate core.
 
 All PII values below are fabricated. Thai national ids are computed to pass
 the real mod-11 checksum (see `is_valid_thai_id`); the same values used in
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from thaiguard.engine.dsar import (
+from amprang.engine.dsar import (
     NoFilesAssessedError,
     NoSubjectIdentifiersError,
     _classify_subject_line,
@@ -20,7 +20,7 @@ from thaiguard.engine.dsar import (
 )
 
 # Fabricated, checksum-valid Thai national ids (verified against
-# thaiguard.engine.detectors.thai_id.is_valid_thai_id) -- same values
+# amprang.engine.detectors.thai_id.is_valid_thai_id) -- same values
 # tests/test_breach_assessment.py uses.
 ID_A = "1101700230708"
 ID_B = "1101200012345"
@@ -219,8 +219,8 @@ def test_match_ignores_detectors_label_organization_on_a_name(tmp_path, monkeypa
     detector call is monkeypatched here to a fixed single-entity result so
     this test pins the matching logic itself rather than depending on the
     CRF's non-deterministic behavior on any particular sentence."""
-    import thaiguard.engine.dsar as dsar_module
-    from thaiguard.engine.models import Entity
+    import amprang.engine.dsar as dsar_module
+    from amprang.engine.models import Entity
 
     subject = _subject_file(tmp_path, ["สมชาย ใจดี"])
     doc = _write(tmp_path, "doc.txt", "บริษัท สมชาย ใจดี จำกัด")
@@ -242,7 +242,7 @@ def test_match_ignores_detectors_label_organization_on_a_name(tmp_path, monkeypa
 
 def test_multi_file_corpus_reports_matched_subset_only(tmp_path):
     # Subject file lives outside the scanned corpus directory -- the same
-    # separation `ai_guard.py dsar locate` enforces by taking `--subject-file`
+    # separation `cli.py dsar locate` enforces by taking `--subject-file`
     # and document `paths` as distinct arguments, so a directory scan never
     # picks up the subject file itself as one of the documents to search.
     subject = _subject_file(tmp_path, [ID_A])

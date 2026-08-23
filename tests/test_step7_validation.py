@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from thaiguard.engine.audit import write_process_log, write_security_log
-from thaiguard.engine.models import EntityRegistry, ReverseResult, VaultRecord
-from thaiguard.engine.output_validator import PIILeakError, ValidationResult, validate_output
-from thaiguard.engine.session_vault import SessionVault
+from amprang.engine.audit import write_process_log, write_security_log
+from amprang.engine.models import EntityRegistry, ReverseResult, VaultRecord
+from amprang.engine.output_validator import PIILeakError, ValidationResult, validate_output
+from amprang.engine.session_vault import SessionVault
 
 
 def _make_vault(original: str = "safe text", pseudonym: str = "SAFE_PSEUDO") -> SessionVault:
@@ -121,7 +121,7 @@ class TestValidateOutput:
         """VAULT-5: English routinely ends without punctuation in chat replies
         (e.g. a version string or a proper noun) — not a truncation."""
         vault = _make_vault()
-        rr = _make_reverse_result("โปรดอัปเดตเป็นเวอร์ชันล่าสุดของ AI Guard")
+        rr = _make_reverse_result("โปรดอัปเดตเป็นเวอร์ชันล่าสุดของ Amprang")
         registry = EntityRegistry(entities=[], fp_count=0, tb_count=0)
         result = validate_output(rr, registry, vault)
         assert [f for f in result.flags if "truncation" in f] == []
@@ -478,7 +478,7 @@ class TestAuditLogSecurity:
     def test_audit_log_path_rejects_traversal(self, tmp_path):
         """A path-traversal session_id must not escape output_dir when it is
         interpolated into the log filename."""
-        from thaiguard.engine.audit import _log_path
+        from amprang.engine.audit import _log_path
 
         p = _log_path("../../etc/passwd", "process", str(tmp_path))
         assert p.parent == Path(str(tmp_path))
@@ -487,7 +487,7 @@ class TestAuditLogSecurity:
 
     def test_audit_log_path_keeps_uuid_intact(self, tmp_path):
         """Sanitizing must not mangle normal uuid/hyphen session ids."""
-        from thaiguard.engine.audit import _log_path
+        from amprang.engine.audit import _log_path
 
         sid = str(uuid.uuid4())
         p = _log_path(sid, "process", str(tmp_path))

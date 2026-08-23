@@ -5,11 +5,11 @@ import uuid
 
 import pytest
 
-from thaiguard.engine.anonymizer.anonymizer import anonymize
-from thaiguard.engine.anonymizer.fp_generator import generate_fp
-from thaiguard.engine.anonymizer.tb_generator import generate_tb
-from thaiguard.engine.models import Entity, EntityRegistry, PseudonymizedDocument, VaultRecord
-from thaiguard.engine.session_vault import SessionVault
+from amprang.engine.anonymizer.anonymizer import anonymize
+from amprang.engine.anonymizer.fp_generator import generate_fp
+from amprang.engine.anonymizer.tb_generator import generate_tb
+from amprang.engine.models import Entity, EntityRegistry, PseudonymizedDocument, VaultRecord
+from amprang.engine.session_vault import SessionVault
 
 SALT = "test-salt-abc123"
 
@@ -20,7 +20,7 @@ SALT = "test-salt-abc123"
 
 
 def test_generate_fp_thai_id():
-    from thaiguard.engine.detectors.thai_id import is_valid_thai_id
+    from amprang.engine.detectors.thai_id import is_valid_thai_id
 
     result = generate_fp("THAI_ID", "1101200012345", salt=SALT)
     assert len(result.replace("-", "").replace(" ", "")) == 13
@@ -52,7 +52,7 @@ def test_generate_fp_phone():
 
 
 def test_generate_fp_credit_card_luhn():
-    from thaiguard.engine.detectors.fp_detector import _luhn_check
+    from amprang.engine.detectors.fp_detector import _luhn_check
 
     result = generate_fp("CREDIT_CARD", "4532015112830366", salt=SALT)
     digits = result.replace("-", "").replace(" ", "")
@@ -216,7 +216,7 @@ def test_consistency_scan_does_not_rescan_the_document_per_entity(monkeypatch):
     so a long paste re-scanned the whole document once per entity and masking
     grew with entities x length. Nothing changes between those calls unless the
     scan itself rewrote the text."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     phones = [f"08{i % 9 + 1}-{100 + i:03d}-{1000 + i:04d}" for i in range(40)]
     text = "\n".join(f"ผู้ติดต่อรายที่ {i} หมายเลขโทรศัพท์ {phone}" for i, phone in enumerate(phones))
@@ -248,7 +248,7 @@ def test_reuse_check_folds_the_document_once(monkeypatch):
     """Reusing a prior pseudonym asks whether the candidate already occurs in
     the source, and that check folded the WHOLE document once per entity. A
     long paste that repeats one value folded it hundreds of times."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     phone = "081-234-5678"
     text = "\n".join(f"ผู้ติดต่อรายที่ {i} หมายเลขโทรศัพท์ {phone}" for i in range(40))
@@ -330,7 +330,7 @@ def test_generate_fp_attempt_rerolls_seed():
 def test_anonymize_rerolls_on_pseudonym_collision(monkeypatch):
     """Two DIFFERENT people whose generated fake names collide must not share
     a pseudonym (the vault reverse index would restore the wrong person)."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     def fake_generate_tb(data_type, context, *, salt, original, attempt=0):
         if attempt == 0:
@@ -362,7 +362,7 @@ def test_anonymize_rerolls_on_pseudonym_collision(monkeypatch):
 def test_anonymize_suffix_fallback_when_generator_exhausted(monkeypatch):
     """If every re-roll still collides, a unique suffix is the last resort —
     never a silent overwrite."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     def stubborn_generate_tb(data_type, context, *, salt, original, attempt=0):
         return "ชนกัน"
@@ -390,7 +390,7 @@ def test_anonymize_fp_collision_rerolls_never_suffixes(monkeypatch):
     """FP pseudonyms must stay format-valid: a '#N' suffix would leave the
     valid FP-looking base embedded in the output (detect_fp re-flags it).
     Collisions re-roll instead."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     def fake_generate_fp(data_type, original, *, salt, attempt=0):
         if attempt == 0:
@@ -415,7 +415,7 @@ def test_anonymize_fp_collision_rerolls_never_suffixes(monkeypatch):
 def test_anonymize_fp_exhausted_raises_instead_of_suffix(monkeypatch):
     """If an FP generator somehow cannot produce a unique value, fail loudly —
     a suffixed FP value is either misleading or re-flagged as a leak."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     def stubborn_generate_fp(data_type, original, *, salt, attempt=0):
         return "099-999-9999"
@@ -434,7 +434,7 @@ def test_anonymize_fp_exhausted_raises_instead_of_suffix(monkeypatch):
 def test_anonymize_suffix_never_embeds_another_persons_real_value(monkeypatch):
     """The '#N' last resort must not wrap a base that equals another entity's
     REAL value — 'สมชาย ใจดี#2' would ship the real name to the AI."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     def evil_generate_tb(data_type, context, *, salt, original, attempt=0):
         return "สมชาย ใจดี"  # always collides with person A's real name
@@ -471,7 +471,7 @@ def test_anonymize_same_original_still_shares_pseudonym():
 def test_anonymize_avoids_pseudonym_equal_to_other_original(monkeypatch):
     """A generated fake must not equal ANOTHER person's real value — reverse
     mapping would then plant person A's data where person B's real value stood."""
-    import thaiguard.engine.anonymizer.anonymizer as anon_mod
+    import amprang.engine.anonymizer.anonymizer as anon_mod
 
     def unlucky_generate_tb(data_type, context, *, salt, original, attempt=0):
         if original == "วิชัย ทองแท้" and attempt == 0:
@@ -500,7 +500,7 @@ def test_anonymize_fn_scanner_entities_get_realistic_fake_values():
     """Regression: fn_scanner-detected THAI_ID/EMAIL must route through
     generate_fp (realistic fake value), not tb_generator's literal
     "[REDACTED_x]" fallback -- fn_scanner now tags them redact_type="FP"."""
-    from thaiguard.engine.detectors.fn_scanner import scan_fn
+    from amprang.engine.detectors.fn_scanner import scan_fn
 
     text = "id 1234567890123 email foo@bar.com"
     entities = scan_fn(text, [])
@@ -526,7 +526,7 @@ def test_anonymize_fn_scanner_entities_get_realistic_fake_values():
 
 
 def test_generate_token_known_type():
-    from thaiguard.engine.anonymizer.token_generator import generate_token
+    from amprang.engine.anonymizer.token_generator import generate_token
 
     namespace = "a" * 25
     nonce = "n" * 20
@@ -539,7 +539,7 @@ def test_generate_token_known_type():
 
 
 def test_generate_token_unknown_type_falls_back_to_type_name():
-    from thaiguard.engine.anonymizer.token_generator import generate_token
+    from amprang.engine.anonymizer.token_generator import generate_token
 
     namespace = "a" * 25
     nonce = "n" * 20
@@ -561,7 +561,7 @@ def test_generate_token_unknown_type_falls_back_to_type_name():
     ],
 )
 def test_generate_token_rejects_non_product_identity(namespace, nonce, ordinal):
-    from thaiguard.engine.anonymizer.token_generator import generate_token
+    from amprang.engine.anonymizer.token_generator import generate_token
 
     with pytest.raises(ValueError, match="invalid token"):
         generate_token("NAME", ordinal, namespace=namespace, nonce=nonce)
@@ -578,13 +578,13 @@ def test_generate_token_rejects_non_product_identity(namespace, nonce, ordinal):
     ],
 )
 def test_token_shape_requires_exact_label_namespace_nonce_and_ordinal(candidate):
-    from thaiguard.engine.anonymizer.token_generator import is_token_for_data_type
+    from amprang.engine.anonymizer.token_generator import is_token_for_data_type
 
     assert not is_token_for_data_type(candidate, "EMAIL")
 
 
 def test_legacy_token_shape_is_readable_only_when_explicitly_allowed():
-    from thaiguard.engine.anonymizer.token_generator import (
+    from amprang.engine.anonymizer.token_generator import (
         is_token_for_data_type,
         token_ordinal_from_candidate,
     )
@@ -597,7 +597,7 @@ def test_legacy_token_shape_is_readable_only_when_explicitly_allowed():
 
 
 def test_token_label_map_matches_v2_contract():
-    from thaiguard.engine.anonymizer.token_generator import TOKEN_LABEL
+    from amprang.engine.anonymizer.token_generator import TOKEN_LABEL
 
     assert TOKEN_LABEL["THAI_ID"] == "บัตรประชาชน"
     assert TOKEN_LABEL["BANK_ACCOUNT"] == "บัญชีธนาคาร"
@@ -675,8 +675,8 @@ def test_anonymize_token_mode_same_original_across_calls_reuses_token():
 
 
 def test_token_mode_same_ordinal_is_namespaced_per_vault(monkeypatch):
-    import thaiguard.engine.anonymizer.anonymizer as anonymizer_mod
-    import thaiguard.engine.session_vault as vault_mod
+    import amprang.engine.anonymizer.anonymizer as anonymizer_mod
+    import amprang.engine.session_vault as vault_mod
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))
@@ -696,8 +696,8 @@ def test_token_mode_same_ordinal_is_namespaced_per_vault(monkeypatch):
 
 
 def test_token_mode_retries_when_nonce_identity_already_occurs_in_source(monkeypatch):
-    import thaiguard.engine.anonymizer.anonymizer as anonymizer_mod
-    from thaiguard.engine.anonymizer.token_generator import generate_token
+    import amprang.engine.anonymizer.anonymizer as anonymizer_mod
+    from amprang.engine.anonymizer.token_generator import generate_token
 
     namespace = "a" * 25
     nonces = iter(("n" * 20, "m" * 20))

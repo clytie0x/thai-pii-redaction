@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("sentence_transformers")
 
-from thaiguard.engine.sensitive_detector import detect_sensitive
+from amprang.engine.sensitive_detector import detect_sensitive
 
 
 def test_semantic_flags_health_without_keyword():

@@ -8,7 +8,7 @@ No MCP tool result may contain the pseudonym→original mapping, in any
 encoding. `sanitize` returns masked text plus an opaque `session_handle` to a
 server-side in-memory vault (TTL-bounded, droppable via `close_session`);
 `reidentify` accepts the handle. The plaintext-mapping API exists only in the
-in-process Python facade (`thaiguard.anonymize().mapping`), where the holder is
+in-process Python facade (`amprang.anonymize().mapping`), where the holder is
 code, not a model context.
 
 ## Why

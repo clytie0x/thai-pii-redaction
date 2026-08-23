@@ -181,7 +181,7 @@ def test_run_blind_is_aggregate_only_and_logs_chain(frozen_blind, capsys):
 
 def test_run_blind_requires_key_and_reason(frozen_blind):
     data_dir, key_file, _ = frozen_blind
-    with pytest.raises(blind.BlindError, match="AIGUARD_BLIND_KEY_FILE"):
+    with pytest.raises(blind.BlindError, match="AMPRANG_BLIND_KEY_FILE"):
         blind.run_blind(engine="crf", key_file=None, reason="x", data_dir=data_dir)
     with pytest.raises(blind.BlindError, match="reason"):
         blind.run_blind(engine="crf", key_file=key_file, reason="  ", data_dir=data_dir)

@@ -4,7 +4,7 @@ import time
 from dataclasses import fields
 from uuid import uuid4
 
-from thaiguard.engine.models import (
+from amprang.engine.models import (
     AIResponse,
     Entity,
     EntityRegistry,

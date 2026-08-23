@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from thaiguard.engine.exporter import ExportError, ExportResult, export
-from thaiguard.engine.models import ReverseResult
-from thaiguard.engine.output_validator import ValidationResult
+from amprang.engine.exporter import ExportError, ExportResult, export
+from amprang.engine.models import ReverseResult
+from amprang.engine.output_validator import ValidationResult
 
 
 def _make_validation_result(halt: bool = False, l2_ok: bool = True) -> ValidationResult:

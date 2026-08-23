@@ -1,37 +1,37 @@
-# thaiguard
+# amprang
 
 Thai PII detection, anonymization, and PDF redaction for Python — mask
 personal data before it reaches an external AI, restore it locally.
 
 ```
-pip install thaiguard
+pip install amprang
 ```
 
 ```python
-import thaiguard
+import amprang
 
 text = "ผมชื่อสมชาย ใจดี เบอร์ 081-234-5678 บัตรประชาชน 1-2345-67890-12-3"
 
 # Detect: spans index into your text
-for entity in thaiguard.detect(text):
+for entity in amprang.detect(text):
     print(entity.data_type, entity.span)
 
 # Mask -> send to an LLM -> restore
-masked = thaiguard.anonymize(text, mode="surrogate")
+masked = amprang.anonymize(text, mode="surrogate")
 reply = call_your_llm(masked.text)  # only masked text leaves the process
-restored = thaiguard.restore(reply, masked.mapping)
+restored = amprang.restore(reply, masked.mapping)
 
 # Multi-turn: the mapping never leaves the Session object
-with thaiguard.Session(mode="token") as session:
+with amprang.Session(mode="token") as session:
     turn1 = session.anonymize(text)
     answer = call_your_llm(turn1.text)
     print(session.restore(answer).text)
 
 # PDPA risk analysis (no raw values in the result)
-thaiguard.analyze(text)
+amprang.analyze(text)
 
-# Permanent PDF blackout (flattened; scanned PDFs need `pip install thaiguard[ocr]`)
-thaiguard.redact_pdf("input.pdf", "redacted.pdf")
+# Permanent PDF blackout (flattened; scanned PDFs need `pip install amprang[ocr]`)
+amprang.redact_pdf("input.pdf", "redacted.pdf")
 ```
 
 ## What it detects
@@ -48,7 +48,7 @@ a guess.
 
 - **Fail closed.** If a masked result would still carry residual PII
   (structured, text-based, or a bare 6+ digit run), `anonymize` raises
-  `thaiguard.LeakBlockedError` instead of returning a partial mask.
+  `amprang.LeakBlockedError` instead of returning a partial mask.
 - **Local only.** Detection and masking run in-process. The library makes no
   network calls and keeps no state on disk.
 - **The mapping is yours to guard.** `anonymize` returns the
@@ -60,33 +60,33 @@ a guess.
 
 ## PDPA tooling (CLI)
 
-The `thaiguard` console command carries the PDPA artifact generators —
+The `amprang` console command carries the PDPA artifact generators —
 processing receipt (มาตรา 39), breach assessment (มาตรา 37(4)), and DSAR
 locate (มาตรา 30) — each producing a value-free JSON + Thai PDF pair:
 
 ```
-thaiguard report document.txt
-thaiguard receipt issue document.txt -o receipt.json --pdf receipt.pdf
-thaiguard breach assess ./leaked_files -o breach.json --pdf breach.pdf
-thaiguard dsar locate ./documents --subject-file subject.txt -o dsar.json
+amprang report document.txt
+amprang receipt issue document.txt -o receipt.json --pdf receipt.pdf
+amprang breach assess ./leaked_files -o breach.json --pdf breach.pdf
+amprang dsar locate ./documents --subject-file subject.txt -o dsar.json
 ```
 
 ## Try it in a browser
 
 ```
-pip install "thaiguard[server]"
-thaiguard serve
+pip install "amprang[server]"
+amprang serve
 ```
 
 One process, loopback only, opens the playground at `http://127.0.0.1:8000/demo`
 — paste Thai text, see detection highlights and masked output live. Nothing
 leaves the machine. (`--no-browser`, `--no-demo`, `--port` available; a
 non-loopback bind requires an explicit `--allow-remote` **and**
-`AIGUARD_API_KEY`, so the data plane is never silently open to a network.)
+`AMPRANG_API_KEY`, so the data plane is never silently open to a network.)
 
 ## MCP server (for AI agents)
 
-`pip install thaiguard[mcp]` adds `thaiguard-mcp` — the same guard as a Model
+`pip install amprang[mcp]` adds `amprang-mcp` — the same guard as a Model
 Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
 `reidentify`, `pdpa_analyze`, `guard_prompt`, `close_session`. Run it over
 stdio for a local agent (text never leaves the machine, no auth needed) or
@@ -97,30 +97,30 @@ land in the very model context the guard exists to protect (see
 `docs/decisions/0003-mcp-no-plaintext-mapping.md`).
 
 The HTTP transport is fail-closed: it refuses to start without
-`AIGUARD_MCP_KEYS="caller_id:key[,caller_id:key...]"` — one key per caller,
+`AMPRANG_MCP_KEYS="caller_id:key[,caller_id:key...]"` — one key per caller,
 checked with a constant-time comparison. There is no "unauthenticated for
 now" mode; a shared endpoint with no key would hand the PII guard to
 anything that can reach the port.
 
 ```
-AIGUARD_MCP_KEYS="agent-a:key-a,agent-b:key-b" thaiguard-mcp --transport http --port 8300
+AMPRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" amprang-mcp --transport http --port 8300
 ```
 
 ## Extras
 
 | Extra | Adds |
 |---|---|
-| `thaiguard[server]` | Local FastAPI HTTP server (`thaiguard.server.server`) |
-| `thaiguard[mcp]` | `thaiguard-mcp` Model Context Protocol server |
-| `thaiguard[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
-| `thaiguard[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
+| `amprang[server]` | Local FastAPI HTTP server (`amprang.server.server`) |
+| `amprang[mcp]` | `amprang-mcp` Model Context Protocol server |
+| `amprang[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
+| `amprang[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
 
 ## Stability
 
-Only the `thaiguard` module surface follows semver — `detect`, `anonymize`,
+Only the `amprang` module surface follows semver — `detect`, `anonymize`,
 `restore`, `analyze`, `redact_pdf`, `Session`, `Entity`, `LeakBlockedError`,
-`SessionExpiredError`, and the result dataclasses. `thaiguard.engine.*`
-(detection/masking core) and `thaiguard.server.*` (local HTTP server) are
+`SessionExpiredError`, and the result dataclasses. `amprang.engine.*`
+(detection/masking core) and `amprang.server.*` (local HTTP server) are
 internal; import them at your own risk.
 
 ## Provenance

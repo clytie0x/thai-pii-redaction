@@ -67,7 +67,7 @@ def _register_font(corpus_dir: Path) -> str:
 
     font_name = "GovFormSynthetic"
     if font_name not in pdfmetrics.getRegisteredFontNames():
-        font_path = corpus_dir.parents[3] / "thaiguard" / "engine" / "fonts"
+        font_path = corpus_dir.parents[3] / "amprang" / "engine" / "fonts"
         font_path /= "IBMPlexSansThaiLooped-Regular.ttf"
         pdfmetrics.registerFont(TTFont(font_name, str(font_path)))
     return font_name

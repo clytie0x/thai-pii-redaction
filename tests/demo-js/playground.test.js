@@ -15,7 +15,7 @@ const script = page.match(/<script>\s*([\s\S]*?)<\/script>/i)?.[1];
 if (!markup || !script) throw new Error("playground HTML must contain a body and inline script");
 
 const PDF_B64 = btoa("%PDF-synthetic");
-const CONTRACT_HEADER = "X-AIGuard-Contract-Version";
+const CONTRACT_HEADER = "X-Amprang-Contract-Version";
 
 function headers(value = "2") {
   return {
@@ -77,7 +77,7 @@ beforeEach(async () => {
   clickedDownloads = [];
   vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(response(healthBody())));
   vi.stubGlobal("URL", {
-    createObjectURL: vi.fn(() => "blob:aiguard-test"),
+    createObjectURL: vi.fn(() => "blob:amprang-test"),
     revokeObjectURL: vi.fn(),
   });
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
@@ -135,8 +135,8 @@ describe("playground browser artifacts", () => {
 
     document.getElementById("pdfDownload").click();
 
-    expect(clickedDownloads).toEqual([{ href: "blob:aiguard-test", download: "redacted_fixture.pdf" }]);
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:aiguard-test");
+    expect(clickedDownloads).toEqual([{ href: "blob:amprang-test", download: "redacted_fixture.pdf" }]);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:amprang-test");
   });
 
   it("downloads the aggregate PDPA report with its fixed safe filename", async () => {
@@ -154,7 +154,7 @@ describe("playground browser artifacts", () => {
       "/api/analyze-report",
       expect.objectContaining({ method: "POST" }),
     );
-    expect(clickedDownloads).toEqual([{ href: "blob:aiguard-test", download: "pdpa_report.pdf" }]);
+    expect(clickedDownloads).toEqual([{ href: "blob:amprang-test", download: "pdpa_report.pdf" }]);
     expect(document.getElementById("meta").textContent).toContain("คะแนนรวม 12 เกรด B");
     expect(document.getElementById("reportBtn").disabled).toBe(false);
   });

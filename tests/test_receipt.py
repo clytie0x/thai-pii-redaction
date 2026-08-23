@@ -18,15 +18,15 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 
-from thaiguard.engine.models import Entity
-from thaiguard.engine.receipt import (
+from amprang.engine.models import Entity
+from amprang.engine.receipt import (
     RECEIPT_SCHEMA,
     build_receipt,
     result_digest,
     verify_receipt,
 )
-from thaiguard.engine.receipt_pdf import render_receipt
-from thaiguard.engine.thai_pdf_text import register_thai_font
+from amprang.engine.receipt_pdf import render_receipt
+from amprang.engine.thai_pdf_text import register_thai_font
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -103,7 +103,7 @@ def test_digest_survives_hash_randomization_across_processes(tmp_path):
 
     script = (
         "import sys;"
-        "from thaiguard.engine.receipt import process_for_receipt, result_digest;"
+        "from amprang.engine.receipt import process_for_receipt, result_digest;"
         "print(result_digest(process_for_receipt(sys.argv[1]).entities))"
     )
     digests = []
@@ -164,7 +164,7 @@ def test_receipt_records_source_result_and_environment(tmp_path):
 
 
 def test_receipt_counts_agree_with_the_detection_it_describes(tmp_path):
-    from thaiguard.engine.receipt import process_for_receipt
+    from amprang.engine.receipt import process_for_receipt
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -344,7 +344,7 @@ def test_verify_refuses_an_unknown_schema(tmp_path):
     doc.write_text(PII_TEXT, encoding="utf-8")
 
     receipt = build_receipt(doc)
-    receipt["schema"] = "aiguard.processing-receipt/99"
+    receipt["schema"] = "amprang.processing-receipt/99"
 
     result = verify_receipt(receipt, doc)
     assert not result.ok
@@ -422,46 +422,46 @@ def test_receipt_pdf_does_not_promise_more_than_it_can_keep(tmp_path):
 
 
 def test_cli_issue_then_verify_round_trip(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
     out = tmp_path / "receipt.json"
 
-    ai_guard.cmd_receipt_issue(
+    cli.cmd_receipt_issue(
         _args(file=str(doc), output=str(out), pdf=None, purpose=None, controller=None)
     )
     assert out.exists()
     issued = json.loads(out.read_text(encoding="utf-8"))
     assert issued["schema"] == RECEIPT_SCHEMA
 
-    ai_guard.cmd_receipt_verify(_args(receipt=str(out), file=str(doc)))
+    cli.cmd_receipt_verify(_args(receipt=str(out), file=str(doc)))
     # "ยืนยันได้", not "ตรงกัน" — the failure line reads "ยืนยันไม่ได้", and a
     # substring both messages share would pass on a failing verification.
     assert "ยืนยันได้" in capsys.readouterr().out
 
 
 def test_cli_issue_writes_a_pdf_when_asked(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
     out = tmp_path / "receipt.json"
     pdf = tmp_path / "receipt.pdf"
 
-    ai_guard.cmd_receipt_issue(
+    cli.cmd_receipt_issue(
         _args(file=str(doc), output=str(out), pdf=str(pdf), purpose=None, controller=None)
     )
     assert pdf.read_bytes()[:5] == b"%PDF-"
 
 
 def test_cli_issue_prints_the_receipt_when_no_output_given(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
 
-    ai_guard.cmd_receipt_issue(
+    cli.cmd_receipt_issue(
         _args(file=str(doc), output=None, pdf=None, purpose=None, controller=None)
     )
     assert json.loads(capsys.readouterr().out)["schema"] == RECEIPT_SCHEMA
@@ -469,7 +469,7 @@ def test_cli_issue_prints_the_receipt_when_no_output_given(tmp_path, capsys):
 
 def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
     """A receipt is evidence someone kept; clobbering one needs to be asked for."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -477,7 +477,7 @@ def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
     out.write_text("earlier receipt", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_receipt_issue(
+        cli.cmd_receipt_issue(
             _args(file=str(doc), output=str(out), pdf=None, purpose=None, controller=None)
         )
     assert exc.value.code == 1
@@ -485,14 +485,14 @@ def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
 
 
 def test_cli_issue_overwrites_when_asked(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
     out = tmp_path / "receipt.json"
     out.write_text("earlier receipt", encoding="utf-8")
 
-    ai_guard.cmd_receipt_issue(
+    cli.cmd_receipt_issue(
         _args(
             file=str(doc),
             output=str(out),
@@ -506,32 +506,32 @@ def test_cli_issue_overwrites_when_asked(tmp_path, capsys):
 
 
 def test_cli_verify_exits_1_when_the_document_does_not_match(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
     out = tmp_path / "receipt.json"
-    ai_guard.cmd_receipt_issue(
+    cli.cmd_receipt_issue(
         _args(file=str(doc), output=str(out), pdf=None, purpose=None, controller=None)
     )
 
     doc.write_text(PII_TEXT + "แก้ไขภายหลัง\n", encoding="utf-8")
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_receipt_verify(_args(receipt=str(out), file=str(doc)))
+        cli.cmd_receipt_verify(_args(receipt=str(out), file=str(doc)))
     assert exc.value.code == 1
 
 
 def test_cli_issue_writes_nothing_when_a_destination_is_unwritable(tmp_path, capsys):
     """A bad --pdf path used to surface only after the JSON had landed, so the
     run ended with a success line, a raw traceback, and half a receipt."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
     out = tmp_path / "receipt.json"
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_receipt_issue(
+        cli.cmd_receipt_issue(
             _args(
                 file=str(doc),
                 output=str(out),
@@ -546,7 +546,7 @@ def test_cli_issue_writes_nothing_when_a_destination_is_unwritable(tmp_path, cap
 
 
 def test_cli_verify_exits_1_on_an_unreadable_receipt(tmp_path):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -554,15 +554,15 @@ def test_cli_verify_exits_1_on_an_unreadable_receipt(tmp_path):
     bad.write_text("{not json", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_receipt_verify(_args(receipt=str(bad), file=str(doc)))
+        cli.cmd_receipt_verify(_args(receipt=str(bad), file=str(doc)))
     assert exc.value.code == 1
 
 
 def test_cli_parser_exposes_receipt_issue_and_verify():
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
-    assert hasattr(ai_guard, "cmd_receipt_issue")
-    assert hasattr(ai_guard, "cmd_receipt_verify")
+    assert hasattr(cli, "cmd_receipt_issue")
+    assert hasattr(cli, "cmd_receipt_verify")
 
 
 # ── helpers ───────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_live_completion_round_trips_a_token():
-    from thaiguard.engine.ai_client import TokenmindProvider
+    from amprang.engine.ai_client import TokenmindProvider
 
     provider = TokenmindProvider()
     reply = provider.complete(

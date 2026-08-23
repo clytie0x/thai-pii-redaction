@@ -17,6 +17,6 @@ def test_every_source_package_is_declared_for_distribution():
     )
     found = {
         ".".join(init.parent.relative_to(ROOT).parts)
-        for init in (ROOT / "thaiguard").rglob("__init__.py")
+        for init in (ROOT / "amprang").rglob("__init__.py")
     }
     assert found <= declared, f"missing from pyproject packages: {sorted(found - declared)}"

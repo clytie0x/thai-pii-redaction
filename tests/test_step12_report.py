@@ -1,5 +1,5 @@
-from thaiguard.engine.reid_risk import ReidRiskResult, assess_reid_risk
-from thaiguard.engine.report import PDPAReport, analyze_text, generate_report
+from amprang.engine.reid_risk import ReidRiskResult, assess_reid_risk
+from amprang.engine.report import PDPAReport, analyze_text, generate_report
 
 
 def test_reid_risk_no_qi():
@@ -113,8 +113,8 @@ def test_analyze_text_matches_the_canonical_fallback_detector():
 
 
 def test_analyze_text_runs_detection_once(monkeypatch):
-    import thaiguard.engine.report as report_module
-    from thaiguard.engine.models import Entity
+    import amprang.engine.report as report_module
+    from amprang.engine.models import Entity
 
     calls = []
 

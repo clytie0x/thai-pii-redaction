@@ -7,7 +7,7 @@ Date: 2026-08-21 · Status: accepted
 Every piece of product logic — detection, masking, vault, restoration, policy,
 PDPA artifacts, adapters — lives in Python, in this repository. Other
 languages are allowed only as the dumbest possible presentation layer: HTML/JS
-that takes input, calls a thaiguard API, and renders the response. No
+that takes input, calls a amprang API, and renders the response. No
 detection, masking, or policy logic may ever be duplicated outside Python.
 
 ## Why

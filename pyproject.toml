@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "thaiguard"
+name = "amprang"
 description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
 readme = "README.md"
 license = "Apache-2.0"
@@ -26,12 +26,12 @@ classifiers = [
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
-thaiguard = "thaiguard.cli:main"
-thaiguard-mcp = "thaiguard.mcp:main"
+amprang = "amprang.cli:main"
+amprang-mcp = "amprang.mcp:main"
 
 [project.urls]
-Homepage = "https://github.com/Teerapat-Vatpitak/thaiguard"
-Issues = "https://github.com/Teerapat-Vatpitak/thaiguard/issues"
+Homepage = "https://github.com/Teerapat-Vatpitak/amprang"
+Issues = "https://github.com/Teerapat-Vatpitak/amprang/issues"
 
 [tool.setuptools.dynamic]
 version = { file = "VERSION" }
@@ -42,30 +42,30 @@ optional-dependencies.ml = { file = "requirements-ml.txt" }
 optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 
 [tool.setuptools]
-# `thaiguard`'s top-level module (thaiguard/__init__.py, cli.py, mcp.py,
+# `amprang`'s top-level module (amprang/__init__.py, cli.py, mcp.py,
 # serve.py) is the public facade and the only import surface with a semver
-# contract. `thaiguard.engine` and `thaiguard.server` ship the internal
+# contract. `amprang.engine` and `amprang.server` ship the internal
 # engine and the optional local HTTP server; they carry no cross-release
-# stability promise. Everything lives under the `thaiguard` distribution
+# stability promise. Everything lives under the `amprang` distribution
 # name so nothing installs a generic top-level import name (`app`,
 # `pii_redactor`) that could collide with an unrelated package.
 packages = [
-  "thaiguard",
-  "thaiguard.engine",
-  "thaiguard.engine.detectors",
-  "thaiguard.engine.anonymizer",
-  "thaiguard.engine.guard",
-  "thaiguard.engine.ingest",
-  "thaiguard.server",
-  "thaiguard.server.worker",
+  "amprang",
+  "amprang.engine",
+  "amprang.engine.detectors",
+  "amprang.engine.anonymizer",
+  "amprang.engine.guard",
+  "amprang.engine.ingest",
+  "amprang.server",
+  "amprang.server.worker",
 ]
 
 # The Thai font travels with the package: a `pip install` user renders the
 # PDPA report and the processing receipt too, and without it Thai comes out
 # as black boxes wherever the machine has no Thai-capable TTF of its own.
 [tool.setuptools.package-data]
-"thaiguard.engine" = ["fonts/*.ttf"]
-"thaiguard.server" = ["demo/*.html"]
+"amprang.engine" = ["fonts/*.ttf"]
+"amprang.server" = ["demo/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -98,7 +98,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011", "E402", "F401", "F841", "RUF043"]
-"thaiguard/server/server.py" = ["E402"]
+"amprang/server/server.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

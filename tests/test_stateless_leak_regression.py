@@ -18,12 +18,12 @@ be able to switch the guard off.
 
 import pytest
 
-from thaiguard.engine import stateless as stateless_module
-from thaiguard.engine.detectors.ner_failure import NERFailureError
-from thaiguard.engine.detectors.tb_detector import detect_tb
-from thaiguard.engine.leak_guard import scan_outbound_leaks, scan_residual_signals
-from thaiguard.engine.session_vault import SessionVault, VaultTimeoutError
-from thaiguard.engine.stateless import (
+from amprang.engine import stateless as stateless_module
+from amprang.engine.detectors.ner_failure import NERFailureError
+from amprang.engine.detectors.tb_detector import detect_tb
+from amprang.engine.leak_guard import scan_outbound_leaks, scan_residual_signals
+from amprang.engine.session_vault import SessionVault, VaultTimeoutError
+from amprang.engine.stateless import (
     StatelessLeakError,
     StatelessProcessingError,
     restore_stateless,
@@ -39,7 +39,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("thaiguard.engine.", "thaiguard.server.")):
+        if module.startswith(("amprang.engine.", "amprang.server.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames

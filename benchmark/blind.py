@@ -12,7 +12,7 @@ repository. The mechanisms here exist for that one purpose:
   file can decrypt, and that is fine; the threat model is self-deception, not
   attackers.
 - The key lives OUTSIDE the repository and is supplied explicitly via the
-  ``AIGUARD_BLIND_KEY_FILE`` environment variable. There is no default
+  ``AMPRANG_BLIND_KEY_FILE`` environment variable. There is no default
   discovery path, so routine tooling cannot stumble into the plaintext.
 - ``data/<version>.lock.json`` pins the plaintext and ciphertext hashes plus
   aggregate composition counts. Scoring refuses a corpus whose hash does not
@@ -109,8 +109,8 @@ def load_master(key_path: str | Path) -> bytes:
 
 
 def _subkeys(master: bytes) -> tuple[bytes, bytes]:
-    enc = hmac.new(master, b"aiguard-blind-enc", hashlib.sha256).digest()
-    auth = hmac.new(master, b"aiguard-blind-auth", hashlib.sha256).digest()
+    enc = hmac.new(master, b"amprang-blind-enc", hashlib.sha256).digest()
+    auth = hmac.new(master, b"amprang-blind-auth", hashlib.sha256).digest()
     return enc, auth
 
 
@@ -438,12 +438,12 @@ def run_blind(
 ) -> dict:
     if not key_file:
         raise BlindError(
-            "set AIGUARD_BLIND_KEY_FILE to the key file path (kept outside the repository)"
+            "set AMPRANG_BLIND_KEY_FILE to the key file path (kept outside the repository)"
         )
     if not reason.strip():
         raise BlindError("a blind run must state --reason (it is recorded in the audit log)")
 
-    from thaiguard.engine.detectors.tb_detector import NERChunkDiagnostics
+    from amprang.engine.detectors.tb_detector import NERChunkDiagnostics
 
     from .runner import predict_samples
 

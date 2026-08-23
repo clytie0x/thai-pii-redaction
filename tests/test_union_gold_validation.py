@@ -15,9 +15,9 @@ import importlib.util
 
 import pytest
 
+from amprang.engine.detectors.aggregate import detect_all
 from benchmark.gold import load_gold
 from benchmark.scorer import score
-from thaiguard.engine.detectors.aggregate import detect_all
 
 
 @pytest.mark.skipif(
@@ -25,7 +25,7 @@ from thaiguard.engine.detectors.aggregate import detect_all
     reason="requires requirements-ml.txt",
 )
 def test_product_union_reproduces_adr_recall_on_gold(monkeypatch):
-    monkeypatch.setenv("AIGUARD_NER_ENGINE", "union")
+    monkeypatch.setenv("AMPRANG_NER_ENGINE", "union")
     samples = load_gold()
     preds = [[(e.span[0], e.span[1], e.data_type) for e in detect_all(s.text)] for s in samples]
     rep = score(samples, preds)

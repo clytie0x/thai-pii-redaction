@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import pytest
 
-import thaiguard.engine.detectors.tb_detector as tbd
-from thaiguard.engine.detectors.aggregate import detect_all
-from thaiguard.engine.detectors.name_context import detect_name_context
+import amprang.engine.detectors.tb_detector as tbd
+from amprang.engine.detectors.aggregate import detect_all
+from amprang.engine.detectors.name_context import detect_name_context
 
 
 def _covered(text: str, value: str) -> bool:
@@ -115,7 +115,7 @@ def test_glued_role_compound_keeps_the_given_name():
 def test_split_role_compounds_are_still_trimmed_whole():
     # The B1 rows the carve-out exists for: when the group IS the compound,
     # the whole group still goes.
-    from thaiguard.engine.detectors.name_context import trim_same_line_name_edges
+    from amprang.engine.detectors.name_context import trim_same_line_name_edges
 
     for seg, expected in (
         ("ผู้รับเงิน สมชาย ใจดี", "สมชาย ใจดี"),
@@ -155,7 +155,7 @@ def test_lead_stop_word_that_is_a_real_given_name_stays_masked():
 
 
 def test_role_and_label_head_trims_are_unaffected():
-    from thaiguard.engine.detectors.name_context import trim_same_line_name_edges
+    from amprang.engine.detectors.name_context import trim_same_line_name_edges
 
     for seg, expected in (
         ("ผู้จัดการฝ่ายขาย วิชัย ประสงค์ดี", "วิชัย ประสงค์ดี"),
@@ -290,7 +290,7 @@ def test_bare_fee_label_is_still_dropped():
 
 
 def test_email_span_starts_at_the_local_part():
-    from thaiguard.engine.detectors.fp_detector import detect_fp
+    from amprang.engine.detectors.fp_detector import detect_fp
 
     got = {e.original_text for e in detect_fp("..a@b.co และ manop.d@example.com")}
     assert "manop.d@example.com" in got

@@ -4,12 +4,12 @@ Date: 2026-08-21 · Status: accepted
 
 ## Decision
 
-The product is the `thaiguard` pip package, and only it:
+The product is the `amprang` pip package, and only it:
 
-- **SDK** — the `thaiguard` facade (the only semver-stable import surface)
-- **CLI** — the `thaiguard` command (sanitize/report + PDPA receipt, breach,
+- **SDK** — the `amprang` facade (the only semver-stable import surface)
+- **CLI** — the `amprang` command (sanitize/report + PDPA receipt, breach,
   DSAR artifacts)
-- **MCP adapter** — `thaiguard-mcp` (local stdio; HTTP for a shared endpoint)
+- **MCP adapter** — `amprang-mcp` (local stdio; HTTP for a shared endpoint)
 - **`[server]` extra** — the local FastAPI app, also the body of the AI for
   Thai deployment
 
@@ -31,7 +31,7 @@ Surface is added when demand pulls it, never ahead of it.
 ## AI for Thai obligation
 
 The platform deployment is an obligation-closing deliverable, not a product
-track: the sibling port pins a released `thaiguard[server]` version behind its
+track: the sibling port pins a released `amprang[server]` version behind its
 nginx shell, text-only routes (the PDF route stays closed — measured at 221 s
 and the 6 GiB ceiling for a single OCR page), then freezes to security fixes
 and version bumps.

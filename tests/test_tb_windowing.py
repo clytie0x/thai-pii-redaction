@@ -2,7 +2,7 @@
 
 import pytest
 
-import thaiguard.engine.detectors.tb_detector as tbd
+import amprang.engine.detectors.tb_detector as tbd
 
 
 class SpyNER:
@@ -152,7 +152,7 @@ class LeftExpandingNameNER:
 
 def _with_engine(monkeypatch, engine):
     monkeypatch.setitem(tbd._ner_cache, "thainer", engine)
-    monkeypatch.setenv("AIGUARD_NER_ENGINE", "thainer")
+    monkeypatch.setenv("AMPRANG_NER_ENGINE", "thainer")
 
 
 def test_chars_tagged_is_near_linear(monkeypatch):
@@ -346,7 +346,7 @@ def test_partial_name_expansion_respects_the_hard_call_cap(monkeypatch):
 def test_isolated_line_fallback_never_adds_calls_for_other_single_engines(monkeypatch, engine_name):
     ner = GreedyIsolatedNER()
     monkeypatch.setitem(tbd._ner_cache, engine_name, ner)
-    monkeypatch.setenv("AIGUARD_NER_ENGINE", engine_name)
+    monkeypatch.setenv("AMPRANG_NER_ENGINE", engine_name)
 
     entities = tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
 
@@ -359,7 +359,7 @@ def test_isolated_line_fallback_never_adds_calls_for_union(monkeypatch):
     wangchanberta = GreedyIsolatedNER()
     monkeypatch.setitem(tbd._ner_cache, "thainer", thainer)
     monkeypatch.setitem(tbd._ner_cache, "wangchanberta", wangchanberta)
-    monkeypatch.setenv("AIGUARD_NER_ENGINE", "union")
+    monkeypatch.setenv("AMPRANG_NER_ENGINE", "union")
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 
     entities = tbd.detect_tb(text)
@@ -371,7 +371,7 @@ def test_isolated_line_fallback_never_adds_calls_for_union(monkeypatch):
 
 def test_isolated_line_fallback_never_runs_for_finetuned(monkeypatch):
     calls = []
-    monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AMPRANG_NER_ENGINE", "finetuned")
     monkeypatch.setattr(tbd, "_detect_tb_finetuned", lambda text: calls.append(text) or [])
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 

@@ -18,6 +18,8 @@ from PIL import ImageChops
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfgen import canvas
 
+from amprang.engine.ingest.file_detector import detect_source_type
+from amprang.engine.ingest.text_extractor import extract
 from benchmark.data.probe.gov_forms.generate_inputs import (
     _register_font,
     _render_pdf,
@@ -25,8 +27,6 @@ from benchmark.data.probe.gov_forms.generate_inputs import (
 )
 from benchmark.data.probe.gov_forms.sanitize_download import sanitize_pdf
 from benchmark.probe_document import load_expectations
-from thaiguard.engine.ingest.file_detector import detect_source_type
-from thaiguard.engine.ingest.text_extractor import extract
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmark" / "data" / "probe" / "gov_forms"

@@ -8,7 +8,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    import thaiguard.server.server as server
+    import amprang.server.server as server
 
     DEPS = True
 except ImportError:
@@ -25,7 +25,7 @@ def _client():
     return TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
 
 
@@ -82,7 +82,7 @@ def test_shutdown_allowed_with_correct_token(monkeypatch):
     monkeypatch.setattr(server, "_BOOT_TOKEN", TOKEN)
     called = {}
     monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
-    resp = _client().post("/api/shutdown", headers={"X-AIGuard-Token": TOKEN})
+    resp = _client().post("/api/shutdown", headers={"X-Amprang-Token": TOKEN})
     assert resp.status_code == 200
     assert called.get("hit") is True
 
@@ -91,7 +91,7 @@ def test_shutdown_rejected_with_wrong_token(monkeypatch):
     monkeypatch.setattr(server, "_BOOT_TOKEN", TOKEN)
     called = {}
     monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
-    resp = _client().post("/api/shutdown", headers={"X-AIGuard-Token": "wrong"})
+    resp = _client().post("/api/shutdown", headers={"X-Amprang-Token": "wrong"})
     assert resp.status_code == 403
     assert "hit" not in called
 
@@ -106,11 +106,11 @@ def test_shutdown_rejected_with_missing_token(monkeypatch):
 
 
 def test_shutdown_local_header_alone_rejected_when_token_set(monkeypatch):
-    """X-AIGuard-Local by itself must NOT authorize shutdown once a token is set."""
+    """X-Amprang-Local by itself must NOT authorize shutdown once a token is set."""
     monkeypatch.setattr(server, "_BOOT_TOKEN", TOKEN)
     called = {}
     monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
-    resp = _client().post("/api/shutdown", headers={"X-AIGuard-Local": "1"})
+    resp = _client().post("/api/shutdown", headers={"X-Amprang-Local": "1"})
     assert resp.status_code == 403
     assert "hit" not in called
 
@@ -129,7 +129,7 @@ def test_shutdown_grace_path_allowed_with_local_header(monkeypatch):
     monkeypatch.setattr(server, "_BOOT_TOKEN", None)
     called = {}
     monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
-    resp = _client().post("/api/shutdown", headers={"X-AIGuard-Local": "1"})
+    resp = _client().post("/api/shutdown", headers={"X-Amprang-Local": "1"})
     assert resp.status_code == 200
     assert called.get("hit") is True
 
@@ -147,7 +147,7 @@ def test_delete_session_allowed_with_valid_authorization(monkeypatch):
     authorization = _disposal_authorization(sid)
     resp = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": authorization},
+        headers={"X-Amprang-Token": authorization},
     )
     assert resp.status_code == 200
     assert resp.json()["deleted"] is True
@@ -157,7 +157,7 @@ def test_delete_session_rejects_raw_boot_token(monkeypatch):
     monkeypatch.setattr(server, "_BOOT_TOKEN", TOKEN)
     client = _client()
     sid = _make_session(client)
-    resp = client.delete(f"/api/session/{sid}", headers={"X-AIGuard-Token": TOKEN})
+    resp = client.delete(f"/api/session/{sid}", headers={"X-Amprang-Token": TOKEN})
     assert resp.status_code == 403
     # Session must survive a rejected delete.
     r = client.post("/api/reidentify", json={"session_id": sid, "text": "x"})
@@ -207,7 +207,7 @@ def test_delete_session_rejects_malformed_authorization(monkeypatch, authorizati
 
     resp = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": authorization},
+        headers={"X-Amprang-Token": authorization},
     )
 
     assert resp.status_code == 403
@@ -227,7 +227,7 @@ def test_delete_session_rejects_non_ascii_authorization(monkeypatch):
 
     resp = client.delete(
         f"/api/session/{sid}",
-        headers=[(b"X-AIGuard-Token", b"\xff")],
+        headers=[(b"X-Amprang-Token", b"\xff")],
     )
 
     assert resp.status_code == 403
@@ -244,7 +244,7 @@ def test_delete_session_rejects_invalid_signature(monkeypatch):
 
     resp = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": authorization},
+        headers={"X-Amprang-Token": authorization},
     )
 
     assert resp.status_code == 403
@@ -262,7 +262,7 @@ def test_delete_session_rejects_expired_authorization(monkeypatch):
 
     resp = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": authorization},
+        headers={"X-Amprang-Token": authorization},
     )
 
     assert resp.status_code == 403
@@ -293,7 +293,7 @@ def test_disposal_authorization_expiry_boundary(
 
     resp = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": authorization},
+        headers={"X-Amprang-Token": authorization},
     )
 
     assert resp.status_code == expected_status
@@ -308,8 +308,8 @@ def test_delete_session_rejects_duplicate_authorization_headers(monkeypatch):
     resp = client.delete(
         f"/api/session/{sid}",
         headers=[
-            (b"X-AIGuard-Token", authorization.encode("ascii")),
-            (b"X-AIGuard-Token", authorization.encode("ascii")),
+            (b"X-Amprang-Token", authorization.encode("ascii")),
+            (b"X-Amprang-Token", authorization.encode("ascii")),
         ],
     )
 
@@ -325,7 +325,7 @@ def test_disposal_authorization_is_bound_to_target_session(monkeypatch):
 
     resp = client.delete(
         f"/api/session/{second_id}",
-        headers={"X-AIGuard-Token": first_authorization},
+        headers={"X-Amprang-Token": first_authorization},
     )
 
     assert resp.status_code == 403
@@ -344,7 +344,7 @@ def test_disposal_authorization_replay_fails_closed(monkeypatch):
     client = _client()
     sid = _make_session(client)
     authorization = _disposal_authorization(sid)
-    headers = {"X-AIGuard-Token": authorization}
+    headers = {"X-Amprang-Token": authorization}
 
     assert client.delete(f"/api/session/{sid}", headers=headers).status_code == 200
     replay = client.delete(f"/api/session/{sid}", headers=headers)
@@ -366,15 +366,15 @@ def test_noncanonical_base64url_cannot_bypass_replay_identity(
 
     rejected = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": alternate},
+        headers={"X-Amprang-Token": alternate},
     )
     accepted = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": canonical},
+        headers={"X-Amprang-Token": canonical},
     )
     replay = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": canonical},
+        headers={"X-Amprang-Token": canonical},
     )
 
     assert rejected.status_code == 403
@@ -398,15 +398,15 @@ def test_padded_authorization_variant_cannot_create_replay_identity(
 
     accepted = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": canonical},
+        headers={"X-Amprang-Token": canonical},
     )
     rejected_padded = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": padded},
+        headers={"X-Amprang-Token": padded},
     )
     rejected_replay = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": canonical},
+        headers={"X-Amprang-Token": canonical},
     )
 
     assert accepted.status_code == 200
@@ -430,7 +430,7 @@ def test_authorization_malformed_alphabet_and_length_fail_closed(monkeypatch, mu
 
     response = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": malformed},
+        headers={"X-Amprang-Token": malformed},
     )
 
     assert response.status_code == 403
@@ -453,7 +453,7 @@ def test_rejected_authorization_is_absent_from_errors_and_logs(monkeypatch, capl
 
     response = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": noncanonical},
+        headers={"X-Amprang-Token": noncanonical},
     )
 
     authorization_logged = noncanonical in caplog.text or canonical in caplog.text
@@ -471,7 +471,7 @@ def test_repeated_disposal_with_fresh_authority_is_idempotent(monkeypatch):
     first = client.delete(
         f"/api/session/{sid}",
         headers={
-            "X-AIGuard-Token": _disposal_authorization(
+            "X-Amprang-Token": _disposal_authorization(
                 sid,
                 nonce=b"a" * 16,
             )
@@ -480,7 +480,7 @@ def test_repeated_disposal_with_fresh_authority_is_idempotent(monkeypatch):
     repeated = client.delete(
         f"/api/session/{sid}",
         headers={
-            "X-AIGuard-Token": _disposal_authorization(
+            "X-Amprang-Token": _disposal_authorization(
                 sid,
                 nonce=b"b" * 16,
             )
@@ -516,7 +516,7 @@ def test_concurrent_repeated_disposal_cleans_once(monkeypatch):
         response = _client().delete(
             f"/api/session/{sid}",
             headers={
-                "X-AIGuard-Token": _disposal_authorization(
+                "X-Amprang-Token": _disposal_authorization(
                     sid,
                     nonce=nonce,
                 )
@@ -551,7 +551,7 @@ def test_disposal_of_already_expired_session_is_safe_noop(monkeypatch):
 
     resp = client.delete(
         f"/api/session/{sid}",
-        headers={"X-AIGuard-Token": _disposal_authorization(sid)},
+        headers={"X-Amprang-Token": _disposal_authorization(sid)},
     )
 
     assert resp.status_code == 200
@@ -598,7 +598,7 @@ def test_disposal_rechecks_expiry_after_lifecycle_lock(
             responses.append(
                 _client().delete(
                     f"/api/session/{target_id}",
-                    headers={"X-AIGuard-Token": authorization},
+                    headers={"X-Amprang-Token": authorization},
                 )
             )
         except BaseException as error:
@@ -643,7 +643,7 @@ def test_concurrent_same_authorization_is_consumed_once(monkeypatch):
         responses.append(
             _client().delete(
                 f"/api/session/{sid}",
-                headers={"X-AIGuard-Token": authorization},
+                headers={"X-Amprang-Token": authorization},
             )
         )
 
@@ -663,12 +663,12 @@ def test_concurrent_same_authorization_is_consumed_once(monkeypatch):
 def test_forbidden_response_does_not_leak_token(monkeypatch):
     monkeypatch.setattr(server, "_BOOT_TOKEN", TOKEN)
     monkeypatch.setattr(server, "_schedule_exit", lambda: None)
-    resp = _client().post("/api/shutdown", headers={"X-AIGuard-Token": "wrong"})
+    resp = _client().post("/api/shutdown", headers={"X-Amprang-Token": "wrong"})
     assert resp.status_code == 403
     assert TOKEN not in resp.text
     del_resp = _client().delete(
         "/api/session/whatever",
-        headers={"X-AIGuard-Token": "wrong"},
+        headers={"X-Amprang-Token": "wrong"},
     )
     assert del_resp.status_code == 403
     assert TOKEN not in del_resp.text

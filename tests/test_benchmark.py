@@ -6,6 +6,7 @@ import importlib.util
 
 import pytest
 
+from amprang.engine.detectors.aggregate import detect_all
 from benchmark.corpus import ENTITY_TYPES, build_corpus
 from benchmark.runner import BenchmarkIntegrityError, render_table, run_benchmark
 from benchmark.scorer import bootstrap_f2_ci, score
@@ -15,7 +16,6 @@ from benchmark.types import (
     GoldSpan,
     Sample,
 )
-from thaiguard.engine.detectors.aggregate import detect_all
 
 
 # ── types ──────────────────────────────────────────────────────────────
@@ -35,8 +35,8 @@ def test_detect_all_finds_thai_id_and_dedupes():
 
 
 # ── dedupe_spans: FP wins over TB on overlap ───────────────────────────
-from thaiguard.engine.detectors.aggregate import dedupe_spans
-from thaiguard.engine.models import Entity
+from amprang.engine.detectors.aggregate import dedupe_spans
+from amprang.engine.models import Entity
 
 
 def _ent(redact_type, data_type, span, score=1.0):
@@ -225,7 +225,7 @@ def test_gen_phone_covers_thai_written_formats():
     were absent entirely."""
     import random
 
-    from thaiguard.engine.anonymizer.fp_generator import _gen_phone
+    from amprang.engine.anonymizer.fp_generator import _gen_phone
 
     seen = {_gen_phone(random.Random(seed)) for seed in range(400)}
 

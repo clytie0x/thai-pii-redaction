@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import pytest
 
-import thaiguard.engine.detectors.tb_detector as tbd
-from thaiguard.engine.detectors.name_context import is_glued_name_run
+import amprang.engine.detectors.tb_detector as tbd
+from amprang.engine.detectors.name_context import is_glued_name_run
 
 OCR_LABEL_FIRST_SPAN = "เดือนปีเกิด\n\nกิตติ พรดี\nพิมพ์ใจ แสนดี"
 
@@ -199,7 +199,7 @@ def test_full_birth_date_label_rejected_by_both_rules():
 def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkeypatch):
     """Same contract on the fine-tuned engine call site (`_detect_tb_finetuned`,
     'every neural engine' per its docstring)."""
-    monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AMPRANG_NER_ENGINE", "finetuned")
     prefix = "หัวข้อฟอร์ม\n"
     text = prefix + OCR_LABEL_FIRST_SPAN + "\nท้ายเอกสาร"
     start = len(prefix)

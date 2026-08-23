@@ -7,7 +7,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    import thaiguard.server.server as server
+    import amprang.server.server as server
 
     DEPS = True
 except ImportError:
@@ -33,7 +33,7 @@ def _client():
     return TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
 
 
@@ -165,7 +165,7 @@ def test_guard_contract_shape_has_no_mapping(open_client):
         ("/api/guard", {"text": PRIVATE_TEXT}),
     ],
 )
-@pytest.mark.parametrize("headers", [{}, {"X-AIGuard-Key": "wrong-key"}])
+@pytest.mark.parametrize("headers", [{}, {"X-Amprang-Key": "wrong-key"}])
 def test_configured_api_key_rejects_missing_or_wrong_header_without_leaks(
     monkeypatch, caplog, path, payload, headers
 ):
@@ -265,7 +265,7 @@ def test_correct_api_key_authorizes_all_four_declared_post_endpoints(monkeypatch
     monkeypatch.setattr(server, "_API_KEY", API_KEY)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
     client = _client()
-    headers = {"X-AIGuard-Key": API_KEY}
+    headers = {"X-Amprang-Key": API_KEY}
 
     sanitized_response = client.post(
         "/api/sanitize", json={"text": "โทร 0812345678"}, headers=headers
@@ -304,7 +304,7 @@ def test_api_key_check_uses_constant_time_comparison(monkeypatch):
     response = _client().post(
         "/api/guard",
         json={"text": "สรุปเอกสารนี้"},
-        headers={"X-AIGuard-Key": API_KEY},
+        headers={"X-Amprang-Key": API_KEY},
     )
 
     assert response.status_code == 200
@@ -315,10 +315,10 @@ def test_unset_api_key_emits_pii_free_warning(monkeypatch, caplog):
     monkeypatch.setattr(server, "_API_KEY", None)
     caplog.clear()
 
-    with caplog.at_level(logging.WARNING, logger="thaiguard.server.server"):
+    with caplog.at_level(logging.WARNING, logger="amprang.server.server"):
         server._warn_if_api_key_unset()
 
-    assert "AIGUARD_API_KEY is not configured" in caplog.text
+    assert "AMPRANG_API_KEY is not configured" in caplog.text
     assert PRIVATE_TEXT not in caplog.text
     assert API_KEY not in caplog.text
 
@@ -327,7 +327,7 @@ def test_configured_api_key_emits_no_warning(monkeypatch, caplog):
     monkeypatch.setattr(server, "_API_KEY", API_KEY)
     caplog.clear()
 
-    with caplog.at_level(logging.WARNING, logger="thaiguard.server.server"):
+    with caplog.at_level(logging.WARNING, logger="amprang.server.server"):
         server._warn_if_api_key_unset()
 
     assert caplog.text == ""

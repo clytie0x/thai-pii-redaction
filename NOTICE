@@ -1,5 +1,5 @@
-AI Guard — Thai PII detection and redaction
-Copyright 2026 AI Guard contributors
+Amprang — Thai PII detection and redaction
+Copyright 2026 Amprang contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
@@ -14,7 +14,7 @@ each under its own permissive license:
 - PyThaiNLP (Apache-2.0) — Thai tokenization and NER library code.
 - python-crfsuite (MIT) — CRF sequence labeling for the thainer NER engine.
 
-The packaged desktop build (AIGuard.exe) additionally bundles a trained model
+The packaged desktop build (Amprang.exe) additionally bundles a trained model
 file, which is licensed separately from the PyThaiNLP library above and requires
 attribution:
 

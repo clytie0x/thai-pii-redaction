@@ -9,15 +9,15 @@ from dataclasses import dataclass
 
 import pytest
 
-import thaiguard.engine.session_service as service_module
-from thaiguard.engine.models import VaultRecord
-from thaiguard.engine.session_service import (
+import amprang.engine.session_service as service_module
+from amprang.engine.models import VaultRecord
+from amprang.engine.session_service import (
     DisposalAuthorizationError,
     RestoreTransactionError,
     SessionExpiredError,
     SessionService,
 )
-from thaiguard.engine.session_vault import SessionVault
+from amprang.engine.session_vault import SessionVault
 
 
 @dataclass

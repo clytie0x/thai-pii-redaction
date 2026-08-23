@@ -6,10 +6,10 @@ import importlib.util
 
 import pytest
 
+from amprang.engine.models import Entity
 from benchmark.gold import load_gold
 from benchmark.runner import render_strategy_table, run_strategy_comparison
 from benchmark.strategies import route_entities, union_entities
-from thaiguard.engine.models import Entity
 
 
 def _ent(dtype, span, redact="TB", score=0.85):

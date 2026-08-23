@@ -1,4 +1,4 @@
-"""Tests for the `ai_guard.py dsar locate` CLI verb.
+"""Tests for the `cli.py dsar locate` CLI verb.
 
 Follows the direct-namespace-call pattern used in tests/test_breach_cli.py
 (construct an Args object, call the cmd_* function, inspect capsys/SystemExit)
@@ -50,14 +50,14 @@ def _subject_file(tmp_path: Path, lines: list[str]) -> Path:
 
 
 def test_dsar_locate_happy_path_prints_thai_summary_and_json_keys(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     outfile = tmp_path / "result.json"
 
-    ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile)))
+    cli.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile)))
 
     payload = json.loads(outfile.read_text(encoding="utf-8"))
     for key in (
@@ -82,13 +82,13 @@ def test_dsar_locate_happy_path_prints_thai_summary_and_json_keys(tmp_path, caps
 def test_dsar_locate_weak_only_match_marked_in_stdout(tmp_path, capsys):
     """F2: a file that matches ONLY on NAME must be marked in the CLI summary,
     not presented identically to an id-backed match."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, ["สมชาย ใจดี"])
     doc = tmp_path / "doc.txt"
     doc.write_text("นาย สมชาย ใจดี เดินทางไปทำงาน", encoding="utf-8")
 
-    ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject)))
+    cli.cmd_dsar_locate(_args([str(doc)], str(subject)))
 
     out = capsys.readouterr().out
     assert "ไฟล์ที่ตรงกันเฉพาะชื่อ" in out
@@ -96,13 +96,13 @@ def test_dsar_locate_weak_only_match_marked_in_stdout(tmp_path, capsys):
 
 
 def test_dsar_locate_id_backed_match_not_marked_weak_in_stdout(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
 
-    ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject)))
+    cli.cmd_dsar_locate(_args([str(doc)], str(subject)))
 
     out = capsys.readouterr().out
     assert "ไฟล์ที่ตรงกันเฉพาะชื่อ" not in out
@@ -111,13 +111,13 @@ def test_dsar_locate_id_backed_match_not_marked_weak_in_stdout(tmp_path, capsys)
 def test_dsar_locate_zero_match_exits_0_and_says_so_plainly(tmp_path, capsys):
     """Zero matched files is a valid DSAR outcome, not a failure -- exit stays
     0 and the summary says so in words, not a bare "0"."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_B}", encoding="utf-8")
 
-    ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject)))  # must not raise SystemExit
+    cli.cmd_dsar_locate(_args([str(doc)], str(subject)))  # must not raise SystemExit
 
     out = capsys.readouterr().out
     assert "ไม่พบไฟล์ที่ตรงกับผู้ขอข้อมูล" in out
@@ -132,7 +132,7 @@ def test_dsar_locate_partial_failure_exits_2_lists_failed_basenames(tmp_path, ca
     plain one -- both are checked, plus `tmp_path.name` (unaffected by the
     doubling), so this test cannot pass vacuously the way a plain
     `str(tmp_path) not in captured.err` check could."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     good = tmp_path / "good.txt"
@@ -140,7 +140,7 @@ def test_dsar_locate_partial_failure_exits_2_lists_failed_basenames(tmp_path, ca
     missing = tmp_path / "missing.txt"  # never created
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(_args([str(good), str(missing)], str(subject)))
+        cli.cmd_dsar_locate(_args([str(good), str(missing)], str(subject)))
     assert exc.value.code == 2
 
     captured = capsys.readouterr()
@@ -155,14 +155,14 @@ def test_dsar_locate_partial_failure_exits_2_lists_failed_basenames(tmp_path, ca
 
 
 def test_dsar_locate_empty_input_exits_1(tmp_path, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(_args([str(empty_dir)], str(subject)))
+        cli.cmd_dsar_locate(_args([str(empty_dir)], str(subject)))
     assert exc.value.code == 1
 
     captured = capsys.readouterr()
@@ -183,14 +183,14 @@ def test_dsar_locate_empty_subject_file_exits_1_no_value_echoed(tmp_path, capsys
     even before the fix. The `str(tmp_path)`/doubled-backslash/`tmp_path.name`
     checks are what actually exercise the scrub (same style as the sibling
     missing-subject-file test at the bottom of this section)."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [])
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject)))
+        cli.cmd_dsar_locate(_args([str(doc)], str(subject)))
     assert exc.value.code == 1
 
     captured = capsys.readouterr()
@@ -206,14 +206,14 @@ def test_dsar_locate_blank_only_subject_file_exits_1_no_value_echoed(tmp_path, c
     """Same M1 gap as the empty-file test above: blank-only lines never put
     `ID_A` in memory either, so the path assertions are what actually pin the
     scrub."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, ["", "   ", "\t"])
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject)))
+        cli.cmd_dsar_locate(_args([str(doc)], str(subject)))
     assert exc.value.code == 1
 
     captured = capsys.readouterr()
@@ -238,14 +238,14 @@ def test_dsar_locate_missing_subject_file_exits_1_and_scrubs_the_real_path(tmp_p
     too. This is the confirmed top-level-failure-line leak the reviewer
     flagged: the CLI's generic exception handler must scrub this path even
     though it never enters `args.paths`."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = tmp_path / "does-not-exist.txt"
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject)))
+        cli.cmd_dsar_locate(_args([str(doc)], str(subject)))
     assert exc.value.code == 1
 
     captured = capsys.readouterr()
@@ -262,12 +262,12 @@ def test_dsar_locate_missing_subject_file_exits_1_and_scrubs_the_real_path(tmp_p
 
 
 def test_dsar_locate_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
-    """Now that thaiguard/engine/dsar_pdf.py (Task 3) exists, --pdf is a happy
+    """Now that amprang/engine/dsar_pdf.py (Task 3) exists, --pdf is a happy
     path: both the PDF and the JSON land on disk and the CLI reports both.
     (Until Task 3 landed, this same scenario exercised the "renderer missing"
     error path -- see test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing
     below for that failure mode, faked via a monkeypatched absent module.)"""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -275,9 +275,7 @@ def test_dsar_locate_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
     outfile = tmp_path / "result.json"
     pdf_file = tmp_path / "result.pdf"
 
-    ai_guard.cmd_dsar_locate(
-        _args([str(doc)], str(subject), output=str(outfile), pdf=str(pdf_file))
-    )
+    cli.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile), pdf=str(pdf_file)))
 
     assert outfile.exists()
     assert pdf_file.read_bytes()[:5] == b"%PDF-"
@@ -290,9 +288,9 @@ def test_dsar_locate_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
 
 
 def test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing(tmp_path, monkeypatch, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
-    monkeypatch.setitem(sys.modules, "thaiguard.engine.dsar_pdf", None)
+    monkeypatch.setitem(sys.modules, "amprang.engine.dsar_pdf", None)
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -301,9 +299,7 @@ def test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing(tmp_path, monk
     pdf_file = tmp_path / "result.pdf"
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(
-            _args([str(doc)], str(subject), output=str(outfile), pdf=str(pdf_file))
-        )
+        cli.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile), pdf=str(pdf_file)))
     assert exc.value.code == 1
     assert not outfile.exists()
     assert not pdf_file.exists()
@@ -314,14 +310,14 @@ def test_dsar_locate_pdf_flag_fails_clearly_when_renderer_missing(tmp_path, monk
 
 
 def test_dsar_locate_pdf_write_failure_leaves_no_json_behind(tmp_path, monkeypatch, capsys):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     def _boom(payload, path):
         raise OSError("disk full")
 
-    fake_module = types.ModuleType("thaiguard.engine.dsar_pdf")
+    fake_module = types.ModuleType("amprang.engine.dsar_pdf")
     fake_module.render_dsar_pdf = _boom
-    monkeypatch.setitem(sys.modules, "thaiguard.engine.dsar_pdf", fake_module)
+    monkeypatch.setitem(sys.modules, "amprang.engine.dsar_pdf", fake_module)
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -330,9 +326,7 @@ def test_dsar_locate_pdf_write_failure_leaves_no_json_behind(tmp_path, monkeypat
     pdf_file = tmp_path / "result.pdf"
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(
-            _args([str(doc)], str(subject), output=str(outfile), pdf=str(pdf_file))
-        )
+        cli.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile), pdf=str(pdf_file)))
     assert exc.value.code == 1
     assert not outfile.exists()
     assert not pdf_file.exists()
@@ -346,14 +340,14 @@ def test_dsar_locate_json_write_failure_deletes_pdf_already_written(tmp_path, mo
     JSON write fails (here, -o points into a directory that does not exist).
     The complete PDF this run wrote must not be left behind for a run that
     reports a hard failure."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     def _ok(payload, path):
         Path(path).write_bytes(b"%PDF-fake")
 
-    fake_module = types.ModuleType("thaiguard.engine.dsar_pdf")
+    fake_module = types.ModuleType("amprang.engine.dsar_pdf")
     fake_module.render_dsar_pdf = _ok
-    monkeypatch.setitem(sys.modules, "thaiguard.engine.dsar_pdf", fake_module)
+    monkeypatch.setitem(sys.modules, "amprang.engine.dsar_pdf", fake_module)
 
     subject = _subject_file(tmp_path, [ID_A])
     doc = tmp_path / "doc.txt"
@@ -362,7 +356,7 @@ def test_dsar_locate_json_write_failure_deletes_pdf_already_written(tmp_path, mo
     bad_outfile = tmp_path / "no-such-directory" / "result.json"
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.cmd_dsar_locate(
+        cli.cmd_dsar_locate(
             _args([str(doc)], str(subject), output=str(bad_outfile), pdf=str(pdf_file))
         )
     assert exc.value.code == 1
@@ -383,14 +377,14 @@ def test_dsar_locate_subject_values_never_leak_across_stdout_stderr_json(tmp_pat
     """One consolidated privacy probe across a run that actually matches on
     every identifier type -- the subject values must never appear in stdout,
     stderr, or the written JSON bytes."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A, PHONE_1, EMAIL_1])
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A} โทร {PHONE_1} อีเมล {EMAIL_1}", encoding="utf-8")
     outfile = tmp_path / "result.json"
 
-    ai_guard.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile)))
+    cli.cmd_dsar_locate(_args([str(doc)], str(subject), output=str(outfile)))
 
     captured = capsys.readouterr()
     blob = outfile.read_text(encoding="utf-8")
@@ -409,43 +403,43 @@ def test_dsar_locate_subject_values_never_leak_across_stdout_stderr_json(tmp_pat
 def test_dsar_locate_missing_subject_file_arg_exits_1_through_real_main(tmp_path, monkeypatch):
     """`dsar locate <path>` with no `--subject-file` is a usage error at the
     INNER parser level -- must exit 1, not argparse's stock 2."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
-    monkeypatch.setattr(sys, "argv", ["ai_guard", "dsar", "locate", str(doc)])
+    monkeypatch.setattr(sys, "argv", ["cli", "dsar", "locate", str(doc)])
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.main()
+        cli.main()
     assert exc.value.code == 1
 
 
 def test_dsar_locate_no_paths_exits_1_through_real_main(tmp_path, monkeypatch):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
-    monkeypatch.setattr(sys, "argv", ["ai_guard", "dsar", "locate", "--subject-file", str(subject)])
+    monkeypatch.setattr(sys, "argv", ["cli", "dsar", "locate", "--subject-file", str(subject)])
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.main()
+        cli.main()
     assert exc.value.code == 1
 
 
 def test_dsar_alone_with_no_verb_exits_1_through_real_main(monkeypatch):
-    """`ai_guard.py dsar` with no sub-subcommand is a usage error at the
+    """`cli.py dsar` with no sub-subcommand is a usage error at the
     OUTER parser level (dsar_parser's own required-subcommand check fires
     before locate_parser is ever reached) -- must also exit 1."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
-    monkeypatch.setattr(sys, "argv", ["ai_guard", "dsar"])
+    monkeypatch.setattr(sys, "argv", ["cli", "dsar"])
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.main()
+        cli.main()
     assert exc.value.code == 1
 
 
 def test_dsar_locate_partial_failure_exits_2_through_real_main(tmp_path, monkeypatch):
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
     subject = _subject_file(tmp_path, [ID_A])
     good = tmp_path / "good.txt"
@@ -455,32 +449,32 @@ def test_dsar_locate_partial_failure_exits_2_through_real_main(tmp_path, monkeyp
     monkeypatch.setattr(
         sys,
         "argv",
-        ["ai_guard", "dsar", "locate", str(good), str(missing), "--subject-file", str(subject)],
+        ["cli", "dsar", "locate", str(good), str(missing), "--subject-file", str(subject)],
     )
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.main()
+        cli.main()
     assert exc.value.code == 2
 
 
 def test_receipt_alone_with_no_verb_still_exits_2_after_dsar_added(monkeypatch):
     """Guard against the dsar-only exit-code remap leaking onto other verbs
     built from the same shared top-level subparsers action."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
-    monkeypatch.setattr(sys, "argv", ["ai_guard", "receipt"])
+    monkeypatch.setattr(sys, "argv", ["cli", "receipt"])
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.main()
+        cli.main()
     assert exc.value.code == 2
 
 
 def test_breach_alone_with_no_verb_still_exits_1_after_dsar_added(monkeypatch):
     """Breach's own pre-existing remap must be unaffected by adding dsar's."""
-    from thaiguard import cli as ai_guard
+    from amprang import cli
 
-    monkeypatch.setattr(sys, "argv", ["ai_guard", "breach"])
+    monkeypatch.setattr(sys, "argv", ["cli", "breach"])
 
     with pytest.raises(SystemExit) as exc:
-        ai_guard.main()
+        cli.main()
     assert exc.value.code == 1

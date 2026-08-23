@@ -16,7 +16,7 @@ real plate while losing its exit times.
 
 from __future__ import annotations
 
-from thaiguard.engine.detectors.fp_detector import detect_fp
+from amprang.engine.detectors.fp_detector import detect_fp
 
 
 def _plates(text: str) -> set[str]:

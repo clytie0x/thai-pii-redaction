@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from thaiguard.engine.ai_client import AIProvider, FakeLLMProvider, PreSendValidationError
-from thaiguard.engine.output_validator import ValidationResult
-from thaiguard.engine.pipeline import PipelineResult, run_pipeline
+from amprang.engine.ai_client import AIProvider, FakeLLMProvider, PreSendValidationError
+from amprang.engine.output_validator import ValidationResult
+from amprang.engine.pipeline import PipelineResult, run_pipeline
 
 EXAMPLE_PROMPTS = sorted(
     (Path(__file__).resolve().parents[1] / "examples" / "prompts").glob("*.txt")
@@ -28,7 +28,7 @@ def test_pipeline_no_pii_text():
 
 
 def test_pipeline_detector_independent_residual_never_reaches_provider(monkeypatch):
-    import thaiguard.engine.ai_client as client_module
+    import amprang.engine.ai_client as client_module
 
     calls = []
 
@@ -102,8 +102,8 @@ def test_pipeline_validation_result_is_validation_result():
 
 
 def test_pipeline_registry_matches_the_canonical_detector():
-    from thaiguard.engine.detectors.aggregate import detect_all
-    from thaiguard.engine.ingest.text_cleaner import clean
+    from amprang.engine.detectors.aggregate import detect_all
+    from amprang.engine.ingest.text_cleaner import clean
 
     text = "รหัส 1234567890123 โทร 081-234-5678"
     result = run_pipeline(text=text, provider=FakeLLMProvider(), salt="canonical-detector")
@@ -155,9 +155,9 @@ def test_pipeline_resolves_overlapping_fp_tb_spans(monkeypatch):
     during tail-first replacement — the registry must be overlap-free, with
     the checksum-backed FP span winning (same rule as aggregate.dedupe_spans).
     """
-    import thaiguard.engine.detectors.fp_detector as fp_mod
-    import thaiguard.engine.detectors.tb_detector as tb_mod
-    from thaiguard.engine.models import Entity
+    import amprang.engine.detectors.fp_detector as fp_mod
+    import amprang.engine.detectors.tb_detector as tb_mod
+    from amprang.engine.models import Entity
 
     text = "ติดต่อ 081-234-5678 ได้เลยครับ"
     phone_start = text.index("081")

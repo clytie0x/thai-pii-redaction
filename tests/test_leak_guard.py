@@ -5,8 +5,8 @@ import uuid
 
 import pytest
 
-import thaiguard.engine.leak_guard as leak_guard_module
-from thaiguard.engine.leak_guard import (
+import amprang.engine.leak_guard as leak_guard_module
+from amprang.engine.leak_guard import (
     OutboundGuardContext,
     OutboundPolicyError,
     enforce_outbound_policy,
@@ -14,8 +14,8 @@ from thaiguard.engine.leak_guard import (
     scan_outbound_leaks,
     scan_residual_signals,
 )
-from thaiguard.engine.models import Entity, VaultRecord
-from thaiguard.engine.session_vault import SessionVault
+from amprang.engine.models import Entity, VaultRecord
+from amprang.engine.session_vault import SessionVault
 
 
 def _vault(pairs):

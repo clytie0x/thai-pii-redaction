@@ -16,10 +16,10 @@ detection recall.
 
 import pytest
 
-from thaiguard.engine.detectors import tner_client
-from thaiguard.engine.detectors.ner_failure import NERFailureError
-from thaiguard.engine.detectors.tb_detector import LABEL_MAP, _bio_to_spans
-from thaiguard.engine.detectors.tner_client import (
+from amprang.engine.detectors import tner_client
+from amprang.engine.detectors.ner_failure import NERFailureError
+from amprang.engine.detectors.tb_detector import LABEL_MAP, _bio_to_spans
+from amprang.engine.detectors.tner_client import (
     TnerEngine,
     TnerIncompleteError,
     TnerServiceError,

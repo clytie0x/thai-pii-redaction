@@ -1,4 +1,4 @@
-"""OCR processing (thaiguard.engine.ingest.ocr_processor).
+"""OCR processing (amprang.engine.ingest.ocr_processor).
 
 Tier 1 (always runs): unit-tests the retry/confidence/human-review control
 flow in ocr_page() and the pixel->point rescaling in _run_ocr_once() by
@@ -16,9 +16,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from thaiguard.engine.detectors.fp_detector import detect_fp
-from thaiguard.engine.ingest import ocr_processor
-from thaiguard.engine.models import WordBbox
+from amprang.engine.detectors.fp_detector import detect_fp
+from amprang.engine.ingest import ocr_processor
+from amprang.engine.models import WordBbox
 
 # --- Tier 1: is_available() -------------------------------------------------
 

@@ -49,7 +49,7 @@ def main(argv=None) -> int:
         try:
             result = blind.run_blind(
                 engine=args.engine,
-                key_file=os.environ.get("AIGUARD_BLIND_KEY_FILE"),
+                key_file=os.environ.get("AMPRANG_BLIND_KEY_FILE"),
                 reason=args.reason,
             )
         except blind.BlindError as exc:

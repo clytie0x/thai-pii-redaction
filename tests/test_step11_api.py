@@ -10,7 +10,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    from thaiguard.server.server import app
+    from amprang.server.server import app
 
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -26,12 +26,12 @@ pytestmark = pytest.mark.skipif(
 def client():
     from fastapi.testclient import TestClient
 
-    from thaiguard.server.server import app
+    from amprang.server.server import app
 
     return TestClient(
         app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
 
 
@@ -242,8 +242,8 @@ def test_sanitize_token_mode_unchanged(client):
 
 
 def test_shutdown_endpoint_returns_ack(monkeypatch):
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     called = {}
 
@@ -258,9 +258,9 @@ def test_shutdown_endpoint_returns_ack(monkeypatch):
     client = TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
-    resp = client.post("/api/shutdown", headers={"X-AIGuard-Local": "1"})
+    resp = client.post("/api/shutdown", headers={"X-Amprang-Local": "1"})
 
     assert resp.status_code == 200
     assert resp.json() == {"status": "shutting_down"}
@@ -286,8 +286,8 @@ def test_sanitize_api_stage_failure_preserves_complete_session_state(
 ):
     from fastapi import HTTPException
 
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
@@ -338,9 +338,9 @@ def test_sanitize_api_stage_failure_preserves_complete_session_state(
 def test_blocked_sanitize_audit_failure_drops_retained_exception(monkeypatch):
     from fastapi import HTTPException
 
-    import thaiguard.engine.session_service as session_module
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.engine.session_service as session_module
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     retained_error = RuntimeError("synthetic blocked audit failure")
     service = SessionService()
@@ -370,8 +370,8 @@ def test_blocked_sanitize_audit_failure_drops_retained_exception(monkeypatch):
 def test_untrusted_downstream_http_exception_becomes_fixed_500(monkeypatch, hostile_detail):
     from fastapi import HTTPException
 
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     private_marker = "SYNTHETIC_PRIVATE_HTTP_DETAIL"
     service = SessionService()
@@ -423,22 +423,22 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
 ):
     from fastapi.testclient import TestClient
 
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
     if stdout_mode:
-        monkeypatch.setenv("AIGUARD_AUDIT_STDOUT", "1")
+        monkeypatch.setenv("AMPRANG_AUDIT_STDOUT", "1")
     else:
-        monkeypatch.delenv("AIGUARD_AUDIT_STDOUT", raising=False)
+        monkeypatch.delenv("AMPRANG_AUDIT_STDOUT", raising=False)
 
     response = TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     ).post(
         "/api/sanitize",
         json={"text": "โทร 081-234-5678", "mode": "token"},
@@ -472,16 +472,16 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
 def test_blocked_sanitize_audit_is_safe_and_non_authorizing(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
-    import thaiguard.engine.session_service as service_module
-    import thaiguard.server.server as server
-    from thaiguard.engine.models import Entity
-    from thaiguard.engine.session_service import SessionService
+    import amprang.engine.session_service as service_module
+    import amprang.server.server as server
+    from amprang.engine.models import Entity
+    from amprang.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
-    monkeypatch.delenv("AIGUARD_AUDIT_STDOUT", raising=False)
+    monkeypatch.delenv("AMPRANG_AUDIT_STDOUT", raising=False)
     monkeypatch.setattr(
         service_module,
         "scan_outbound_leaks",
@@ -500,7 +500,7 @@ def test_blocked_sanitize_audit_is_safe_and_non_authorizing(tmp_path, monkeypatc
     response = TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     ).post(
         "/api/sanitize",
         json={"text": "โทร 081-234-5678", "mode": "token"},
@@ -527,9 +527,9 @@ def test_detector_independent_sanitize_block_is_safe_and_transactional(
 ):
     from fastapi.testclient import TestClient
 
-    import thaiguard.engine.session_service as service_module
-    import thaiguard.server.server as server
-    from thaiguard.engine.session_service import SessionService
+    import amprang.engine.session_service as service_module
+    import amprang.server.server as server
+    from amprang.engine.session_service import SessionService
 
     service = SessionService(now_fn=lambda: 1000.0)
     monkeypatch.setattr(server, "SERVICE", service)
@@ -545,7 +545,7 @@ def test_detector_independent_sanitize_block_is_safe_and_transactional(
     response = TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     ).post(
         "/api/sanitize",
         json={"text": "เอกสารหมายเลข 6801234", "mode": "token"},
@@ -577,7 +577,7 @@ def test_inspection_routes_do_not_apply_outbound_digit_policy(client, path):
 
 
 def test_sanitize_writes_one_audit_record(tmp_path, monkeypatch):
-    import thaiguard.server.server as server
+    import amprang.server.server as server
 
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
 
@@ -586,7 +586,7 @@ def test_sanitize_writes_one_audit_record(tmp_path, monkeypatch):
     client = TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
     resp = client.post(
         "/api/sanitize", json={"text": "ผมชื่อสมชาย ใจดี เบอร์ 0812345678", "mode": "token"}
@@ -604,7 +604,7 @@ def test_sanitize_writes_one_audit_record(tmp_path, monkeypatch):
 
 
 def test_audit_log_endpoint_returns_safe_records(tmp_path, monkeypatch):
-    import thaiguard.server.server as server
+    import amprang.server.server as server
 
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
     from fastapi.testclient import TestClient
@@ -612,7 +612,7 @@ def test_audit_log_endpoint_returns_safe_records(tmp_path, monkeypatch):
     client = TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
     client.post("/api/sanitize", json={"text": "ผมชื่อสมชาย เบอร์ 0812345678", "mode": "token"})
 

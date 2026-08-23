@@ -15,8 +15,8 @@ here that detected something before the fix must still detect it after.
 
 from __future__ import annotations
 
-from thaiguard.engine.detectors.aggregate import detect_all
-from thaiguard.engine.detectors.fp_detector import detect_fp
+from amprang.engine.detectors.aggregate import detect_all
+from amprang.engine.detectors.fp_detector import detect_fp
 
 
 def _addresses(ents):
@@ -160,7 +160,7 @@ def test_gazetteer_province_after_admin_fragment_fires():
 
 
 def test_gazetteer_is_the_complete_fixed_national_list():
-    from thaiguard.engine.detectors.fp_detector import _PROVINCES
+    from amprang.engine.detectors.fp_detector import _PROVINCES
 
     assert len(set(_PROVINCES)) == 77
 

@@ -7,7 +7,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    import thaiguard.server.server as server
+    import amprang.server.server as server
 
     DEPS = True
 except ImportError:
@@ -24,7 +24,7 @@ def _client():
     return TestClient(
         server.app,
         base_url="http://localhost",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
 
 
@@ -46,7 +46,7 @@ def _isolated_session_service(monkeypatch, tmp_path):
 
 def _disposal_headers(session_id: str) -> dict[str, str]:
     return {
-        "X-AIGuard-Token": server._make_session_disposal_authorization(
+        "X-Amprang-Token": server._make_session_disposal_authorization(
             CONTROL_TOKEN,
             session_id,
             now=AUTH_NOW,
@@ -125,7 +125,7 @@ def test_shutdown_grace_path_is_open_when_control_token_is_unset(monkeypatch):
 def test_shutdown_allowed_with_local_header(monkeypatch):
     called = {}
     monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
-    resp = _client().post("/api/shutdown", headers={"X-AIGuard-Local": "1"})
+    resp = _client().post("/api/shutdown", headers={"X-Amprang-Local": "1"})
     assert resp.status_code == 200
     assert called.get("hit") is True
 

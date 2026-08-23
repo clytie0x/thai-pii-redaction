@@ -1,10 +1,10 @@
 """Hosted-deployment readiness knobs (deploy design v2, 2026-07-28).
 
 Six small generic changes that let a hosted port run the same core:
-AIGUARD_ALLOWED_HOSTS, AIGUARD_PROVIDERS, the acceptance-script header fix,
-the audit-dir boot check, AIGUARD_AUDIT_STDOUT, and the redact-pdf/text work
+AMPRANG_ALLOWED_HOSTS, AMPRANG_PROVIDERS, the acceptance-script header fix,
+the audit-dir boot check, AMPRANG_AUDIT_STDOUT, and the redact-pdf/text work
 caps. Env-driven import-time behavior is tested in a subprocess so this
-process's `thaiguard.server.server` module stays untouched.
+process's `amprang.server.server` module stays untouched.
 """
 
 from __future__ import annotations
@@ -20,11 +20,11 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 
-from thaiguard.server import server
-from thaiguard.server.server import app
+from amprang.server import server
+from amprang.server.server import app
 
 ROOT = Path(__file__).resolve().parent.parent
-V2_HEADERS = {"X-AIGuard-Contract-Version": "2"}
+V2_HEADERS = {"X-Amprang-Contract-Version": "2"}
 
 
 @pytest.fixture()
@@ -32,7 +32,7 @@ def client():
     return TestClient(app, base_url="http://localhost")
 
 
-# ── AIGUARD_ALLOWED_HOSTS ──────────────────────────────────────────────
+# ── AMPRANG_ALLOWED_HOSTS ──────────────────────────────────────────────
 def test_parse_csv_env_splits_strips_and_drops_empties():
     assert server._parse_csv_env("a.example, b.example ,,") == ["a.example", "b.example"]
     assert server._parse_csv_env("") == []
@@ -40,7 +40,7 @@ def test_parse_csv_env_splits_strips_and_drops_empties():
 
 
 def test_default_trusted_hosts_unchanged_when_env_unset(client):
-    # this process imported thaiguard.server.server without the env var -> exact old default
+    # this process imported amprang.server.server without the env var -> exact old default
     assert client.get("/api/health").status_code == 200
     foreign = TestClient(app, base_url="http://evil.example")
     assert foreign.get("/api/health").status_code == 400
@@ -51,9 +51,9 @@ def test_env_allowed_host_is_accepted_in_fresh_process():
     # the already-imported module here is not disturbed.
     code = (
         "import os\n"
-        "os.environ['AIGUARD_ALLOWED_HOSTS'] = 'team08.aiforthai.in.th'\n"
+        "os.environ['AMPRANG_ALLOWED_HOSTS'] = 'team08.aiforthai.in.th'\n"
         "from fastapi.testclient import TestClient\n"
-        "from thaiguard.server.server import app\n"
+        "from amprang.server.server import app\n"
         "c = TestClient(app, base_url='http://team08.aiforthai.in.th')\n"
         "assert c.get('/api/health').status_code == 200\n"
         "local = TestClient(app, base_url='http://localhost')\n"
@@ -67,15 +67,15 @@ def test_env_allowed_host_is_accepted_in_fresh_process():
     assert "OK" in proc.stdout
 
 
-# ── AIGUARD_PROVIDERS ──────────────────────────────────────────────────
+# ── AMPRANG_PROVIDERS ──────────────────────────────────────────────────
 def test_provider_allowlist_env_narrows_surface_in_fresh_process():
     code = (
         "import os\n"
-        "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
+        "os.environ['AMPRANG_PROVIDERS'] = 'fake'\n"
         "from fastapi.testclient import TestClient\n"
-        "from thaiguard.server.server import app\n"
+        "from amprang.server.server import app\n"
         "c = TestClient(app, base_url='http://localhost')\n"
-        "h = {'X-AIGuard-Contract-Version': '2'}\n"
+        "h = {'X-Amprang-Contract-Version': '2'}\n"
         "r = c.post('/api/roundtrip', headers=h, json={'text': 'ทดสอบข้อความธรรมดา', 'mode': 'token', 'provider': 'tokenmind'})\n"
         "assert r.status_code == 400, r.status_code\n"
         "r2 = c.post('/api/roundtrip', headers=h, json={'text': 'ทดสอบข้อความธรรมดา', 'mode': 'token', 'provider': 'fake'})\n"
@@ -92,9 +92,9 @@ def test_provider_allowlist_env_narrows_surface_in_fresh_process():
 def test_unknown_provider_name_fails_the_boot_loudly():
     code = (
         "import os\n"
-        "os.environ['AIGUARD_PROVIDERS'] = 'typo_provider'\n"
+        "os.environ['AMPRANG_PROVIDERS'] = 'typo_provider'\n"
         "try:\n"
-        "    import thaiguard.server.server\n"
+        "    import amprang.server.server\n"
         "except ValueError as e:\n"
         "    assert 'typo_provider' in str(e)\n"
         "    print('BOOT_REFUSED')\n"
@@ -122,15 +122,15 @@ def test_no_env_keeps_full_registry(client):
 def test_hosted_adapter_exposes_only_allowlisted_v2_routes():
     code = (
         "import os\n"
-        "os.environ['AIGUARD_API_KEY'] = 'synthetic-hosted-key'\n"
-        "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
+        "os.environ['AMPRANG_API_KEY'] = 'synthetic-hosted-key'\n"
+        "os.environ['AMPRANG_PROVIDERS'] = 'fake'\n"
         "from fastapi.testclient import TestClient\n"
-        "from thaiguard.server.hosted import app\n"
+        "from amprang.server.hosted import app\n"
         "paths = {getattr(route, 'path', None) for route in app.routes}\n"
         "expected = {'/api/health', '/api/detect', '/api/analyze', '/api/guard', '/api/sanitize', '/api/reidentify', '/api/roundtrip'}\n"
         "assert paths == expected, paths\n"
         "c = TestClient(app, base_url='http://localhost')\n"
-        "h = {'X-AIGuard-Contract-Version': '2', 'X-AIGuard-Key': 'synthetic-hosted-key'}\n"
+        "h = {'X-Amprang-Contract-Version': '2', 'X-Amprang-Key': 'synthetic-hosted-key'}\n"
         "assert c.get('/api/health').status_code == 200\n"
         "for path in ('/', '/docs', '/redoc', '/openapi.json', '/demo', '/api/analyze-report', '/api/redact-pdf', '/api/audit-log', '/api/shutdown', '/api/session/synthetic'):\n"
         "    method = c.delete if path.startswith('/api/session/') else c.post if path == '/api/shutdown' else c.get\n"
@@ -152,14 +152,14 @@ def test_hosted_adapter_exposes_only_allowlisted_v2_routes():
 def test_hosted_explicit_tner_missing_configuration_fails_closed():
     code = (
         "import os\n"
-        "os.environ['AIGUARD_API_KEY'] = 'synthetic-hosted-key'\n"
-        "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
-        "os.environ['AIGUARD_NER_ENGINE'] = 'tner'\n"
+        "os.environ['AMPRANG_API_KEY'] = 'synthetic-hosted-key'\n"
+        "os.environ['AMPRANG_PROVIDERS'] = 'fake'\n"
+        "os.environ['AMPRANG_NER_ENGINE'] = 'tner'\n"
         "os.environ.pop('AIFORTHAI_API_KEY', None)\n"
         "from fastapi.testclient import TestClient\n"
-        "from thaiguard.server.hosted import app\n"
+        "from amprang.server.hosted import app\n"
         "c = TestClient(app, base_url='http://localhost')\n"
-        "h = {'X-AIGuard-Contract-Version': '2', 'X-AIGuard-Key': 'synthetic-hosted-key'}\n"
+        "h = {'X-Amprang-Contract-Version': '2', 'X-Amprang-Key': 'synthetic-hosted-key'}\n"
         "r = c.post('/api/detect', headers=h, json={'text': 'ข้อความทดสอบ'})\n"
         "assert r.status_code == 503, r.text\n"
         "assert r.json() == {'error': {'code': 'ner_unavailable', 'category': 'configuration', 'count': 0, 'retryable': False, 'status': 503}}, r.text\n"
@@ -176,15 +176,15 @@ def test_hosted_explicit_tner_missing_configuration_fails_closed():
     assert "OK" in proc.stdout
 
 
-@pytest.mark.parametrize("missing_name", ["AIGUARD_API_KEY", "AIGUARD_PROVIDERS"])
+@pytest.mark.parametrize("missing_name", ["AMPRANG_API_KEY", "AMPRANG_PROVIDERS"])
 def test_hosted_adapter_refuses_missing_authority_or_provider_policy(missing_name):
     code = (
         "import os\n"
-        "os.environ['AIGUARD_API_KEY'] = 'synthetic-hosted-key'\n"
-        "os.environ['AIGUARD_PROVIDERS'] = 'fake'\n"
+        "os.environ['AMPRANG_API_KEY'] = 'synthetic-hosted-key'\n"
+        "os.environ['AMPRANG_PROVIDERS'] = 'fake'\n"
         f"os.environ.pop({missing_name!r})\n"
         "try:\n"
-        "    import thaiguard.server.hosted\n"
+        "    import amprang.server.hosted\n"
         "except RuntimeError as error:\n"
         f"    assert {missing_name!r} in str(error)\n"
         "    print('BOOT_REFUSED')\n"
@@ -206,13 +206,13 @@ def test_hosted_adapter_refuses_missing_authority_or_provider_policy(missing_nam
 def test_hosted_adapter_refuses_effectively_empty_provider_policy(provider_policy):
     code = (
         "import os, sys\n"
-        "os.environ['AIGUARD_API_KEY'] = 'synthetic-hosted-key'\n"
-        f"os.environ['AIGUARD_PROVIDERS'] = {provider_policy!r}\n"
+        "os.environ['AMPRANG_API_KEY'] = 'synthetic-hosted-key'\n"
+        f"os.environ['AMPRANG_PROVIDERS'] = {provider_policy!r}\n"
         "try:\n"
-        "    import thaiguard.server.hosted\n"
+        "    import amprang.server.hosted\n"
         "except RuntimeError as error:\n"
-        "    assert 'AIGUARD_PROVIDERS' in str(error)\n"
-        "    assert 'thaiguard.server.server' not in sys.modules\n"
+        "    assert 'AMPRANG_PROVIDERS' in str(error)\n"
+        "    assert 'amprang.server.server' not in sys.modules\n"
         "    print('BOOT_REFUSED')\n"
         "else:\n"
         "    print('BOOT_ACCEPTED')\n"
@@ -230,9 +230,9 @@ def test_hosted_adapter_refuses_effectively_empty_provider_policy(provider_polic
 
 # ── audit stdout mode ──────────────────────────────────────────────────
 def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path, capsys):
-    from thaiguard.engine.audit import write_process_log
+    from amprang.engine.audit import write_process_log
 
-    monkeypatch.setenv("AIGUARD_AUDIT_STDOUT", "1")
+    monkeypatch.setenv("AMPRANG_AUDIT_STDOUT", "1")
     path = write_process_log(
         session_id="s1",
         step="test",
@@ -250,9 +250,9 @@ def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path,
 
 
 def test_audit_file_mode_unchanged_without_env(monkeypatch, tmp_path):
-    from thaiguard.engine.audit import write_security_log
+    from amprang.engine.audit import write_security_log
 
-    monkeypatch.delenv("AIGUARD_AUDIT_STDOUT", raising=False)
+    monkeypatch.delenv("AMPRANG_AUDIT_STDOUT", raising=False)
     path = write_security_log(
         session_id="s2",
         layer="layer1",
@@ -273,7 +273,7 @@ def test_audit_dir_boot_check_fails_loudly_when_unwritable(monkeypatch, tmp_path
     blocker.write_text("file, not dir", encoding="utf-8")
     # a probe write under a FILE path raises OSError on every platform
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(blocker / "logs"))
-    monkeypatch.delenv("AIGUARD_AUDIT_STDOUT", raising=False)
+    monkeypatch.delenv("AMPRANG_AUDIT_STDOUT", raising=False)
     with pytest.raises(RuntimeError, match="not writable"):
         server._check_audit_dir_writable()
 
@@ -282,7 +282,7 @@ def test_audit_dir_boot_check_skipped_in_stdout_mode(monkeypatch, tmp_path):
     blocker = tmp_path / "not_a_dir"
     blocker.write_text("file, not dir", encoding="utf-8")
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(blocker / "logs"))
-    monkeypatch.setenv("AIGUARD_AUDIT_STDOUT", "1")
+    monkeypatch.setenv("AMPRANG_AUDIT_STDOUT", "1")
     server._check_audit_dir_writable()  # no raise
 
 
@@ -301,7 +301,7 @@ def _pdf_bytes(pages: int, size_pt: tuple[float, float] = (595, 842)) -> bytes:
 
 def _assert_payload_too_large(response):
     assert response.status_code == 413
-    assert response.headers.get_list("X-AIGuard-Contract-Version") == ["2"]
+    assert response.headers.get_list("X-Amprang-Contract-Version") == ["2"]
     assert response.json() == {
         "error": {
             "code": "payload_too_large",

@@ -13,14 +13,14 @@ from pathlib import Path
 
 import pytest
 
-import thaiguard.engine.detectors.tb_detector as tbd
-from thaiguard.engine.detectors.aggregate import detect_all
-from thaiguard.engine.detectors.tb_detector import detect_tb
-from thaiguard.engine.ingest.text_cleaner import clean
-from thaiguard.engine.session_service import SessionService
+import amprang.engine.detectors.tb_detector as tbd
+from amprang.engine.detectors.aggregate import detect_all
+from amprang.engine.detectors.tb_detector import detect_tb
+from amprang.engine.ingest.text_cleaner import clean
+from amprang.engine.session_service import SessionService
 
 FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "prompts" / "02_medical_consult.txt"
-V2_HEADERS = {"X-AIGuard-Contract-Version": "2"}
+V2_HEADERS = {"X-Amprang-Contract-Version": "2"}
 
 
 def _fixture_text_and_name() -> tuple[str, str]:
@@ -31,7 +31,7 @@ def _fixture_text_and_name() -> tuple[str, str]:
 
 
 def _use_default_crf(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("AIGUARD_NER_ENGINE", raising=False)
+    monkeypatch.delenv("AMPRANG_NER_ENGINE", raising=False)
     monkeypatch.setattr(tbd, "_ner_cache", {})
 
 
@@ -64,7 +64,7 @@ def test_issue_82_fixture_round_trips_through_api_and_session(monkeypatch):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from thaiguard.server import server
+    from amprang.server import server
 
     text, expected_name = _fixture_text_and_name()
     expected_clean = clean(text).text

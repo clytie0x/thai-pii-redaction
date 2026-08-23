@@ -15,13 +15,13 @@ from pathlib import Path
 
 import pytest
 
-from thaiguard.server.access_logging import UvicornAccessLogFilter
-from thaiguard.server.session_control_auth import make_session_disposal_authorization
+from amprang.server.access_logging import UvicornAccessLogFilter
+from amprang.server.session_control_auth import make_session_disposal_authorization
 
 pytest.importorskip("fastapi")
 pytest.importorskip("uvicorn")
 
-_CONTRACT_HEADERS = {"X-AIGuard-Contract-Version": "2"}
+_CONTRACT_HEADERS = {"X-Amprang-Contract-Version": "2"}
 
 
 def _unused_loopback_port() -> int:
@@ -83,7 +83,7 @@ def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
         sys.executable,
         "-m",
         "uvicorn",
-        "thaiguard.server.server:app",
+        "amprang.server.server:app",
         "--host",
         "127.0.0.1",
         "--port",
@@ -94,8 +94,8 @@ def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
     environment = os.environ.copy()
     environment.update(
         {
-            "AIGUARD_TOKEN": control_secret,
-            "AIGUARD_NO_BROWSER": "1",
+            "AMPRANG_TOKEN": control_secret,
+            "AMPRANG_NO_BROWSER": "1",
             "PYTHONUTF8": "1",
             "PYTHONPATH": os.pathsep.join(
                 filter(
@@ -105,7 +105,7 @@ def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
             ),
         }
     )
-    environment.pop("AIGUARD_API_KEY", None)
+    environment.pop("AMPRANG_API_KEY", None)
     process = subprocess.Popen(
         command,
         cwd=tmp_path,
@@ -149,14 +149,14 @@ def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
                 base_url,
                 f"/api/session/{session_id}?authority={query_authority}",
                 method="DELETE",
-                headers={"X-AIGuard-Token": "synthetic-invalid-authorization"},
+                headers={"X-Amprang-Token": "synthetic-invalid-authorization"},
             )
         assert rejected.value.code == 403
         status, deleted = _request(
             base_url,
             f"/api/session/{session_id}",
             method="DELETE",
-            headers={"X-AIGuard-Token": authorization},
+            headers={"X-Amprang-Token": authorization},
         )
         assert status == 200
         assert deleted == {"deleted": True}
@@ -164,7 +164,7 @@ def test_real_uvicorn_redacts_disposal_route_and_keeps_safe_access_logs(
             base_url,
             "/api/shutdown",
             method="POST",
-            headers={"X-AIGuard-Token": control_secret},
+            headers={"X-Amprang-Token": control_secret},
         )
         stdout, stderr = process.communicate(timeout=10)
         captured = stdout + stderr

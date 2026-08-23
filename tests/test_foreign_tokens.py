@@ -9,8 +9,8 @@ import re
 
 import pytest
 
-from thaiguard.engine.reverse_mapper import count_foreign_tokens
-from thaiguard.engine.stateless import restore_stateless
+from amprang.engine.reverse_mapper import count_foreign_tokens
+from amprang.engine.stateless import restore_stateless
 
 _BRACKET_TOKEN = re.compile(r"\[[^\[\]\r\n]{1,128}\]")
 
@@ -87,7 +87,7 @@ class TestFlagFlow:
         assert not any(w.startswith("foreign_tokens:") for w in out.warnings)
 
     def test_flag_not_filtered_by_session_service_noisy_prefixes(self):
-        from thaiguard.engine.session_service import _NOISY_PREFIXES
+        from amprang.engine.session_service import _NOISY_PREFIXES
 
         assert not "foreign_tokens:9".startswith(_NOISY_PREFIXES)
 
@@ -106,12 +106,12 @@ class TestSessionReidentifyForeignTokens:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from thaiguard.server.server import app
+        from amprang.server.server import app
 
         return TestClient(
             app,
             base_url="http://localhost",
-            headers={"X-AIGuard-Contract-Version": "2"},
+            headers={"X-Amprang-Contract-Version": "2"},
         )
 
     def test_foreign_token_warning_survives_session_reidentify(self, client):
@@ -166,7 +166,7 @@ class TestEmptyMappingRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from thaiguard.server import server
+        from amprang.server import server
 
         monkeypatch.setitem(
             server._PROVIDER_FACTORIES,
@@ -176,7 +176,7 @@ class TestEmptyMappingRoundtrip:
         client = TestClient(
             server.app,
             base_url="http://localhost",
-            headers={"X-AIGuard-Contract-Version": "2"},
+            headers={"X-Amprang-Contract-Version": "2"},
         )
 
         response = client.post(
@@ -199,7 +199,7 @@ class TestEmptyMappingRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from thaiguard.server import server
+        from amprang.server import server
 
         monkeypatch.setitem(
             server._PROVIDER_FACTORIES,
@@ -209,7 +209,7 @@ class TestEmptyMappingRoundtrip:
         client = TestClient(
             server.app,
             base_url="http://localhost",
-            headers={"X-AIGuard-Contract-Version": "2"},
+            headers={"X-Amprang-Contract-Version": "2"},
         )
 
         response = client.post(

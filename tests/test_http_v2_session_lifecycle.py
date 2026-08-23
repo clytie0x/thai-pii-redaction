@@ -10,13 +10,13 @@ pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient
 
-import thaiguard.server.server as server
-from thaiguard.engine.session_service import SessionService
+import amprang.server.server as server
+from amprang.engine.session_service import SessionService
 
 _NOW = 1_800_000_000.0
 _V2_DATA_HEADERS = {
-    "X-AIGuard-Contract-Version": "2",
-    "X-AIGuard-Key": "synthetic-data-authority",
+    "X-Amprang-Contract-Version": "2",
+    "X-Amprang-Key": "synthetic-data-authority",
 }
 
 
@@ -68,7 +68,7 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
 
     unauthorized = keyed_client.delete(
         f"/api/session/{backend_session_id}",
-        headers={"X-AIGuard-Contract-Version": "2"},
+        headers={"X-Amprang-Contract-Version": "2"},
     )
     assert unauthorized.status_code == 403
     assert unauthorized.json()["error"]["code"] == "control_forbidden"
@@ -83,8 +83,8 @@ def test_private_http_v2_session_lifecycle_is_authoritative_and_mapping_minimize
     disposed = keyed_client.delete(
         f"/api/session/{backend_session_id}",
         headers={
-            "X-AIGuard-Contract-Version": "2",
-            "X-AIGuard-Token": authorization,
+            "X-Amprang-Contract-Version": "2",
+            "X-Amprang-Token": authorization,
         },
     )
     assert disposed.status_code == 200
