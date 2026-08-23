@@ -1,16 +1,9 @@
 """Pseudonymization orchestrator.
 
-Two modes: mode="surrogate" (default) draws realistic fake values from
-fp_generator/tb_generator with collision-safe re-rolls; mode="token" emits
-session-namespaced bracket tokens via token_generator (web AI-Guard default).
-
-Algorithm:
-1. Sort entities by span[0] DESCENDING (tail-first) to preserve offsets during replacement.
-2. For each entity: reuse only a safe vault hit; otherwise generate -> write.
-3. Replace span in text (tail-first preserves earlier spans).
-4. Consistency scan: replace remaining verbatim occurrences of each original.
-5. Post-replace PII leak check via detect_fp -> raise PIILeakError if any found.
-6. Return PseudonymizedDocument.
+mode="surrogate" (default) draws realistic fakes from fp_generator/tb_generator with
+collision-safe re-rolls; mode="token" emits session-namespaced bracket tokens. Entities are
+replaced tail-first, then a consistency scan rewrites remaining verbatim originals, then detect_fp
+runs over the output and raises PIILeakError on a real leak.
 """
 
 from __future__ import annotations
@@ -95,8 +88,7 @@ def _safe_to_reuse(
 ) -> bool:
     """Return whether a prior pseudonym can safely represent this turn.
 
-    Takes the source text already folded: it is the same text for every entity
-    of one document, and folding it per entity cost length x entities.
+    ``compact_source`` is the already-folded text: folding per entity cost length x entities.
     """
     if not candidate:
         return False
@@ -127,8 +119,8 @@ def _seeded_candidate_is_admissible(record: VaultRecord, data_type: str, mode: s
 
     if mode != "token":
         return True
-    # Legacy caller-held mappings remain readable at the explicit stateless
-    # boundary. Tokens minted by this process always carry a namespace.
+    # Legacy caller-held mappings stay readable here; tokens minted by this process always carry
+    # a namespace.
     return is_token_for_data_type(candidate, data_type, allow_legacy=True)
 
 
@@ -142,29 +134,17 @@ def _generate_unique_pseudonym(
 ) -> str:
     """Generate a pseudonym that cannot be confused with anyone else's data.
 
-    The fake-value pools (esp. Thai names) are small, so two different people
-    can deterministically draw the same pseudonym — the vault reverse index
-    would then restore the wrong person. A candidate is rejected when it:
-    - is empty or contains the original;
-    - is already vaulted for a DIFFERENT original (same original = consistency,
-      allowed), or
-    - equals another entity's real value, or appears verbatim in the source
-      text (reverse mapping would rewrite unrelated text).
-
-    Re-rolls the seed up to _MAX_COLLISION_REROLLS times. Last resort differs
-    by redact_type: FP keeps re-rolling (a '#N' suffix would leave the valid
-    FP-looking base embedded in the output and detect_fp would re-flag it) and
-    fails loudly when exhausted; TB may take a '#N' suffix (mirrors the
-    uniqueness rules the old web-path generator had), but only on a base that
-    is safe to embed — never someone's real value or a string from the source
-    text.
+    The fake pools are small, so two people can draw the same pseudonym and the vault reverse
+    index would restore the wrong person. Rejects candidates that are empty, contain the original,
+    are vaulted for a different original, equal another entity's real value, or appear verbatim in
+    the source text. Re-rolls the seed; as a last resort TB may take a '#N' suffix on a safe base,
+    while FP keeps re-rolling (a suffixed FP base would still be re-flagged by detect_fp) and
+    fails loudly when exhausted.
     """
     original = entity.original_text
 
-    # Cross-turn consistency: if this exact original already has a pseudonym
-    # in the vault (regardless of which entity_id produced it), reuse it —
-    # otherwise the same person can get a different fake name/address each
-    # turn depending on which sentence-context tb_generator happened to see.
+    # Cross-turn consistency: reuse the vaulted pseudonym for this original regardless of
+    # entity_id, otherwise the same person gets a different fake each turn.
     existing = vault.get_by_original(original, data_type=entity.data_type)
     if (
         existing is not None
@@ -329,10 +309,8 @@ def _adopt_seeded_token_namespace(
 def _find_all(haystack: str, needle: str) -> list[int]:
     """Non-overlapping start offsets of needle in haystack, left to right.
 
-    A match consumes its own characters, which is the scan str.replace performs:
-    "กก" occurs once in "กกก", not twice. Advancing a single character instead
-    would queue overlapping ranges, and the tail-first splice would then write
-    one of them over an offset a later splice had already invalidated.
+    Must match str.replace semantics ("กก" occurs once in "กกก"): overlapping ranges would make
+    the tail-first splice write over an already-invalidated offset.
     """
     out: list[int] = []
     pos = 0
@@ -385,19 +363,9 @@ def anonymize(
     salt: str,
     mode: str = "surrogate",
 ) -> PseudonymizedDocument:
-    """Replace all detected PII entities with pseudonyms.
+    """Replace all detected PII entities with pseudonyms and return the PseudonymizedDocument.
 
-    Args:
-        text: original document text
-        entity_registry: detected entities from Step 2
-        vault: in-memory session vault for storing original<->pseudonym mappings
-        salt: per-process random salt (never stored)
-
-    Returns:
-        PseudonymizedDocument with real PII replaced by pseudonyms
-
-    Raises:
-        PIILeakError: if detect_fp finds any structured PII in the pseudonymized output
+    Raises PIILeakError if detect_fp still finds structured PII in the output.
     """
     pseudonymized = text
     replacement_highlights: list[ReplacementHighlight] = []
@@ -406,14 +374,13 @@ def anonymize(
     if mode == "token":
         _adopt_seeded_token_namespace(compact_text, entity_registry, vault)
 
-    # Step 1: sort entities by span start DESCENDING (tail-first)
+    # Tail-first so earlier spans stay valid during replacement.
     sorted_entities = sorted(
         entity_registry.entities,
         key=lambda e: e.span[0],
         reverse=True,
     )
 
-    # Step 2 & 3: generate or retrieve pseudonym, then replace span
     all_originals = {e.original_text for e in entity_registry.entities}
     for entity in sorted_entities:
         existing = vault.get_by_entity_id(entity.entity_id)
@@ -449,9 +416,8 @@ def anonymize(
             redact_type=entity.redact_type,
         )
 
-    # Step 4: consistency scan - replace remaining verbatim occurrences
-    # Build known pseudonyms set first to avoid cascading: skip replacement
-    # when the original text is itself a known pseudonym (would corrupt vault mapping)
+    # Consistency scan. Skip originals that are themselves known pseudonyms (cascading
+    # replacement would corrupt the vault mapping).
     known_pseudonyms_scan: set[str] = set()
     for entity in sorted_entities:
         rec = vault.get_by_entity_id(entity.entity_id)
@@ -459,10 +425,8 @@ def anonymize(
             known_pseudonyms_scan.add(rec.pseudonym)
 
     scan_pseudonyms = [p for p in known_pseudonyms_scan if p]
-    # Those ranges depend only on the text and that fixed pseudonym list, so
-    # they are derived once and kept until this scan itself rewrites the text.
-    # Re-deriving them per entity made masking cost entities x document length,
-    # and a long paste took minutes.
+    # Protected ranges are derived once and kept until this scan rewrites the text; re-deriving
+    # per entity cost entities x document length.
     protected: list[tuple[int, int]] | None = None
     for entity in sorted_entities:
         existing = vault.get_by_entity_id(entity.entity_id)
@@ -472,14 +436,9 @@ def anonymize(
         pseudo = existing.pseudonym
         if not original or original in known_pseudonyms_scan:
             continue
-        # Replace only OUTSIDE the ranges pseudonyms already occupy. A generated
-        # pseudonym can contain another entity's original verbatim -- the fake
-        # pools are small and the NER splits names, so "ไทย" is its own LOCATION
-        # entity while also sitting inside a fake surname. str.replace reached
-        # into the pseudonym written moments earlier, and the corrupted value no
-        # longer matched the vault, so reverse_map could not restore it and the
-        # original was lost. Whole-string equality does not catch that; the
-        # hazard is containment. Same positional rule as reverse_mapper.
+        # Replace only OUTSIDE ranges pseudonyms already occupy: a fake pseudonym can contain
+        # another entity's original verbatim ("ไทย" inside a fake surname), and rewriting inside
+        # it breaks the vault match so reverse_map cannot restore it. Same rule as reverse_mapper.
         if protected is None:
             protected = pseudonym_ranges(pseudonymized, scan_pseudonyms)
         hits = [
@@ -500,23 +459,16 @@ def anonymize(
         if hits:
             protected = None
 
-    # Step 5: post-replace PII leak check
-    # Collect known pseudonyms so they are not mistaken for real PII leaks.
-    # Generated pseudonyms (e.g. fake emails, fake phones) are themselves
-    # valid-looking PII patterns and would otherwise be flagged.
+    # Post-replace leak check. Known pseudonyms are valid-looking PII and must not be flagged.
     known_pseudonyms: set[str] = set()
     for entity in sorted_entities:
         rec = vault.get_by_entity_id(entity.entity_id)
         if rec is not None:
             known_pseudonyms.add(rec.pseudonym)
 
-    # Whole-string exclusion is not enough once the detectors read address
-    # STRUCTURE: a generated fake address carries its own "ซอย"/"แขวง" labels,
-    # so the address detectors re-detect a FRAGMENT of a pseudonym we just
-    # wrote ("สุขสันต์ 9" out of a longer fake address). That fragment is not
-    # in known_pseudonyms and used to raise PIILeakError on our own output.
-    # Same fix leak_guard already applies: excuse a span only when pseudonym
-    # occurrences positionally account for it.
+    # Whole-string exclusion is not enough: address detectors re-detect FRAGMENTS of a fake
+    # address we just wrote, so excuse a span only when a pseudonym occurrence positionally
+    # covers it (same rule as leak_guard).
     ranges = pseudonym_ranges(pseudonymized, [p for p in known_pseudonyms if p])
     leak_entities = detect_fp(pseudonymized)
     real_leaks = [

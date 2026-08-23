@@ -1,8 +1,7 @@
 """Shared PII detection assembly used by both the web API and the benchmark.
 
-detect_all() is the exact ensemble /api/sanitize runs: format-preserving +
-text-based + false-negative scan, then overlap dedup. Keeping it in one place
-means the benchmark measures precisely what the product ships.
+detect_all() is the exact ensemble /api/sanitize runs (FP + TB + FN scan, then
+dedup), so the benchmark measures precisely what ships.
 """
 
 from __future__ import annotations
@@ -19,11 +18,8 @@ from amprang.engine.models import Entity
 def dedupe_spans(entities: list[Entity]) -> list[Entity]:
     """Drop overlapping spans, keeping a non-overlapping set.
 
-    FP entities (regex + checksum validated: id/email/phone/card/...) are placed
-    first, so a fuzzy NER (TB) span can never displace a precise structured hit
-    it overlaps -- a checksum-valid email must not be relabeled ADDRESS just
-    because the NER span happened to start earlier. Within each tier, prefer the
-    earlier start, then the longer span.
+    FP (regex/checksum) entities go first so a fuzzy TB span can never displace a
+    precise hit it overlaps. Within each tier: earlier start, then longer span.
     """
 
     def _key(e: Entity):
@@ -56,14 +52,9 @@ def _prefer_record_names(
         ]
         if any(entity.redact_type == "FP" for entity in overlaps):
             continue
-        # Relabeling a span the record row explains is the point of this pass,
-        # so a coextensive LOCATION/ADDRESS still becomes the NAME. What it may
-        # never do is UNCOVER: an overlap reaching outside the record name (a
-        # CRF ADDRESS whose span runs on into the next line) would lose that
-        # tail to a shorter NAME, and dropping already-masked characters
-        # violates recall > precision. Tested against every data_type —
-        # limiting the guard to NAME is what let other labels be swapped for a
-        # shorter span.
+        # Relabeling a coextensive span is the point; UNCOVERING is not. An overlap reaching
+        # outside the record name would lose its tail to a shorter NAME (recall > precision).
+        # Guard every data_type, not just NAME.
         if any(
             entity.span[0] < name.span[0] or entity.span[1] > name.span[1] for entity in overlaps
         ):
@@ -74,34 +65,16 @@ def _prefer_record_names(
 
 
 # ── ADDRESS coalescing ─────────────────────────────────────────────────────
-#
-# The FP address patterns capture components (house number, moo, soi/road,
-# admin areas) as separate spans, so one real address becomes several
-# entities: several pseudonyms downstream, several boxes on the PDF path, and
-# on gold v4 an ADDRESS entity precision of 0.220 where 175 of 183 "false
-# positives" were fragments inside real addresses. Coalescing is done here,
-# after dedupe, over the FULL sorted entity list — merging only consecutive
-# entities so a chain can never swallow an intervening NAME and recreate the
-# overlap dedupe just removed.
-#
-# Gap rules (adversarially reviewed): a strict gap is a few spaces/commas; a
-# bridge gap may carry an uncaptured Thai token run (a building name) but ONLY
-# when it contains an address-structure word, no digit, no tab/newline, and no
-# ownership/introducer word — "ผู้ขาย เลขที่" between two addresses is two
-# parties, not one address, and on the PDF path every word of a merged span
-# becomes a document-wide redaction fragment, so over-merging is costly.
+# FP address patterns capture components as separate spans; one address became several
+# entities (several pseudonyms, several PDF boxes). Merge only CONSECUTIVE entities of the
+# full sorted list so a chain can never swallow an intervening NAME. Over-merging is costly:
+# on the PDF path every word of a merged span becomes a document-wide redaction fragment.
 
 _MERGE_TYPES = {"ADDRESS", "POSTAL_CODE"}
 _STRICT_GAP_RE = re.compile(r"[ , ]{0,3}")
-# The FP patterns capture VALUES only ("บางพระ" from "ตำบลบางพระ"), so the
-# labels themselves live in the gaps between fragments. A bridgeable gap is
-# short, single-line, and must contain an address label or structure word;
-# digit runs are capped at 3 so a moo/floor number may sit in the gap but a
-# phone or id cannot. The cap was raised 18 -> 25 (2026-08-04) for building
-# names between fragments (" คอนโดริเวอร์ไซด์ ชั้น " is 23); every other gap
-# rule — glue word required, no digit run > 3, no newline, no
-# ownership/introducer veto — still stands, so the two-party split cases the
-# 18 was chosen against remain unmergeable (re-measured on gold + negative).
+# FP captures VALUES only, so labels live in the gaps. A bridge gap is short, single-line,
+# must contain a glue word, digit runs <= 3 (a moo/floor number, never a phone). Cap 25 fits
+# a building name (" คอนโดริเวอร์ไซด์ ชั้น " is 23); the veto words keep two-party splits apart.
 _BRIDGE_CHARSET_RE = re.compile(r"[ .,ก-๎0-9]{1,25}")
 _ADDRESS_GLUE_RE = re.compile(
     r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่ที่|หมู่|ซอย|ถนน|ต\.|อ\.|จ\.|ม\."
@@ -110,12 +83,9 @@ _ADDRESS_GLUE_RE = re.compile(
 _BRIDGE_VETO_RE = re.compile(
     r"บ้านเลขที่|ที่อยู่|เลขที่|ผู้ซื้อ|ผู้ขาย|ผู้กู้|ผู้ค้ำ|ผู้เช่า|ผู้ให้เช่า|ส่งที่|ติดต่อ|นาย|นาง|นางสาว"
 )
-# A postal code may merge BACKWARD across exactly one bare Thai token — the
-# label-less khwaeng/province word that ends most Thai addresses ("เขตหลักสี่
-# กทม 10210"): the code already required an address cue within 45 chars to
-# exist at all, so the worst case is over-masking one word in front of a real
-# postcode, never a new claim. One token only; digits, newlines, and every
-# veto word still break it.
+# A postal code may merge BACKWARD across exactly one bare Thai token (the label-less
+# province word ending most addresses, "เขตหลักสี่ กทม 10210"). Worst case is over-masking
+# one word before a real postcode, never a new claim. Digits, newlines, veto words still break.
 _POSTAL_BACKSTEP_RE = re.compile(r" ?[ก-๎]{2,18} ?")
 
 
@@ -141,10 +111,9 @@ def _gap_ok(gap: str, prev_type: str, next_type: str) -> bool:
 def merge_address_spans(text: str, entities: list[Entity]) -> list[Entity]:
     """Coalesce adjacent ADDRESS/POSTAL_CODE entities into single ADDRESS spans.
 
-    Input must be sorted and non-overlapping (dedupe_spans output). Output
-    keeps that invariant. A chain merges only if it contains at least one
-    ADDRESS; the merged entity is TB so the anonymizer routes it to the Thai
-    address surrogate generator instead of the generic ASCII fallback.
+    Input must be sorted and non-overlapping; output keeps that. A chain merges only
+    if it contains an ADDRESS; the merged entity is TB so the anonymizer routes it to
+    the Thai address surrogate generator.
     """
     out: list[Entity] = []
     i = 0
@@ -184,15 +153,9 @@ def merge_address_spans(text: str, entities: list[Entity]) -> list[Entity]:
 def _extend_address_chains(text: str, entities: list[Entity], tb: list[Entity]) -> list[Entity]:
     """Union a retained ADDRESS span with raw TB ADDRESS spans dedupe dropped.
 
-    FP-first dedupe keeps the precise label-keyed fragments and discards a
-    wider CRF ADDRESS span covering the same ground — but that wider span is
-    often the only thing that saw the label-less tail ("อำเภอเมือง ขอนแก่น":
-    the bare province lives in no FP capture). The CRF has already asserted
-    the whole region is one address, so the retained span may grow to the
-    union — clamped at the neighboring retained entities so a NAME beside the
-    address can never be swallowed (over-masking within the CRF's own span is
-    the worst case, never a new claim). Chains are re-merged afterwards
-    because an extension can close the gap to a POSTAL_CODE fragment.
+    The wider CRF span is often the only one that saw the label-less tail ("อำเภอเมือง
+    ขอนแก่น"). Clamped at neighboring retained entities so a NAME beside the address is
+    never swallowed. Re-merged afterwards since an extension can close a POSTAL_CODE gap.
     """
     tb_addr = [t for t in tb if t.data_type == "ADDRESS"]
     if not tb_addr:
@@ -234,30 +197,15 @@ def _extend_address_chains(text: str, entities: list[Entity], tb: list[Entity]) 
     return merge_address_spans(text, out)
 
 
-# Bare facility designators (ng19): a bookable meeting room in a facilities
-# notice is furniture, not a place tied to a person. thainer maps FACILITY to
-# nothing by design, but the CRF emits these as LOCATION. Runs post-merge,
-# where a facility word inside a real address has already been absorbed into
-# its ADDRESS chain.
-#
-# Dropping UNMASKS, so absence of evidence is not evidence: the first cut
-# dropped the span whenever NOTHING else was detected nearby, and a bare
-# delivery line ("ส่งเอกสารมาที่ อาคาร 7 ชั้น 3") has no neighbours by
-# construction — it lost its building outright (2026-08-04 review). Two
-# conditions are now required together, both of which must point AT a
-# facilities notice:
-#
-#  - positive register evidence in the window (booking/capacity/meeting
-#    vocabulary), read with the facility spans themselves blanked out so
-#    "ห้องประชุม 1204" cannot vouch for itself; and
-#  - no retained non-facility entity nearby (a name, a phone, an address, an
-#    organization keeps the span masked; facility siblings never anchor each
-#    other, or the three ng19 spans would keep each other alive).
+# Bare facility designators (a bookable meeting room) are furniture, not a place tied to a
+# person; the CRF emits them as LOCATION. Runs post-merge so a facility word inside a real
+# address is already absorbed. Dropping UNMASKS, so absence of evidence is not evidence
+# (a bare delivery line "ส่งเอกสารมาที่ อาคาร 7 ชั้น 3" lost its building). Both required:
+# positive register vocabulary in the window (facility spans blanked so they cannot vouch
+# for themselves) AND no retained non-facility entity nearby (siblings never anchor each other).
 _FACILITY_SPAN_RE = re.compile(r"(?:ห้องประชุม|ห้องเรียน|ห้อง|อาคาร|ตึก|ชั้น)\s*\d+")
 _FACILITY_ANCHOR_WINDOW = 80
-# Booking/capacity/event vocabulary. Bare สอบ is deliberately absent — it is a
-# substring of ตรวจสอบ/สอบถาม, which are ordinary prose and would license an
-# unmasking; the exam-room forms are spelled out instead.
+# Bare สอบ deliberately absent (substring of ตรวจสอบ/สอบถาม); exam-room forms spelled out.
 _FACILITY_REGISTER_RE = re.compile(
     r"ความจุ|ที่นั่ง|จอง|ประชุม|อบรม|สัมมนา|บรรยาย|ห้องสอบ|สนามสอบ|ตารางสอบ|ผู้เข้าสอบ"
 )
@@ -271,8 +219,7 @@ def _drop_unanchored_facility_spans(text: str, entities: list[Entity]) -> list[E
     }
     if not facility:
         return entities
-    # Blank the facility spans so their own designator words are not read as
-    # register evidence for themselves.
+    # Blank the facility spans so they are not their own register evidence.
     masked = list(text)
     for i in facility:
         for pos in range(*entities[i].span):
@@ -296,12 +243,8 @@ def _drop_unanchored_facility_spans(text: str, entities: list[Entity]) -> list[E
 def _relabel_student_ids(tb: list[Entity], kept: list[Entity]) -> list[Entity]:
     """Give a TB STUDENT_ID span its honest label past the FP-first dedupe.
 
-    A cue-free student id is matched by the generic 8-12 digit FP pattern as
-    ID_NUMBER, and FP-first dedupe then discards the TB STUDENT_ID candidate
-    covering the same digits — so an engine that can actually recognize
-    student ids (the fine-tuned one) could never surface the label. The
-    masked span is identical either way; only the label (and therefore the
-    surrogate) changes. A no-op for engines that emit no TB STUDENT_ID.
+    FP-first dedupe keeps the generic ID_NUMBER over a TB STUDENT_ID on the same
+    digits; only the label (and surrogate) changes, never the masked span.
     """
     student_spans = {e.span for e in tb if e.data_type == "STUDENT_ID"}
     if not student_spans:

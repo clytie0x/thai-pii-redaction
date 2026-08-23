@@ -1,11 +1,8 @@
-"""OCR processing for pdf_hybrid pages (Step 1).
+"""OCR processing for pdf_hybrid pages.
 
-Optional dependency (requirements-ocr.txt): paddleocr, paddlepaddle,
-OpenCV (provided by the PaddleOCR/PaddleX dependency set). Never imported at
-module load time -- only inside functions -- so importing this module is
-always safe even when the OCR stack isn't installed. Callers must check
-is_available() (or catch
-OCRUnavailableError) before relying on OCR extraction.
+The OCR stack (paddleocr, paddlepaddle, OpenCV) is optional and imported only inside
+functions, so importing this module is always safe. Callers check is_available() or catch
+OCRUnavailableError.
 """
 
 from __future__ import annotations
@@ -31,15 +28,8 @@ class OCRUnavailableError(RuntimeError):
 
 
 def _prime_torch_if_present() -> None:
-    """Windows DLL-load-order workaround.
-
-    If torch is installed (the optional sentence-transformers Section-26
-    detector pulls it in), it must be imported before paddleocr/paddle in
-    this process -- paddleocr's own dependency chain (via albumentations)
-    imports torch too, and if paddle's native libraries load first, torch's
-    later import fails with "OSError: ... Error loading ...torch\\lib\\shm.dll".
-    Importing torch here first (best-effort, a no-op if it isn't installed)
-    avoids the crash regardless of which optional feature a process uses first.
+    """Windows DLL-load-order workaround: torch must import before paddle in this process,
+    else torch's later import fails loading shm.dll. Best-effort no-op when torch is absent.
     """
     try:
         import torch  # noqa: F401
@@ -116,19 +106,11 @@ def _sharpen(image):
 
 
 def preprocess_image(image, *, level: int = 0):
-    """Preprocess a rendered page image before OCR.
+    """Preprocess a rendered page image before OCR: denoise + sharpen, plus binarization on
+    retries (level >= 1).
 
-    level 0 (first attempt): denoise + sharpen.
-    level >= 1 (retries): adds stronger binarization to help low-quality scans.
-
-    NOTE: no deskew here (DET-3). Rotating the page for OCR put the detected
-    bboxes in a rotated coordinate space, but redactor.py paints its black
-    boxes on a render of the ORIGINAL (unrotated) page -- so on any skewed scan
-    the redaction rectangles landed off the actual PII, leaving it visible. The
-    old angle logic was also written for OpenCV < 4.5's convention and could
-    over-rotate a near-straight page by ~90 deg under the pinned cv2 >= 4.9.
-    PaddleOCR's own text detector tolerates moderate skew; keeping the image
-    unrotated guarantees bbox coordinates match the redaction render.
+    No deskew: rotating would put bboxes in a rotated space while redactor.py paints on the
+    unrotated render, leaving PII visible. PaddleOCR tolerates moderate skew on its own.
     """
     import cv2
 
@@ -144,16 +126,8 @@ def preprocess_image(image, *, level: int = 0):
 
 
 def _run_ocr_once(image, page_num: int, dpi: int) -> tuple[list[WordBbox], float]:
-    """Run PaddleOCR on a preprocessed page image.
-
-    Rescales detected boxes from pixel space (at the given DPI) back to PDF
-    point space (72 DPI) so they line up with fitz's page coordinate system --
-    the same contract redactor.py already relies on for text-layer bboxes.
-
-    PaddleOCR's predict() returns one OCRResult (dict-like) per input image,
-    with parallel "rec_texts" / "rec_scores" / "rec_boxes" fields -- rec_boxes
-    is an (N, 4) array of axis-aligned [x0, y0, x1, y1] pixel-space boxes, one
-    per recognized line.
+    """Run PaddleOCR on a preprocessed page image; boxes are rescaled from pixel space back to
+    PDF points (72 DPI) so they match the text-layer bbox contract redactor.py relies on.
     """
     engine = _get_engine()
     scale = 72.0 / dpi
@@ -245,12 +219,8 @@ def _merge_retry_words(
                 for index in overlaps
                 if _word_key(merged[index].text) and _word_key(merged[index].text) in word_key
             ]
-            # Replacing is only safe when the longer read still carries every
-            # structured value the reads it evicts carried. A retry that adds
-            # one digit to a national id contains the old key as a SUBSTRING
-            # while matching no pattern itself, so without this check a 0.55
-            # attempt could delete the 0.90 attempt's valid THAI_ID and leave
-            # nothing for detection — and nothing for redaction — to find.
+            # Replace only when the longer read keeps every structured value it evicts; a retry
+            # adding one digit to a national id would otherwise delete a valid THAI_ID read.
             if contained and keys >= set().union(
                 *(_structured_keys(merged[index].text) for index in contained)
             ):
@@ -282,14 +252,8 @@ def ocr_page(
             if type(exc) is not RuntimeError:
                 raise
             discard_exception_graph(exc)
-            # PaddlePaddle's pybind layer translates transient native faults
-            # to BARE builtins.RuntimeError ("Unknown exception",
-            # enforce-class errors like PreconditionNotMet). Retry the failed
-            # attempt once, visibly: the warning is recorded on the page
-            # result and surfaced through extract() meta warnings, so
-            # evidence shows every retry. A second failure propagates
-            # unchanged, and RuntimeError SUBCLASSES (PdfiumError,
-            # OCRUnavailableError) never retry.
+            # PaddlePaddle reports transient native faults as BARE RuntimeError; retry once,
+            # visibly (warning). Subclasses (PdfiumError, OCRUnavailableError) never retry.
             warnings.append(
                 f"page {page_num}: OCR attempt {attempt} raised RuntimeError; retried once"
             )

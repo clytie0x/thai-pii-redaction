@@ -1,9 +1,8 @@
 """Outbound PII leak scan shared by the CLI pre-send guard and the web path.
 
-A "leak" is a detector hit in already-pseudonymized text that pseudonym
-occurrences cannot account for. Fuzzy NER spans around embedded pseudonyms
-are excused via position-based overlap + per-segment remainder scans + a
-cue-preserving name_context re-check (see PR #33/#34 history).
+A "leak" is a detector hit in already-pseudonymized text that pseudonym occurrences cannot
+account for. Fuzzy NER spans around embedded pseudonyms are excused via overlap, per-segment
+remainder scans and a cue-preserving name_context re-check.
 """
 
 from __future__ import annotations
@@ -118,12 +117,8 @@ class OutboundPolicyError(Exception):
 
 
 def pseudonym_ranges(text: str, pseudonyms: list[str]) -> list[tuple[int, int]]:
-    """
-    Character ranges of every known-pseudonym occurrence in text.
-
-    Longest pseudonym first so a shorter pseudonym cannot claim a slice of a
-    longer one (same ordering rule as reverse_mapper); ranges never overlap.
-    """
+    """Non-overlapping ranges of every known-pseudonym occurrence, longest pseudonym first
+    (same ordering rule as reverse_mapper)."""
     claimed: list[tuple[int, int]] = []
 
     def _taken(start: int, end: int) -> bool:
@@ -158,10 +153,8 @@ def _cue_leak_in_window(
     return False
 
 
-# A digit run this long is an identifier, not a quantity, in the documents this
-# system handles. Six is deliberately below the numeric detectors' eight-digit
-# floor: that floor is precisely the gap a hospital number or a short reference
-# number falls through.
+# Six is deliberately below the numeric detectors' eight-digit floor: that gap is where a
+# hospital number or short reference number falls through.
 _ORPHAN_DIGITS_RE = re.compile(r"(?<!\d)(\d{6,})(?!\d)")
 _REPEATED_WHITESPACE_RE = re.compile(r"\s{2,}")
 _SPACED_IBAN_START_RE = re.compile(r"(?<![A-Z0-9])([A-Z]{2}\d{2})(?= )")
@@ -345,18 +338,11 @@ def _obfuscated_structured_signals(
 
 
 def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
-    """A second opinion over structural and obfuscated residuals.
+    """Detector-independent second opinion over bare-number and obfuscated residuals.
 
-    `scan_outbound_leaks` runs the same `detect_fp`/`detect_tb` that produced
-    this text, so whatever detection missed on the way in is missed again on
-    the way out: three layers on the architecture diagram, one layer in
-    practice (correlated failure). The bare-number check depends on neither
-    detector. A second, scan-only view removes embedded format controls and
-    repeated whitespace, then applies structured validation without changing
-    caller text or source spans.
-
-    The strings are structural findings, not caller-facing warnings. The
-    shared outbound policy turns any finding into a fail-closed decision.
+    `scan_outbound_leaks` reuses the detectors that produced this text, so their misses
+    correlate; this check does not depend on them. Findings are structural signals that the
+    outbound policy turns into a fail-closed decision.
     """
     trusted = guard_context.trusted_pseudonyms()
     ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
@@ -372,10 +358,8 @@ def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
 
 def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]:
     """Return real leaks in pseudonymized text (empty list = safe to send)."""
-    # Caller-seeded mappings are declarations, not proof. Only replacements
-    # minted or actually reused by this processing turn may excuse any FP or TB
-    # hit. A fuzzy TB span can cross a trusted replacement, so re-scan only its
-    # uncovered segments and preserve cue-linked checks around the full span.
+    # Only replacements minted or reused this turn may excuse a hit; caller-seeded mappings are
+    # not proof. A fuzzy TB span crossing a trusted replacement is re-scanned per segment.
     trusted = guard_context.trusted_pseudonyms()
     trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
     real_leaks = []

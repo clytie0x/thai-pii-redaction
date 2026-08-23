@@ -1,22 +1,16 @@
 """Semantic detector for PDPA Section 26 sensitive data.
 
-Flags free-form sensitive content (health, religion, etc.) that the keyword
-scan in report.py misses — e.g. "ป่วยเป็นเบาหวาน" has no keyword like "โรค".
-It compares each sentence's embedding against per-category prototype phrases
-(MiniLM, multilingual) and flags those above a similarity threshold.
-
-Non-generative: it only flags spans that exist in the input, so there is no
-hallucination risk. Optional — requires sentence-transformers
-(requirements-ml.txt). Callers degrade gracefully (empty list) when the model
-or its dependency is unavailable, so the base product runs without it.
+Flags free-form sensitive content the keyword scan misses ("ป่วยเป็นเบาหวาน" has no "โรค") by
+comparing sentence embeddings (multilingual MiniLM) against per-category prototypes.
+Non-generative (only flags spans present in the input). Optional: returns [] without
+sentence-transformers.
 """
 
 from __future__ import annotations
 
 _MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
-# Prototype phrases per PDPA Section 26 category (Thai). A handful each is
-# enough for sentence-level semantic matching.
+# Prototype phrases per PDPA Section 26 category (Thai); a handful each suffices.
 _PROTOTYPES: dict[str, list[str]] = {
     "HEALTH": [
         "ฉันป่วยเป็นโรคประจำตัว",
@@ -97,11 +91,8 @@ def _load():
 
 
 def detect_sensitive(text: str, *, threshold: float = 0.55) -> list[dict]:
-    """Flag sentences semantically close to a Section 26 category.
-
-    Returns one entry per flagged sentence:
-    ``{category, text, start, end, score}``. Returns an empty list when the
-    text is empty or the embedding dependency is unavailable.
+    """Flag sentences semantically close to a Section 26 category; one ``{category, text, start,
+    end, score}`` per hit, [] when text is empty or the dependency is unavailable.
     """
     if not text or not text.strip() or not is_available():
         return []

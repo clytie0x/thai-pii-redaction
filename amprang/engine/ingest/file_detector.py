@@ -21,14 +21,8 @@ def page_needs_ocr(page) -> bool:
 
 
 def detect_source_type(path: str | Path) -> str:
-    """
-    Returns: "text" | "pdf_text" | "pdf_hybrid"
-
-    Logic:
-    - If not a PDF (extension not .pdf): return "text"
-    - Open with pypdfium2 and inspect every page. Any raster image needs OCR,
-      even when selectable text is also present.
-    - If the PDF cannot be opened: raise ValueError(f"Cannot open PDF: {path}")
+    """Return "text" | "pdf_text" | "pdf_hybrid"; any raster page (even beside a text layer)
+    makes the PDF hybrid. Raises ValueError if the PDF cannot be opened.
     """
     path = Path(path)
     if path.suffix.lower() != ".pdf":
@@ -53,11 +47,7 @@ def detect_source_type(path: str | Path) -> str:
 
 
 def validate_encoding(content: bytes) -> str:
-    """
-    Try to decode as UTF-8. If fails, try common Thai encodings (tis-620, cp874).
-    Return the decoded string (always as Unicode).
-    Raise ValueError if no encoding works.
-    """
+    """Decode as UTF-8, then tis-620, then cp874; raise ValueError if none works."""
     for encoding in ("utf-8", "tis-620", "cp874"):
         try:
             return content.decode(encoding)

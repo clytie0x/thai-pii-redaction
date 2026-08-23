@@ -131,11 +131,7 @@ def validate(
     ocr_confidence: float | None = None,
     min_thai_ratio: float = 0.1,
 ) -> QualityResult:
-    """
-    Validate cleaned text quality before PII detection.
-
-    source_type: "text" | "pdf_text" | "pdf_hybrid"
-    """
+    """Validate cleaned text quality before PII detection (source_type: text|pdf_text|pdf_hybrid)."""
     pattern_ok, pattern_warnings = _pattern_validation(text, min_thai_ratio)
     structure_ok, structure_warnings = _structure_validation(text)
     ocr_ok, ocr_warnings = _ocr_confidence_validation(source_type, ocr_confidence)

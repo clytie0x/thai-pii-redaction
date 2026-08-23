@@ -124,31 +124,13 @@ def _extract_pdfplumber_page(page, page_num: int) -> tuple[str, list[WordBbox]]:
 
 
 def extract(path: str | Path, source_type: str) -> tuple[str, list[WordBbox], dict]:
-    """
-    Returns (full_text, word_bboxes, meta).
+    """Return (full_text, word_bboxes, meta) for source_type text / pdf_text / pdf_hybrid.
 
-    For source_type == "text":
-      - Read file bytes, call validate_encoding
-      - Return (decoded_text, [], {})  # no bboxes for plain text
-
-    For source_type == "pdf_text":
-      - Use pdfplumber's character-to-text map to extract text page by page
-      - Every WordBbox carries its exact half-open interval in full_text
-      - Join all pages with "\n\n"
-      - If pdfplumber extraction fails or returns empty string:
-        fallback to pypdfium2:
-          for each page: page.get_textpage().get_text_range() for text, and
-          per-character boxes stitched into word-level WordBbox entries.
-      - Return (full_text, word_bboxes, {})
-
-    For source_type == "pdf_hybrid":
-      - Per-page: keep selectable text and also OCR every raster page. Mixed
-        pages merge both sources so a text overlay cannot hide image-only PII.
-      - Raises OCRUnavailableError if the OCR dependencies (requirements-ocr.txt)
-        aren't installed.
-      - Returns (full_text, word_bboxes, meta) where meta carries
-        ocr_confidence / human_review / human_review_pages / pages_ocred /
-        pages_text_layer / warnings.
+    pdf_text: pdfplumber char map with pypdfium2 fallback; every WordBbox carries its exact
+    half-open span in full_text; pages joined with "\n\n". pdf_hybrid: keeps the text layer
+    and also OCRs every raster page so a text overlay cannot hide image-only PII; raises
+    OCRUnavailableError when OCR deps are missing; meta carries ocr_confidence / human_review /
+    human_review_pages / pages_ocred / pages_text_layer / ocr_text_ranges / warnings.
     """
     path = Path(path)
 
@@ -207,21 +189,17 @@ def _extract_pdf_text(path: Path) -> tuple[str, list[WordBbox]]:
         if full_text.strip():
             return full_text, word_bboxes
 
-        # pdfplumber returned empty — fall through to pypdfium2
     except Exception as exc:
         discard_exception_graph(exc)
-        # Fall through to pypdfium2.
 
     return _extract_pdf_pypdfium2(path)
 
 
 def _extract_page_text_layer(page, page_num: int) -> tuple[str, list[WordBbox]]:
-    """Extract a single pypdfium2 page's text layer as (page_text, word_bboxes).
+    """Extract one pypdfium2 page's text layer as (page_text, word_bboxes).
 
-    pypdfium2 has no built-in word tokenizer, so words are reconstructed by
-    grouping consecutive non-whitespace characters using per-character boxes
-    (get_charbox), then converting from PDF's bottom-left origin to the
-    top-left origin used elsewhere (pdfplumber's "top" convention).
+    pypdfium2 has no word tokenizer: words are rebuilt from per-character boxes and
+    converted from PDF bottom-left origin to the top-left origin used elsewhere.
     """
     textpage = page.get_textpage()
     try:
@@ -390,15 +368,8 @@ def _extract_pdf_hybrid(path: Path) -> tuple[str, list[WordBbox], dict]:
     """Extract text layers and OCR every raster page."""
     from amprang.engine.ingest import ocr_processor
 
-    # Routing sends a page here as soon as it carries a raster image, even one
-    # sitting beside a full text layer (a letterhead logo). Refusing the whole
-    # document when the OCR extra is missing would take PDF redaction away from
-    # every core-only install (no `amprang[ocr]` extra) for documents it used to
-    # read fine. So the refusal
-    # is made per page and only where it is true: a raster page with no usable
-    # text layer really cannot be read, while one that has a text layer falls
-    # back to it, loudly (warning + human_review), because whatever the image
-    # holds stays unread.
+    # OCR-missing refusal is per page, not per document: a raster page with no text layer
+    # cannot be read, but one with a text layer falls back to it loudly (warning + human_review).
     ocr_available = ocr_processor.is_available()
 
     import pypdfium2 as pdfium

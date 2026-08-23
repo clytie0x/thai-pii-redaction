@@ -2,18 +2,7 @@
 
 
 def is_valid_thai_id(id_str: str) -> bool:
-    """
-    Validate Thai national ID using mod-11 Luhn checksum.
-
-    Rules:
-    - Must be exactly 13 digits
-    - Checksum: sum(digit[i] * (13 - i) for i in range(12)) -> total
-    - check_digit = (11 - (total % 11)) % 10
-    - check_digit must equal digit[12]
-
-    Returns True if valid, False otherwise.
-    Never raises.
-    """
+    """Validate a 13-digit Thai national ID (mod-11 checksum). Never raises."""
     try:
         if len(id_str) != 13:
             return False

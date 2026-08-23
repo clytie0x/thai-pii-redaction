@@ -1,26 +1,9 @@
-"""The DSAR locate result rendered as a Thai PDF slip (Track D #3, Task 3).
+"""The DSAR locate result rendered as a Thai PDF slip.
 
-Same whitelist discipline as `breach_pdf.py` / `receipt_pdf.py` / `report_pdf.py`:
-this module is handed the dict `DsarResult.to_json_dict()` already produced,
-and that dict never carries a subject identifier value, a document value, or a
-hash of one to begin with (see `dsar.py`'s own rationale) -- so the PII-free
-property of this renderer is structural rather than a filter applied here.
-What it draws is: the subject's identifier TYPES and how many of each were
-supplied (never the identifiers themselves), file aggregate counts, each
-matched file's basename + source type + which identifier types matched (and
-how many occurrences of each) + its full PII type inventory (types and
-counts, never values) + risk grade + the `human_review`, `third_party_possible`,
-and `weak_only` flags, the basenames + short reasons of failed files, the
-basenames of skipped files, version strings, and the timestamp.
-
-The fixed method/limitation/third-party/scope statements are drawn verbatim
-from `payload["method"]` rather than being retyped here, so the JSON and the
-PDF cannot describe how matching works two different ways.
-
-Mirrors `render_breach_pdf`'s contract exactly: this module writes the file
-itself (`render_dsar_pdf(result_dict, output_path) -> None`), not
-`render_receipt`'s bytes-returning idiom -- matching what the CLI
-(`amprang dsar locate` (amprang.cli.cmd_dsar_locate)) expects to call before it writes the JSON.
+Whitelist renderer over `DsarResult.to_json_dict()`, which carries no identifier value, document
+value, or hash to begin with, so the PII-free property is structural. Method statements are drawn
+verbatim from `payload["method"]` so JSON and PDF cannot disagree. Writes the file itself
+(`render_dsar_pdf(result_dict, output_path) -> None`), same contract as `render_breach_pdf`.
 """
 
 from __future__ import annotations
@@ -32,9 +15,7 @@ from pathlib import Path
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-# One label vocabulary across every PDF surface -- the breach slip, the DSAR
-# slip, the risk report and the processing receipt must call the same data
-# type the same name.
+# One label vocabulary across every PDF surface.
 from amprang.engine.report_pdf import _TYPE_LABELS
 from amprang.engine.thai_pdf_text import draw_text, register_thai_font
 
@@ -51,12 +32,7 @@ _NOTES = [
 
 
 def _wrap(text: str, width: int = 100) -> list[str]:
-    """Word-wrap an English statement drawn verbatim from the dict.
-
-    `draw_text` only ever draws one line; the method/limitation/third-party/
-    scope statements are full paragraphs, so this is the only place that
-    breaks them into lines before handing each one to `line()`.
-    """
+    """Word-wrap a verbatim paragraph statement; `draw_text` only draws one line."""
     return textwrap.wrap(text, width=width) or [""]
 
 
@@ -69,11 +45,8 @@ def _type_counts_str(counts: dict) -> str:
 
 
 def _occurrence_counts_str(counts: dict) -> str:
-    """Same shape as `_type_counts_str`, but every number is spelled out as
-    "N ครั้ง" (N occurrences) -- `matched_identifier_counts` counts how many
-    times a value matched, not how many distinct identifiers the subject has
-    (a phone number typed two ways in the same file matches twice), and the
-    plain-number rendering read as the latter (M5)."""
+    """Like `_type_counts_str` but spelled "N ครั้ง": `matched_identifier_counts` counts
+    occurrences, not distinct identifiers, and a plain number read as the latter."""
     if not counts:
         return "ไม่มี"
     return "  ".join(
@@ -82,19 +55,10 @@ def _occurrence_counts_str(counts: dict) -> str:
 
 
 def render_dsar_pdf(result_dict: dict, output_path: str | Path) -> None:
-    """Draw `result_dict` (a `DsarResult.to_json_dict()` dict) onto an A4 PDF
-    and write it to `output_path`.
+    """Draw `result_dict` (a `DsarResult.to_json_dict()` dict) onto an A4 PDF at `output_path`.
 
-    Whitelist renderer: only identifier TYPE names/counts, file/matched-file
-    aggregate counts, matched-file rows (basename, source type, matched-type
-    occurrence counts, full type inventory, risk grade, human_review,
-    third_party_possible, weak_only), failed-file basenames + short reasons,
-    skipped-file basenames, the fixed method statements (verbatim), version
-    strings, and the timestamp ever reach the canvas -- never a subject
-    identifier value, a document value, or a hash of one. Raises `OSError` if
-    `output_path` cannot be written (propagated from `Path.write_bytes`, not
-    caught here), matching the receipt/report/breach PDF renderers' failure
-    behaviour.
+    Only type names/counts, basenames, grades, flags, verbatim method statements, version strings,
+    and the timestamp reach the canvas. `OSError` from the write propagates uncaught.
     """
     font = register_thai_font()
     buf = BytesIO()

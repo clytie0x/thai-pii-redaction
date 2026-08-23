@@ -1,8 +1,6 @@
 """Format-preserving pseudonym generator for structured PII entities.
 
-Deterministic for fixed (data_type, original, salt, attempt) inputs.
-The seed uses the caller's salt and original value, with attempt added for
-deterministic collision rerolls; entity_id is not part of the seed.
+Deterministic for fixed (data_type, original, salt, attempt); entity_id is not part of the seed.
 """
 
 from __future__ import annotations
@@ -12,8 +10,7 @@ import random
 
 
 def _seeded_rng(salt: str, original: str, attempt: int = 0) -> random.Random:
-    # attempt=0 keeps the historical seed so existing pseudonyms stay stable;
-    # attempt>0 re-rolls deterministically when a collision must be resolved.
+    # attempt=0 keeps the historical seed so existing pseudonyms stay stable.
     material = f"{salt}:{original}" if attempt == 0 else f"{salt}:{original}:{attempt}"
     seed = int.from_bytes(
         hashlib.sha256(material.encode()).digest()[:4],
@@ -35,11 +32,8 @@ def _gen_thai_id(rng: random.Random) -> str:
 def _gen_phone(rng: random.Random) -> str:
     """Generate a Thai phone number in one of the written forms people use.
 
-    The benchmark corpus draws PHONE values from here, so every shape the
-    detector is expected to catch must be reachable — mobile and landline,
-    and the trunk-prefix split (0-2123-4567) that Thai organisations print on
-    letterheads. A single canonical form here made the CI gate blind to a real
-    detection leak (DET-1 follow-up).
+    The benchmark corpus draws PHONE values from here, so every shape the detector must catch
+    (mobile, landline, trunk-prefix split 0-2123-4567) must be reachable or the CI gate goes blind.
     """
     if rng.random() < 0.35:
         # Bangkok landline, 9 digits: 02-XXX-XXXX
@@ -154,22 +148,8 @@ def _gen_generic(rng: random.Random, original: str) -> str:
 
 
 def generate_fp(data_type: str, original: str, *, salt: str, attempt: int = 0) -> str:
-    """Generate a format-preserving pseudonym for a given entity.
-
-    Deterministic: same (data_type, original, salt, attempt) -> same pseudonym.
-    Uses seeded random from salt and original, with attempt added for a
-    deterministic collision reroll.
-
-    Args:
-        data_type: entity type (THAI_ID, PHONE, EMAIL, etc.)
-        original: the real PII value
-        salt: caller-provided salt; the session service keeps one per session
-            and the pipeline generates one when omitted
-        attempt: collision re-roll counter; 0 = the stable deterministic value
-
-    Returns:
-        A format-preserving fake string
-    """
+    """Generate a format-preserving pseudonym; same (data_type, original, salt, attempt) -> same
+    result. ``attempt`` is the collision re-roll counter (0 = the stable value)."""
     rng = _seeded_rng(salt, original, attempt)
 
     if data_type == "THAI_ID":

@@ -1,9 +1,8 @@
 """Wire-level primitives for OpenAI-compatible /chat/completions endpoints.
 
-Mechanics only, shared between the product provider (amprang/engine/ai_client.py)
-and the benchmark caller (benchmark/llm_providers.py). Policy stays with each
-caller: retry ownership, temperature/model/token limits, and whether empty
-content is data (benchmark) or an error (product) are deliberately NOT here.
+Mechanics only, shared by amprang/engine/ai_client.py and benchmark/llm_providers.py.
+Policy (retries, model/token limits, whether empty content is data or an error) is
+deliberately left to each caller.
 """
 
 from __future__ import annotations
@@ -12,9 +11,8 @@ from __future__ import annotations
 def validate_header_value(value: str, *, env_name: str) -> str:
     """Return `value` if it can travel as an HTTP header; raise ValueError naming `env_name`.
 
-    httpx encodes headers as latin-1 and rejects CR/LF; a key pasted with a
-    stray newline or Thai note fails deep inside the transport with a message
-    that names neither the variable nor the cause. Reject here, by name.
+    httpx rejects non-latin-1/CR/LF headers deep in the transport without naming the
+    variable, so reject here by name.
     """
     if not value:
         raise ValueError(f"{env_name} is not set")
@@ -44,11 +42,9 @@ def is_sse_response(content_type: str | None) -> bool:
 
 
 def extract_chat_content(payload: object) -> tuple[str | None, str | None]:
-    """Structural extraction of (content, finish_reason) from a chat envelope.
+    """Extract (content, finish_reason) from a chat envelope; ValueError on bad shape.
 
-    Raises ValueError when the envelope shape is wrong. A present-but-null
-    content comes back as None -- whether that is data or an error is the
-    caller's policy, not this module's.
+    Null content comes back as None -- whether that is data or an error is caller policy.
     """
     if not isinstance(payload, dict):
         raise ValueError("response body is not a JSON object")

@@ -1,12 +1,7 @@
-"""The environment block every PDPA artifact (receipt, breach assessment, DSAR
-locate) records: which product build, which NER engine, which detector
-release produced the result.
+"""The environment block every PDPA artifact records: product build, NER engine, detector release.
 
-One implementation on purpose. The artifact modules used to carry identical
-private copies that read a repo-root ``VERSION`` file; an installed wheel has
-no such file, so a pip user's receipts reported ``"unknown"``. Distribution
-metadata is the answer that is right in both a source checkout (editable
-install) and a wheel, and it is what ``amprang.__version__`` already reports.
+Single implementation reading distribution metadata, which is right in both an editable
+checkout and a wheel (a repo-root VERSION file is absent from wheels).
 """
 
 from __future__ import annotations
@@ -17,11 +12,7 @@ from amprang.engine.detectors.tb_detector import _resolve_engine_name
 
 
 def product_version() -> str:
-    """The installed amprang version, or ``"unknown"`` outside any install.
-
-    Never a hardcoded literal: a receipt that guesses its own version is worse
-    than one that admits it does not know.
-    """
+    """Installed amprang version, or ``"unknown"``; never a hardcoded literal."""
     try:
         return version("amprang")
     except PackageNotFoundError:
@@ -29,12 +20,8 @@ def product_version() -> str:
 
 
 def detector_version() -> str:
-    """The PyThaiNLP release that produced the detection result.
-
-    ``requirements.txt`` carries a loose ``>=`` floor, so two machines with the
-    same ``product_version`` can run different CRF models. Without this field
-    a genuine model difference surfaces as a ``result_mismatch`` with an empty
-    list of differences.
+    """The PyThaiNLP release that produced the result; the ``>=`` floor lets two machines with
+    the same product_version run different CRF models, which this field makes visible.
     """
     try:
         return f"pythainlp {version('pythainlp')}"

@@ -1,28 +1,9 @@
-"""Locate which files, among a set the controller already holds, mention a
-data subject -- for a PDPA มาตรา 30 access request (Track D #3).
+"""Locate which files mention a data subject -- for a PDPA มาตรา 30 access request.
 
-This module LOCATES; it never reproduces document content. The controller
-answering the request serves it from the located files themselves. Retention
-is in-memory for the duration of one run only (owner decision, 2026-08-01):
-the subject identifiers the controller supplies, every value this module
-detects while matching them, and all intermediate state live in local
-variables and die with the process -- nothing here writes to disk, and no
-subject identifier VALUE (never mind a hash of one -- see breach.py's own
-rationale, a hash of a 13-digit id is brute-forceable) reaches `to_json_dict()`,
-an exception message, or a dataclass repr. `DsarResult` therefore carries only
-identifier TYPE counts, never the identifiers themselves -- every dataclass
-below is absent-by-construction rather than filtered late (no field holds a
-raw value, so there is nothing for its ordinary auto-generated repr to leak).
-
-Reuses the same `extract` / `clean` / `detect_all` / `assess_reid_risk` every
-other storefront runs, and the same `discover_files` / `short_reason` /
-`canonical_value` helpers `breach.py` uses (now shared via `scan_common.py`)
--- this module only classifies subject-file lines and matches canonical
-values across files.
-
-Not a legal conclusion: the result never claims the DSAR is satisfied. Not a
-document exporter: unmatched files are never listed, and a matched file's
-own content is never quoted or excerpted.
+Locates only, never reproduces content. No subject identifier VALUE (nor a hash of one, which is
+brute-forceable for a 13-digit id) reaches `to_json_dict()`, an exception message, or a dataclass
+repr: every dataclass holds only type counts, basenames, grades, and flags, so nothing is there
+to leak. Not a legal conclusion; unmatched files are counted but never listed.
 """
 
 from __future__ import annotations
@@ -43,22 +24,13 @@ from amprang.engine.scan_common import canonical_value, discover_files, short_re
 
 DSAR_SCHEMA = "amprang.dsar-locate/1"
 
-# Subject-file line classification, in this exact priority order (a line
-# tried against later rules only if the earlier ones don't fire):
-#   13 digits                -> THAI_ID
-#   [A-Z]{2}\d{7}             -> PASSPORT (Thai-format, no cue needed)
-#   contains "@"              -> EMAIL
-#   digit / "+66" phone shape -> PHONE
-#   anything else             -> NAME (the catch-all; a full name has no
-#                                shape test, so nothing is "unclassifiable"
-#                                except a blank line)
+# Subject-file line classification, in priority order: 13 digits -> THAI_ID, [A-Z]{2}\d{7} ->
+# PASSPORT, contains "@" -> EMAIL, domestic/+66 phone shape -> PHONE, anything else -> NAME.
 _PASSPORT_LINE_RE = re.compile(r"^[A-Z]{2}\d{7}$")
 _PHONE_DOMESTIC_RE = re.compile(r"^0\d{8,9}$")
 _PHONE_INTL_RE = re.compile(r"^\+66\d{8,9}$")
 
-# An explicit "+66" country-code marker (the plus sign itself, not just the
-# bare digits "66") somewhere in a detected entity's raw text -- see
-# `_entity_matches_any_subject_value`'s PHONE guard below.
+# Explicit "+66" marker (the plus sign, not bare "66") -- see the PHONE guard below.
 _PLUS_66_MARKER_RE = re.compile(r"\+\s*66")
 
 _METHOD_STATEMENT = (
@@ -121,10 +93,7 @@ class NoSubjectIdentifiersError(ValueError):
 
 
 class NoFilesAssessedError(RuntimeError):
-    """Nothing could be assessed -- no files found, or every one failed.
-
-    Mirrors `breach.assess_breach`'s own error of the same name: a result
-    that silently covers zero documents is worse than a clear failure."""
+    """Nothing could be assessed -- no files found, or every one failed."""
 
 
 @dataclass
@@ -137,8 +106,7 @@ class FailedFile:
 
 @dataclass
 class MatchedFile:
-    """One file where the subject was found. Nothing here is a value -- type
-    names, counts, a grade, and three flags."""
+    """One file where the subject was found. Type names, counts, a grade, and flags only."""
 
     basename: str
     source_type: str  # "text" | "pdf_text" | "pdf_hybrid"
@@ -149,17 +117,14 @@ class MatchedFile:
     risk_grade: str
     human_review: bool
     third_party_possible: bool
-    weak_only: bool  # True iff the ONLY matched identifier type is NAME -- see
-    # _NAME_WEAK_MATCH_NOTE: a name-only match needs human confirmation, unlike
-    # a checksum-backed id/passport/phone/email match.
+    weak_only: bool  # True iff the ONLY matched identifier type is NAME (see _NAME_WEAK_MATCH_NOTE)
 
 
 @dataclass
 class DsarResult:
-    """Corpus-level result of `locate_subject`. `to_json_dict()` is what both
-    the CLI's JSON output and the PDF renderer build from, so the two can
-    never drift apart. `subject_counts` holds identifier TYPES and how many of
-    each were supplied -- never the identifier values themselves."""
+    """Corpus-level result of `locate_subject`. Both the CLI JSON and the PDF renderer build from
+    `to_json_dict()`, so the two cannot drift. `subject_counts` holds identifier types, never
+    values."""
 
     subject_counts: dict[str, int]  # identifier type -> count supplied
     files_total: int
@@ -171,9 +136,7 @@ class DsarResult:
     assessed_at: str
 
     def to_json_dict(self) -> dict:
-        """The JSON-serializable shape. No subject identifier value, document
-        excerpt, or hash appears here -- every field is a count, a type name,
-        a basename, a grade, a flag, or a fixed method statement."""
+        """JSON-serializable shape; no identifier value, document excerpt, or hash appears here."""
         return {
             "schema": DSAR_SCHEMA,
             "assessed_at": self.assessed_at,
@@ -213,9 +176,8 @@ class DsarResult:
 
 
 def _classify_subject_line(line: str) -> str | None:
-    """Classify one subject-file line by shape. Returns `None` only for a
-    blank line -- every non-blank line classifies as at least NAME, the
-    catch-all with no shape test of its own."""
+    """Classify one subject-file line by shape; `None` only for a blank line (NAME is the
+    catch-all)."""
     stripped = line.strip()
     if not stripped:
         return None
@@ -233,16 +195,10 @@ def _classify_subject_line(line: str) -> str | None:
 
 
 def _read_subject_identifiers(subject_file: str | Path) -> list[tuple[str, str]]:
-    """Read and classify every non-blank line of `subject_file`.
+    """Read and classify every non-blank line of `subject_file` into (data_type, canonical_value)
+    pairs; nothing read is logged or persisted.
 
-    Returns a list of (data_type, canonical_value) pairs, kept only in local
-    memory by every caller -- this function does not log, cache, or persist
-    a single value it reads.
-
-    Raises:
-        NoSubjectIdentifiersError: the file has no classifiable (non-blank)
-            line. The message names the subject-file path, never a line's
-            content.
+    Raises NoSubjectIdentifiersError (message names the path, never a line) if no line classifies.
     """
     path = Path(subject_file)
     raw_lines = path.read_text(encoding="utf-8").splitlines()
@@ -265,29 +221,12 @@ def _read_subject_identifiers(subject_file: str | Path) -> list[tuple[str, str]]
 def _entity_matches_any_subject_value(
     subject_type: str, subject_values: set[str], entity_text: str
 ) -> bool:
-    """Whether `entity_text` (a detected entity's raw text, ANY detector
-    label) is a legitimate spelling of one of the subject's `subject_type`
-    identifiers -- the label-independent half of F1's fix.
+    """Whether `entity_text` (any detector label) is a spelling of one of the subject's
+    `subject_type` identifiers, via `canonical_value`'s own normalization.
 
-    For every type except PHONE this is exactly `canonical_value`'s own
-    normalization: no rewrite beyond folding formatting (spaces, hyphens,
-    case), so an accidental cross-type collision would require the two
-    values to already be identical once formatting is stripped.
-
-    PHONE needs an extra guard. `canonical_value("PHONE", ...)` folds an
-    11/10-digit run starting "66" down to the domestic "0..." form, because
-    "+66 81 234 5678" and "081-234-5678" are the same legitimate spelling of
-    one Thai mobile number. But that fold does not require the source text
-    to have actually carried a "+" country-code marker -- it fires on bare
-    digits alone. A 10/11-digit Thai bank account number that happens to
-    start with "66" (no relation to any phone number) would then canonicalize
-    to the same domestic form purely by digit coincidence, producing a false
-    positive this tool must not make (a DSAR artifact is legal evidence).
-    So: a plain domestic-looking match (raw digits equal a subject's already-
-    domestic canonical phone) is accepted directly, and the international
-    fold is applied ONLY when the entity's own raw text still carries an
-    explicit "+66" marker -- bare "66812345678" with no "+" is left
-    unmatched, `+66 81 234 5678` (any spacing/labeling) still matches.
+    PHONE guard: `canonical_value("PHONE", ...)` folds a bare "66..." digit run to domestic form,
+    so an unrelated 10/11-digit bank account starting with 66 would false-match. The fold is
+    therefore applied only when the raw text carries an explicit "+66" marker.
     """
     if subject_type == "PHONE":
         digits = re.sub(r"\D", "", entity_text)
@@ -305,25 +244,12 @@ def locate_subject(
     *,
     recursive: bool = False,
 ) -> DsarResult:
-    """Locate which of `paths` mention the subject named in `subject_file`.
+    """Locate which of `paths` mention the subject named in `subject_file` (one identifier per
+    line, classified by shape). Matching is exact canonical-value equality, label-independent
+    (see `_METHOD_STATEMENT`); a failed file is recorded by basename and the run continues.
 
-    `subject_file` holds one identifier per line (Thai national id, passport,
-    phone, email, or full name), classified by shape. Each document runs the
-    product's own pipeline (`extract` -> `clean` -> `detect_all`); a detected
-    entity matches the subject when its raw text, canonicalized under a
-    subject identifier's own type rules, equals that subject identifier's
-    canonical value -- value-based only, the detector's own label for that
-    entity is never consulted (exact match, no fuzzy matching -- see
-    `_METHOD_STATEMENT`). A matched file whose ONLY matched identifier type is
-    NAME is flagged `weak_only` (see `_NAME_WEAK_MATCH_NOTE`). A file that
-    fails to process is recorded as a `FailedFile` (basename + exception
-    class/short reason -- never its content) and the run continues. Unmatched
-    files are counted but never listed as rows.
-
-    Raises:
-        NoSubjectIdentifiersError: the subject file has no classifiable line.
-        NoFilesAssessedError: no document could be assessed (none found, or
-            every one failed to process).
+    Raises NoSubjectIdentifiersError (no classifiable line) or NoFilesAssessedError (nothing
+    could be assessed).
     """
     subject_identifiers = _read_subject_identifiers(subject_file)
 
@@ -353,17 +279,8 @@ def locate_subject(
         matched_identifier_counts: dict[str, int] = {}
         for entity in entities:
             type_counts[entity.data_type] = type_counts.get(entity.data_type, 0) + 1
-            # Value-based, not label-based (F1): the detector's own data_type
-            # for this entity is never consulted here. Every subject identifier
-            # TYPE gets a turn at checking this entity's raw text against that
-            # type's own subject values, because the detector's label is a
-            # contextual guess (the same value can be tagged BANK_ACCOUNT in
-            # one document and PHONE in another) and is not a property of the
-            # value itself -- see _METHOD_STATEMENT. The comparison itself is
-            # delegated to `_entity_matches_any_subject_value`, which for PHONE
-            # additionally guards against a bare "66"-prefixed digit run
-            # (e.g. an unrelated bank account) being folded into a false
-            # match with a +66 phone spelling it never actually carried.
+            # Value-based, not label-based: the detector's data_type is a contextual guess, so
+            # every subject type gets a turn at this entity's raw text (see _METHOD_STATEMENT).
             for subject_type, subject_values in subject_lookup.items():
                 if _entity_matches_any_subject_value(
                     subject_type, subject_values, entity.original_text
@@ -376,9 +293,7 @@ def locate_subject(
             continue
 
         third_party_possible = sum(type_counts.values()) > sum(matched_identifier_counts.values())
-        # weak_only (F2): true only when NAME is the ONLY identifier type that
-        # matched -- a checksum-backed id/passport/phone/email match on the
-        # same file makes it False even if a NAME also happened to match.
+        # True only when NAME is the ONLY matched type; any strong match on the file makes it False.
         weak_only = set(matched_identifier_counts) == {"NAME"}
         reid = assess_reid_risk(text)
 
@@ -395,9 +310,7 @@ def locate_subject(
             )
         )
 
-    # files_assessed counts every file the pipeline actually ran on --
-    # matched or not -- mirroring breach.py's own definition (assessed !=
-    # matched, the same way breach's assessed != "flagged for section 26").
+    # files_assessed counts every file the pipeline ran on, matched or not (same as breach.py).
     files_assessed = files_total - len(skipped_names) - len(failed)
     if files_assessed == 0:
         raise NoFilesAssessedError(

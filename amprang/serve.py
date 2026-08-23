@@ -1,16 +1,7 @@
-"""`amprang serve` — the zero-build local UI.
+"""`amprang serve` — run the local FastAPI backend with the demo playground and open a browser.
 
-Starts the local FastAPI backend with the demo playground enabled and opens
-the browser at it, so trying amprang on your own machine is one command::
-
-    pip install "amprang[server]"
-    amprang serve
-
-Everything runs in this one process; nothing leaves the machine. The server
-binds loopback only unless `--allow-remote` is passed explicitly — the local
-API's data-plane authentication is optional (`AMPRANG_API_KEY`), so exposing
-it beyond the machine without a key would hand sanitize/reidentify to the
-whole network.
+Binds loopback only unless `--allow-remote` is passed: data-plane auth (`AMPRANG_API_KEY`) is
+optional, so an unkeyed non-loopback bind would expose sanitize/reidentify to the network.
 """
 
 from __future__ import annotations
@@ -84,8 +75,7 @@ def run_serve(args: argparse.Namespace) -> None:
     url = f"http://{args.host}:{args.port}" + ("" if args.no_demo else "/demo")
     print(f"amprang serving on {url} (Ctrl+C to stop)")
     if not args.no_browser:
-        # Fire after uvicorn has had a moment to bind; a missed open is only
-        # a convenience loss, never an error.
+        # Fire after uvicorn has had a moment to bind; a missed open is not an error.
         opener = threading.Timer(1.0, webbrowser.open, [url])
         opener.daemon = True
         opener.start()

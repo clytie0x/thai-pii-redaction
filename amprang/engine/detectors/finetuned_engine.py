@@ -1,19 +1,9 @@
 """Adapter for a locally fine-tuned token-classification NER model.
 
-Unlike the PyThaiNLP engines, this adapter returns CHARACTER-OFFSET spans
-directly from the fast tokenizer's offset mapping — it does not fake the
-word/BIO ``.tag()`` tuple stream, whose reconstruction via ``text.find``
-was built for PyThaiNLP tokenizers, not subword models.
-
-The model lives OUTSIDE the repository (weights are never committed) and is
-selected explicitly via ``AMPRANG_FINETUNED_MODEL_DIR``. Long inputs are
-handled with a token-window stride inside the adapter, because a 500-char
-product chunk plus margins can exceed the model's window — training length
-alone does not make truncation safe.
-
-Label space (see training/): PERSON, LOCATION, ORGANIZATION, DATE,
-STUDENT_ID in BIO. Structured identifiers stay owned by the regex/checksum
-FP layer; ADDRESS/DATE_OF_BIRTH refinement stays with the cue-upgrade layer.
+Returns CHARACTER-OFFSET spans from the fast tokenizer's offset mapping (the
+word/BIO ``.tag()`` reconstruction was built for PyThaiNLP, not subword models).
+Weights live outside the repo (``AMPRANG_FINETUNED_MODEL_DIR``); long inputs use a
+token-window stride since a product chunk plus margins can exceed the model window.
 """
 
 from __future__ import annotations
@@ -52,9 +42,7 @@ class FinetunedEngine:
         self._model = AutoModelForTokenClassification.from_pretrained(model_dir)
         self._model.eval()
         self._id2label = {int(k): v for k, v in self._model.config.id2label.items()}
-        # Per-label confidence floors, calibrated on the synthetic dev split
-        # (training/calibrate_thresholds.py) and stored WITH the weights —
-        # they are part of the model artifact, never of the repo.
+        # Per-label confidence floors live WITH the weights (model artifact, not repo).
         self.thresholds: dict[str, float] = {}
         thresholds_path = os.path.join(model_dir, "thresholds.json")
         if os.path.exists(thresholds_path):

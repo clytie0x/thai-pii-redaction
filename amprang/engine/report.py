@@ -41,11 +41,8 @@ _SECTION26_KEYWORDS = {
 
 
 def scan_section26(text: str) -> list[dict]:
-    """Find Section 26 sensitive-category matches with their spans.
-
-    Returns one entry per category found (first match), each a dict with
-    keys: category, text, start, end. Flag-only — never used for redaction.
-    """
+    """Find Section 26 sensitive-category matches: one dict (category, text, start, end) per
+    category found, first match only. Flag-only — never used for redaction."""
     hits: list[dict] = []
     for category, pattern in _SECTION26_KEYWORDS.items():
         m = pattern.search(text)
@@ -141,10 +138,7 @@ def _risk_label(score: float) -> str:
 
 
 def analyze_text(text: str) -> dict:
-    """Build the shared PDPA response for clean text.
-
-    The API, PDF report, and worker use this same result.
-    """
+    """Build the shared PDPA response for clean text (used by the API, PDF report, and worker)."""
     entities = detect_all(text)
     report = _generate_report(text, entities)
     reid = report.reid_risk
@@ -163,8 +157,7 @@ def analyze_text(text: str) -> dict:
     breakdown = sorted(breakdown_map.values(), key=lambda x: -x["count"])
 
     section26 = scan_section26(text)
-    # Semantic pass: flag free-form sensitive content the keywords miss.
-    # No-op (empty) when sentence-transformers is not installed.
+    # Semantic pass for content the keywords miss; no-op without sentence-transformers.
     try:
         from amprang.engine.sensitive_detector import detect_sensitive
 

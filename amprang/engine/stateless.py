@@ -1,18 +1,9 @@
 """Stateless core used by hosted and worker adapters.
 
-The signed proposal states the platform "จะไม่ถือข้อมูลส่วนบุคคลของผู้ใช้รายใดเลย".
-This module enforces only the core-owned part of that boundary: it builds a
-SessionVault, uses it for one call, optionally returns a mapping to an
-in-process adapter or the legacy worker-v1 opt-in path, and clears its
-function-local vault. Hosted roundtrip consumes the mapping inside one request;
-the accepted HTTP v2 wire contract does not export it. This primitive retains
-no process-global session or vault; its adapter owns wire, logging, and storage
-policy.
-
-SessionService (local storefronts) keeps a vault on purpose. Both paths run the
-same body — `sanitize_into_vault` — which is deliberately handed the vault it
-works on rather than owning one; that is the single knob separating the
-stateless platform deployment from the stateful local one.
+The platform "จะไม่ถือข้อมูลส่วนบุคคลของผู้ใช้รายใดเลย": each call builds a function-local
+SessionVault, uses it once and clears it; no process-global session survives. SessionService
+keeps a vault on purpose; both run the same `sanitize_into_vault`, which is handed its vault
+rather than owning one. That is the single knob separating the two deployments.
 """
 
 from __future__ import annotations
@@ -74,12 +65,8 @@ class StatelessSanitizeResult:
 
     @property
     def guard_context(self) -> OutboundGuardContext:
-        """Trusted pseudonyms for an immediate pre-provider rescan.
-
-        The context is captured from vault provenance and attached outside the
-        dataclass fields, so repr, asdict, and the existing wire shapes cannot
-        include it. Manually shaped results receive an empty context.
-        """
+        """Trusted pseudonyms for an immediate pre-provider rescan. Attached outside the
+        dataclass fields so repr/asdict/wire shapes cannot include it."""
         context = getattr(self, "_guard_context", None)
         if isinstance(context, OutboundGuardContext):
             return context
@@ -207,20 +194,11 @@ def _sanitize_into_vault_impl(
     scan_leaks: Callable[[str, SessionVault], list[Entity]] = scan_outbound_leaks,
     scan_residual: Callable[[str, SessionVault], list[str]] = scan_residual_signals,
 ) -> SanitizeCore:
-    """Detect, mask and leak-guard `text` using the vault the caller supplies.
+    """Detect, mask and leak-guard `text` using the caller-supplied vault.
 
-    The vault is a parameter, not a field: a caller that wants statelessness
-    passes a throwaway one, a caller that wants multi-turn continuity passes
-    the one it keeps. Nothing else differs between the two deployments.
-
-    Both scan callbacks are injectable so a caller's own module-level
-    references are used. They are security boundaries, and callers must be
-    able to substitute either one without reaching into this module.
-
-    Raises:
-        StatelessLeakError: masking failed, a replacement record is missing, or
-            any outbound residual survived. The text is never returned.
-        VaultTimeoutError: propagated untouched from the supplied vault.
+    Scan callbacks are injectable security boundaries. Raises StatelessLeakError when masking
+    fails, a replacement record is missing, or any residual survives (text is never returned);
+    VaultTimeoutError propagates untouched.
     """
     scan_text = text if detection_text is None else detection_text
     if len(scan_text) != len(text):
@@ -427,9 +405,8 @@ def _restore_stateless_impl(
             generated_pii_count = error.count
             discard_exception_graph(error)
 
-        # Counted here rather than taken from the audit summary: the caller's
-        # question is how much of its mapping was applied, not how many vault
-        # records happened to exist.
+        # Counted from the caller's mapping, not the audit summary: the question is how much
+        # of the mapping was applied, not how many vault records existed.
         present = [p for p in mapping if p and p in text]
         leftover = sorted(p for p in present if p in restored)
         replaced = len(present) - len(leftover)
@@ -547,8 +524,7 @@ def _sanitize_stateless_impl(
             for pseudonym, original in prior_mapping.items():
                 vault.seed(pseudonym, original)
 
-        # Pass this module's own references explicitly. Default arguments are
-        # bound at import time and would bypass an adapter's test seam.
+        # Pass explicitly: default arguments bind at import time and bypass an adapter's seam.
         core = sanitize_into_vault(
             text,
             vault,

@@ -26,25 +26,8 @@ _QI_PATTERNS = {
 
 
 def assess_reid_risk(text: str) -> ReidRiskResult:
-    """
-    Assess re-identification risk from quasi-identifiers in text.
-
-    Quasi-identifiers detected:
-    - gender: Thai title prefixes (นาย/นาง/นางสาว/ด.ช./ด.ญ.)
-    - date_of_birth: any date pattern (reuse fp_detector DATE_OF_BIRTH logic)
-    - age: Thai age pattern (อายุ N ปี, N ขวบ)
-    - district: Thai district keywords (แขวง/ตำบล + name)
-    - province: Thai province keywords (จังหวัด + name)
-    - occupation: Thai occupation keywords (อาชีพ/ทำงาน)
-    - religion: mention of religion keywords
-
-    Risk score:
-    - Base: 0
-    - Each unique QI type: +10 points
-    - Mandatory HIGH if combo {gender + district + (date_of_birth OR age)}
-    - Cap at 100
-
-    Grades: 0-20=A, 21-40=B, 41-60=C, 61-80=D, 81+=F
+    """Assess re-identification risk from quasi-identifiers: +10 per QI type, forced F-range
+    for gender + district + (DOB|age), capped at 100. Grades A..F in 20-point bands.
     """
     qi_found = []
 
@@ -52,10 +35,8 @@ def assess_reid_risk(text: str) -> ReidRiskResult:
         if pattern.search(text):
             qi_found.append(qi_type)
 
-    # Score: 10 per QI type
     score = len(qi_found) * 10.0
 
-    # High-risk combo check
     has_gender = "gender" in qi_found
     has_district = "district" in qi_found
     has_dob_or_age = "date_of_birth" in qi_found or "age" in qi_found
@@ -66,7 +47,6 @@ def assess_reid_risk(text: str) -> ReidRiskResult:
 
     score = min(score, 100.0)
 
-    # Grade
     if score <= 20:
         grade = "A"
     elif score <= 40:
@@ -78,7 +58,6 @@ def assess_reid_risk(text: str) -> ReidRiskResult:
     else:
         grade = "F"
 
-    # Warnings
     warnings = []
     if high_risk_combo:
         warnings.append(

@@ -37,16 +37,11 @@ class Entity:
 
     entity_id: str  # UUID4 string
     redact_type: str  # "FP" (format-preserving) | "TB" (text-based)
-    data_type: str  # "THAI_ID" | "PHONE" | "EMAIL" | "NAME" | "SURNAME" |
-    # "ADDRESS" | "BANK_ACCOUNT" | "CREDIT_CARD" |
-    # "DATE_OF_BIRTH" | "VEHICLE_PLATE" | "PASSPORT" |
-    # "STUDENT_ID" | "IBAN" | "ETHNICITY" |
-    # "POLITICAL_OPINION" | "RELIGION" | "CRIMINAL" |
-    # "HEALTH" | "DISABILITY" | "UNION" |
-    # "LOCATION" | "DATE" | "ORGANIZATION" | "ID_NUMBER"
-    # (honest fallbacks: LOCATION/DATE/ID_NUMBER upgrade to
-    # ADDRESS/DATE_OF_BIRTH/STUDENT_ID/PASSPORT only when a nearby cue
-    # confirms it; ORGANIZATION has no such upgrade)
+    # THAI_ID | PHONE | EMAIL | NAME | SURNAME | ADDRESS | BANK_ACCOUNT | CREDIT_CARD |
+    # DATE_OF_BIRTH | VEHICLE_PLATE | PASSPORT | STUDENT_ID | IBAN | ETHNICITY | POLITICAL_OPINION |
+    # RELIGION | CRIMINAL | HEALTH | DISABILITY | UNION | LOCATION | DATE | ORGANIZATION | ID_NUMBER
+    # (LOCATION/DATE/ID_NUMBER are honest fallbacks that upgrade only when a nearby cue confirms)
+    data_type: str
     span: tuple[int, int]  # (start, end) char offsets in NormalizedDocumentModel.text
     score: float  # 1.0 for FP (regex+checksum), NER confidence for TB
     original_text: str  # the actual PII text at this span

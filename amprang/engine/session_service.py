@@ -1,12 +1,8 @@
 """Session facade unifying the web path onto the core pipeline components.
 
-One brain: SessionVault + accumulated EntityRegistry + per-session salt/mode,
-with the same cap/TTL policy the old app/server.py _SESSIONS dict had.
-Owns session lifecycle plus the sanitize/restore flows.
-
-SECURITY: sessions live in memory only. Dropping or replacing a published
-session removes the service-owned reference and invokes the vault cleanup path;
-Python immutable strings cannot be guaranteed to be zeroized.
+One brain per session: SessionVault + accumulated EntityRegistry + salt/mode, under a cap/TTL
+policy. SECURITY: sessions live in memory only; dropping one clears the vault, but Python
+strings cannot be guaranteed zeroized.
 """
 
 from __future__ import annotations
@@ -77,13 +73,8 @@ class _ExpiryTimer(Protocol):
 _TimerFactory = Callable[[float, Callable[[], None]], _ExpiryTimer]
 
 
-# Flags with these prefixes are informational only on the inbound (restore)
-# direction — the client already gets the same signal via replaced_count/
-# leftover_tokens, and both flags are noisy on a normal chat reply:
-# incomplete_reverse compares unique-pseudonyms-replaced against accumulated
-# entity-instance count (fires even on a perfect restore), and
-# possible_truncation is a layer-3 heuristic aimed at final documents (chat
-# replies routinely lack terminal punctuation).
+# Informational only on restore: the client already gets the signal via replaced_count/
+# leftover_tokens, and both flags fire on normal chat replies.
 _NOISY_PREFIXES = ("incomplete_reverse:", "possible_truncation:")
 
 
@@ -169,15 +160,9 @@ class SessionService:
         self._authorization_cache_limit = max(256, cap * 4)
         self._lifecycle_tombstones: OrderedDict[bytes, None] = OrderedDict()
         self._tombstone_limit = max(256, cap * 4)
-        # FastAPI runs sync endpoints in a threadpool, so every public entry
-        # point serializes on this lock: without it, drop/evict can clear vault
-        # lookup state while another thread is mid-restore. RLock because sanitize/
-        # restore call drop() on their expiry paths while already holding it.
-        # Deliberately coarse — it serializes heavy NER work across sessions,
-        # but only the localhost extension (one user) goes through this class;
-        # the concurrent-traffic paths (/api/roundtrip, the platform worker)
-        # are stateless and never touch it. A per-session lock would add
-        # deadlock surface for no real-world gain.
+        # Every public entry point serializes here (FastAPI threadpool): drop/evict must not
+        # clear a vault mid-restore. RLock because sanitize/restore call drop() while holding it.
+        # Deliberately coarse: only the single-user local path uses this class.
         self._lock = threading.RLock()
 
     @property
@@ -361,16 +346,12 @@ class SessionService:
             raise ModeMismatchError(f"unknown mode '{resolved_mode}'")
 
         if len(self._sessions) >= self._cap:
-            # LRU victim: least-recently-used, never the oldest-created — an
-            # old but active session must survive (VAULT-2). A TTL-expired
-            # session is by definition the least recently accessed, so it is
-            # always evicted first.
+            # Evict least-recently-used, never oldest-created: an old but active session survives.
             lru = min(self._sessions, key=lambda k: self._sessions[k].last_access)
             self.drop(lru)
         sid = str(uuid.uuid4())
         now = self._now()
-        # The service is the sole TTL authority for managed vaults. Standalone
-        # SessionVault instances retain their own idle expiry.
+        # The service is the sole TTL authority for managed vaults.
         session = _Session(
             vault=SessionVault(idle_timeout_s=None),
             mode=resolved_mode,
@@ -601,12 +582,8 @@ class SessionService:
     ) -> _ResultT:
         """Prepare, finalize, then atomically publish one sanitize turn.
 
-        `finalize` runs under the same coarse lock and receives only the public
-        outcome. A caller can finish response projection, encoding, and required
-        audit work there. Any exception before the final dictionary assignment
-        leaves the published session graph unchanged, except that a genuine
-        staged-vault expiry disposes the expired published session. The callback
-        must not re-enter this service or mutate its private session graph.
+        `finalize` runs under the lock with only the public outcome and must not re-enter this
+        service. Any exception before publish leaves the published session graph unchanged.
         """
         with self._lock:
             sid, staged, is_new = self._stage_sanitize_locked(session_id, mode)
@@ -617,9 +594,8 @@ class SessionService:
             discarded = None
             try:
                 try:
-                    # Same body the platform's stateless entry point runs; the
-                    # detached vault becomes live only after every later stage
-                    # succeeds. This module's guard reference stays injectable.
+                    # Same body as the stateless entry point; the detached vault becomes live
+                    # only after every later stage succeeds.
                     core = sanitize_into_vault(
                         text,
                         staged.vault,
@@ -636,9 +612,7 @@ class SessionService:
                     )
                     discard_exception_graph(error)
                 except VaultTimeoutError:
-                    # Confirm provenance before treating this exception name as
-                    # lifecycle expiry. An injected detector/finalizer can
-                    # coincidentally raise the same public exception type.
+                    # Confirm provenance: an injected detector/finalizer can raise the same type.
                     if not staged.vault.is_idle():
                         raise
                     if not is_new:
@@ -666,8 +640,7 @@ class SessionService:
                     staged.trusted_sanitized_digests = (prior_digests + (digest,))[
                         -_TRUSTED_SANITIZED_DIGEST_LIMIT:
                     ]
-                    # A request that acquired the lifecycle lock before expiry
-                    # stays active for one full TTL after its successful commit.
+                    # A request admitted before expiry stays active one full TTL after commit.
                     staged.last_access = self._now()
                     discarded = self._publish_sanitize_locked(sid, staged, is_new=is_new)
             except Exception:
@@ -720,8 +693,6 @@ class SessionService:
                 salt=published.salt,
                 created=published.created,
                 last_access=now,
-                # Entity is immutable, so a detached list can safely share
-                # prior records and append only this turn's detections.
                 entities=list(published.entities),
                 trusted_sanitized_digests=published.trusted_sanitized_digests,
             )
@@ -774,7 +745,6 @@ class SessionService:
             session.vault.clear()
         except Exception as error:
             discard_exception_graph(error)
-            # The service reference is already absent (or was never published).
             # Do not turn a completed commit into a caller-visible failure.
             _LOG.error("Session vault cleanup did not complete")
         finally:
@@ -871,7 +841,7 @@ class SessionService:
             except OutputPIILeakError as error:
                 generated_pii_count = error.count
                 discard_exception_graph(error)
-                # inbound direction: the AI fabricated PII-looking data — warn only
+                # Inbound: the AI fabricated PII-looking data; warn only.
                 warnings.append("ai_generated_pii")
 
         replaced_count = int(reverse_result.audit_summary.get("replaced_count", 0))

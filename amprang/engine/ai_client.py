@@ -31,7 +31,7 @@ from amprang.engine.session_vault import SessionVault, VaultTimeoutError
 
 logger = logging.getLogger(__name__)
 
-# Module-level sleep function for testability (can be monkeypatched)
+# Module-level so tests can monkeypatch it.
 _sleep = time.sleep
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -139,11 +139,8 @@ class ClaudeProvider(AIProvider):
 class PathummaProvider(AIProvider):
     """Pathumma LLM (NECTEC, AI for Thai). Requires AIFORTHAI_API_KEY env var.
 
-    Wire shape proven against the live endpoint on 2026-07-21: the API accepts
-    form-encoded bodies ONLY — a JSON body draws a 422 "Field required" that
-    looks like a naming bug but is a content-type bug. Same Apikey header
-    convention as detectors/tner_client.py, same env var, one credential for
-    the whole AI for Thai surface.
+    The API accepts form-encoded bodies ONLY; a JSON body draws a misleading 422 "Field
+    required". Same Apikey header and env var as detectors/tner_client.py.
     """
 
     API_URL = "https://api.aiforthai.in.th/textqa/completion"
@@ -170,20 +167,17 @@ class PathummaProvider(AIProvider):
 class ProviderProtocolError(ValueError):
     """A 200 response that violates the provider protocol.
 
-    Subclasses ValueError so app/server.py's existing malformed-response
-    handler turns it into 502 and app/worker/handler.py into provider_failed
-    without either surface changing. The message carries a category only --
-    never the response body (VAULT-4: a body can contain anything).
+    Subclasses ValueError so the server's malformed-response handler maps it to 502 unchanged.
+    The message carries a category only, never the response body.
     """
 
 
 class TokenmindProvider(AIProvider):
     """Official AIFT hackathon LiteLLM gateway (OpenAI-compatible).
 
-    Requires TOKENMIND_BASE_URL (must end in /v1; https unless
-    TOKENMIND_ALLOW_HTTP=1) and TOKENMIND_API_KEY. Model is hardcoded: the
-    gateway has exactly one text model, and an env override would invite
-    pointing it at the ptm-tts-1/ptm-asr-1 audio models. See
+    Requires TOKENMIND_BASE_URL (/v1 suffix; https unless TOKENMIND_ALLOW_HTTP=1) and
+    TOKENMIND_API_KEY. Model is hardcoded: the gateway has one text model and an env override
+    would invite pointing it at the audio models. See
     docs/decisions/2026-07-28-tokenmind-detector-and-aift-port.md.
     """
 
@@ -235,8 +229,8 @@ class TokenmindProvider(AIProvider):
             marker in lowered
             for marker in ("<think>", "</think>", "&lt;think&gt;", "&lt;/think&gt;")
         ):
-            # enable_thinking was ignored upstream. Restoring tokens inside a
-            # thought block would write real PII into it -- refuse instead.
+            # enable_thinking was ignored upstream; restoring tokens inside a thought block
+            # would write real PII into it.
             raise ProviderProtocolError("provider response contains reasoning-block markers")
         return content
 
@@ -294,8 +288,7 @@ def _provider_failure_metadata(
         if isinstance(error, ValueError):
             return "malformed", "ValueError", None
     except Exception:
-        # Provider exception objects are untrusted too. Metadata reduction must
-        # never create a second exception that reconnects the raw error graph.
+        # Provider exceptions are untrusted; never let reduction reconnect the raw error graph.
         return "failed", "ProviderError", None
     return "failed", "ProviderError", None
 
@@ -337,7 +330,6 @@ def complete_provider_call(
     response, failure = _invoke_provider_once(provider, system, user, timeout)
     if failure is not None:
         category, error_type, status_code = failure
-        # Do not retain provider inputs in this exception's raising frame.
         provider = None
         system = ""
         user = ""
@@ -426,20 +418,9 @@ def complete_provider_with_retry_policy(
 
 
 def _validate_pre_send(text: str, vault: SessionVault) -> None:
-    """
-    4 checks before sending any prompt to AI.
-    Raise PreSendValidationError if any fail.
-
-    Args:
-        text: The pseudonymized text to validate
-        vault: The session vault containing mappings
-
-    Raises:
-        PreSendValidationError: If validation fails
-        VaultTimeoutError: If vault has been idle past timeout
-    """
-    # 1. Fail closed on every outbound residual class. Pass this module's
-    # references explicitly so callers can substitute the security scans here.
+    """Pre-send checks; raises PreSendValidationError or VaultTimeoutError."""
+    # Fail closed on every residual class. Pass this module's references explicitly so callers
+    # can substitute the security scans here.
     residual_failure = False
     try:
         enforce_outbound_policy(
@@ -459,7 +440,7 @@ def _validate_pre_send(text: str, vault: SessionVault) -> None:
             code="outbound_residual",
         )
 
-    # 2. Prompt size check (rough heuristic: len/4 ≈ tokens)
+    # Rough heuristic: len/4 ≈ tokens.
     estimated_tokens = len(text) // 4
     if estimated_tokens > 100_000:
         text = ""
@@ -469,10 +450,6 @@ def _validate_pre_send(text: str, vault: SessionVault) -> None:
             code="prompt_too_large",
         )
 
-    # 3. Vault not cleared (passive check - design note, not a hard failure)
-    # Empty vault is OK for first call (no entities yet)
-
-    # 4. Session valid (idle check)
     timeout_failure = False
     try:
         vault.check_idle()
@@ -499,24 +476,13 @@ def _raise_pre_send_failure(code: str) -> None:
 def _validate_response(
     response: str, entity_registry: EntityRegistry, vault: SessionVault
 ) -> list[str]:
-    """
-    Validate AI response. Returns list of warning messages.
-
-    Args:
-        response: The AI response text to validate
-        entity_registry: The entity registry from the original document
-        vault: The session vault containing mappings
-
-    Returns:
-        List of warning messages (validation warnings don't halt processing)
-    """
+    """Validate AI response. Returns warning messages; warnings never halt processing."""
     warnings = []
 
     if not response or not response.strip():
         warnings.append("Empty response from AI")
         return warnings
 
-    # Check pseudonym integrity: each pseudonym should still be in response
     for entity in entity_registry.entities:
         record = vault.get_by_entity_id(entity.entity_id)
         if record is None:
@@ -546,30 +512,13 @@ def _send_to_ai(
     system_prompt: str | None = None,
     max_retries: int = 3,
 ) -> AIResponse:
-    """
-    Validate, send to AI, validate response, with retry/rollback on failure.
+    """Validate, send, validate response; retries transient failures (timeout, network,
+    429/5xx) up to max_retries and rolls the vault back on failure.
 
-    Args:
-        pseudonymized_text: The pseudonymized text to send to AI
-        entity_registry: The entity registry from detection
-        vault: The session vault with pseudonym mappings
-        provider: The AI provider to use
-        system_prompt: Optional custom system prompt (default: Thai instruction)
-        max_retries: Number of attempts for transient errors — timeouts,
-            network errors, HTTP 429/5xx (default: 3). Other HTTP 4xx are
-            fatal: vault is rolled back and a safe provider error is raised.
-
-    Returns:
-        AIResponse with text, request_id, and latency
-
-    Raises:
-        PreSendValidationError: If pre-send validation fails
-        VaultTimeoutError: If vault has timed out
-        ProviderCallError: If a provider call fails or retries are exhausted
+    Raises PreSendValidationError, VaultTimeoutError or ProviderCallError.
     """
     system = system_prompt or DEFAULT_SYSTEM_PROMPT
 
-    # Snapshot for rollback
     snapshot = vault.snapshot()
 
     def validate_attempt(attempt: int) -> None:
@@ -645,7 +594,6 @@ def _send_to_ai(
     warning = None
     result = None
     try:
-        # Response validation warnings do not halt normal processing.
         warnings = _validate_response(response_text, entity_registry, vault)
         for warning in warnings:
             logger.warning("AI response validation: %s", warning)
@@ -659,8 +607,7 @@ def _send_to_ai(
         discard_exception_graph(error)
         response_failure = True
     if response_failure:
-        # Tail failures are fatal, not transient provider failures. Preserve
-        # the pre-call rollback contract without entering the retry path.
+        # Tail failures are fatal, not transient: roll back without entering the retry path.
         _restore_snapshot_after_failure(vault, snapshot)
 
         provider = None
@@ -791,11 +738,8 @@ def send_to_ai(
     )
 
 
-# Single registry -- app/server.py and app/worker/handler.py used to carry
-# byte-identical copies of this dict; the fourth copy was a comment and the
-# third a dropdown. Surfaces take a snapshot via get_provider_factories() so
-# a future hosted surface can pass an allowlist (public deployments must not
-# grow ollama/claude/fake by accident).
+# Single registry; surfaces snapshot it via get_provider_factories() so a hosted deployment can
+# pass an allowlist and never grow ollama/claude/fake by accident.
 PROVIDER_FACTORIES: MappingProxyType[str, Callable[[], AIProvider]] = MappingProxyType(
     {
         "fake": FakeLLMProvider,
@@ -810,11 +754,8 @@ PROVIDER_FACTORIES: MappingProxyType[str, Callable[[], AIProvider]] = MappingPro
 def get_provider_factories(
     *, allowed: Iterable[str] | None = None
 ) -> dict[str, Callable[[], AIProvider]]:
-    """Snapshot of the registry, optionally filtered by an allowlist.
-
-    An unknown name in `allowed` raises instead of being dropped: a typo in a
-    deployment allowlist must fail the boot, not silently remove a provider.
-    """
+    """Snapshot of the registry, optionally filtered by an allowlist. An unknown name raises:
+    a typo in a deployment allowlist must fail the boot, not silently drop a provider."""
     if allowed is None:
         return dict(PROVIDER_FACTORIES)
     names = list(allowed)

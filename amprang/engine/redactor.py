@@ -1,13 +1,9 @@
-"""True PDF redaction via flatten-to-image (Step 8).
+"""True PDF redaction via flatten-to-image.
 
-Renders each page to a raster image, paints opaque black rectangles over the
-word bboxes that match entity spans, then rebuilds the PDF from the images.
-The output has no text layer, so redacted text is unrecoverable (this also
-means the non-redacted text is no longer selectable/searchable — the standard
-trade-off of guaranteed redaction).
-
-Permissively licensed: pypdfium2 (Apache/BSD) for rendering, Pillow for drawing.
-Replaces the previous PyMuPDF (AGPL) implementation.
+Renders each page to a raster, paints opaque black rectangles over the word bboxes matched to
+entity spans, then rebuilds the PDF from the images. The output has no text layer, so redacted
+text is unrecoverable (and the rest is no longer selectable). pypdfium2 + Pillow only
+(permissive licenses; no PyMuPDF/AGPL).
 """
 
 from math import isfinite
@@ -23,21 +19,12 @@ from amprang.engine.safe_errors import discard_exception_graph
 # Render scale (points -> pixels). Higher = crisper output but larger files.
 RENDER_SCALE = 2.0
 
-# Padding added around each redaction rectangle, in PDF points, before scaling
-# to pixels. Thai vowel/tone marks (sara i/ii, mai ek/tho, etc.) and tall
-# consonants (e.g. in "ถนนพหลโยธิน") render above the word bbox's nominal top
-# -- measured at ~3pt overshoot on examples/sample_document.pdf (Sarabun,
-# 14pt) -- so REDACT_PAD_TOP_PT carries extra margin. Left/right/bottom only
-# need to absorb anti-aliasing fringe at a tight box edge. Padding biases
-# toward over-coverage per the project's recall > precision invariant.
+# Padding (PDF points) around each redaction rectangle. Thai vowel/tone marks render ~3pt above
+# the nominal bbox top, so the top pad is larger; over-coverage is the intended bias.
 REDACT_PAD_PT = 2.0
 REDACT_PAD_TOP_PT = 5.0
 
-# Two redaction rectangles on the same page are merged into one covering
-# rectangle if they are within this many PDF points of each other vertically
-# (same line) and horizontally (adjacent words of one entity/line, e.g.
-# "ถนนพหลโยธิน" + "แขวงจตุจักร" on an address line). This removes the exposed
-# gaps that appeared between separately-drawn per-word boxes.
+# Same-line rectangles within this gap merge into one, closing exposed gaps between words.
 REDACT_MERGE_GAP_PT = 6.0
 
 _PDF_SOURCE_MAPPING_ERROR = "PDF source mapping could not be established safely"
@@ -157,16 +144,8 @@ def _map_entities_to_boxes(
 def _merge_boxes(
     boxes: list[tuple[float, float, float, float]],
 ) -> list[tuple[float, float, float, float]]:
-    """
-    Merge nearby/overlapping (x0, y0, x1, y1) rectangles (PDF points) into
-    covering rectangles, so redacted words that sit next to each other on the
-    same line (e.g. multiple words of one NAME/ADDRESS entity) are painted as
-    a single solid rectangle instead of leaving a gap of exposed text between
-    them. Two boxes merge if their vertical ranges overlap (same line) and
-    their horizontal gap is within REDACT_MERGE_GAP_PT.
-
-    Runs to a fixed point so chained merges (A touches B, B touches C) collapse
-    into one rectangle even if the boxes weren't given in left-to-right order.
+    """Merge same-line (x0, y0, x1, y1) rectangles within REDACT_MERGE_GAP_PT into covering
+    rectangles. Runs to a fixed point so chained merges collapse regardless of input order.
     """
     remaining = list(boxes)
     merged: list[tuple[float, float, float, float]] = []
@@ -195,23 +174,11 @@ def redact_pdf(
     word_bboxes: list[WordBbox],
     output_path: str,
 ) -> Path:
-    """
-    Paint black rectangles over the WordBbox items selected by entity spans,
-    then flatten the PDF to images so the redacted text cannot be recovered.
+    """Paint black rectangles over the boxes selected by entity spans, flatten to images, and
+    return the output Path. Boxes are top-origin PDF points.
 
-    Every selected box must carry an exact source interval. Missing,
-    inconsistent, or incomplete provenance fails before output; the redactor
-    never falls back to value or substring matching.
-
-    Args:
-        input_pdf_path: Path to input PDF file
-        entity_registry: Registry containing entities to redact
-        word_bboxes: List of word bounding boxes from PDF extraction
-                     (top-origin: x = left, y = top, in PDF points)
-        output_path: Path to write redacted PDF
-
-    Returns:
-        Path to the redacted PDF file
+    Every box must carry an exact source interval; missing or inconsistent provenance fails
+    before output. Never falls back to value or substring matching.
     """
     out_path = Path(output_path)
 
@@ -249,9 +216,7 @@ def redact_pdf(
             pil = doc[idx].render(scale=RENDER_SCALE).to_pil().convert("RGB")
             draw = ImageDraw.Draw(pil)
 
-            # Collect PDF-point rectangles first (padded), then merge adjacent
-            # ones on the same line, so we draw solid coverage with no gaps
-            # instead of one tight rectangle per word.
+            # Pad in PDF points, merge same-line rectangles, then draw solid coverage.
             for entity_boxes in by_page.get(page_num, []):
                 pt_boxes: list[tuple[float, float, float, float]] = []
                 for wb in entity_boxes:
@@ -283,12 +248,8 @@ def redact_pdf(
         # No pages — write an empty 1-page white image so output is a valid PDF.
         page_images = [Image.new("RGB", (612, 792), (255, 255, 255))]
 
-    # Pillow's PDF writer JPEG-compresses ("DCTDecode") RGB images by default,
-    # which introduces ringing artifacts (a faint gray fringe a few pixels
-    # past a hard black/white edge) right at the border of every redaction
-    # box -- part of the reported leak. Converting to an adaptive-palette
-    # image ("P" mode) makes Pillow write it via lossless ASCIIHexDecode
-    # instead, so redaction box edges stay perfectly solid.
+    # Pillow JPEG-compresses RGB pages (ringing fringe at box edges); "P" mode makes it write
+    # lossless ASCIIHexDecode so redaction edges stay solid.
     page_images = [im.convert("P", palette=Image.ADAPTIVE) for im in page_images]
 
     page_images[0].save(

@@ -72,10 +72,8 @@ def _clear_exception_payload(error: BaseException) -> None:
             payload.clear()
     except BaseException:
         pass
-    # BaseExceptionGroup keeps `message` and `exceptions` in read-only C-level
-    # fields. Replacing only `args` corrupts repr() on Python 3.13. Leave that
-    # immutable shell intact; its member errors have already been queued for
-    # recursive scrubbing and callers must drop the original group.
+    # BaseExceptionGroup holds message/exceptions in read-only C fields; clearing only `args`
+    # corrupts repr() on 3.13. Members are scrubbed recursively; callers must drop the group.
     if isinstance(error, BaseExceptionGroup):
         return
     try:

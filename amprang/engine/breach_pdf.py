@@ -1,25 +1,9 @@
-"""The breach assessment rendered as a Thai PDF slip (Track D #2, Task 3).
+"""The breach assessment rendered as a Thai PDF slip.
 
-Same whitelist discipline as `report_pdf.py` / `receipt_pdf.py`: this module is
-handed the dict `BreachAssessment.to_json_dict()` already produced, and that
-dict never carries a personal-data value, an excerpt, or a hash of a value to
-begin with (see `breach.py`) -- so the PII-free property of this renderer is
-structural rather than a filter applied here. What it draws is counts, type
-and category labels, version strings, the basenames + short reasons of
-failed-file rows (`breach.py` already limits `reason` to the exception class
-and a path-stripped message -- never file content or a document value), and
-the basenames of files a directory scan skipped for carrying an unsupported
-extension (`files.skipped`).
-
-The method statement and the NAME weak-identifier note are drawn verbatim from
-the dict (`subjects.method`, `name_weak_identifier.note`) rather than being
-retyped here, so the JSON and the PDF cannot say two different things about
-how the estimate was derived.
-
-Unlike `render_receipt`/`render_pdpa_report`, this module's contract is to
-write the file itself (`render_breach_pdf(assessment, output_path) -> None`),
-mirroring what the CLI (`amprang breach assess` (amprang.cli.cmd_breach_assess)) expects to call
-before it writes the JSON.
+Whitelist renderer over `BreachAssessment.to_json_dict()`, which carries no value, excerpt, or
+hash to begin with, so the PII-free property is structural. The method statement and NAME note
+are drawn verbatim from the dict so JSON and PDF cannot disagree. Unlike `render_receipt`, this
+writes the file itself (`render_breach_pdf(assessment, output_path) -> None`).
 """
 
 from __future__ import annotations
@@ -31,9 +15,7 @@ from pathlib import Path
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-# One label vocabulary across every PDF surface -- the breach slip, the risk
-# report and the processing receipt must call the same data type the same
-# name.
+# One label vocabulary across every PDF surface.
 from amprang.engine.report_pdf import _TYPE_LABELS
 from amprang.engine.thai_pdf_text import draw_text, register_thai_font
 
@@ -51,25 +33,16 @@ _NOTES = [
 
 
 def _wrap(text: str, width: int = 100) -> list[str]:
-    """Word-wrap an English statement drawn verbatim from the dict.
-
-    `draw_text` only ever draws one line; the method statement and the NAME
-    weak-identifier note are full paragraphs, so this is the only place that
-    breaks them into lines before handing each one to `line()`.
-    """
+    """Word-wrap a verbatim paragraph statement; `draw_text` only draws one line."""
     return textwrap.wrap(text, width=width) or [""]
 
 
 def render_breach_pdf(assessment: dict, output_path: str | Path) -> None:
-    """Draw `assessment` (a `BreachAssessment.to_json_dict()` dict) onto an A4
-    PDF and write it to `output_path`.
+    """Draw `assessment` (a `BreachAssessment.to_json_dict()` dict) onto an A4 PDF at
+    `output_path`.
 
-    Whitelist renderer: only counts, type/category labels, grades, version
-    strings, and failed-file basenames + short reasons from the dict ever
-    reach the canvas -- never a value, an excerpt, or a hash. Raises `OSError`
-    if `output_path` cannot be written
-    (propagated from `Path.write_bytes`, not caught here), matching the
-    receipt/report PDF renderers' failure behaviour.
+    Only counts, type/category labels, grades, version strings, and failed-file basenames +
+    short reasons reach the canvas. `OSError` from the write propagates uncaught.
     """
     font = register_thai_font()
     buf = BytesIO()

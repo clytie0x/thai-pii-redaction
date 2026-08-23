@@ -41,30 +41,11 @@ def run_pipeline(
     system_prompt: str | None = None,
     overwrite: bool = False,
 ) -> PipelineResult:
+    """Run the 8-step PII redaction pipeline; returns PipelineResult with all intermediates.
+
+    Exactly one of input_path / text is required (ValueError otherwise). output_path None
+    skips export. Raises FileNotFoundError, PIILeakError, ExportError, VaultTimeoutError.
     """
-    Run the 8-step PII redaction pipeline.
-
-    Args:
-        input_path: Path to input file (.txt or .pdf). Mutually exclusive with text.
-        text: Direct text input. Mutually exclusive with input_path.
-        output_path: Where to write final output. If None, skip export.
-        fmt: Output format ("txt" | "pdf_text"). Default "txt".
-        provider: AI provider. Default: FakeLLMProvider() if not given.
-        salt: HMAC salt for FP pseudonym generation. Auto-generated if not given.
-        system_prompt: Override default AI system prompt.
-        overwrite: Whether to overwrite existing output_path.
-
-    Returns:
-        PipelineResult with all intermediate outputs.
-
-    Raises:
-        ValueError: if neither input_path nor text provided, or both provided
-        FileNotFoundError: if input_path does not exist
-        PIILeakError: if PII detected in pseudonymized or final output
-        ExportError: if export fails
-        VaultTimeoutError: if vault times out during processing
-    """
-    # Validate inputs
     if input_path is None and text is None:
         raise ValueError("Provide either input_path or text")
     if input_path is not None and text is not None:
@@ -72,7 +53,6 @@ def run_pipeline(
     if input_path is not None and not Path(input_path).exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")
 
-    # Defaults
     if provider is None:
         provider = FakeLLMProvider()
     if salt is None:

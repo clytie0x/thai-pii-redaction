@@ -1,22 +1,9 @@
-"""Client for the AI for Thai TNER service (opt-in NER engine).
+"""Client for the AI for Thai TNER service (opt-in NER engine, `AMPRANG_NER_ENGINE=tner`).
 
-Wire shape verified against the live service: POST to `/tner` with an `Apikey`
-header and the text as a form field, answering with three parallel lists:
-`words`, `POS`, and `tags`. Older versions of the published `aift` SDK exposed
-`POS` as `[word, pos_tag]` pairs, so the decoder accepts that legacy shape too.
-Both are translated into PyThaiNLP's `(word, tag)` shape so `_bio_to_spans` can
-decode them unchanged.
-
-Verified against the live service on 2026-07-22. The live BIO vocabulary uses
-compact labels such as PER, LOC, ORG, and DTM; `tb_detector.LABEL_MAP`
-translates those labels into Amprang's public types. Every failed request or
-incomplete token stream raises a value-free `TnerServiceError` subtype rather
-than returning a partial result, because a truncated response decoded as "no
-entities found" is indistinguishable from a clean document.
-
-This engine sends text to a third party, so it is opt-in only
-(`AMPRANG_NER_ENGINE=tner`) and never the default — the offline claim the
-proposal makes holds precisely because of that.
+POST `/tner` returns parallel `words`/`POS`/`tags` lists (legacy SDK: `POS` as
+[word, pos] pairs), translated to PyThaiNLP's `(word, tag)` shape. Any failed or
+incomplete response raises a value-free `TnerServiceError` rather than a partial
+result: a truncated response decoded as "no entities" looks like a clean document.
 """
 
 from __future__ import annotations
@@ -28,12 +15,9 @@ from amprang.engine.safe_errors import discard_exception_graph
 
 _DEFAULT_URL = "https://api.aiforthai.in.th/tner"
 _DEFAULT_TIMEOUT = 15.0
-# The SDK stamps this so the platform can attribute traffic; harmless, and
-# sending it keeps us indistinguishable from a normal SDK client.
+# Traffic-attribution header the SDK also sends.
 _CLIENT_LIB = "amprang-python"
-# TNER uses the Thai LST20 labels. Long-form aliases remain accepted for the
-# older published SDK shape already supported by this adapter. Anything else
-# is a response-contract change and must fail closed.
+# LST20 labels plus the older SDK's long-form aliases; anything else must fail closed.
 _TNER_LABELS = frozenset(
     {
         "BRN",
@@ -169,7 +153,6 @@ class TnerEngine:
         if not isinstance(pos, list) or not isinstance(tags, list):
             raise TnerIncompleteError()
         if len(pos) != len(tags):
-            # Any unequal parallel field indicates a truncated response.
             raise TnerIncompleteError()
         if any(not isinstance(tag, str) for tag in tags):
             raise TnerIncompleteError()
@@ -188,8 +171,7 @@ class TnerEngine:
                     raise TnerIncompleteError()
                 words.append(item)
         else:
-            # Backward compatibility with the published SDK's older POS-pair
-            # representation. A bare POS string such as "NR" is never a word.
+            # Legacy SDK POS-pair shape. A bare POS string such as "NR" is never a word.
             for item in pos:
                 if (
                     not isinstance(item, (list, tuple))

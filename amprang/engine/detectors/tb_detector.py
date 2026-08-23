@@ -33,9 +33,7 @@ class NERChunkDiagnostics:
         }
 
 
-# ---------------------------------------------------------------------------
-# Label mapping: actual thainer labels -> PDPA data_type (None = skip)
-# ---------------------------------------------------------------------------
+# Label mapping: thainer labels -> PDPA data_type (None = skip)
 
 LABEL_MAP: dict[str, str | None] = {
     "PERSON": "NAME",
@@ -56,142 +54,87 @@ LABEL_MAP: dict[str, str | None] = {
     "LOC": "LOCATION",
 }
 
-# Cue-based upgrades (same cue-window mechanism as fp_detector's
-# _disambiguate_bank_phone; regexes copied rather than imported to avoid a
-# circular import, same precedent as _deduplicate below).
-# The ADDRESS check includes the span ITSELF because address cues (เขต/ตำบล/
-# ซอย/ถนน) usually sit inside the address text; the DOB check looks at the
-# preceding context plus the span's own non-digit HEAD — the CRF can absorb a
-# glued cue into the DATE span ("ปีเกิด 24 มีนาคม 2550"), where a
-# preceding-window-only search ends at "...วันเดือน" and misses it.
-# `เลขที่` is a real address cue on its own ("เลขที่ 26 ซอย...") but it also
-# opens compounds meaning "the number of <a thing>" -- เลขที่บัญชี, เลขที่สัญญา,
-# เลขที่ใบกำกับภาษี -- which are not addresses. Without the lookahead the
-# account-number LABEL was upgraded to ADDRESS and replaced with a fake street
-# address; that surrogate landed beside other surrogates, the NER drew one wide
-# ADDRESS span across them, and the pre-send guard halted a clean prompt
-# (intermittent PreSendValidationError, salt-dependent). Alternation order
-# still matters: บ้านเลขที่ must be tried before เลขที่.
+# Cue-based upgrades (cue-window like fp_detector; regexes copied, not imported, to avoid a
+# circular import). The ADDRESS check includes the span itself (cues sit inside address text);
+# the DOB check uses the preceding context plus the span's non-digit head (the CRF absorbs a
+# glued cue into the DATE span). `เลขที่` lookahead: เลขที่บัญชี/เลขที่สัญญา... mean "number of
+# <thing>", not an address — without it an account-number label became a fake street address
+# and the pre-send guard halted clean prompts. บ้านเลขที่ must be tried before เลขที่.
 _ADDR_CUE_RE = re.compile(
     r"ที่อยู่|บ้านเลขที่|อาศัยอยู่|พักอยู่"
     r"|เลขที่(?!บัญชี|ใบ|สัญญา|เอกสาร|คำสั่ง|กรมธรรม์|พัสดุ|คดี|หนังสือ|บัตร)"
     r"|ซอย|ถนน|ตำบล|แขวง|อำเภอ|เขต|จังหวัด"
 )
-# Same cue as fp_detector._BIRTH_CUE_RE (copies by design): เกิดเหตุ/เหตุเกิด
-# are incident phrasings that never introduce a birth date, and the English
-# labels are a real register on Thai visa/passport paperwork.
+# Copy of fp_detector._BIRTH_CUE_RE by design: เกิดเหตุ/เหตุเกิด never introduce a birth date;
+# the English labels are a real register on Thai visa/passport paperwork.
 _TB_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
 _TB_CUE_WINDOW = 30
 
-# thainer CRF has no reliable signal on out-of-distribution (non-Thai) input --
-# fed a plain English sentence, it still forces some non-O label onto the
-# whole span rather than abstaining. ORGANIZATION is the one honest label with
-# no cue gate of its own (unlike LOCATION/DATE, which route through
-# _apply_cue_upgrades), so an all-Latin "organization" span is always this
-# degenerate guess rather than a real Thai employer/hospital name -- reject it.
+# thainer CRF forces a non-O label onto out-of-distribution (non-Thai) input rather than
+# abstaining; ORGANIZATION has no cue gate of its own, so an all-Latin "organization" span is
+# always that degenerate guess -- reject it.
 _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 _ISOLATED_NAME_LINE_RE = re.compile(r"[ก-ฮเ-ไ][ก-ฮะ-์]*(?:[ \t]+[ก-ฮเ-ไ][ก-ฮะ-์]*){1,3}")
-# A line holding ONE Thai run is admitted to the retry too, but only through
-# `name_context.is_glued_name_run` -- OCR deletes the space inside a name
-# ("สมชาย ใจดี" -> "สมชายใจดี") and the shape gate above then rejected the whole
-# line. Relaxing the regex to {0,3} instead would admit every single-word Thai
-# line in the document, spending the _ISOLATED_NAME_MAX_LINES budget on form
-# headers before the retry ever reaches a real name.
+# A one-run Thai line is admitted to the retry only via `name_context.is_glued_name_run` (OCR
+# deletes the space inside a name). Relaxing the regex above to {0,3} instead would spend the
+# _ISOLATED_NAME_MAX_LINES budget on single-word form headers before reaching a real name.
 _ISOLATED_GLUED_LINE_RE = re.compile(r"[ก-ฮเ-ไ][ก-ฮะ-์]*")
-# One or more Thai-letter "words" separated by single spaces/tabs and nothing
-# else -- a bare digit run is already excluded (digits aren't in ก-ฮ/ะ-์), and
-# so is a segment with a glued non-name prefix like an OCR-corrupted "และ..."
-# co-applicant marker ("แถะ...มาลิรักดิ"): the parallel-record bootstrap
-# (name_context.detect_parallel_record_names) already owns that shape and
-# extracts the bare name from it; a hygiene segment that also grabbed the
-# punctuation-glued prefix would out-compete the correct extraction in dedupe.
+# Thai-letter words separated by single spaces/tabs and nothing else: excludes digit runs and a
+# glued non-name prefix like an OCR-corrupted "และ..." co-applicant marker -- the parallel-record
+# bootstrap (name_context.detect_parallel_record_names) extracts that bare name and must win
+# dedupe over a hygiene segment that also grabbed the prefix.
 _NAME_SEGMENT_SHAPE_RE = re.compile(r"^[ก-ฮเ-ไ][ก-ฮะ-์]*(?:[ \t]+[ก-ฮเ-ไ][ก-ฮะ-์]*)*$")
 _ISOLATED_NAME_PREFIX_RE = re.compile(r"(?:ชื่อ(?:-นามสกุล)?|ผู้[ก-๛]{1,30})[ \t:：]+")
 _ISOLATED_NAME_MAX_CHARS = 80
 _ISOLATED_NAME_MAX_LINES = 8
-# Document/form compounds the CRF hallucinates as PERSON in header-heavy
-# registers. Anchored at span start; each entry is a compound so that real
-# given names sharing a prefix (เลขา, ใบเฟิร์น, ประกาศิต, นิคม) survive.
+# Document/form compounds the CRF hallucinates as PERSON. Anchored at span start; each entry is
+# a compound so real given names sharing a prefix (เลขา, ใบเฟิร์น, ประกาศิต, นิคม) survive.
 _NAME_CUE_AFTER_BREAK_RE = re.compile(r"(?:[ก-๛]{0,12}ชื่อ|นาย|นางสาว|นาง|ด\.ช\.|ด\.ญ\.)")
 _NAME_DOC_COMPOUND_RE = re.compile(
     r"ตารางสอบ|ตารางเรียน|ตารางนัด|รายงานการ|สถานีตำรวจ|ประวัติการ|นิคมอุตสาหกรรม"
     r"|เลขครุภัณฑ์|เลขที่|เลขเอกสาร|ใบสมัคร|ใบคำร้อง|ใบเสร็จ|ใบกำกับ|ใบแจ้ง"
     r"|บันทึกข้อความ|ประกาศรายชื่อ|ประกาศผล|กำหนดการ|ระเบียบวาระ"
-    # Document-title heads that leaked through the lenient head rule (each a
-    # measured gold false positive). Compounds, never noun prefixes: bare
-    # รายชื่อ leads no real name; แบบประเมิน and สัญญาเช่า/สัญญาจ้าง are the
-    # title forms only — bare แบบ and bare สัญญา are real given names
-    # (แบบบุญมี, สัญญา ธรรมศักดิ์) and must stay out. ขอบคุณ/ขอขอบคุณ is the
-    # letter-closing class whose precedent (ขอแสดงความนับถือ) already sits in
-    # name_context's _NOT_NAME.
+    # Document-title heads (measured gold false positives). Compounds only: bare แบบ and bare
+    # สัญญา are real given names (แบบบุญมี, สัญญา ธรรมศักดิ์) and must stay out.
     r"|รายชื่อ|แบบประเมิน|สัญญาเช่า|สัญญาจ้าง|ขอขอบคุณ|ขอบคุณ"
-    # Form field labels seen gluing to real names in label-first OCR order
-    # (M6-P0 mechanism 2, ภ.ง.ด.91 spouse-name exposure): "เดือนปีเกิด" is
-    # "month/year of birth", not a person. The regex is used with .match()
-    # (anchored at segment start), so the commoner full form spelling
-    # "วันเดือนปีเกิด" needs its own alternative -- without it that spelling
-    # leaked as a NAME (a measured gold false positive, doc116) even though
-    # `name_context.is_glued_name_run` already rejected it via its token stop
-    # set. Longer alternative first.
+    # Form labels glued to real names in label-first OCR order: "เดือนปีเกิด" is a field, not a
+    # person. Used with .match(), so the full spelling "วันเดือนปีเกิด" needs its own alternative
+    # (it leaked as a NAME without one). Longer alternative first.
     r"|วันเดือนปีเกิด|เดือนปีเกิด"
 )
-# Punctuation an OCR line break leaves hanging on a name ("สมชาย ใจดี,"). On a
-# tail segment it is TRIMMED, not treated as a reason to drop the segment --
-# the strict shape gate below would otherwise discard the name because of a
-# comma. Deliberately narrow: only characters that end a clause.
+# Punctuation an OCR line break leaves hanging on a name ("สมชาย ใจดี,"): TRIMMED from a tail
+# segment rather than failing the shape gate. Deliberately narrow: clause-ending chars only.
 _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
-# A digit run (with its separators) inside a NAME span is the same class of
-# invariant as the line break: a person's name never contains one. The CRF
-# glues a trailing account number into the PERSON span ("บัญชี ศักดิ์ชัย
-# รุ่งอรุณ เลขบัญชี8807123456"), and aggregate.dedupe_spans then dropped the
-# WHOLE dirty span for overlapping the FP BANK_ACCOUNT at its tail — deleting
-# the name at the head because of digits at the end (fn10, the one fully
-# unmasked name in the 2026-08-04 weakness inventory). The HEAD segment is
-# truncated at its first digit run; what follows is glued junk the FP
-# patterns claim independently, and Thai names never contain digits, so no
-# name text can be lost. Tail segments keep their existing wholesale shape
-# rejection instead — see the loop below.
+# A digit run inside a NAME span is junk the CRF glued on (e.g. a trailing account number);
+# aggregate.dedupe_spans then dropped the WHOLE span for overlapping the FP BANK_ACCOUNT and
+# unmasked the name. The HEAD segment is truncated at its first digit run (Thai names never
+# contain digits, so no name text is lost); tail segments keep their wholesale shape rejection
+# instead — see the loop below.
 _NAME_DIGIT_RUN_RE = re.compile(r"[0-9][0-9\s./-]*")
 
 
-# A CRF "location" that is really หนังสือราชการ numbering, in two shapes seen
-# on the gold negative slice: the span IS a เลขที่<document> field label
-# (เลขที่คำสั่ง / เลขที่ใบเสนอราคา ... — same compound list the ADDRESS cue
-# already refuses to upgrade on), or the span carries digits with no Thai
-# letter RUN and a Buddhist-year component ("จ.44/2569" — a contract number
-# whose only Thai is the abbreviation letter). The year requirement is what
-# separates it from a bare house number ("214/9"), which the adversarial
-# review showed the finetuned engine emits as its own LOCATION span — no
-# Thai, digits and a slash, and absolutely PII. A real place with a digit
-# ("เชียงใหม่ 50200", "อาคาร 7") keeps its Thai run and survives either way.
-# บัตร joined both lists 2026-08-04 (FP-gf08/FP-lf11): เลขที่บัตรประชาชน /
-# เลขที่บัตรเครดิต... are card-number field labels the CRF misreads as places
-# — บัตร always means "card" in Thai, so no real address takes this shape,
-# and the card digits themselves keep their own checksum detectors.
+# A CRF "location" that is really document numbering: the span IS a เลขที่<document> field
+# label (same compound list the ADDRESS cue refuses to upgrade on), or it carries digits plus a
+# Buddhist year with no Thai letter RUN ("จ.44/2569"). The year requirement keeps a bare house
+# number ("214/9" — emitted as its own LOCATION span, absolutely PII) alive; a real place with
+# a digit ("เชียงใหม่ 50200") keeps its Thai run. บัตร: เลขที่บัตรประชาชน/เลขที่บัตรเครดิต are
+# card-number labels, never addresses; the card digits keep their own checksum detectors.
 _DOC_NUMBER_LABEL_RE = re.compile(r"เลขที่(?:บัญชี|ใบ|สัญญา|เอกสาร|คำสั่ง|กรมธรรม์|พัสดุ|คดี|หนังสือ|บัตร)")
 _THAI_RUN_RE = re.compile(r"[ก-๛]{2,}")
 _BUDDHIST_YEAR_RE = re.compile(r"(?<!\d)2[456]\d{2}(?!\d)")
-# A "date" right after the Thai industrial-standard designation is the
-# standard's number ("มอก. 2540-2555"), not a calendar date. The left
-# boundary keeps common words ending in the same letters (ทะเลหมอก) from
-# swallowing a real date after them.
+# A "date" right after มอก. is the standard's number ("มอก. 2540-2555"), not a calendar date.
+# The left boundary keeps words ending in the same letters (ทะเลหมอก) from swallowing a date.
 _STANDARD_CUE_RE = re.compile(r"(?<![ก-๛])มอก\.?\s*$")
 _STANDARD_CUE_LOOKBACK = 10
-# No calendar date component has five digits in a row — a run that long
-# inside a "date" means the CRF swallowed a serial/reference number into the
-# span ("ที่ 27 ISSN 08571724 เผยแพร่เดือนกันยายน 2568", surfaced on the gold
-# negative slice once the FP ID_NUMBER stopped out-competing it in dedupe).
+# No calendar date has five digits in a row — such a run means the CRF swallowed a
+# serial/reference number into the span ("ISSN 08571724 เผยแพร่เดือนกันยายน 2568").
 _DATE_SERIAL_RE = re.compile(r"\d{5,}")
-# An "organization" whose span text opens with the fee-compound head ค่า+noun
-# (ค่าธรรมเนียม/ค่าหอพัก/ค่าบริการ — ng42) is a price-list category label,
-# never the name of anything; in surrogate mode it became a fake org name in
-# the middle of a fee schedule. The ย lookahead protects camp/label orgs
-# (ค่ายอาสาพัฒนาชนบท, ค่ายสุรนารี) — the one real-org shape sharing the
-# prefix. Used with .match(), anchored at span start.
+# An "organization" opening with the fee-compound head ค่า+noun (ค่าธรรมเนียม/ค่าบริการ) is a
+# price-list label, never a name; in surrogate mode it became a fake org name. The ย lookahead
+# protects camp orgs (ค่ายอาสาพัฒนาชนบท). Used with .match(), anchored at span start.
 _FEE_COMPOUND_RE = re.compile(r"ค่า(?!ย)")
-# Organization leads that make a ค่า-prefixed span a real organization name
-# rather than a fee label. Same closed vocabulary as name_context's
-# _NON_PERSON_LEADS, kept literal here to avoid a circular import.
+# Organization leads that make a ค่า-prefixed span a real org name. Same closed vocabulary as
+# name_context's _NON_PERSON_LEADS, kept literal here to avoid a circular import.
 _ORG_LEAD_IN_SPAN_RE = re.compile(
     r"บริษัท|ห้าง|ธนาคาร|โรงพยาบาล|มหาวิทยาลัย|โรงเรียน|สำนักงาน|โรงงาน|มูลนิธิ|สมาคม|สหกรณ์"
 )
@@ -202,10 +145,8 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str 
     if data_type == "ORGANIZATION":
         entity_text = text[start:end]
         if _FEE_COMPOUND_RE.match(entity_text) and not _ORG_LEAD_IN_SPAN_RE.search(entity_text):
-            # A fee word glued in front of a real organization
-            # ("ค่าจ้างบริษัท เอบีซี จำกัด") is still an organization span, and
-            # ORGANIZATION is masked on purpose as a quasi-identifier — only
-            # the bare price-list label is dropped.
+            # A fee word glued in front of a real org ("ค่าจ้างบริษัท เอบีซี จำกัด") is still an
+            # organization span; only the bare price-list label is dropped.
             return None
     elif data_type == "LOCATION":
         entity_text = text[start:end]
@@ -221,10 +162,9 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str 
             return None
         if _DATE_SERIAL_RE.search(text[start:end]):
             return None
-        # Preceding window PLUS the span's non-digit head: the CRF absorbs a
-        # glued cue into the span, and the head is contiguous original text,
-        # so the เกิดเหตุ lookarounds still see across the join. A clean date
-        # span has an empty head and is unaffected.
+        # Preceding window PLUS the span's non-digit head: the CRF absorbs a glued cue into the
+        # span; the head is contiguous original text, so the lookarounds still see across the
+        # join. A clean date span has an empty head and is unaffected.
         span_text = text[start:end]
         first_digit = re.search(r"\d", span_text)
         head = span_text[: first_digit.start()] if first_digit else span_text
@@ -237,44 +177,22 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str 
 def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     """Shared NAME span hygiene for every neural engine (CRF and fine-tuned).
 
-    A person's name never spans a line break — and never contains a digit
-    run, so the head segment is SPLIT at its first one and both sides are
-    judged (see `_NAME_DIGIT_RUN_RE`; digit-bearing tail lines were already
-    rejected wholesale by the shape gate). On label-first OCR field order
-    the CRF can glue a form label to the real name(s) that follow it into one
-    span (e.g. "เดือนปีเกิด\n\nกิตติ พรดี\nพิมพ์ใจ แสนดี" -- a
-    month/year-of-birth label followed by two real names): unconditionally
-    keeping the pre-newline head would mint the label itself as a
-    false-positive NAME while discarding both real names. So the span is split
-    at newlines into segments -- but the HEAD and the TAIL segments are judged
-    by deliberately different rules, because the evidence for them differs:
+    A person's name never spans a line break or contains a digit run, and on label-first OCR
+    order the CRF glues a form label to the name(s) after it into one span -- so the span is
+    split into segments, judged by deliberately different rules because the evidence differs:
 
-    - HEAD (the pre-newline part, what the CRF actually started on) keeps the
-      original lenient rule: >= 2 characters after rstrip and not a document
-      compound. Requiring a strict name shape here drops the real name for a
-      trailing comma, a parenthesised role, an age, or Latin script
-      ("สมชาย ใจดี," / "สมชาย ใจดี (ผู้ยื่น)" / "John Smith" all became NOTHING)
-      -- the sample-PDF regression class, measured on the branch review.
-    - TAIL segments carry no such evidence: they are whatever the CRF ran on
-      into. They must look like a name (`_NAME_SEGMENT_SHAPE_RE`, after
-      trailing clause punctuation is TRIMMED rather than counted against them)
-      AND survive the shared non-person rejection
-      (`name_context.is_non_person_segment` plus the document-compound regex),
-      which is what keeps Thai form labels (ที่อยู่, เลขประจำตัวประชาชน,
-      บัญชีรับเงินกู้, ตำแหน่ง) and letter closings (ขอแสดงความนับถือ) from
-      becoming NAME entities of their own.
+    - HEAD (what the CRF actually started on) keeps the lenient rule: >= 2 chars after rstrip
+      and not a document compound. A strict name shape here dropped real names for a trailing
+      comma, a parenthesised role, an age, or Latin script ("สมชาย ใจดี," / "John Smith").
+    - TAIL segments carry no such evidence: they must match `_NAME_SEGMENT_SHAPE_RE` (after
+      trailing clause punctuation is TRIMMED, not counted against them) AND survive
+      `name_context.is_non_person_segment` plus the document-compound regex, which keeps form
+      labels (ที่อยู่, ตำแหน่ง) and letter closings (ขอแสดงความนับถือ) from becoming NAMEs.
 
-    The one exception: if the line right after the first break opens with a
-    name cue (นาย/นาง/ชื่อ/...), the cue pass owns the person outright, and
-    even the head would be junk glued to it -- so the WHOLE span is dropped
-    instead of segmented.
-
-    Same-line spans (and the head segment) additionally get the B1/B2/B3
-    role/label edge trim (`name_context.trim_same_line_name_edges`): a
-    leading role word (ผู้จัดการฝ่ายขาย, ผู้ค้ำประกัน) is trimmed and the
-    span is truncated at the first trailing field-label group
-    (เลขประจำตัวประชาชน, วันเกิด) — whole-token closed-lexicon evidence only,
-    and only while two name groups remain, because trimming unmasks.
+    Exception: if the line right after the first break opens with a name cue (นาย/นาง/ชื่อ/...),
+    the cue pass owns the person and the WHOLE span is dropped. Same-line spans and the head
+    also get `name_context.trim_same_line_name_edges` (leading role word, trailing field-label
+    group; whole-token evidence only, and only while two name groups remain).
     """
     from amprang.engine.detectors.name_context import (
         is_non_person_segment,
@@ -300,17 +218,11 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     if "\n" not in entity_text and not _NAME_DIGIT_RUN_RE.search(entity_text):
         compound = _NAME_DOC_COMPOUND_RE.match(entity_text)
         if compound:
-            # A document compound at the head does NOT mean the whole span is
-            # a header: the CRF routinely glues one onto a real name that
-            # follows it ("รายชื่อ สมชาย ใจดี"), and dropping the span left
-            # that name completely unmasked (measured, 2026-08-04 review).
-            # The compound must END the word for that reading: a label is
-            # written apart from the name it introduces ("รายชื่อ สมชาย"),
-            # while a compound glued to what follows is one longer header
-            # phrase ("ตารางสอบปลายภาค", "รายชื่อนักศึกษาฝึกงาน") and the
-            # whole span stays dropped. What follows is then judged by the
-            # strict tail gate plus a two-group floor, so a header with no
-            # name material behind it is dropped too.
+            # A document compound at the head does NOT make the whole span a header: the CRF
+            # glues one onto a real name ("รายชื่อ สมชาย ใจดี") and dropping it unmasked the name.
+            # The compound must END the word (a glued compound is one longer header phrase,
+            # "รายชื่อนักศึกษาฝึกงาน", still dropped); what follows passes the strict tail gate
+            # plus a two-group floor.
             rest = entity_text[compound.end() :]
             if not rest[:1].isspace():
                 return []
@@ -334,19 +246,10 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         line_start = start + offset
         offset += len(line) + 1
         if index == 0:
-            # HEAD only: split at the first digit run. Tail lines keep the
-            # stricter rule they always had — the shape gate rejects a
-            # digit-bearing line wholesale, and truncating one instead would
-            # mint its leading word ("วันที่ 1 สิงหาคม" -> "วันที่") as a
-            # segment the gate was built to reject.
-            #
-            # BOTH sides of the cut are evaluated. Keeping only the PREFIX
-            # dropped every roster line that numbers the person before naming
-            # them ("1. สมชาย ใจดี" -> nothing at all, 2026-08-04 review). The
-            # part AFTER the digits carries no start-of-span evidence — it is
-            # exactly the "whatever the CRF ran on into" case — so it is
-            # judged by the strict TAIL gate, which is what keeps the fn10
-            # trailing account number and its label out.
+            # HEAD only: split at the first digit run (tail lines keep wholesale shape rejection;
+            # truncating them would mint "วันที่" from "วันที่ 1 สิงหาคม"). BOTH sides are judged:
+            # prefix-only dropped numbered roster lines ("1. สมชาย ใจดี"); the part AFTER the
+            # digits has no start-of-span evidence, so it goes through the strict TAIL gate.
             digits = _NAME_DIGIT_RUN_RE.search(line)
             head = line[: digits.start()] if digits else line
             if digits:
@@ -356,8 +259,7 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
             seg = head.rstrip()
             if len(seg) < 2 or _NAME_DOC_COMPOUND_RE.match(seg):
                 continue
-            # Same-line role/label edge trim (B1/B2/B3), re-checking the
-            # compound gate on the result: a trim can expose a document
+            # Same-line edge trim, re-checking the compound gate: a trim can expose a document
             # compound the role word was glued in front of.
             t_lo, t_hi = trim_same_line_name_edges(seg)
             if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(seg[t_lo:t_hi]):
@@ -383,16 +285,10 @@ _finetuned_cache: dict[str, object] = {}
 def _detect_tb_finetuned(text: str) -> list[Entity]:
     """TB detection under the fine-tuned engine (AMPRANG_NER_ENGINE=finetuned).
 
-    Two deliberate differences from the CRF path, both from the reveal-3
-    evidence that the extended cue passes cost precision in registers gold
-    does not cover:
-
-    - model spans arrive as character offsets from the adapter (no word/BIO
-      reconstruction), with the same hygiene/cue-upgrade layers applied; and
-    - the extended name-cue passes are kept only when they OVERLAP a model
-      PERSON span (model-as-verifier). The strong passes (titles, explicit
-      name labels) stay unconditional — the pre-registered high-precision
-      fallback.
+    Model spans arrive as character offsets (no BIO reconstruction) and get the same hygiene
+    and cue-upgrade layers. The extended name-cue passes are kept only when they OVERLAP a
+    model PERSON span (model-as-verifier) because they measurably cost precision in registers
+    gold does not cover; the strong passes (titles, explicit labels) stay unconditional.
     """
     from amprang.engine.detectors.finetuned_engine import FinetunedEngine
     from amprang.engine.detectors.name_context import detect_name_context_passes
@@ -451,10 +347,8 @@ def _detect_tb_finetuned(text: str) -> list[Entity]:
             e.span[0] < me and ms < e.span[1] for ms, me in model_name_spans
         ):
             cue_kept.append(e)
-    # A verified cue span carries the full name boundary; a model span it
-    # contains is the same person clipped (the model said "someone is here",
-    # the cue says where the name starts and ends). Drop the contained model
-    # span so dedupe cannot prefer it and leak the surname.
+    # A verified cue span carries the full name boundary; drop a model NAME span it contains so
+    # dedupe cannot prefer the clipped span and leak the surname.
     if cue_kept:
         contained = {
             id(c)
@@ -488,29 +382,24 @@ def _raise_explicit_ner_failure(
     raise NERFailureError(code, category=category, count=count) from None
 
 
-# Curated allow-list: only engines verified to emit the same (word, "B-"/"I-"/
-# "O"-tag) shape that _bio_to_spans() below decodes. Do NOT add thai-nner or
-# tltk here without first verifying their .tag() output shape -- they are
-# known to differ (nested entities / different tuple layout).
+# Curated allow-list: only engines verified to emit the (word, "B-"/"I-"/"O"-tag) shape that
+# _bio_to_spans() decodes. Do NOT add thai-nner or tltk without verifying their .tag() shape --
+# they are known to differ (nested entities / different tuple layout).
 _ENGINE_CONFIG: dict[str, dict[str, str | None]] = {
     "thainer": {"ner_engine": "thainer", "requires": None},
     "wangchanberta": {"ner_engine": "thainer-v2", "requires": "transformers"},
-    # AI for Thai platform TNER. Opt-in only: the proposal claims detection
-    # runs offline in-container, which stays true precisely because this is
-    # never the default. Needs AIFORTHAI_API_KEY; absent credentials raise
-    # rather than fall back, so nobody believes they have recall they do not.
+    # AI for Thai TNER. Opt-in only so detection stays offline by default; absent
+    # AIFORTHAI_API_KEY raises rather than falls back (no phantom recall).
     "tner": {"ner_engine": "tner", "requires": "env:AIFORTHAI_API_KEY"},
 }
 
-# Lazy NER cache, keyed by AMPRANG_NER_ENGINE value (first use per engine loads
-# the model). A dict rather than a single slot so `union` can hold both engines.
+# Lazy NER cache keyed by engine name; a dict so `union` can hold both engines.
 _ner_cache: dict[str, NER] = {}
 
 
 def _load_ner(name: str) -> NER:
-    """Return the NER engine for a single engine name (thainer / wangchanberta),
-    loading and caching it on first use. Raises ValueError for an unknown name
-    and NEREngineUnavailableError if the engine's dependency is missing."""
+    """Return the cached NER engine for one engine name, loading it on first use. Raises
+    ValueError for an unknown name, NEREngineUnavailableError for a missing dependency."""
     if name not in _ENGINE_CONFIG:
         raise ValueError(
             f"Unknown AMPRANG_NER_ENGINE={name!r}; supported: {sorted(_ENGINE_CONFIG)} (or 'union')"
@@ -540,9 +429,8 @@ def _load_ner(name: str) -> NER:
                         f"Run: pip install -r requirements-ml.txt"
                     ) from None
         if name == "tner":
-            # Not a PyThaiNLP engine: TNER is an HTTP service, so NER(engine=
-            # "tner") raised a raw library error and the registered slot did
-            # nothing. TnerEngine exposes the same .tag() contract instead.
+            # TNER is an HTTP service, not a PyThaiNLP engine (NER(engine="tner") raises);
+            # TnerEngine exposes the same .tag() contract.
             from amprang.engine.detectors.tner_client import TnerEngine
 
             _ner_cache[name] = TnerEngine(api_key=os.environ.get("AIFORTHAI_API_KEY", ""))
@@ -552,12 +440,8 @@ def _load_ner(name: str) -> NER:
 
 
 def _resolve_engine_name() -> str:
-    """The engine named by AMPRANG_NER_ENGINE, defaulting to the offline CRF.
-
-    The default is load-bearing: the AI for Thai proposal claims detection runs
-    offline in-container, which is only true while every network-backed engine
-    stays opt-in.
-    """
+    """The engine named by AMPRANG_NER_ENGINE, defaulting to the offline CRF. The default is
+    load-bearing: detection is claimed offline, true only while network engines stay opt-in."""
     return os.environ.get("AMPRANG_NER_ENGINE", "thainer")
 
 
@@ -566,17 +450,11 @@ def _get_ner() -> NER:
     return _load_ner(_resolve_engine_name())
 
 
-# ---------------------------------------------------------------------------
 # BIO tag decoding
-# ---------------------------------------------------------------------------
 
 
 def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, int, int, str]]:
-    """
-    Convert BIO-tagged token list to entity spans with character offsets.
-
-    Returns list of (entity_text, start, end, label).
-    """
+    """Convert BIO-tagged tokens to (entity_text, start, end, label) spans with char offsets."""
     spans: list[tuple[str, int, int, str]] = []
     current_label: str | None = None
     current_start: int | None = None
@@ -589,15 +467,13 @@ def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, i
             continue
         token_end = idx + len(word)
 
-        # Live TNER represents separators as whitespace tokens with a blank
-        # tag. Keep them transparent so a following I-tag extends the same
-        # source span without losing the gap.
+        # Live TNER emits separators as whitespace tokens with a blank tag; keep them
+        # transparent so a following I-tag extends the same span without losing the gap.
         if not word.strip() and not tag.strip():
             pos = token_end
             continue
 
         if tag.startswith("B-"):
-            # Save previous entity
             if current_label and current_start is not None and current_end is not None:
                 spans.append(
                     (
@@ -611,11 +487,9 @@ def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, i
             current_start = idx
             current_end = token_end
         elif tag.startswith("I-") and current_label == tag[2:]:
-            # Source positions, unlike concatenated token lengths, preserve an
-            # internal separator omitted by the tokenizer.
+            # Source positions preserve an internal separator the tokenizer omitted.
             current_end = token_end
         else:
-            # O tag or label mismatch — close current entity
             if current_label and current_start is not None and current_end is not None:
                 spans.append(
                     (
@@ -631,7 +505,6 @@ def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, i
 
         pos = token_end
 
-    # Flush last entity
     if current_label and current_start is not None and current_end is not None:
         spans.append(
             (
@@ -645,9 +518,7 @@ def _bio_to_spans(tokens: list[tuple[str, str]], text: str) -> list[tuple[str, i
     return spans
 
 
-# ---------------------------------------------------------------------------
 # Deduplication (copied from fp_detector to avoid circular import)
-# ---------------------------------------------------------------------------
 
 
 def _covered_by_kept(span: tuple[int, int], kept: list[Entity]) -> bool:
@@ -664,20 +535,13 @@ def _covered_by_kept(span: tuple[int, int], kept: list[Entity]) -> bool:
 def _deduplicate(entities: list[Entity]) -> list[Entity]:
     """Remove redundant spans: higher score wins, then earlier start.
 
-    Score-first is fp_detector's DET-2 key and the contract name_context.py
-    documents ("slightly higher score than the CRF, so ... the complete name
-    wins de-duplication"): a cue span with the exact boundary beats the CRF
-    span that glued a role word on. The earlier start-first key protected a
-    real class — the CRF emits ONE wide span covering TWO people while a cue
-    span covers only the first at higher score (LATENT-1; reproduced through
-    the real path in tests/test_name_boundary_hygiene.py), and plain
-    score-first eviction unmasked the second person. So eviction requires
-    coverage: an overlapping candidate is dropped only when its characters
-    are FULLY covered by the spans already kept, else it is kept too —
-    eviction never reduces coverage (recall > precision). In that guarded
-    case the output carries an overlap; `aggregate.dedupe_spans` resolves it
-    start-first-then-longer, so the wide span wins downstream and nothing is
-    unmasked."""
+    Score-first (same key as fp_detector and name_context's contract) lets a cue span with the
+    exact boundary beat the CRF span that glued a role word on. But the CRF can emit ONE wide
+    span over TWO people while a cue span covers only the first at higher score, and plain
+    score-first eviction unmasked the second person — so a candidate is dropped only when its
+    characters are FULLY covered by spans already kept (eviction never reduces coverage). The
+    surviving overlap is resolved by `aggregate.dedupe_spans` start-first-then-longer, so the
+    wide span wins downstream and nothing is unmasked."""
     sorted_ents = sorted(entities, key=lambda e: (-e.score, e.span[0]))
     kept: list[Entity] = []
     for ent in sorted_ents:
@@ -688,36 +552,23 @@ def _deduplicate(entities: list[Entity]) -> list[Entity]:
     return sorted(kept, key=lambda e: e.span[0])
 
 
-# ---------------------------------------------------------------------------
 # Stride-chunk NER (single engine)
-# ---------------------------------------------------------------------------
 
 _CHUNK_CORE_CHARS = 500
 
-# Degenerate-chunk guard (gov-form OCR gap): on sufficiently noisy input the
-# CRF sometimes returns a SINGLE span covering nearly the whole chunk instead
-# of abstaining, and when that span's data_type is None the entire chunk
-# silently yields zero entities -- including any real name the model would
-# have tagged correctly in isolation. 80%/3-line are the two shapes this
-# degenerate guess takes in the reproduced OCR corpus: either the label maps
-# to None (LABEL_MAP.get(label) is None -- true both for a label missing from
-# LABEL_MAP entirely, like the reproduced corpus's "LAW", AND for one of the
-# labels LABEL_MAP explicitly maps to None, like MONEY/TIME/PERCENT --
-# `label not in LABEL_MAP` would miss the second group even though
-# _finalize_tb_candidate rejects both identically) or a mapped label has
-# swallowed several unrelated form lines into one span (a real NAME/DATE/etc
-# never spans that much of a multi-field form).
+# Degenerate-chunk guard (gov-form OCR): on noisy input the CRF sometimes returns a SINGLE span
+# covering nearly the whole chunk instead of abstaining, and when its label maps to None the
+# chunk silently yields zero entities. Two shapes: LABEL_MAP.get(label) is None (true both for
+# a label missing from LABEL_MAP, like "LAW", AND for one explicitly mapped to None, like MONEY
+# -- `label not in LABEL_MAP` would miss the second) or a mapped label swallowing several lines.
 _DEGENERATE_COVERAGE_RATIO = 0.8
 _DEGENERATE_MIN_LINES = 3
 
 
 def _finalize_tb_candidate(text: str, orig_start: int, orig_end: int, label: str) -> list[Entity]:
-    """Apply the normal LABEL_MAP -> hygiene -> cue-upgrade pipeline to one
-    decoded BIO span and return the resulting candidate Entities (zero, one,
-    or several -- see `_name_hygiene`). Shared by the main per-chunk loop and
-    the degenerate-chunk line-by-line fallback so both paths reject/accept
-    spans identically.
-    """
+    """Apply LABEL_MAP -> hygiene -> cue-upgrade to one decoded BIO span; returns zero, one or
+    several Entities. Shared by the per-chunk loop and the degenerate-chunk fallback so both
+    paths accept/reject identically."""
     data_type = LABEL_MAP.get(label)
     if data_type is None:
         return []
@@ -726,14 +577,8 @@ def _finalize_tb_candidate(text: str, orig_start: int, orig_end: int, label: str
     entity_text = text[orig_start:orig_end]
     if data_type == "ORGANIZATION" and not _THAI_CHAR_RE.search(entity_text):
         return []
-    # NAME hygiene (blind-set precision classes): a person's name never spans
-    # a line break. On label-first OCR field order the CRF can glue a form
-    # label to the name(s) that follow it into one span, so the span is split
-    # into segments (see `_name_hygiene`) rather than just trimmed to the
-    # head -- trimming alone would keep the label itself as a false-positive
-    # NAME. A segment BEGINNING with a document compound (ตารางสอบ…,
-    # เลขครุภัณฑ์…) is a header, not a person. Compounds, never noun prefixes --
-    # เลขา, ใบเฟิร์น and ประกาศิต are real names.
+    # NAME hygiene: split at line breaks into segments (see `_name_hygiene`) rather than trim to
+    # the head -- trimming alone kept a glued form label as a false-positive NAME.
     if data_type == "NAME":
         segments = _name_hygiene(text, orig_start, orig_end)
     else:
@@ -766,13 +611,9 @@ def _retag_degenerate_chunk(
 ) -> list[Entity]:
     """Re-tag a degenerate chunk's core one physical line at a time.
 
-    The whole-chunk tagging call that produced the degenerate span is not
-    retried -- it is exactly what produced the bad guess. Isolating each line
-    removes the noisy neighbours that dragged the CRF into a single bogus
-    span, which is what lets it recognize a clean line's PII again (verified
-    against the reproduced คร.1 OCR text: the CRF cannot tag a name at all in
-    the degenerate whole-chunk context, but tags it correctly once the line
-    carrying it is presented alone).
+    The whole-chunk call is not retried -- it produced the bad guess. Isolating each line
+    removes the noisy neighbours; verified on คร.1 OCR text, the CRF tags a name correctly only
+    once its line is presented alone.
     """
     candidates: list[Entity] = []
     core_text = text[core_begin:core_end]
@@ -816,17 +657,12 @@ def _retag_unknown_label_span(
 ) -> list[Entity]:
     """Re-tag an unknown-label multi-line span's physical lines individually.
 
-    A label absent from LABEL_MAP entirely (the CRF's LAW-class confusion —
-    distinct from MONEY/TIME, which map to None deliberately) that crosses a
-    newline has swallowed unrelated form lines the model tags fine in
-    isolation ("เลขบัตรประชาชน ... วันเกิด 30 ตุลาคม 2549" — the DOB was
-    silently dropped with the bogus span). The degenerate-chunk guard cannot
-    catch it: that guard needs a single near-chunk-wide span, and these sit
-    among other decoded spans. Lines are expanded to full physical lines so a
-    span starting mid-name still re-tags the whole line. Retagged NAME
-    candidates are additionally gated through `is_non_person_segment` — the
-    retag context is exactly where the CRF hallucinates PERSON on field
-    labels (measured: retagging mints PERSON "เลขบัตรประชาชน").
+    A label absent from LABEL_MAP (the CRF's LAW-class confusion — unlike MONEY/TIME, which map
+    to None deliberately) that crosses a newline has swallowed form lines the model tags fine
+    alone (a DOB was silently dropped with the bogus span); the degenerate-chunk guard cannot
+    catch it because these sit among other decoded spans. Lines are expanded to full physical
+    lines, and retagged NAME candidates are gated through `is_non_person_segment` — the retag
+    context is exactly where the CRF hallucinates PERSON on field labels ("เลขบัตรประชาชน").
     """
     from amprang.engine.detectors.name_context import is_non_person_segment
 
@@ -856,17 +692,13 @@ def _ner_candidates(
     *,
     fail_closed: bool = False,
 ) -> list[Entity]:
-    """Run one NER engine over stride chunks and return TB Entity candidates
-    mapped to original-text offsets (pre-dedup).
+    """Run one NER engine over stride chunks and return TB Entity candidates at original-text
+    offsets (pre-dedup).
 
-    Chunks are runs of consecutive sentences whose combined length is capped
-    at ~_CHUNK_CORE_CHARS (always at least one sentence), padded with
-    `margin_sentences` sentences of context on each side. The tagged string is
-    ALWAYS a slice of the original text (a join of sentence strings would drop
-    the gaps between sentences and corrupt every offset after the first gap).
-    Only spans that START inside the chunk core are kept, so margins never
-    duplicate entities across neighbouring chunks. Each sentence is tagged
-    ~1+2*margin/chunk_len times instead of the old sliding window's ~7x.
+    Chunks are consecutive sentences capped at ~_CHUNK_CORE_CHARS (always >= 1 sentence), padded
+    with `margin_sentences` of context each side. The tagged string is ALWAYS a slice of the
+    original text (joining sentence strings would drop the gaps and corrupt every later offset).
+    Only spans that START inside the core are kept, so margins never duplicate entities.
     """
     n = len(sentence_offsets)
     candidates: list[Entity] = []
@@ -899,11 +731,9 @@ def _ner_candidates(
         try:
             tagged: list[tuple[str, str]] = ner.tag(context_text)
         except Exception as exc:
-            # Dropping a whole chunk is recall-negative (violates recall >
-            # precision). Never silence it — a repeatedly failing engine must
-            # be visible, not quietly eat ~500 chars of PII. Offsets and the
-            # exception class are safe integers/names; the message and
-            # traceback are NOT logged because they can embed the input text.
+            # Dropping a whole chunk is recall-negative; never silence it. Offsets and the
+            # exception class are safe; the message and traceback are NOT logged because they
+            # can embed the input text.
             if diagnostics is not None:
                 diagnostics.skipped += 1
             if fail_closed:
@@ -928,12 +758,9 @@ def _ner_candidates(
         if tagged:
             bio_spans = _bio_to_spans(tagged, context_text)
 
-            # Degenerate-chunk guard: a SINGLE span covering most of the core
-            # is either a bogus unmapped label or a mapped label that has
-            # swallowed several unrelated lines -- either way it is not a
-            # real entity, and consuming it (or letting it fall through to
-            # the normal loop below) would drop every real entity the model
-            # could have found on this chunk's individual lines.
+            # Degenerate-chunk guard: a SINGLE span covering most of the core is a bogus unmapped
+            # label or a mapped label that swallowed several lines; letting it fall through
+            # would drop every real entity the model could find on this chunk's lines.
             if len(bio_spans) == 1:
                 _ent_text, sp_ctx_start, sp_ctx_end, sp_label = bio_spans[0]
                 sp_start = ctx_begin + sp_ctx_start
@@ -993,12 +820,9 @@ def _trim_unoccupied_isolated_name_prefix(
 ) -> Entity | None:
     """Remove a field or role before an isolated NAME.
 
-    The prefix is matched on the physical LINE, not the candidate: the
-    same-line hygiene trim can strip the role word (ผู้เช่า, ชื่อ) off the
-    candidate before this gate runs, and the unvalidated remainder
-    ("ต้องชำระ ค่าเช่า") must still be probed — the whole point of this gate
-    is that a prefix-led isolated line only mints a NAME when its value
-    passes the normal name rules.
+    The prefix is matched on the physical LINE, not the candidate: same-line hygiene can strip
+    the role word off the candidate first, and the remainder must still be probed — a
+    prefix-led isolated line mints a NAME only when its value passes the normal name rules.
     """
     line_begin = text.rfind("\n", 0, candidate.span[0]) + 1
     prefix = _ISOLATED_NAME_PREFIX_RE.match(text, line_begin)
@@ -1117,9 +941,7 @@ def _isolated_line_name_candidates(
     return candidates, superseded_ids
 
 
-# ---------------------------------------------------------------------------
 # Main detector
-# ---------------------------------------------------------------------------
 
 
 def _detect_tb_impl(
@@ -1128,28 +950,18 @@ def _detect_tb_impl(
     window_size: int = 1,
     diagnostics: NERChunkDiagnostics | None = None,
 ) -> list[Entity]:
-    """
-    Detect text-based PII entities using PyThaiNLP NER (thainer CRF).
+    """Detect text-based PII entities using PyThaiNLP NER.
 
-    Args:
-        text: cleaned text to scan
-        window_size: sentences of margin context on each side of a chunk
-            (default 1; raise to 2 if benchmark recall regresses)
-
-    Returns list of Entity objects (redact_type="TB").
-    Sorted by span start (ascending).
-    No redundant spans (an overlap survives only in `_deduplicate`'s
-    coverage-guard case — a lower-score span whose characters a higher-score
-    winner does not fully cover is kept too rather than unmasked).
-    Span chokepoint: reject span < 2 chars.
+    window_size: sentences of margin context each side of a chunk (raise to 2 if benchmark
+    recall regresses). Returns Entities (redact_type="TB") sorted by span start; an overlap
+    survives only in `_deduplicate`'s coverage-guard case. Spans < 2 chars are rejected.
     """
     if not text or not text.strip():
         return []
 
-    # Step 1: Sentence tokenization with cumulative offsets. crfcut is ~28% of
-    # detect time; line-break units were measured instead (2026-08-23): same
-    # output on all 252 gold docs, 18% faster, but on the คร.1 OCR regression
-    # they lost a name the crfcut grouping recovers. Recall wins; crfcut stays.
+    # Sentence tokenization with cumulative offsets. crfcut is ~28% of detect time; line-break
+    # units were measured (same output on all gold docs, 18% faster) but lost a name on the คร.1
+    # OCR regression that crfcut's grouping recovers. Recall wins; crfcut stays.
     raw_sentences = sent_tokenize(text, engine="crfcut")
     if not raw_sentences:
         return []
@@ -1199,16 +1011,15 @@ def _detect_tb_impl(
             )
         )
 
-    # Recall booster: title/label-cued names the NER missed or clipped
-    # (engine-independent, added once).
+    # Recall booster: title/label-cued names the NER missed or clipped (engine-independent).
     from amprang.engine.detectors.name_context import (
         detect_conjunction_names,
         detect_name_context,
     )
 
     candidates.extend(detect_name_context(text))
-    # A conjunction right after an accepted NAME introduces the NEXT person
-    # in the same list; the CRF stops at และ and that name shipped unmasked.
+    # A conjunction right after an accepted NAME introduces the NEXT person; the CRF stops at
+    # และ and that name shipped unmasked.
     candidates.extend(detect_conjunction_names(text, candidates))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
@@ -1220,7 +1031,6 @@ def _detect_tb_impl(
         candidates = [entity for entity in candidates if entity.entity_id not in superseded_ids]
         candidates.extend(isolated_names)
 
-    # Deduplication
     return _deduplicate(candidates)
 
 

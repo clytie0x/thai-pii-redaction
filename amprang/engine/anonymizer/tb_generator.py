@@ -1,8 +1,7 @@
 """Thai name/address pseudonym generator using hardcoded pools (no LLM).
 
-Deterministic for fixed data_type, original, salt, attempt, and relevant
-context cues. The seed uses salt and original, with attempt added for a
-deterministic collision reroll; entity_id is not part of the seed.
+Deterministic for fixed data_type, original, salt, attempt and context cues; entity_id is not
+part of the seed.
 """
 
 from __future__ import annotations
@@ -171,8 +170,7 @@ ORGANIZATIONS = [
 
 
 def _seeded_rng(salt: str, original: str, attempt: int = 0) -> random.Random:
-    # attempt=0 keeps the historical seed so existing pseudonyms stay stable;
-    # attempt>0 re-rolls deterministically when a collision must be resolved.
+    # attempt=0 keeps the historical seed so existing pseudonyms stay stable.
     material = f"{salt}:{original}" if attempt == 0 else f"{salt}:{original}:{attempt}"
     seed = int.from_bytes(
         hashlib.sha256(material.encode()).digest()[:4],
@@ -189,28 +187,16 @@ def generate_tb(
     original: str,
     attempt: int = 0,
 ) -> str:
-    """Generate a pseudonym for a text-based PII entity.
+    """Generate a realistic Thai fake value for a text-based PII entity.
 
-    Args:
-        data_type: "NAME" | "SURNAME" | "ADDRESS" | "DATE_OF_BIRTH" | etc.
-        context_with_blank: sentence(s) with the original PII replaced by '___'
-        salt: caller-provided salt; the session service keeps one per session
-            and the pipeline generates one when omitted
-        original: original PII (for seeding; never sent to LLM)
-        attempt: collision re-roll counter; 0 = the stable deterministic value
-
-    Returns:
-        A realistic Thai fake value
+    ``context_with_blank`` is the sentence with the PII replaced by '___' (used for gender cues);
+    ``attempt`` is the collision re-roll counter (0 = the stable value).
     """
     rng = _seeded_rng(salt, original, attempt)
 
     if data_type == "NAME":
-        # Preserve the useful shape of a full Thai name. Returning only a
-        # given name for an original such as "นายสมชาย ใจดี" leaves the next
-        # ordinary Thai phrase looking like a surname to the high-recall name
-        # detector ("ผมชื่อ สุรชัย ขอลาป่วย"). The outbound guard then blocks
-        # our own trusted surrogate. A two-part surrogate both reads more
-        # naturally and gives the detector an unambiguous end boundary.
+        # Keep a two-part surrogate for two-part originals: a lone given name makes the next
+        # phrase look like a surname to the name detector, and the outbound guard blocks it.
         original_parts = original.split()
         has_surname = len(original_parts) >= 2
         if "นาย" in context_with_blank or original.startswith("นาย"):

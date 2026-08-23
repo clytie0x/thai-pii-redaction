@@ -1,11 +1,8 @@
-"""PDPA risk report rendered as a PDF (feature D — "สิ่งที่องค์กรซื้อคือหลักฐาน").
+"""PDPA risk report rendered as a PDF.
 
-Renders the /api/analyze result dict. PII-free BY WHITELIST: only the fields
-drawn here — scores, grades, counts, data-type labels, category names and the
-canned recommendation strings — ever reach the canvas. No raw source text, no
-entity values, no keyword excerpts (section26 entries carry a "keyword" field;
-this module reads only "category"). Long lines are clipped at the right
-margin rather than wrapped — accepted for v1, the content is short labels.
+Renders the /api/analyze result dict. PII-free BY WHITELIST: only scores, grades, counts, labels,
+category names and canned recommendation strings reach the canvas (section26 entries are read for
+"category" only, never the matched text). Long lines are clipped, not wrapped.
 """
 
 from __future__ import annotations

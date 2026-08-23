@@ -1,24 +1,8 @@
 """MCP adapter — the amprang toolset for AI agents.
 
-Run locally over stdio (full local privacy — text never leaves the machine,
-and stdio is only reachable by the parent process, so no auth is needed)::
-
-    amprang-mcp
-
-or as a shared HTTP endpoint (hosted convenience tier — callers' text reaches
-this server; state is one in-memory vault with a TTL, nothing on disk). HTTP
-is reachable by anything that can open the port, so every caller must
-present a per-caller key — there is no unauthenticated fallback::
-
-    AMPRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" \\
-        amprang-mcp --transport http --host 127.0.0.1 --port 8300
-
-Design rule (see docs/decisions/0003-mcp-no-plaintext-mapping.md): a tool
-result always enters the calling model's context, so no tool here ever
-returns the pseudonym→original mapping. ``sanitize`` returns an opaque
-``session_handle`` to a server-side in-memory vault; ``reidentify`` accepts
-that handle. The plaintext-mapping form exists only in the in-process Python
-facade, where the caller is code rather than a model context.
+stdio (``amprang-mcp``) needs no auth; HTTP (``--transport http``) requires a per-caller key in
+``AMPRANG_MCP_KEYS="id:key,..."`` with no unauthenticated fallback. No tool ever returns the
+pseudonym→original mapping; see docs/decisions/0003-mcp-no-plaintext-mapping.md.
 """
 
 from __future__ import annotations
@@ -67,11 +51,8 @@ def parse_caller_keys(raw: str) -> dict[str, str]:
 class _CallerKeyMiddleware:
     """Fail-closed per-caller bearer-key gate for the shared HTTP transport.
 
-    Every request must carry ``Authorization: Bearer <key>`` matching one of
-    the configured per-caller keys — there is no unauthenticated path, unlike
-    the local FastAPI server's optional ``AMPRANG_API_KEY``. An MCP HTTP
-    endpoint hands the PII guard to any caller who can reach the port, so it
-    stays closed until a caller proves who it is.
+    Every request must carry ``Authorization: Bearer <key>``; there is no unauthenticated path,
+    unlike the local FastAPI server's optional ``AMPRANG_API_KEY``.
     """
 
     def __init__(self, app: Any, keys_by_secret: dict[str, str]) -> None:
@@ -254,12 +235,8 @@ def build_server(
 def run_http(server: MCPServer, *, host: str, port: int, caller_keys: dict[str, str]) -> None:
     """Serve ``server`` over streamable-http behind the per-caller key gate.
 
-    Bypasses ``MCPServer.run("streamable-http", ...)``: the SDK's own auth
-    layer is OAuth-shaped (``AuthSettings`` requires an ``issuer_url`` and
-    stands up authorization-server discovery routes), which is the wrong
-    protocol for a static per-caller shared secret. Wrapping the Starlette
-    app with a small bearer-key ASGI middleware instead keeps the surface to
-    exactly one check: is this caller's key valid.
+    Bypasses ``MCPServer.run("streamable-http", ...)``: the SDK's auth layer is OAuth-shaped,
+    the wrong protocol for a static shared secret, so a bearer-key ASGI middleware is used instead.
     """
     import uvicorn
 

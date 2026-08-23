@@ -13,23 +13,12 @@ from amprang.engine.models import Entity
 # ---------------------------------------------------------------------------
 
 _FN_PATTERNS: list[tuple[re.Pattern[str], str, str, float]] = [
-    # 13-digit sequences not caught (checksum failed but highly suspicious).
-    # THAI_ID/EMAIL/DATE_OF_BIRTH are all format-preserving types -- redact_type
-    # must be "FP" (matching fp_detector's own classification of these same
-    # data_types) so anonymizer.py routes them through generate_fp() for a
-    # realistic fake value instead of tb_generator's literal "[REDACTED_x]"
-    # fallback.
-    # Digit-boundary lookarounds, not \b: a Thai letter is a word char, so \b
-    # never fires between Thai script and a digit, letting a 13-digit run glued
-    # to Thai text ("รหัส1234567890123") slip past this fallback too.
+    # redact_type must be "FP" (as in fp_detector) so the anonymizer routes these through
+    # generate_fp() instead of the literal "[REDACTED_x]" fallback.
+    # Digit-boundary lookarounds, not \b: \b never fires between Thai script and a digit.
     (re.compile(r"(?<!\d)(\d{13})(?!\d)"), "THAI_ID", "FP", 0.6),
-    # Email-like patterns with @ (simpler than full RFC pattern)
     (re.compile(r"([^\s@]+@[^\s@]+\.[^\s@]{2,})"), "EMAIL", "FP", 0.7),
-    # Date-like patterns in various formats. Labeled DATE (not DATE_OF_BIRTH):
-    # this loose fallback has no cue context to gate on, so the honest generic
-    # label is the only defensible one here (see fp_detector.py's cue-gated
-    # DATE/DATE_OF_BIRTH split for the primary pass).
-    # day-first (dd-mm-yyyy) OR ISO year-first (yyyy-mm-dd).
+    # Labeled DATE, not DATE_OF_BIRTH: this fallback has no cue context to gate on.
     (
         re.compile(r"(?<!\d)(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})(?!\d)"),
         "DATE",
@@ -40,42 +29,22 @@ _FN_PATTERNS: list[tuple[re.Pattern[str], str, str, float]] = [
 
 
 # ---------------------------------------------------------------------------
-# Corrupted-duplicate structured id scan (F4).
+# Corrupted-duplicate structured id scan.
 #
-# The OCR retry merge (ingest/ocr_processor.py) can leave a second, corrupted
-# copy of a structured value beside the valid read -- e.g. "13122+1506581"
-# next to the valid "1312271505581". The corrupt copy matches neither
-# fp_detector's regex nor its checksum, so without this rule 12 of 13 digits
-# of a national id leave unmasked on the text path (/api/sanitize, roundtrip).
+# The OCR retry merge can leave a corrupted copy of a structured value beside the valid
+# read ("13122+1506581" next to "1312271505581"); it matches neither regex nor checksum, so
+# 12 of 13 digits of a national id would leave unmasked. A 12-15 char run that is digits
+# except for 1-2 INNER junk chars (+ $ #) is tagged ID_NUMBER. Comma/period are excluded on
+# purpose: "1,234,567.89" is the likeliest false-positive source.
 #
-# Rule: a run of length 12-15 that is digits except for 1-2 INNER (not
-# leading/trailing) non-digit "junk" characters is tagged ID_NUMBER -- honest
-# label, since the checksum cannot be verified on a corrupt read. The junk
-# character set is deliberately narrow and evidence-based (+ $ #): comma and
-# period are excluded on purpose, since a thousands/decimal-separated amount
-# like "1,234,567.89" is the likeliest real-world false-positive source; Thai
-# characters and letters are excluded because they were never observed in the
-# OCR corruption evidence.
+# Cue gate: a summed amount has the same shape ("รวมเป็นเงิน 600000+120000"), so
+# nearest-cue-wins: an amount cue nearer than an id cue suppresses the tag. The amount side
+# is imported from fp_detector so the two rules cannot drift. Default is KEEP (recall >
+# precision). Windows are clipped at the line.
 #
-# Cue gate: the rule above describes the SHAPE of an OCR-corrupted id, and an
-# ordinary summed amount has the same shape ("รวมเป็นเงิน 600000+120000 = 720000
-# บาท" -> a 13-char digit run with one inner "+"). So the same nearest-cue-wins
-# idiom fp_detector uses for STUDENT_ID/bank/phone decides: an amount or order
-# introducer NEARER to the run than an id introducer suppresses the tag. The
-# amount side is imported from fp_detector rather than restated -- a second copy
-# is how the two rules would drift. Default is KEEP (recall > precision): a run
-# with no cue on either side, which is the register the corrupted-id evidence
-# came from, is still tagged. Windows are clipped at the line, since the cue and
-# the value share a line in form and invoice text alike.
-#
-# The ID side needs its own pattern and cannot just BE fp_detector's
-# `_STUDENT_INTRO_RE`: that one introduces a STUDENT id
-# (รหัสประจำตัว|เลขประจำตัว|รหัส|id) and knows nothing about national-id-card
-# phrasing, so "ค่าธรรมเนียม 500 บาท เลขบัตร 13122+1506581" found no id cue at
-# all and the fee's บาท suppressed a REAL corrupted national id. The card
-# phrasings below are evidenced -- gold's own gov-form document gf08 labels a
-# THAI_ID with "เลขที่บัตรประชาชน". Longest alternative first so the widest
-# label is the one that matches.
+# The id side cannot just BE _STUDENT_INTRO_RE: it knows nothing about national-id-card
+# phrasing, so "ค่าธรรมเนียม 500 บาท เลขบัตร 13122+1506581" found no id cue and บาท suppressed
+# a real corrupted id. Longest alternative first.
 _AMOUNT_CUE_RE = re.compile(
     _NON_STUDENT_NUM_CUE_RE.pattern + r"|รวม|บาท|total",
     re.IGNORECASE,
@@ -92,11 +61,7 @@ _CORRUPTED_ID_CANDIDATE_RE = re.compile(r"(?<![0-9+$#])[0-9+$#]+(?![0-9+$#])")
 
 
 def _nearest_cue_distance(pattern: re.Pattern[str], text: str, start: int, end: int) -> int | None:
-    """Chars between the candidate and the nearest `pattern` match on its line.
-
-    Looks both ways inside `_CORRUPTED_ID_CUE_WINDOW`, clipped at the nearest
-    newline on each side. Returns None when the pattern does not occur there.
-    """
+    """Chars to the nearest `pattern` match either side, same line, or None."""
     before = text[max(0, start - _CORRUPTED_ID_CUE_WINDOW) : start]
     before = before.rsplit("\n", 1)[-1]
     after = text[end : end + _CORRUPTED_ID_CUE_WINDOW]
@@ -136,12 +101,7 @@ def _is_corrupted_id_candidate(candidate: str) -> bool:
 
 
 def scan_fn(text: str, existing_entities: list[Entity]) -> list[Entity]:
-    """
-    False-negative second pass: lightweight regex scan for PII patterns
-    not already caught by fp_detector or tb_detector.
-
-    Returns NEW entities only (no duplicates of existing_entities spans).
-    """
+    """Second-pass regex scan; returns only NEW entities not overlapping existing ones."""
     existing_spans = {(e.span[0], e.span[1]) for e in existing_entities}
 
     new_entities: list[Entity] = []
@@ -150,7 +110,6 @@ def scan_fn(text: str, existing_entities: list[Entity]) -> list[Entity]:
             start, end = m.start(1), m.end(1)
             if end - start < 2:
                 continue
-            # Skip if this span overlaps with any existing entity
             overlaps = any(not (end <= es[0] or start >= es[1]) for es in existing_spans)
             if not overlaps:
                 new_entities.append(

@@ -1,7 +1,7 @@
 """Session-bound authorization for the trusted local control plane.
 
-The boot secret stays in the native/backend trust domain. Browser, Office, and
-extension code receive neither that secret nor a disposal authorization.
+The boot secret stays in the backend trust domain; untrusted clients receive neither it nor a
+disposal authorization.
 """
 
 from __future__ import annotations

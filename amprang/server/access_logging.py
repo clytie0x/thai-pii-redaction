@@ -35,8 +35,7 @@ class UvicornAccessLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args
         if not _supported_uvicorn_args(args):
-            # Uvicorn's tuple is private API. Suppress an unknown shape instead
-            # of risking a raw request target after dependency drift.
+            # Uvicorn's tuple is private API; suppress unknown shapes rather than risk a raw target.
             return False
         redacted_args = list(args)
         redacted_args[2] = _redact_request_target(args[2])

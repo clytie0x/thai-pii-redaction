@@ -1,15 +1,5 @@
-"""Shared file-discovery and value-canonicalization helpers for the
-corpus-scanning storefronts (`breach.py`, `dsar.py`).
-
-Extracted verbatim from `amprang/engine/breach.py` (Track D #2) when the second
-caller (`dsar.py`, Track D #3) needed the identical behavior. `breach.py`
-imports these under its old private names so its own tests (which import
-`_canonical_value` directly) keep working unmodified. The extraction itself
-was a pure move, but `path_spellings` was extended afterward (adding the
-backslash-doubled and `repr()`-stripped spellings a real `OSError` message
-embeds), which changed `short_reason`'s scrubbing behavior for both callers --
-see `docs/decisions/2026-08-01-dsar-helper.md`'s "A fix that came out of this
-work" section.
+"""Shared file-discovery and value-canonicalization helpers for the corpus-scanning
+storefronts (`breach.py`, `dsar.py`). See docs/decisions/2026-08-01-dsar-helper.md.
 """
 
 from __future__ import annotations
@@ -26,17 +16,8 @@ _NAME_TITLE_RE = re.compile(r"^(?:นางสาว|นาย|นาง|น\.�
 
 
 def path_spellings(path: Path) -> set[str]:
-    """Every string spelling of `path` a caught exception's own message might
-    embed -- as given, resolved, both slash directions, AND the repr-escaped
-    forms CPython's `OSError.__str__` actually produces.
-
-    `OSError.__str__` formats its filename with `%R` (Python's own `repr()`),
-    which backslash-escapes a Windows path -- a real `FileNotFoundError` from
-    e.g. `Path.read_bytes()` on a missing file embeds the path as
-    `'C:\\\\Users\\\\...\\\\missing.txt'` (doubled backslashes), which none of
-    the plain single-backslash/forward-slash spellings match as a substring.
-    Shared by `short_reason` (per-file scrub) and `amprang.cli._scrub_known_paths`
-    (corpus-level scrub) so this escaping only has to be handled once.
+    """Every spelling of `path` an exception message might embed: as given, resolved, both slash
+    directions, and the repr-escaped (doubled-backslash) forms `OSError.__str__` produces.
     """
     spellings = {str(path)}
     try:
@@ -53,21 +34,9 @@ def path_spellings(path: Path) -> set[str]:
 
 
 def short_reason(exc: Exception, path: Path) -> str:
-    """`{ExceptionClassName} {message}` with the input file's own path
-    scrubbed out of the message.
-
-    A failed-file row is documented as "basename + short reason, never
-    content" -- but several stdlib exceptions embed the FULL operand path in
-    their own message (`FileNotFoundError`: "[Errno 2] No such file or
-    directory: 'C:\\\\Users\\\\...\\\\missing.txt'" -- note the DOUBLED
-    backslashes: `OSError.__str__` formats the filename via `repr()`), which
-    can carry a directory name the controller did not intend to disclose.
-    Every spelling of `path` this process is likely to have produced --
-    see `path_spellings` -- is folded down to the bare basename, which is
-    already a value this report shows elsewhere. A space separates the class
-    name from the message rather than a colon -- this reason string can reach
-    Thai-facing CLI/PDF output, and Thai punctuation uses spaces, not Western
-    colons.
+    """`{ExceptionClassName} {message}` with every spelling of the file's path folded to its
+    basename (stdlib messages embed the full path, which may disclose a directory name).
+    Space, not colon, between class and message: the string reaches Thai-facing output.
     """
     message = str(exc)
     basename = path.name
@@ -78,18 +47,9 @@ def short_reason(exc: Exception, path: Path) -> str:
 
 
 def discover_files(paths: Sequence[str | Path], *, recursive: bool) -> tuple[list[Path], list[str]]:
-    """Resolve `paths` to a deterministic, de-duplicated list of files, plus the
-    basenames a directory scan chose not to look at.
-
-    A directory is scanned for *.txt/*.pdf (non-recursive unless `recursive`);
-    every other file the scan finds there is reported back as skipped rather
-    than dropped silently -- a report must not claim it covered a folder when
-    it only opened a subset of what was in it. A path that is not a directory
-    is taken as-is, even if it does not exist or carries a different
-    extension -- the caller named it explicitly, and letting it reach the
-    caller's own per-file try/except turns a bad path into a failed-file row
-    instead of a silent skip (this rule does not apply to directory contents,
-    which is exactly what "skipped" now surfaces).
+    """Resolve `paths` to a deterministic, de-duplicated file list plus the basenames a directory
+    scan skipped (non *.txt/*.pdf), so a report never silently claims full folder coverage.
+    A non-directory path is taken as-is so a bad path becomes a failed-file row, not a skip.
     """
     found: list[Path] = []
     skipped: list[str] = []
@@ -132,14 +92,9 @@ def discover_files(paths: Sequence[str | Path], *, recursive: bool) -> tuple[lis
 
 
 def canonical_value(data_type: str, value: str) -> str:
-    """Fold formatting differences that would otherwise inflate a distinct count.
-
-    Only strong types get bespoke normalization (per the spec: spaced/hyphenated
-    Thai id forms and mixed-case emails are the same value). NAME is normalized
-    by stripping a leading title and collapsing whitespace -- still a WEAK
-    identifier, so this only keeps its own distinct count honest, never feeds
-    subjects_min/max. Every other type gets a generic whitespace/case fold so
-    its distinct count is not inflated by incidental formatting.
+    """Fold formatting differences that would inflate a distinct count. Strong types get bespoke
+    normalization; NAME strips a leading title but stays a WEAK identifier (never feeds
+    subjects_min/max); everything else gets a whitespace/case fold.
     """
     if data_type == "THAI_ID":
         return re.sub(r"\D", "", value)
@@ -147,12 +102,8 @@ def canonical_value(data_type: str, value: str) -> str:
         return re.sub(r"[\s-]", "", value).upper()
     if data_type == "PHONE":
         digits = re.sub(r"\D", "", value)
-        # +66 drops the domestic leading 0 (fp_detector's _RE_PHONE_INTL
-        # comment): a 9-digit mobile number becomes 66 + 9 digits (11 total),
-        # an 8-digit landline becomes 66 + 8 digits (10 total). Both fold back
-        # to the domestic form so "+66 81 234 5678" and "081-234-5678" --
-        # or "+66 2 123 4567" and "02-123-4567" -- collapse to one value
-        # instead of counting the same subject twice.
+        # +66 drops the domestic leading 0 (66 + 9 mobile / 66 + 8 landline digits); fold back so
+        # "+66 81 234 5678" and "081-234-5678" count once.
         if digits.startswith("66") and len(digits) in (10, 11):
             digits = "0" + digits[2:]
         return digits

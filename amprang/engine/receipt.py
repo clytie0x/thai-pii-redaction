@@ -23,8 +23,7 @@ from amprang.engine.models import Entity
 
 RECEIPT_SCHEMA = "amprang.processing-receipt/1"
 
-# Every field `verify` needs to do its job. A receipt missing one of these is
-# rejected rather than partially checked -- "verified" has to mean all of it.
+# A receipt missing any of these is rejected rather than partially checked.
 _REQUIRED_PATHS = (
     ("source", "sha256"),
     ("source", "bytes"),
@@ -65,12 +64,8 @@ class VerifyResult:
 
 
 def process_for_receipt(path: str | Path) -> ProcessedSource:
-    """Ingest, clean and detect — the single path both issuing and verifying run.
-
-    Shared on purpose rather than duplicated: if issuing and verifying could
-    drift apart, a receipt would start failing against its own document and the
-    verifier would be measuring itself.
-    """
+    """Ingest, clean and detect — the single path both issuing and verifying run, so the two
+    cannot drift apart."""
     source_type = detect_source_type(path)
     raw_text, _bboxes, _meta = extract(path, source_type)
     text = clean(raw_text).text
@@ -78,25 +73,16 @@ def process_for_receipt(path: str | Path) -> ProcessedSource:
 
 
 def result_digest(entities: list[Entity]) -> str:
-    """A digest over what detection found — spans and types, nothing else.
-
-    Sorted before hashing so detector ordering, which is an implementation
-    detail, cannot change the digest. See the module docstring for what is
-    excluded and why.
-    """
+    """A digest over what detection found — spans and types, sorted so detector ordering cannot
+    change it."""
     rows = sorted([e.span[0], e.span[1], e.data_type, e.redact_type] for e in entities)
-    # The schema string is in the preimage so a future schema that hashes
-    # different material can never collide with a v1 digest.
+    # Schema string in the preimage so a future schema can never collide with a v1 digest.
     preimage = RECEIPT_SCHEMA + "\n" + json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
     return "sha256:" + hashlib.sha256(preimage.encode("utf-8")).hexdigest()
 
 
 def _source_fingerprint(path: Path) -> tuple[str, int]:
-    """Hash and size from ONE pass over the bytes.
-
-    Together rather than separately so the two can never describe different
-    reads of a file that is changing underneath us.
-    """
+    """Hash and size from ONE pass, so they can never describe different reads of a changing file."""
     digest = hashlib.sha256()
     size = 0
     with open(path, "rb") as f:
@@ -109,14 +95,8 @@ def _source_fingerprint(path: Path) -> tuple[str, int]:
 def _claims(processed: ProcessedSource, sha256: str, size: int) -> dict:
     """The factual half of a receipt — everything `verify` recomputes.
 
-    Built in one place and used by BOTH `build_receipt` and `verify_receipt`,
-    which is the point. The first version of this module compared only the two
-    digests, so `entity_count`, the per-type counts, the file size and the
-    source type rode along unverified: a receipt could be edited to claim zero
-    entities found and still verify clean, while the verifier had the real
-    numbers in hand and discarded them. Anything that goes in here from now on
-    is checked by construction rather than by someone remembering to add a
-    comparison.
+    Single source for BOTH `build_receipt` and `verify_receipt`: a field added here is compared
+    by construction, so no claim can ride along unverified.
     """
     type_counts: dict[str, int] = {}
     for entity in processed.entities:
@@ -147,23 +127,14 @@ def build_receipt(
 ) -> dict:
     """Run the pipeline over `path` and return the receipt describing that run.
 
-    `purpose` and `controller` are Section 39 fields only the operator can
-    answer, so they appear only when supplied. Inventing a plausible default
-    for either would put a claim in a compliance document that nobody made.
-    Note that both are free text the operator typed: they are the one part of
-    a receipt that is not derived from the document, and nothing here inspects
-    them.
+    `purpose` and `controller` are operator-supplied Section 39 fields; they appear only when
+    given (no invented default) and are never inspected.
 
-    Raises:
-        SourceChangedError: the file's bytes changed while it was being read.
+    Raises SourceChangedError if the file's bytes changed while it was being read.
     """
     path = Path(path)
-    # Fingerprinted on both sides of the pipeline. Detection takes real time on
-    # a large document, and a file rewritten in that window would otherwise
-    # produce a receipt whose hash describes the new bytes and whose findings
-    # describe the old ones -- internally inconsistent, unverifiable forever,
-    # and diagnosed later as `result_mismatch`, which would be a lie about what
-    # went wrong.
+    # Fingerprinted on both sides of detection: a file rewritten mid-run would otherwise yield a
+    # receipt whose hash and findings describe different bytes, unverifiable forever.
     before, _ = _source_fingerprint(path)
     processed = process_for_receipt(path)
     after, size = _source_fingerprint(path)
@@ -211,24 +182,9 @@ def _diff_claims(receipt: dict, actual: dict) -> list[str]:
 def verify_receipt(receipt: dict, path: str | Path) -> VerifyResult:
     """Re-run `path` and report whether it still produces this receipt.
 
-    EVERY factual field is compared, not just the two digests. That distinction
-    is the whole difference between a receipt and a decorated guess: the digest
-    covers which spans of what type were found, but what a person reads off the
-    page is "7 entities, 3 of them names" — and until this compared the counts
-    too, those numbers could be edited to anything at all and the tool would
-    still print that the document and the result matched. `_claims()` is the
-    single source for both sides so a field cannot be added on one side only.
-
-    The source hash is checked first and on its own, so the answer distinguishes
-    "this is not the document the receipt was issued for" from "same document,
-    the system now sees something different in it". Collapsing them would make a
-    version upgrade look like a swapped file.
-
-    A mismatch is reported with whatever changed in the environment alongside
-    it, because that is almost always the explanation. An environment
-    difference that did NOT change the result is reported too, on the other
-    side of the ledger: reproducing across versions is a stronger result than
-    reproducing on the same one.
+    EVERY factual field is compared, not just the digests. The source hash is checked first and
+    alone so a swapped file is never confused with a version upgrade. Environment differences
+    are reported on both the mismatch and the match path.
     """
     if receipt.get("schema") != RECEIPT_SCHEMA:
         return VerifyResult(
@@ -254,8 +210,7 @@ def verify_receipt(receipt: dict, path: str | Path) -> VerifyResult:
     ]
 
     if actual_sha != receipt["source"]["sha256"]:
-        # Stop here. Recomputing a result for a document the receipt never
-        # described would produce a second mismatch that says nothing.
+        # Stop here; recomputing for a document the receipt never described says nothing.
         return VerifyResult(
             ok=False,
             outcome="source_mismatch",
@@ -267,11 +222,8 @@ def verify_receipt(receipt: dict, path: str | Path) -> VerifyResult:
     try:
         processed = process_for_receipt(path)
     except Exception as e:
-        # The bytes are right but the pipeline cannot read them again. The
-        # ordinary cause is a renamed file -- `detect_source_type` routes on the
-        # extension, so a PDF copied to `.txt` fails to decode. Reported as its
-        # own outcome, because letting this surface as a raw error made a
-        # correct file look like a broken tool.
+        # Bytes match but cannot be re-read (typically a renamed file: `detect_source_type` routes
+        # on extension). Its own outcome, so a correct file does not look like a broken tool.
         return VerifyResult(
             ok=False,
             outcome="recompute_failed",

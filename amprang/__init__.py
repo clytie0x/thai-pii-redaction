@@ -13,13 +13,11 @@ this module exports:
                                        this process)
 
 plus the ``Entity`` dataclass and the result dataclasses above. Everything
-under ``amprang.engine.*`` is the internal engine and carries no stability
-contract between releases.
+under ``amprang.engine.*`` is internal and carries no stability contract.
 
-Privacy note: ``anonymize`` hands the pseudonym→original mapping back to the
-caller. Once it crosses this boundary, keeping it out of logs, disks, and
-telemetry is the caller's responsibility. Prefer ``Session`` when the mapping
-can stay inside your process for the conversation's lifetime.
+Privacy note: ``anonymize`` hands the pseudonym→original mapping to the caller,
+who then owns keeping it out of logs, disks, and telemetry. Prefer ``Session``
+when the mapping can stay inside your process.
 """
 
 from __future__ import annotations
@@ -69,9 +67,7 @@ __all__ = [
     "restore",
 ]
 
-# Re-exported so callers can catch the fail-closed outbound block without
-# importing internals. The engine raises it when a masked result would still
-# carry structured, text-based, or digit-run residual PII.
+# Re-exported so callers can catch the fail-closed outbound block without importing internals.
 LeakBlockedError = StatelessLeakError
 
 
@@ -116,9 +112,8 @@ def anonymize(
     previous call's ``mapping`` as ``prior_mapping`` keeps token continuity
     across calls.
     """
-    # detection_text mirrors detect(): without the length-preserving Thai-digit
-    # normalization a Thai-numeral phone number is never detected — and never
-    # masked (the engine only applies it when the caller passes it in).
+    # detection_text mirrors detect(): without the length-preserving Thai-digit normalization a
+    # Thai-numeral phone number is never detected or masked.
     result = _sanitize_stateless(
         text,
         mode=mode,
@@ -187,8 +182,7 @@ def restore(
 def analyze(text: str) -> dict:
     """PDPA-oriented risk analysis: entity counts, Section 26 signals, and a
     re-identification risk score. The result contains no raw PII values."""
-    # Full clean first — the analyzer is documented for cleaned text, and the
-    # result carries no spans, so offset-shifting normalization is safe here.
+    # Full clean is safe here: the analyzer expects cleaned text and the result carries no spans.
     return _analyze_text(_clean(text).text)
 
 

@@ -1,12 +1,8 @@
 """FastAPI server for the Amprang Thai PII redaction pipeline.
 
-Local API backend for the browser extension (extension/). The extension runs
-on chatgpt.com / claude.ai and calls these endpoints on localhost.
-
-Amprang uses session-namespaced TOKEN-mode pseudonymization so the round-trip
-through an external AI is robust and visually explicit. The token -> original
-map is owned by `amprang.engine.session_service.SessionService` in backend
-memory. HTTP contract v2 returns only strict, data-minimized projections.
+Session-namespaced TOKEN-mode pseudonymization; the token -> original map lives in
+`amprang.engine.session_service.SessionService` in backend memory. HTTP contract v2
+returns only strict, data-minimized projections.
 """
 
 from __future__ import annotations
@@ -141,11 +137,7 @@ def _contain_public_errors(func):
 
 
 def _read_version() -> str:
-    """The installed amprang version, or an honest "0.0.0" outside any install.
-
-    Distribution metadata is the single source once the package is installed
-    (editable or wheel); a stale hardcoded release literal is never acceptable.
-    """
+    """Installed amprang version, or "0.0.0" outside any install (never a hardcoded literal)."""
     try:
         return version("amprang")
     except PackageNotFoundError:
@@ -318,10 +310,8 @@ def _parse_csv_env(value: str | None) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-# Hosted deployments sit behind a reverse proxy whose public hostname must be
-# accepted (a Host of e.g. team08.aiforthai.in.th would otherwise 400). The
-# default stays the exact localhost pair so a from-source backend + extension
-# keeps working byte-for-byte when the env var is unset.
+# AMPRANG_ALLOWED_HOSTS lets a reverse-proxied hosted deployment accept its public Host;
+# unset keeps the exact localhost pair so a from-source backend works unchanged.
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=_parse_csv_env(os.environ.get("AMPRANG_ALLOWED_HOSTS")) or _DEFAULT_ALLOWED_HOSTS,
@@ -445,16 +435,13 @@ async def enforce_http_v2(request: Request, call_next):
 app.add_middleware(_StrictCORSMiddleware)
 
 
-# ── boot token (Horizon-1 #2) ──────────────────────────────────────────
-# Random shared secret read once at import from the environment.
-# Shutdown accepts the secret directly when configured. Session disposal always
-# requires a short-lived target-bound authorization derived from it; an unset
-# secret therefore leaves no disposal grace path. The value is never logged.
-# Tests monkeypatch this module global directly, so checks read it dynamically.
+# ── boot token ─────────────────────────────────────────────────────────
+# Shutdown accepts the secret directly; session disposal needs a short-lived target-bound
+# authorization derived from it (unset secret = no disposal path). Never logged. Tests
+# monkeypatch this global, so checks read it dynamically.
 _BOOT_TOKEN: str | None = os.environ.get("AMPRANG_TOKEN") or None
 
-# Optional v2 data-plane authentication. It is distinct from the control token,
-# read once at process start, and never logged or reflected.
+# Optional v2 data-plane auth, distinct from the control token; never logged or reflected.
 _API_KEY: str | None = os.environ.get("AMPRANG_API_KEY") or None
 _LOGGER = logging.getLogger(__name__)
 
@@ -475,12 +462,7 @@ def _token_required() -> bool:
 
 
 def _boot_token_ok(supplied: str | None) -> bool:
-    """True when the supplied X-Amprang-Token authorizes the request.
-
-    When no boot token is configured, source-development control routes remain
-    open. When one is configured, an exact constant-time header match is
-    required.
-    """
+    """True when X-Amprang-Token authorizes the request; open when no token is configured."""
     if _BOOT_TOKEN is None:
         return True
     if not supplied:
@@ -531,17 +513,13 @@ def root():
 
 
 def _demo_page_path() -> Path:
-    """Resolve the demo playground page, shipped as `amprang.server` package
-    data (amprang/server/demo/playground.html) so an installed wheel serves it."""
+    """Demo page shipped as package data (amprang/server/demo/playground.html)."""
     return Path(__file__).resolve().parent / "demo" / "playground.html"
 
 
 @app.get("/demo", include_in_schema=False)
 def demo_page():
-    """Demo playground — off unless AMPRANG_DEMO=1 (backend stays API-only).
-
-    Read dynamically (not at import) so one process can flip it in tests.
-    """
+    """Demo playground; served only when AMPRANG_DEMO=1, read per request so tests can flip it."""
     if os.environ.get("AMPRANG_DEMO") != "1":
         raise FastAPIHTTPException(status_code=404, detail="Not Found")
     page = _demo_page_path()
@@ -551,12 +529,7 @@ def demo_page():
 
 
 def _schedule_exit() -> None:
-    """Exit the process shortly after the HTTP response is flushed.
-
-    Localhost-only control path used by the desktop shell (Tauri) to stop the
-    bundled sidecar gracefully. A short delay lets the 200 response reach the
-    caller before the interpreter exits.
-    """
+    """Exit the process after a short delay so the 200 response reaches the caller first."""
 
     def _die() -> None:
         time.sleep(0.3)
@@ -579,11 +552,8 @@ def shutdown():
 def _check_audit_dir_writable() -> None:
     """Fail at boot, not with a 500 on first use, when audit logs cannot be written.
 
-    amprang/engine/audit.py has no try/except around its file writes on purpose
-    (a silently lost audit trail is worse than a crash), so on a hosted
-    deployment a bad mount/permission would otherwise surface as a 500 the
-    first time a judge presses the button. Skipped in stdout audit mode
-    (AMPRANG_AUDIT_STDOUT=1), which never touches the filesystem.
+    audit.py deliberately never swallows write errors (a lost audit trail is worse than a
+    crash). Skipped in stdout audit mode (AMPRANG_AUDIT_STDOUT=1), which never touches disk.
     """
     if os.environ.get("AMPRANG_AUDIT_STDOUT") == "1":
         return
@@ -617,8 +587,7 @@ def _now() -> float:
     return time.monotonic()
 
 
-# The single core brain. now_fn is late-bound through the module global so
-# tests that monkeypatch amprang.server.server._now keep working.
+# now_fn is late-bound through the module global so tests monkeypatching _now keep working.
 from amprang.engine.session_service import (
     DisposalAuthorizationError,
     ModeMismatchError,
@@ -861,8 +830,7 @@ def _project_audit_record(record: object) -> dict[str, object] | None:
     return None
 
 
-# Keep the route-specific names stable for direct Python callers and tests
-# while using one exact `{text}` schema.
+# Route-specific aliases stay stable for direct callers; one exact `{text}` schema.
 AnalyzeRequest = TextRequest
 DetectRequest = TextRequest
 GuardRequest = TextRequest
@@ -961,15 +929,13 @@ def sanitize(request: SanitizeRequest):
             "warnings": [],
             "safety": {"status": "pass", "residual_count": 0},
         }
-        # Validation and JSON rendering happen before the one-assignment
-        # publication in SessionService.
+        # Render (and fail) before the one-assignment publish in SessionService.
         response = _render(SanitizeResponse, payload)
         write_process_log(
             session_id=operation_id,
             step="api_sanitize",
             entity_count=len(out.entities),
-            # The process record is written before the one-assignment publish.
-            # "prepared" stays truthful even if the write itself then fails.
+            # Written before the publish, so "prepared" stays truthful if the write fails.
             validation_result="prepared",
             flags=[],
             latency_ms=(time.time() - start) * 1000,
@@ -1047,9 +1013,8 @@ def reidentify(request: ReidentifyRequest):
         step="api_reidentify",
         entity_count=out.replaced_count,
         validation_result="warn" if (leftover_count or warnings) else "pass",
-        # VAULT-4: never log the pseudonym itself. The signed AI for Thai
-        # proposal states the audit log holds only event type, counts and time,
-        # and /api/audit-log echoes `flags` verbatim to any local caller.
+        # Never log the pseudonym itself: the audit log holds only event type, counts and
+        # time, and /api/audit-log echoes `flags` verbatim to any local caller.
         flags=([f"leftover_count:{leftover_count}"] if leftover_count else []),
         latency_ms=(time.time() - start) * 1000,
         output_dir=_get_audit_log_dir(),
@@ -1121,12 +1086,10 @@ def analyze(request: AnalyzeRequest):
 @app.post("/api/analyze-report", response_model=AnalyzeReportResponse)
 @_contain_public_errors
 def analyze_report(request: AnalyzeRequest):
-    """PDPA risk report as a downloadable PDF — the compliance artifact.
+    """PDPA risk report as a downloadable PDF.
 
-    Same assembly as /api/analyze (via report.analyze_text), rendered by
-    amprang/engine/report_pdf.py which draws whitelist fields only; the source
-    text itself never reaches the canvas. The sha256 prefix ties a report to
-    its source without embedding any of it.
+    report_pdf draws whitelist fields only (source text never reaches the canvas); the sha256
+    prefix ties a report to its source without embedding any of it.
     """
     start = time.time()
     _validate_text_input(request.text)
@@ -1156,13 +1119,9 @@ def analyze_report(request: AnalyzeRequest):
 @app.post("/api/detect", response_model=DetectResponse)
 @_contain_public_errors
 def detect(request: DetectRequest):
-    """Detection only — no session, no vault, no persistence.
+    """Detection only: no session, no vault, no persistence (demo live-highlight loop).
 
-    Exists for the demo playground's live-highlight loop: /api/sanitize mints a
-    session per call, which a keystroke-frequency caller would flood. Offsets
-    must stay aligned with the caller's text, so this uses
-    clean_length_preserving (same contract as the redact-pdf path), never
-    clean().
+    Uses clean_length_preserving, never clean(), so offsets stay aligned with the caller's text.
     """
     _validate_text_input(request.text)
     entities = detect_all(clean_length_preserving(request.text))
@@ -1197,11 +1156,8 @@ def detect(request: DetectRequest):
     )
 
 
-# Hosted deployments narrow the provider surface (e.g. AMPRANG_PROVIDERS=
-# "tokenmind") so ollama/claude/fake cannot appear on a public service by
-# accident. Unset keeps the full registry — the local extension/desktop
-# behavior, byte-for-byte. An unknown name fails the boot loudly (the
-# registry's allowlist contract), never silently drops.
+# AMPRANG_PROVIDERS narrows the provider surface for hosted deployments; unset keeps the full
+# registry. An unknown name fails the boot loudly (registry allowlist), never silently drops.
 _PROVIDER_FACTORIES = get_provider_factories(
     allowed=_parse_csv_env(os.environ.get("AMPRANG_PROVIDERS")) or None
 )
@@ -1210,12 +1166,10 @@ _PROVIDER_FACTORIES = get_provider_factories(
 @app.post("/api/roundtrip", response_model=RoundtripResponse)
 @_contain_public_errors
 def roundtrip(request: RoundtripRequest):
-    """mask -> LLM -> restore in one request, on the stateless core.
+    """mask -> LLM -> restore in one request on the stateless core.
 
-    This endpoint consumes the mapping inside the request, does not serialize
-    it, and creates no SessionService entry. Platform logging and persistence
-    acceptance remain separate. In the default local provider registry, `fake`
-    is the offline identity provider used by the demo.
+    The mapping lives only inside the request: never serialized, no SessionService entry.
+    `fake` is the offline identity provider used by the demo.
     """
     start = time.time()
     _validate_text_input(request.text)
@@ -1321,9 +1275,8 @@ def roundtrip(request: RoundtripRequest):
         if invalid_provider_text:
             provider_error_code = "provider_response_invalid"
     if provider_error_code is not None:
-        # The traceback is inspectable until FastAPI renders this exception.
-        # Clear all locals that can reach credentials, input, or the transient
-        # mapping before raising the fixed wire-safe error.
+        # The traceback stays inspectable until FastAPI renders the exception: clear every
+        # local that can reach credentials, input, or the transient mapping before raising.
         provider = None
         factory = None
         request = None
@@ -1390,11 +1343,7 @@ def roundtrip(request: RoundtripRequest):
 @app.post("/api/guard", response_model=GuardResponse)
 @_contain_public_errors
 def guard(request: GuardRequest):
-    """Dependency-light prompt-injection warning scan; blocks nothing.
-
-    See amprang/engine/guard/injection.py: explicit rules plus bounded
-    normalization/intent features in Thai and English; not airtight.
-    """
+    """Dependency-light prompt-injection warning scan; blocks nothing and is not airtight."""
     _validate_text_input(request.text)
     findings = _guard_findings(request.text)
     return validated_payload(
@@ -1411,20 +1360,15 @@ def _first_page_png(pdf_path: str) -> str:
     return base64.b64encode(png).decode("ascii")
 
 
-# Upload cap for /api/redact-pdf; enforced while streaming so an oversize
-# body is rejected before it is fully buffered in memory.
+# Upload cap for /api/redact-pdf, enforced while streaming so an oversize body is never buffered.
 _MAX_PDF_BYTES = 50 * 1024 * 1024
 
-# Work caps for a public deployment: byte size alone does not bound OCR work
-# (a small file can carry hundreds of pages, or one page with an enormous
-# MediaBox that renders to a gigapixel bitmap). Read at import; hosted
-# deployments tune via env, tests monkeypatch the module globals.
+# Work caps: byte size alone does not bound OCR work (hundreds of pages, or one gigapixel
+# MediaBox). Read at import; hosted deployments tune via env, tests monkeypatch the globals.
 _MAX_PDF_PAGES = int(os.environ.get("AMPRANG_PDF_MAX_PAGES", "100"))
 _MAX_PDF_PAGE_POINTS = float(os.environ.get("AMPRANG_PDF_MAX_PAGE_POINTS", "5000"))
 
-# Same idea for the text endpoints: NER/masking work scales with input length
-# and nothing bounded it before. The default is far above any legitimate chat
-# or document paste; hosted deployments tighten it via env.
+# Text work cap: NER/masking scales with length; far above any legitimate paste, tune via env.
 _MAX_TEXT_CHARS = int(os.environ.get("AMPRANG_MAX_TEXT_CHARS", "200000"))
 
 
@@ -1439,8 +1383,7 @@ def _validate_text_input(text: str) -> None:
 def _check_pdf_work_caps(pdf_path: Path) -> None:
     """Reject page-count / page-size bombs before any render or OCR work.
 
-    Raises a fixed v2 error on a cap violation or unreadable document.
-    be opened (with a fixed category — never the parser's exception text).
+    Raises a fixed v2 error (never the parser's text) on a cap violation or unreadable document.
     """
     import pypdfium2 as pdfium
 
@@ -1490,26 +1433,18 @@ async def _strict_pdf_upload(
 @app.post("/api/redact-pdf", response_model=RedactPdfResponse)
 @_contain_public_errors
 def redact_pdf(pdf_file: Annotated[UploadFile, Depends(_strict_pdf_upload)]):
-    """Redact PII in a text-layer or scanned PDF and return the redacted file + previews.
+    """Redact PII in a text-layer or scanned PDF; returns the redacted file + previews.
 
-    Detection runs on a length-preserving normalisation of the raw extracted
-    text (clean_length_preserving — Thai-to-Arabic digit substitution only),
-    not the full clean(), so entity text still aligns with the word bboxes
-    used to draw the black boxes: clean()'s whitespace collapsing, NFC and
-    zero-width stripping all shift char offsets, which would misalign the
-    boxes. The digit substitution is 1:1 in character count, so it's safe here
-    — without it a Thai-numeral phone number (e.g. ๐๘๑-๒๓๔-๕๖๗๘) is never
-    detected and never blacked out. Scanned/image PDFs are routed through
-    OCR (amprang.engine.ingest.ocr_processor) page by page; if the OCR
-    dependencies (requirements-ocr.txt) aren't installed, this returns 503.
+    Detection uses clean_length_preserving (1:1 digit substitution), never clean(), so entity
+    offsets stay aligned with the word bboxes drawn as black boxes, while Thai-numeral phone
+    numbers are still detected. Scanned PDFs go through OCR page by page; no OCR deps -> 503.
     """
     start = time.time()
     if not pdf_file.filename or not pdf_file.filename.lower().endswith(".pdf"):
         raise ContractError("document_invalid")
 
-    # Sync endpoint on purpose (API-1): the heavy OCR/NER/render work must run
-    # in FastAPI's threadpool, not on the event loop. pdf_file.file is the
-    # underlying SpooledTemporaryFile, readable without await.
+    # Sync endpoint on purpose: heavy OCR/NER/render work must run in FastAPI's threadpool, not
+    # on the event loop. pdf_file.file is the SpooledTemporaryFile, readable without await.
     chunks: list[bytes] = []
     size = 0
     while chunk := pdf_file.file.read(64 * 1024):

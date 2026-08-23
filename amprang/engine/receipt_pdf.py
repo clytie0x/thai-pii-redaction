@@ -1,19 +1,9 @@
 """The processing receipt rendered as a PDF slip.
 
-Same whitelist discipline as `report_pdf.py`: this module is handed a receipt
-dict, and nothing in a receipt is copied out of the source document (see
-`receipt.py`), so that half of the PII-free property is structural rather than
-a filter applied here. What it draws is counts, type labels and hashes.
-
-The half that is NOT structural: `purpose` and `controller` are free text the
-operator typed, drawn verbatim. An operator who writes a patient's name into
-`--purpose` has put a name on the slip. The page says so in its own notes
-rather than carrying a blanket claim it cannot honour — the first version
-printed "no personal data value appears in this document" unconditionally,
-directly above whatever the operator had typed.
-
-The slip carries its own verification command. A compliance artifact that can
-be checked but does not say how gets filed and never checked.
+Draws counts, type labels and hashes from the receipt dict, which copies nothing from the source
+document. `purpose` and `controller` are operator free text drawn verbatim, so the slip's notes
+say so rather than claiming it is PII-free unconditionally. The slip carries its own verify
+command.
 """
 
 from __future__ import annotations
@@ -23,9 +13,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-# One label vocabulary for both PDF surfaces. Duplicating the map would let the
-# receipt and the risk report call the same data type two different things in
-# two documents about the same run.
+# One label vocabulary across every PDF surface.
 from amprang.engine.report_pdf import _TYPE_LABELS
 from amprang.engine.thai_pdf_text import draw_text, register_thai_font
 

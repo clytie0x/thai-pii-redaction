@@ -52,9 +52,8 @@ def cmd_sanitize(args):
             f"({result.export_result.byte_size} bytes)"
         )
     else:
-        # The MASKED text (what you'd paste into an external AI), NOT
-        # reverse_result.text — that is the re-identified output, which under
-        # the fake provider is just the original PII echoed back.
+        # The MASKED text, not reverse_result.text (re-identified; under the fake provider that
+        # is the original PII echoed back).
         print("--- Sanitized Output ---")
         print(result.pseudonymized_text)
 
@@ -121,12 +120,8 @@ def cmd_receipt_issue(args):
     """Issue a PDPA มาตรา 39 processing receipt for a file."""
     from amprang.engine.receipt import build_receipt
 
-    # Both destinations are checked before the pipeline runs, not after.
-    # Failing fast costs the user nothing, and it keeps a bad --pdf path from
-    # being discovered once the JSON is already on disk — a run that leaves
-    # half a receipt behind is worse than one that refuses to start. A receipt
-    # is evidence someone kept on purpose, so clobbering one silently would be
-    # the odd behaviour; `sanitize --overwrite` already sets that convention.
+    # Check both destinations before running: a bad --pdf path must not surface once the JSON is
+    # already on disk, and a receipt is kept evidence so it is never clobbered without --overwrite.
     for path in (args.output, args.pdf):
         if not path:
             continue
@@ -152,9 +147,7 @@ def cmd_receipt_issue(args):
         print(f"Failed to issue receipt: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Both artifacts are rendered before either is written. A bad --pdf path
-    # used to surface after the JSON had already landed, so the run ended with
-    # a success line, a raw traceback, and half a receipt on disk.
+    # Render both artifacts before writing either, so a render failure leaves no half receipt.
     blob = json.dumps(receipt, ensure_ascii=False, indent=2)
     pdf_bytes = None
     if args.pdf:
@@ -180,16 +173,13 @@ def cmd_receipt_issue(args):
 
 
 def _print_breach_summary(result, payload):
-    """Short Thai summary: counts only, no PII value, no filename beyond the
-    basenames breach.py already limits itself to. Thai punctuation uses spaces,
-    never Western colons/semicolons (see cmd_receipt_verify's output)."""
+    """Short Thai summary: counts only, no PII value, basenames only; Thai punctuation uses
+    spaces, never colons."""
     print(f"ประเมินแล้ว {result.files_assessed}/{result.files_total} ไฟล์")
     print(f"ประเภทข้อมูลที่พบ {len(payload['types'])} ประเภท")
     subjects = payload["subjects"]
     if subjects["no_strong_identifiers"]:
-        # subjects_min/max are both 0 here only because no strong identifier
-        # (id/passport/phone/email) was found -- that is not the same claim as
-        # "nobody was affected", so the headline says so instead of a 0-0 range.
+        # 0-0 here means "no strong identifier found", not "nobody affected", so say so.
         print("ไม่พบตัวระบุแบบเข้ม จึงประมาณจำนวนเจ้าของข้อมูลไม่ได้")
     else:
         print(f"ประมาณการจำนวนเจ้าของข้อมูลที่ได้รับผลกระทบ {subjects['min']}-{subjects['max']} คน")
@@ -197,17 +187,9 @@ def _print_breach_summary(result, payload):
 
 
 def _scrub_known_paths(message, paths):
-    """Fold every spelling of each caller-given path (as given, resolved, both
-    slash directions, and the repr-escaped forms a real `OSError` embeds --
-    see `amprang.engine.scan_common.path_spellings`) down to its bare basename.
-
-    Mirrors `scan_common.short_reason`'s per-file path scrub, but applied to a
-    corpus-level failure (e.g. a `PermissionError` raised while scanning a
-    directory) that escapes `assess_breach`/`locate_subject` themselves -- any
-    of the given `paths` could be the one embedded in the exception's own
-    message, not just a single file, so every one of them is scrubbed. Uses
-    the SAME helper `short_reason` uses so a fix to the escaping only has to
-    happen once."""
+    """Fold every spelling of each caller-given path down to its basename in a corpus-level
+    failure message. Shares `scan_common.path_spellings` with `short_reason` so the escaping
+    logic lives once."""
     from amprang.engine.scan_common import path_spellings
 
     for raw in paths:
@@ -223,11 +205,8 @@ def cmd_breach_assess(args):
     """Assess a set of files for a PDPA มาตรา 37(4) breach notification."""
     from amprang.engine.breach import NoFilesAssessedError, assess_breach
 
-    # --pdf is checked before the assessment runs, same reasoning as receipt
-    # issue: a run that discovers a missing renderer after already writing the
-    # JSON leaves a half-finished result on disk. `render_breach_pdf` is Task
-    # 3's contract: given the assessment dict and an output path, it writes
-    # the PDF itself (no bytes returned here to write).
+    # Resolve the --pdf renderer before assessing, so a missing renderer never surfaces after
+    # the JSON has landed. The renderer writes the PDF itself (no bytes returned here).
     render_breach_pdf = None
     if args.pdf:
         try:
@@ -252,14 +231,8 @@ def cmd_breach_assess(args):
 
     payload = result.to_json_dict()
 
-    # PDF before JSON: if the PDF write fails, nothing must be left behind.
-    # The reverse order used to let a successful -o JSON survive a failed
-    # --pdf, so exit 1 (a hard failure) still left an artifact on disk. The
-    # mirror image is just as much a half-state: if the PDF write SUCCEEDS
-    # and the JSON write then fails, a complete assessment PDF is left on
-    # disk for a run that reports a hard failure and never mentions it. So on
-    # any OSError here, a PDF this run wrote is deleted (best-effort) before
-    # the error is reported.
+    # PDF before JSON, and on any OSError delete a PDF this run wrote (best-effort): a hard
+    # failure must never leave a complete artifact behind.
     try:
         if render_breach_pdf is not None:
             render_breach_pdf(payload, args.pdf)
@@ -301,9 +274,8 @@ def cmd_breach_assess(args):
 
 
 def _print_dsar_summary(payload):
-    """Short Thai summary: counts only, no subject identifier or document
-    value ever printed. Thai punctuation uses spaces, never colons (same
-    convention as `_print_breach_summary`)."""
+    """Short Thai summary: counts only, no subject identifier or document value; Thai
+    punctuation uses spaces, never colons."""
     files = payload["files"]
     print(f"ตรวจแล้ว {files['assessed']}/{files['total']} ไฟล์")
     matched = files["matched"]
@@ -317,9 +289,7 @@ def _print_dsar_summary(payload):
     for data_type, count in sorted(subject_types.items()):
         print(f"  - {data_type} {count}")
 
-    # weak_only (F2): a NAME-only match is weaker evidence than a
-    # checksum-backed id/passport/phone/email match, so the CLI marks those
-    # rows separately rather than presenting every match identically.
+    # A NAME-only match is weaker evidence than a checksum-backed one, so mark those rows apart.
     weak_only_names = [row["basename"] for row in payload["matched_files"] if row["weak_only"]]
     if weak_only_names:
         print(f"ไฟล์ที่ตรงกันเฉพาะชื่อ (ตัวระบุอ่อน ต้องยืนยันตัวตนเพิ่มเติม) {len(weak_only_names)} ไฟล์")
@@ -328,18 +298,14 @@ def _print_dsar_summary(payload):
 
 
 def cmd_dsar_locate(args):
-    """Locate which files mention a data subject for a PDPA มาตรา 30 access
-    request."""
+    """Locate which files mention a data subject for a PDPA มาตรา 30 access request."""
     from amprang.engine.dsar import (
         NoFilesAssessedError,
         NoSubjectIdentifiersError,
         locate_subject,
     )
 
-    # Same reasoning as breach assess: check --pdf's renderer before running
-    # anything, so a missing renderer never surfaces after the JSON has
-    # already landed. `render_dsar_pdf` is Task 3's contract -- given the
-    # locate-result dict and an output path, it writes the PDF itself.
+    # Resolve the --pdf renderer before running anything, same reasoning as breach assess.
     render_dsar_pdf = None
     if args.pdf:
         try:
@@ -354,11 +320,7 @@ def cmd_dsar_locate(args):
     try:
         result = locate_subject(args.paths, args.subject_file, recursive=args.recursive)
     except NoSubjectIdentifiersError as e:
-        # M1: the raised message names the subject-file PATH (never a line's
-        # content -- see NoSubjectIdentifiersError's own docstring), but this
-        # is the one branch on this argument that skipped the scrub the
-        # sibling failure below already applies. Route it through the same
-        # helper so a directory name never reaches stderr either.
+        # The message names the subject-file path; scrub it so no directory name reaches stderr.
         print(
             f"Error: {_scrub_known_paths(str(e), [args.subject_file])}",
             file=sys.stderr,
@@ -376,10 +338,7 @@ def cmd_dsar_locate(args):
 
     payload = result.to_json_dict()
 
-    # PDF before JSON, same half-state discipline as breach assess: on any
-    # OSError, a PDF this run wrote is deleted (best-effort) before the error
-    # is reported, so a hard failure never leaves a complete artifact behind
-    # unmentioned.
+    # PDF before JSON, same half-state discipline as breach assess.
     try:
         if render_dsar_pdf is not None:
             render_dsar_pdf(payload, args.pdf)
@@ -443,8 +402,7 @@ def cmd_receipt_verify(args):
         print("ยืนยันได้ เอกสารและผลการตรวจตรงกับใบรับรอง")
     else:
         print(f"ยืนยันไม่ได้ ({result.outcome})")
-    # Printed on both paths: on a match these lines are the environment that
-    # differed anyway, which is the more interesting half of a passing check.
+    # Printed on both paths: on a match these are the environment differences, still useful.
     for difference in result.differences:
         print(f"  - {difference}")
 
@@ -453,35 +411,20 @@ def cmd_receipt_verify(args):
 
 
 def _usage_error_exits_one(self, message):
-    """argparse's own default usage-error exit code is 2, but the breach
-    verb's spec assigns 2 to "partial failure" (some files failed) and 1 to
-    "usage error" -- a scripted caller needs to tell "you typed it wrong"
-    apart from "some inputs failed". Bound onto `breach`-tree parsers only
-    (see `main()`), so no other verb's usage-error exit code changes."""
+    """Usage errors exit 1, not argparse's stock 2: breach/dsar reserve exit 2 for "some files
+    failed", so scripted callers can tell the two apart. Bound onto those parser trees only."""
     self.print_usage(sys.stderr)
     self.exit(1, f"{self.prog}: error: {message}\n")
 
 
 class _BreachSubcommandParser(argparse.ArgumentParser):
-    """Used as `parser_class=` for `breach`'s own nested subparsers action, so
-    every parser it constructs (currently just `assess`) exits 1 on a usage
-    error instead of argparse's stock 2. `breach_parser` itself (the outer
-    "breach" level, whose required-subcommand check fires before this class
-    is ever involved) gets the same behavior via a direct instance-level
-    `error` bind in `main()` -- it is built by the shared top-level
-    subparsers action alongside `sanitize`/`report`/`receipt`, so it cannot
-    be given a different `parser_class` without affecting those too."""
+    """`parser_class=` for `breach`'s nested subparsers, so `assess` exits 1 on a usage error."""
 
     error = _usage_error_exits_one
 
 
 class _DsarSubcommandParser(argparse.ArgumentParser):
-    """Used as `parser_class=` for `dsar`'s own nested subparsers action, same
-    technique as `_BreachSubcommandParser` -- every parser it constructs
-    (currently just `locate`) exits 1 on a usage error instead of argparse's
-    stock 2. `dsar_parser` itself gets the same behavior via a direct
-    instance-level `error` bind in `main()`, for the same reason
-    `_BreachSubcommandParser`'s docstring gives for `breach_parser`."""
+    """`parser_class=` for `dsar`'s nested subparsers, so `locate` exits 1 on a usage error."""
 
     error = _usage_error_exits_one
 
@@ -507,8 +450,7 @@ def main():
     report_parser.add_argument("file", help="Input file path")
     report_parser.set_defaults(func=cmd_report)
 
-    # receipt subcommand — issue and verify, deliberately one command apart.
-    # A receipt nobody can check is a claim, not a record.
+    # receipt subcommand — issue and verify; a receipt nobody can check is a claim, not a record.
     receipt_parser = subparsers.add_parser(
         "receipt", help="Issue or verify a PDPA มาตรา 39 processing receipt"
     )
@@ -530,17 +472,12 @@ def main():
     verify_parser.add_argument("file", help="The original file the receipt was issued for")
     verify_parser.set_defaults(func=cmd_receipt_verify)
 
-    # breach subcommand — one verb (assess) today, mirrors receipt's
-    # sub-subparser shape so a future verb has somewhere to go.
+    # breach subcommand — one verb (assess) today, same sub-subparser shape as receipt.
     breach_parser = subparsers.add_parser(
         "breach", help="Assess files for a PDPA มาตรา 37(4) breach notification"
     )
-    # Instance-level bind, not a parser_class swap: breach_parser is built by
-    # the SAME top-level `subparsers` action as sanitize_parser/report_parser/
-    # receipt_parser, so giving it a different class there would change those
-    # too. Binding `error` directly on this one instance leaves every other
-    # verb's parser (including receipt_parser and its own issue/verify
-    # children) on argparse's stock exit-2 usage-error behavior.
+    # Instance-level bind, not a parser_class swap: breach_parser shares the top-level subparsers
+    # action with sanitize/report/receipt, which must keep argparse's stock exit-2 usage errors.
     breach_parser.error = types.MethodType(_usage_error_exits_one, breach_parser)
     breach_sub = breach_parser.add_subparsers(
         dest="breach_command", required=True, parser_class=_BreachSubcommandParser
@@ -561,10 +498,7 @@ def main():
     dsar_parser = subparsers.add_parser(
         "dsar", help="Locate files mentioning a data subject for a PDPA มาตรา 30 access request"
     )
-    # Same instance-level bind as breach_parser, for the same reason (see
-    # _BreachSubcommandParser's docstring): dsar_parser is built by the same
-    # shared top-level subparsers action, so a parser_class swap here would
-    # affect sanitize/report/receipt/breach too.
+    # Same instance-level bind as breach_parser, for the same reason.
     dsar_parser.error = types.MethodType(_usage_error_exits_one, dsar_parser)
     dsar_sub = dsar_parser.add_subparsers(
         dest="dsar_command", required=True, parser_class=_DsarSubcommandParser

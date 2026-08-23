@@ -1,23 +1,9 @@
-"""Thai prompt-injection guard — dependency-light warning signals.
+"""Thai prompt-injection guard — dependency-light, warn-only signals.
 
-The first layer matches explicit injection SHAPES (override phrases, role
-grabs, exfiltration asks, hidden characters, anomalous payloads). A bounded
-second layer canonicalizes security words split into individual letters and
-classifies a small set of high-signal intent/target/context combinations. The
-second layer is deliberately feature-based rather than another broad regex
-pile: it only fires when multiple independent signals agree and includes
-ordinary-language negative controls in the test corpus.
-
-This is still not a complete defense and does not claim to catch novel attacks
-or arbitrary obfuscation. Findings remain warn-only. Exfiltration rules keep
-their strict system/hidden target, while the second layer recovers ambiguous
-"your rules"/"your instructions" only for an explicit retrieval request with
-no ordinary topic qualifier. Likewise, a bare Thai กติกา/ข้อกำหนด override is
-only recovered when followed by a suspicious reset or secret-disclosure
-intent; ordinary rules and orders remain unflagged.
-
-Separate from leak_guard.py (outbound PII) and the PII detectors — prompt
-injection is a different problem and lives in its own module.
+Layer 1 matches explicit injection shapes (override phrases, role grabs, exfiltration asks,
+hidden characters, anomalous payloads). A bounded layer 2 canonicalizes spaced-out security
+words and fires only when several independent intent/target/context signals agree. Not a
+complete defense; precision over recall throughout.
 """
 
 from __future__ import annotations
@@ -26,9 +12,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-# Same zero-width set the text cleaner strips (ingest/text_cleaner.py Stage 3),
-# plus the bidi overrides that visually reorder text. Named here, not
-# redefined with different values.
+# Same zero-width set ingest/text_cleaner.py strips, plus bidi overrides that reorder text.
 _HIDDEN_CHARS = re.compile(
     "["
     "​‌‍﻿"  # zero-width space / ZWNJ / ZWJ / BOM
@@ -37,13 +21,8 @@ _HIDDEN_CHARS = re.compile(
     "]"
 )
 
-# role_hijack needs the jailbreak/no-limits marker to be the ADJACENT object
-# of the role-grab verb, not just floating somewhere nearby in the sentence —
-# a bare "developer mode" or "dan" elsewhere (e.g. a person actually named
-# Dan, or an unrelated mention of developer mode) must not fire just because
-# a role verb also happens to appear in the same message. Each alternative
-# below binds verb and marker directly together, so "act as a mediator ...
-# Dan is on vacation" does not match: the marker never follows "act as".
+# role_hijack binds the jailbreak marker directly to the role verb: a bare "dan" / "developer
+# mode" elsewhere in the message (a person named Dan) must not fire.
 _ROLE_MARKER_EN = r"(?:dan|unrestricted|unfiltered|jailbroken|evil)"
 _ROLE_HIJACK_EN = (
     rf"\bact as (?:an? )?{_ROLE_MARKER_EN}\b"
@@ -57,24 +36,9 @@ _ROLE_HIJACK_TH = (
     r"|สวมบทเป็น.{0,20}(?:ไม่มีข้อจำกัด|ไม่มีขีดจำกัด|ปลดล็อก|ทำได้ทุกอย่าง|dan)"
 )
 
-# exfiltration needs BOTH a broad reveal-family verb AND a QUALIFIED target,
-# within a short window — either alone is common in innocent text: "show the
-# message you got from the vendor" has the verb but an unqualified target;
-# "update the system prompt config file" has the qualified target but no
-# reveal-family verb.
-#
-# Bare possessive "your" is NOT a qualifier — it cannot distinguish "your
-# system prompt" (attack) from "your instructions for the assignment"
-# (innocent). Three rounds of narrowing individual words ("message", "rule",
-# "directive", ...) kept reopening the same false-positive class through a
-# different noun, because the ambiguity lives in "your", not in the noun that
-# follows it. Fix pass 3 removes "your" from the target entirely: the ONLY
-# qualifiers are system/hidden/internal — an unambiguous system referent.
-# "system prompt" is covered by this same pattern (system + prompt), so no
-# separate literal-phrase branch is needed. This is a deliberate
-# precision-over-recall choice for layer 1. The bounded intent layer below may
-# recover those phrases only when an explicit retrieval request is present and
-# an ordinary topic qualifier is absent.
+# exfiltration needs a reveal verb AND a system/hidden-qualified target within a short window.
+# Bare "your" is NOT a qualifier (ambiguous: "your instructions for the assignment"); the
+# intent layer below recovers it only with an explicit retrieval request and no topic qualifier.
 _EXFIL_VERB_EN = (
     r"\b(?:reveal|print|output|repeat|leak|dump|show|tell|give|share|disclose"
     r"|what(?:'s|\s+is)|write\s+out)\b"
@@ -84,28 +48,16 @@ _EXFIL_TARGET_EN = (
     r"(?:prompt|instruction)s?\b"
 )
 _EXFIL_VERB_TH = r"(?:แสดง|เปิดเผย|พิมพ์|บอก|ขอดู|ขอ)"
-# Vault-specific targets only — "คำสั่งระบบ" was dropped (fix pass 5): it's a
-# generic noun phrase ("ระบบนัดหมาย" = appointment system) that fires on
-# ordinary IT/admin Thai, not an unambiguous internal-secret referent. "ค่าจริงทั้งหมด"
-# dropped (fix pass 6): generic finance phrase that fires on ordinary bank Thai.
+# Vault-specific target only: "คำสั่งระบบ" and "ค่าจริงทั้งหมด" fire on ordinary IT/bank Thai.
 _EXFIL_TARGET_TH = r"ตารางจับคู่โทเคน"
 
-# Thai override rule (fix pass 5): Thai has no word boundaries, so a bare
-# substring match on "คำสั่ง"/"กติกา" fires on ordinary nouns that happen to
-# contain it — "คำสั่งซื้อ" (purchase order), "คำสั่งลา" (leave order),
-# "คำสั่งแพทย์" (doctor's order). The attack always refers to the AI's PRIOR
-# instructions, so require an override verb + คำสั่ง/กติกา/ข้อกำหนด
-# IMMEDIATELY followed by a prior-context cue — cue adjacent to the noun, no
-# concrete noun (ซื้อ/ลา/แพทย์/เก่า/...) allowed in between. เก่า/เดิม are
-# deliberately NOT cues: "คำสั่งเก่า" (old medical/standing order) is innocent
-# and ambiguous in a way "ก่อนหน้า"/"ที่ผ่านมา" are not.
+# Thai has no word boundaries: bare "คำสั่ง" matches คำสั่งซื้อ/คำสั่งลา/คำสั่งแพทย์, so require
+# verb + noun IMMEDIATELY followed by a prior-context cue. เก่า/เดิม are deliberately not cues.
 _OVERRIDE_VERB_TH = r"(?:ลืม|ยกเลิก|ไม่ต้องสนใจ|ไม่สนใจ|เพิกเฉยต่อ)"
 _OVERRIDE_NOUN_TH = r"(?:คำสั่ง|กติกา|ข้อกำหนด)"
 _OVERRIDE_CUE_TH = r"(?:ก่อนหน้า|ที่ผ่านมา|ที่ให้ไว้|ที่สั่งไว้|ที่บอกไว้|ทั้งหมด)"
 
-# Rule table: (category, severity, compiled pattern, rationale).
-# Patterns are intentionally readable — this file IS the spec of what layer 1
-# covers, and the reviewer/judge should be able to read the ceiling off it.
+# Rule table: (category, severity, compiled pattern, rationale). Kept readable: this is the spec.
 _RULES: list[tuple[str, str, re.Pattern, str]] = [
     (
         "instruction_override",
@@ -164,9 +116,8 @@ class _Token:
 _TOKEN = re.compile(r"[A-Za-z]+|[\u0E00-\u0E7F]+|\d+")
 _CLAUSE_BOUNDARY = re.compile(r"[.!?;\r\n\u3002\uff01\uff1f\uff1b]")
 
-# Only these security-relevant words may be reconstructed from single-letter
-# runs. A general-purpose de-spacing transform would turn ordinary initialisms
-# or prose into accidental attack phrases.
+# Only these words may be rebuilt from single-letter runs; general de-spacing would turn
+# ordinary initialisms into accidental attack phrases.
 _SPELLABLE_SECURITY_WORDS = frozenset(
     {
         "above",
@@ -327,8 +278,7 @@ def _classify_english_intent(text: str, tokens: list[_Token]) -> list[GuardFindi
     for i in range(len(values) - 1):
         if values[i] != "your" or values[i + 1] not in control_targets:
             continue
-        # A named topic/recipient makes the phrase an ordinary request, e.g.
-        # "your instructions for the assignment" or "rules for the game".
+        # A named topic makes it an ordinary request ("your instructions for the assignment").
         if topic_qualifiers.intersection(values[i + 2 : i + 6]):
             continue
         before_start = max(0, i - 5)
@@ -373,9 +323,7 @@ def _classify_thai_intent(text: str) -> list[GuardFinding]:
             search_from = action_start + len(action)
             for target in ("กติกา", "ข้อกำหนด"):
                 target_search_start = action_start + len(action)
-                # Bound every target lookup to the same 24-character relation
-                # window used below. An unbounded find here rescanned the whole
-                # remaining document for every repeated action cue (quadratic).
+                # Bound the lookup to the 24-char window; an unbounded find was quadratic.
                 target_search_end = min(len(text), action_start + 25 + len(target))
                 target_start = text.find(target, target_search_start, target_search_end)
                 if target_start < 0 or target_start - action_start > 24:
@@ -426,11 +374,7 @@ def _excerpt(text: str, start: int, end: int, pad: int = 12) -> str:
 
 
 def scan_injection(text: str) -> list[GuardFinding]:
-    """Match known injection shapes. Returns findings ordered by position.
-
-    Explicit rules plus bounded normalization/intent features; see the module
-    docstring for the deliberate ceiling. Findings warn and never block.
-    """
+    """Match known injection shapes; returns warn-only findings ordered by position."""
     findings: list[GuardFinding] = []
 
     for m in _HIDDEN_CHARS.finditer(text):

@@ -746,9 +746,7 @@ class ShutdownResponse(StrictDTO):
 
 def validated_payload(model: type[StrictDTO], payload: object) -> dict[str, object]:
     """Validate a server-owned projection before it crosses the adapter."""
-    # Keep text as Python strings until the response renderer. Besides avoiding
-    # an unnecessary serialization pass, this lets the HTTP boundary contain
-    # and scrub an encoding failure in one place.
+    # mode="python" keeps text as str so the HTTP boundary scrubs encoding failures in one place.
     return model.model_validate(payload).model_dump(mode="python")
 
 

@@ -1,20 +1,8 @@
 """Text cleaning and normalization — 4-stage pipeline.
 
-Stages 4/5/6 of the original 7 (broken-word recovery, OCR-error flagging,
-broken-sentence review) were removed after the v2 audit verified the kill-list
-claim against the running code:
-
-- stage 4 tokenized every input through PyThaiNLP and rejoined it, loading the
-  entire Thai word set into memory, yet changed nothing on real Thai text (0/4
-  representative samples) while being free to concatenate tokens the tokenizer
-  had split;
-- stage 5 flagged every word containing B or Z as an "OCR substitution
-  candidate" ("Bob", "Building", "ZIP", "AB1234567" all matched);
-- stage 6's interactive review branch was unreachable — no caller anywhere
-  passes interactive=True, so it always took the auto-skip path.
-
-Nothing consumed any of their outputs (only hasattr assertions in tests), so
-the work was computed and discarded on every request.
+Whitespace, Unicode NFC, Thai digit standardization, post-clean encoding check. Earlier
+PyThaiNLP word recovery / OCR-error flagging / interactive review stages were removed as
+no-ops whose output nothing consumed.
 """
 
 import re
@@ -27,10 +15,6 @@ class CleanResult:
     text: str  # the cleaned text
     post_clean_warnings: list[str]  # any encoding issues found post-clean
 
-
-# ---------------------------------------------------------------------------
-# Stage 3 constants
-# ---------------------------------------------------------------------------
 
 THAI_DIGIT_MAP = {
     "๐": "0",
@@ -46,20 +30,12 @@ THAI_DIGIT_MAP = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
-
 def clean_length_preserving(text: str) -> str:
     """Apply only the normalisations that cannot move a character offset.
 
-    Callers that hold character-indexed side data — the redact-pdf path holds
-    word bboxes keyed by position — cannot use clean(), because whitespace
-    collapsing, NFC and zero-width stripping all shift offsets and the black
-    boxes would land in the wrong place. Thai-to-Arabic digit substitution is
-    1:1, so it is safe here, and without it a Thai-numeral phone number is
-    never detected and never redacted.
+    Callers holding position-keyed side data (redact-pdf word bboxes) cannot use clean():
+    whitespace collapsing / NFC / zero-width stripping shift offsets. Thai-to-Arabic digits
+    are 1:1, and without them a Thai-numeral phone number is never detected.
     """
     for thai, ascii_ch in THAI_DIGIT_MAP.items():
         text = text.replace(thai, ascii_ch)
@@ -72,48 +48,29 @@ def clean(
     interactive: bool = False,
     review_timeout_s: float = 30.0,
 ) -> CleanResult:
-    """
-    Run the text cleaning pipeline: whitespace, Unicode NFC, Thai character
-    standardization, and a post-clean encoding check.
+    """Run the cleaning pipeline; returns CleanResult with cleaned text and encoding warnings.
 
-    Args:
-        text: raw text to clean
-        interactive: accepted and ignored — kept so existing callers and the CLI
-                     flag keep working now that the interactive review stage is
-                     gone (it was never reachable; no caller set it).
-        review_timeout_s: accepted and ignored, same reason.
-
-    Returns:
-        CleanResult with cleaned text and any post-clean encoding warnings
+    interactive / review_timeout_s are accepted and ignored (call-site compatibility).
     """
     del interactive, review_timeout_s  # retained for call-site compatibility
 
-    # ------------------------------------------------------------------
-    # Stage 1: Whitespace normalization
-    # ------------------------------------------------------------------
+    # Stage 1: whitespace normalization
     text = re.sub(r" {2,}", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = "\n".join(line.rstrip() for line in text.split("\n"))
     text = text.strip()
 
-    # ------------------------------------------------------------------
-    # Stage 2: Unicode normalization
-    # ------------------------------------------------------------------
+    # Stage 2: Unicode NFC
     text = unicodedata.normalize("NFC", text)
 
-    # ------------------------------------------------------------------
-    # Stage 3: Character standardization (Thai shape variants)
-    # ------------------------------------------------------------------
+    # Stage 3: Thai digit standardization
     for thai, ascii_ch in THAI_DIGIT_MAP.items():
         text = text.replace(thai, ascii_ch)
 
-    # Remove zero-width chars: zero-width space (U+200B), ZWJ (U+200C),
-    # ZWNJ (U+200D), BOM / zero-width no-break space (U+FEFF)
+    # Remove zero-width chars: U+200B, U+200C, U+200D, U+FEFF
     text = re.sub(r"[​‌‍﻿]", "", text)
 
-    # ------------------------------------------------------------------
-    # Stage 4: Post-clean encoding check
-    # ------------------------------------------------------------------
+    # Stage 4: post-clean encoding check
     post_warnings: list[str] = []
     try:
         text.encode("utf-8")

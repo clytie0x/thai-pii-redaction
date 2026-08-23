@@ -1,7 +1,6 @@
 """Session-namespaced bracket tokens used by token-mode pseudonymization.
 
-Explicit and visually robust for AI round-trips. The Thai label map is the
-single source of truth (moved here from app/server.py during the core unify).
+Explicit and visually robust for AI round-trips. TOKEN_LABEL is the single source of truth.
 """
 
 from __future__ import annotations

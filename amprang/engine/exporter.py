@@ -1,8 +1,4 @@
-"""Export final de-anonymized output to file (Step 8).
-
-Formats: txt, pdf_text
-Pre-export validation checks halt flag, path writability, format support.
-"""
+"""Export final de-anonymized output to file (txt, pdf_text) after pre-export checks."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,14 +30,8 @@ def _check_pre_export(
     fmt: str,
     overwrite: bool,
 ) -> None:
-    """
-    Pre-export validation checks.
-
-    Raises ExportError if:
-    - validation_result.halt is True
-    - fmt not in {"txt", "pdf_text"}
-    - output file exists and overwrite=False
-    - output directory not writable
+    """Raise ExportError on halt flag, unsupported fmt, existing file without overwrite, or an
+    unwritable output directory.
     """
     if validation_result.halt:
         raise ExportError("Export blocked: validation_result.halt=True (layer3 integrity failure)")
@@ -54,10 +44,8 @@ def _check_pre_export(
             f"Output file already exists: {output_path}. Use overwrite=True to replace."
         )
 
-    # Check parent directory writable
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        # Try creating a temp probe
         probe = output_path.parent / ".write_probe"
         probe.touch()
         probe.unlink()
@@ -83,10 +71,7 @@ def _export_pdf_text(text: str, output_path: Path) -> int:
     page_width, page_height = letter
     c.setFont(font_name, 11)
 
-    # Split into lines and insert at fixed positions.
-    # Use a simple layout: start from (50, height - 72) with line height 14,
-    # matching the previous top-down layout (fitz used a top-left origin;
-    # reportlab uses bottom-left, hence the page_height flip).
+    # Simple top-down layout; reportlab uses a bottom-left origin, hence the page_height flip.
     x = 50
     y = page_height - 72
     line_height = 14
@@ -112,35 +97,15 @@ def export(
     fmt: str = "txt",
     overwrite: bool = False,
 ) -> ExportResult:
-    """
-    Export final de-anonymized output to file.
-
-    Pre-export checks:
-    1. validation_result.halt == True → raise ExportError
-    2. output path not writable → raise ExportError
-    3. fmt not in {"txt", "pdf_text"} → raise ExportError
-    4. output file exists and overwrite=False → raise ExportError
-
-    Args:
-        reverse_result: Final text output with real data restored
-        validation_result: 3-layer validation result
-        output_path: Path to write output file
-        fmt: Output format ("txt" or "pdf_text")
-        overwrite: If True, replace existing file; otherwise raise ExportError
-
-    Returns:
-        ExportResult with output path, format, byte size, and warnings
-
-    Raises:
-        ExportError: If any pre-export check fails
+    """Export final de-anonymized output; returns ExportResult. Raises ExportError when a
+    pre-export check fails (see _check_pre_export).
     """
     path = Path(output_path)
     warnings = []
 
-    # Pre-export checks
     _check_pre_export(validation_result, path, fmt, overwrite)
 
-    # Collect Layer 2 warnings (non-halting flags)
+    # Layer 2 warnings are non-halting flags
     if not validation_result.layer2_completeness_ok:
         warnings.extend([f for f in validation_result.flags if "incomplete" in f or "residue" in f])
 

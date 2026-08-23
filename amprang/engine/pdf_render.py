@@ -1,7 +1,4 @@
-"""Render a PDF page to PNG bytes for previews (before/after in /api/redact-pdf).
-
-Permissively licensed: pypdfium2 (Apache/BSD).
-"""
+"""Render a PDF page to PNG bytes for previews (pypdfium2, permissively licensed)."""
 
 from __future__ import annotations
 

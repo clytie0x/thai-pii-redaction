@@ -1,18 +1,8 @@
-"""Aggregate detected PII across a set of files for a PDPA section 37(4) breach
-notification (Track D #2).
+"""Aggregate detected PII across files for a PDPA section 37(4) breach notification.
 
-Reuses the same `detect_all` / `extract` / `clean` / `assess_reid_risk` /
-`scan_section26` every other storefront runs -- this module only aggregates
-their output across files, per file and per corpus. No artifact this module
-produces may carry a personal-data value, an excerpt, a hash of a value, or
-OCR text (a hash of a 13-digit id is brute-forceable, so a hash counts as a
-value here too): `to_json_dict()` holds only counts, type/category names, and
-version strings. The distinct-value sets used to compute those counts are
-plain in-memory `set[str]` and are dropped with the process -- nothing here
-writes them to disk.
-
-Not a legal conclusion: the assessment states what was found and how the
-subject estimate was derived, never that notification is required.
+No artifact here may carry a personal-data value, excerpt, OCR text, or hash of a value (a hash
+of a 13-digit id is brute-forceable): `to_json_dict()` holds only counts, type/category names,
+and version strings. Distinct-value sets live in memory only. Not a legal conclusion.
 """
 
 from __future__ import annotations
@@ -35,11 +25,8 @@ from amprang.engine.scan_common import short_reason as _short_reason
 
 BREACH_SCHEMA = "amprang.breach-assessment/1"
 
-# Strong identifiers: the same canonical value under one of these types can
-# only ever describe one subject, which is what makes subjects_min/max
-# meaningful. NAME is deliberately excluded -- spelling variants and OCR noise
-# inflate a name-based count, so it is reported separately (see
-# `_NAME_TYPE`) and never contributes to the subject bounds.
+# Strong identifiers: one canonical value describes one subject. NAME is deliberately excluded
+# (spelling/OCR variants inflate it) and never contributes to the subject bounds.
 _STRONG_TYPES = ("THAI_ID", "PASSPORT", "PHONE", "EMAIL")
 _NAME_TYPE = "NAME"
 
@@ -85,9 +72,8 @@ class FileAssessment:
 
 @dataclass
 class BreachAssessment:
-    """Corpus-level result of `assess_breach`. `to_json_dict()` is what both
-    the CLI's JSON output and the PDF renderer build from, so the two can
-    never drift apart."""
+    """Corpus-level result of `assess_breach`. Both the CLI JSON and the PDF renderer build from
+    `to_json_dict()`, so the two cannot drift."""
 
     files_total: int
     files_assessed: int
@@ -108,8 +94,7 @@ class BreachAssessment:
     file_rows: list[FileAssessment]
 
     def to_json_dict(self) -> dict:
-        """The JSON-serializable shape. No value, excerpt, or hash appears here --
-        every field is a count, a type/category name, or a version string."""
+        """JSON-serializable shape; no value, excerpt, or hash appears here."""
         return {
             "schema": BREACH_SCHEMA,
             "assessed_at": self.assessed_at,
@@ -153,9 +138,7 @@ class BreachAssessment:
 
 
 def _max_risk_grade(distribution: dict[str, int]) -> str:
-    """The worst grade present. `distribution` is never empty when this is
-    called -- every successfully assessed file contributes exactly one grade,
-    and zero successes raises before this point."""
+    """The worst grade present; `distribution` is never empty here (zero successes raises first)."""
     rank = {"A": 0, "B": 1, "C": 2, "D": 3, "F": 4}
     return max(distribution, key=lambda grade: rank.get(grade, -1))
 
@@ -168,16 +151,9 @@ def assess_breach(
 ) -> BreachAssessment:
     """Assess a set of leaked/affected files for a PDPA section 37(4) notification.
 
-    Each file runs the product's own pipeline (`extract` -> `clean` ->
-    `detect_all`), then contributes to per-file and corpus-level PII counts, a
-    `scan_section26` flag, and a `reid_risk` grade. A file that fails to
-    process is recorded as a `FailedFile` (basename + exception class/short
-    reason -- never its content) and the assessment continues; if every file
-    fails, or none were found, raises `NoFilesAssessedError` rather than
-    returning an assessment that silently covers zero documents.
-
-    Raises:
-        NoFilesAssessedError: no file could be assessed.
+    Each file contributes PII counts, a `scan_section26` flag, and a `reid_risk` grade; a failed
+    file is recorded by basename and the run continues. Raises `NoFilesAssessedError` if no file
+    could be assessed.
     """
     files, skipped_names = _discover_files(paths, recursive=recursive)
     files_total = len(files) + len(skipped_names)
