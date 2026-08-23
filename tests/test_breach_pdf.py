@@ -7,7 +7,7 @@ pdfplumber's character-position sort), a `requires_thai_font` skip guard, and a
 privacy check against fabricated fixture values.
 
 All PII values below are fabricated. The Thai national id is computed to pass
-the real mod-11 checksum (see amprang.engine.detectors.thai_id.is_valid_thai_id)
+the real mod-11 checksum (see amphrang.engine.detectors.thai_id.is_valid_thai_id)
 so the FP detector actually fires on it, matching tests/test_breach_assessment.py.
 """
 
@@ -16,9 +16,9 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 
-from amprang.engine.breach import assess_breach
-from amprang.engine.breach_pdf import render_breach_pdf
-from amprang.engine.thai_pdf_text import register_thai_font
+from amphrang.engine.breach import assess_breach
+from amphrang.engine.breach_pdf import render_breach_pdf
+from amphrang.engine.thai_pdf_text import register_thai_font
 
 requires_thai_font = pytest.mark.skipif(
     register_thai_font() == "Helvetica",

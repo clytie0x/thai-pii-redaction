@@ -7,14 +7,14 @@ from collections.abc import Callable
 import httpx
 import pytest
 
-from amprang.engine import ai_client
-from amprang.engine.ai_client import (
+from amphrang.engine import ai_client
+from amphrang.engine.ai_client import (
     AIProvider,
     ProviderCallError,
     ProviderProtocolError,
     complete_provider_with_retry_policy,
 )
-from amprang.engine.leak_guard import OutboundPolicyError
+from amphrang.engine.leak_guard import OutboundPolicyError
 
 MASKED_TEXT = "synthetic masked text"
 SYSTEM_PROMPT = "synthetic system prompt"

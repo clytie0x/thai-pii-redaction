@@ -4,12 +4,12 @@ Date: 2026-08-21 · Status: accepted
 
 ## Decision
 
-The product is the `amprang` pip package, and only it:
+The product is the `amphrang` pip package, and only it:
 
-- **SDK** — the `amprang` facade (the only semver-stable import surface)
-- **CLI** — the `amprang` command (sanitize/report + PDPA receipt, breach,
+- **SDK** — the `amphrang` facade (the only semver-stable import surface)
+- **CLI** — the `amphrang` command (sanitize/report + PDPA receipt, breach,
   DSAR artifacts)
-- **MCP adapter** — `amprang-mcp` (local stdio; HTTP for a shared endpoint)
+- **MCP adapter** — `amphrang-mcp` (local stdio; HTTP for a shared endpoint)
 - **`[server]` extra** — the local FastAPI app, also the body of the AI for
   Thai deployment
 
@@ -31,7 +31,7 @@ Surface is added when demand pulls it, never ahead of it.
 ## AI for Thai obligation
 
 The platform deployment is an obligation-closing deliverable, not a product
-track: the sibling port pins a released `amprang[server]` version behind its
+track: the sibling port pins a released `amphrang[server]` version behind its
 nginx shell, text-only routes (the PDF route stays closed — measured at 221 s
 and the 6 GiB ceiling for a single OCR page), then freezes to security fixes
 and version bumps.

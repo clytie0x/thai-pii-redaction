@@ -1,5 +1,5 @@
 pypdfium2>=4.30.0
-# 4.4.0 is the floor, not a preference: amprang/engine/thai_pdf_text.py imports
+# 4.4.0 is the floor, not a preference: amphrang/engine/thai_pdf_text.py imports
 # `shapeStr` at module level, and that name first appears in 4.4.0 (4.2 has
 # neither it nor ShapedStr; 4.3 has ShapedStr only). Below this floor the
 # import fails and the whole backend and CLI die on startup. CI never catches

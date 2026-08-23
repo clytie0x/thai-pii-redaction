@@ -12,8 +12,8 @@ COMPOUNDS (ตารางสอบ, เลขครุภัณฑ์), never n
 
 from __future__ import annotations
 
-from amprang.engine.detectors.name_context import detect_name_context
-from amprang.engine.detectors.tb_detector import detect_tb
+from amphrang.engine.detectors.name_context import detect_name_context
+from amphrang.engine.detectors.tb_detector import detect_tb
 
 
 def ctx_names(text: str) -> set[str]:
@@ -205,8 +205,8 @@ def test_record_name_relabels_but_never_uncovers():
     Swapping it for the shorter NAME would drop already-masked characters,
     which recall > precision does not allow.
     """
-    from amprang.engine.detectors.aggregate import _prefer_record_names
-    from amprang.engine.models import Entity
+    from amphrang.engine.detectors.aggregate import _prefer_record_names
+    from amphrang.engine.models import Entity
 
     def entity(data_type: str, start: int, end: int, redact_type: str = "TB") -> Entity:
         return Entity(

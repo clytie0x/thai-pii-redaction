@@ -12,7 +12,7 @@ the tail of a real address stays claimed.
 
 from __future__ import annotations
 
-from amprang.engine.detectors.fp_detector import detect_fp
+from amphrang.engine.detectors.fp_detector import detect_fp
 
 
 def _types_for(text: str, value: str) -> set[str]:
@@ -136,7 +136,7 @@ def test_khet_borikan_is_not_an_admin_area():
 
 
 def _tb_types_for(text: str, value: str) -> set[str]:
-    from amprang.engine.detectors.tb_detector import detect_tb
+    from amphrang.engine.detectors.tb_detector import detect_tb
 
     lo = text.index(value)
     hi = lo + len(value)
@@ -186,7 +186,7 @@ def test_bare_house_number_is_not_a_document_code():
     # number จ.44/2569 is separated from it by its Buddhist-year component.
     # Tested on the chokepoint directly so the pin holds for every engine
     # that routes through it, including the opt-in finetuned one.
-    from amprang.engine.detectors.tb_detector import _apply_cue_upgrades
+    from amphrang.engine.detectors.tb_detector import _apply_cue_upgrades
 
     text = "ส่งของไปที่ 214/9 หมู่ 4 ตำบลบางพลีใหญ่"
     lo = text.index("214/9")
@@ -212,7 +212,7 @@ def test_card_number_labels_are_not_addresses():
     # FP-gf08/FP-lf11: เลขที่บัตร... is a card-number field label — บัตร
     # always means "card", so no real Thai address takes this shape. Pinned
     # on the chokepoint so the rule holds for every engine routing through it.
-    from amprang.engine.detectors.tb_detector import _apply_cue_upgrades
+    from amphrang.engine.detectors.tb_detector import _apply_cue_upgrades
 
     for text, label in (
         ("ชื่อ กฤษณะ โพธิ์ทองคำ เลขที่บัตรประชาชน 7878130827727", "เลขที่บัตรประชาชน"),
@@ -240,7 +240,7 @@ def test_card_digits_keep_their_checksum_types():
 def test_bare_lekthi_and_district_still_cue_addresses():
     # Recall controls: เลขที่ with a real address keeps upgrading, and the
     # issuing district behind the card label keeps its own claim.
-    from amprang.engine.detectors.tb_detector import _apply_cue_upgrades
+    from amphrang.engine.detectors.tb_detector import _apply_cue_upgrades
 
     text = "ส่งเอกสารไปที่เลขที่ 99/1 บางกะปิ"
     lo = text.index("บางกะปิ")
@@ -257,7 +257,7 @@ def test_bare_lekthi_and_district_still_cue_addresses():
 def test_fee_schedule_labels_are_not_organizations():
     # ng42: a tuition-fee category label the CRF tags ORGANIZATION — in
     # surrogate mode it became a fake org name inside a price list.
-    from amprang.engine.detectors.tb_detector import _apply_cue_upgrades
+    from amphrang.engine.detectors.tb_detector import _apply_cue_upgrades
 
     text = "ค่าธรรมเนียมการศึกษาภาคปกติ 18,500 บาทต่อภาคการศึกษา ค่าหอพัก 6,000 บาท"
     for label in ("ค่าธรรมเนียมการศึกษาภาคปกติ", "ค่าหอพัก"):
@@ -269,7 +269,7 @@ def test_fee_schedule_labels_are_not_organizations():
 def test_camp_orgs_survive_the_fee_rejection():
     # ค่าย (a camp / a record label) is the one real-org shape sharing the
     # prefix — the ย lookahead keeps it (finding's counterexamples).
-    from amprang.engine.detectors.tb_detector import _apply_cue_upgrades
+    from amphrang.engine.detectors.tb_detector import _apply_cue_upgrades
 
     for span in ("ค่ายอาสาพัฒนาชนบท", "ค่ายสุรนารี", "ค่ายเพลงจีเอ็มเอ็ม แกรมมี่"):
         text = "รายงานตัวที่" + span + " ตามกำหนดการ"

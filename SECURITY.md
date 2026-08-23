@@ -1,6 +1,6 @@
 # Security policy
 
-Amprang exists to keep Thai personal data out of places it should not go. A
+Amphrang exists to keep Thai personal data out of places it should not go. A
 bug that lets personal data through is a security bug, not a quality bug,
 and is handled as one.
 
@@ -16,8 +16,8 @@ first.
 
 Include, where you can:
 
-- the amprang version (`python -c "import amprang; print(amprang.__version__)"`)
-- the entry point involved (facade, CLI, `amprang serve`, `amprang-mcp`)
+- the amphrang version (`python -c "import amphrang; print(amphrang.__version__)"`)
+- the entry point involved (facade, CLI, `amphrang serve`, `amphrang-mcp`)
 - a minimal input that reproduces it, with real personal data replaced by
   synthetic values
 
@@ -35,9 +35,9 @@ In scope — please report:
   result, a server log, a response body, disk
 - `restore`/`reidentify` producing original values from a session or handle
   the caller should not hold
-- authentication or binding bypass in `amprang serve` or
-  `amprang-mcp --transport http` (loopback-only default, `--allow-remote`
-  gating, `AMPRANG_MCP_KEYS`)
+- authentication or binding bypass in `amphrang serve` or
+  `amphrang-mcp --transport http` (loopback-only default, `--allow-remote`
+  gating, `AMPHRANG_MCP_KEYS`)
 - anything that makes the library contact the network, read, or write
   outside what the call asked for
 
@@ -48,7 +48,7 @@ Out of scope — open a regular issue instead:
   the fail-closed guard was also bypassed)
 - false positives
 - issues in optional third-party engines (PaddleOCR, WangchanBERTa) that do
-  not change amprang's own guarantees
+  not change amphrang's own guarantees
 
 ## Supported versions
 

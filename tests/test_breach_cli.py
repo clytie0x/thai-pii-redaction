@@ -6,7 +6,7 @@ rather than going through argparse.
 
 Synthetic Thai national ids are the same checksum-valid values used in
 tests/test_breach_assessment.py (verified against
-amprang.engine.detectors.thai_id.is_valid_thai_id), reused here so the FP
+amphrang.engine.detectors.thai_id.is_valid_thai_id), reused here so the FP
 detector actually fires the same way.
 """
 
@@ -30,7 +30,7 @@ def _args(paths, output=None, pdf=None, recursive=False):
 
 
 def test_breach_assess_happy_path_prints_thai_summary(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "f1.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     (tmp_path / "f2.txt").write_text(f"เลขบัตรประชาชน {ID_B}", encoding="utf-8")
@@ -51,7 +51,7 @@ def test_breach_assess_reports_skipped_non_txt_pdf_files(tmp_path, capsys):
     """A directory holding files outside *.txt/*.pdf must surface them by
     basename in both the JSON and stdout, not drop them silently, and
     assessed + skipped + failed must add up to total."""
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "good.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     (tmp_path / "leak.docx").write_text("unsupported extension", encoding="utf-8")
@@ -76,7 +76,7 @@ def test_breach_assess_no_strong_identifiers_reports_distinct_wording(tmp_path, 
     """A corpus with detected NAME entities but no THAI_ID/PASSPORT/PHONE/EMAIL
     must not print a literal 0-0 headline -- that reads as "nobody affected"
     in a legal-evidence document when the tool plainly found named people."""
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "f1.txt").write_text("นาย สมชาย ใจดี พบกับ นาย มานะ ดีใจ ที่ร้านอาหาร", encoding="utf-8")
 
@@ -94,7 +94,7 @@ def test_breach_assess_partial_failure_exits_2_and_lists_failed_basenames(tmp_pa
     plain one -- both are checked, plus `tmp_path.name` (unaffected by the
     doubling), so this test cannot pass vacuously the way a plain
     `str(tmp_path) not in captured.err` check could."""
-    from amprang import cli
+    from amphrang import cli
 
     good = tmp_path / "good.txt"
     good.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
@@ -115,7 +115,7 @@ def test_breach_assess_partial_failure_exits_2_and_lists_failed_basenames(tmp_pa
 
 
 def test_breach_assess_empty_input_exits_1(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
@@ -129,7 +129,7 @@ def test_breach_assess_empty_input_exits_1(tmp_path, capsys):
 
 
 def test_breach_assess_output_file_has_expected_top_level_keys(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "f1.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     outfile = tmp_path / "report.json"
@@ -158,12 +158,12 @@ def test_breach_assess_output_file_has_expected_top_level_keys(tmp_path, capsys)
 
 
 def test_breach_assess_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
-    """Now that amprang/engine/breach_pdf.py (Task 3) exists, --pdf is a happy
+    """Now that amphrang/engine/breach_pdf.py (Task 3) exists, --pdf is a happy
     path: both the PDF and the JSON land on disk and the CLI reports both.
     (Until Task 3 landed, this same scenario exercised the "renderer missing"
     error path -- see test_breach_assess_pdf_flag_fails_clearly_when_missing
     below for that failure mode, faked via a monkeypatched absent module.)"""
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "f1.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     outfile = tmp_path / "report.json"
@@ -182,13 +182,13 @@ def test_breach_assess_pdf_flag_writes_pdf_and_json(tmp_path, capsys):
 
 
 def test_breach_assess_pdf_flag_fails_clearly_when_missing(tmp_path, monkeypatch, capsys):
-    """If amprang.engine.breach_pdf cannot be imported at all (e.g. a broken
+    """If amphrang.engine.breach_pdf cannot be imported at all (e.g. a broken
     install), --pdf must fail with a clear message rather than an ImportError
     traceback, and must not leave a JSON file behind from the same run (both
     destinations are checked before anything is written)."""
-    from amprang import cli
+    from amphrang import cli
 
-    monkeypatch.setitem(sys.modules, "amprang.engine.breach_pdf", None)
+    monkeypatch.setitem(sys.modules, "amphrang.engine.breach_pdf", None)
 
     (tmp_path / "f1.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     outfile = tmp_path / "report.json"
@@ -207,7 +207,7 @@ def test_breach_assess_pdf_flag_fails_clearly_when_missing(tmp_path, monkeypatch
 def test_breach_assess_pdf_write_failure_leaves_no_json_behind(tmp_path, monkeypatch, capsys):
     """--pdf is rendered/written before -o's JSON, so a failed PDF write must
     not leave the JSON behind despite the run exiting 1."""
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "f1.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     outfile = tmp_path / "report.json"
@@ -216,9 +216,9 @@ def test_breach_assess_pdf_write_failure_leaves_no_json_behind(tmp_path, monkeyp
     def _boom(payload, path):
         raise OSError("disk full")
 
-    fake_module = types.ModuleType("amprang.engine.breach_pdf")
+    fake_module = types.ModuleType("amphrang.engine.breach_pdf")
     fake_module.render_breach_pdf = _boom
-    monkeypatch.setitem(sys.modules, "amprang.engine.breach_pdf", fake_module)
+    monkeypatch.setitem(sys.modules, "amphrang.engine.breach_pdf", fake_module)
 
     with pytest.raises(SystemExit) as exc:
         cli.cmd_breach_assess(_args([str(tmp_path)], output=str(outfile), pdf=str(pdf_file)))
@@ -236,7 +236,7 @@ def test_breach_assess_json_write_failure_deletes_the_pdf_already_written(tmp_pa
     that does not exist). The run must not leave a complete assessment PDF on
     disk for a run that reports a hard failure and never mentions it -- the
     PDF this run wrote is deleted, and the error message says so."""
-    from amprang import cli
+    from amphrang import cli
 
     (tmp_path / "f1.txt").write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
     pdf_file = tmp_path / "report.pdf"
@@ -265,7 +265,7 @@ def test_breach_assess_top_level_failure_scrubs_input_paths(tmp_path, monkeypatc
     backslash-escapes a Windows path, so a hand-built message using plain
     str-formatting (as this test previously did) never exercises that
     doubled-backslash form and can pass even when the scrub misses it."""
-    from amprang import cli
+    from amphrang import cli
 
     bad_dir = tmp_path / "case-folder"
     bad_dir.mkdir()
@@ -273,7 +273,7 @@ def test_breach_assess_top_level_failure_scrubs_input_paths(tmp_path, monkeypatc
     def _boom(paths, *, recursive=False):
         Path(paths[0]).read_bytes()  # a directory -- raises a real OSError
 
-    monkeypatch.setattr("amprang.engine.breach.assess_breach", _boom)
+    monkeypatch.setattr("amphrang.engine.breach.assess_breach", _boom)
 
     with pytest.raises(SystemExit) as exc:
         cli.cmd_breach_assess(_args([str(bad_dir)]))
@@ -296,7 +296,7 @@ def test_breach_assess_no_paths_exits_1_through_real_main(monkeypatch, capsys):
     """A usage error (no paths given) must exit 1, not argparse's own default
     of 2 -- 2 is reserved for partial failure so a scripted caller can tell
     the two apart."""
-    from amprang import cli
+    from amphrang import cli
 
     monkeypatch.setattr(sys, "argv", ["cli", "breach", "assess"])
 
@@ -306,7 +306,7 @@ def test_breach_assess_no_paths_exits_1_through_real_main(monkeypatch, capsys):
 
 
 def test_breach_assess_partial_failure_exits_2_through_real_main(tmp_path, monkeypatch, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     good = tmp_path / "good.txt"
     good.write_text(f"เลขบัตรประชาชน {ID_A}", encoding="utf-8")
@@ -326,7 +326,7 @@ def test_breach_alone_with_no_verb_exits_1_through_real_main(monkeypatch, capsys
     required-subcommand check fires before assess_parser is ever reached),
     distinct from the `breach assess`-with-no-paths case above (the INNER
     level)."""
-    from amprang import cli
+    from amphrang import cli
 
     monkeypatch.setattr(sys, "argv", ["cli", "breach"])
 
@@ -339,7 +339,7 @@ def test_receipt_alone_with_no_verb_still_exits_2_through_real_main(monkeypatch,
     """Guard against the breach-only exit-code remap leaking onto other
     verbs: `receipt` (built from the same top-level subparsers action as
     `breach`) must keep argparse's stock exit 2 for this exact usage error."""
-    from amprang import cli
+    from amphrang import cli
 
     monkeypatch.setattr(sys, "argv", ["cli", "receipt"])
 

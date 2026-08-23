@@ -6,8 +6,8 @@ below exist to keep it that way.
 ## Setup
 
 ```
-git clone https://github.com/Teerapat-Vatpitak/amprang
-cd amprang
+git clone https://github.com/Teerapat-Vatpitak/amphrang
+cd amphrang
 python -m venv .venv
 # Windows: .venv\Scripts\activate   macOS/Linux: source .venv/bin/activate
 pip install -e ".[server,mcp]" ruff pytest
@@ -55,9 +55,9 @@ proposing anything structural.
    in any encoding.
 4. **Fail closed.** A masked result that still carries residual PII raises.
    Never add a path that returns a partial mask silently.
-5. **Only the `amprang` facade is semver-stable.** `amprang.engine.*` and
-   `amprang.server.*` are internal and may change without notice. Changing
-   anything exported from `amprang/__init__.py` needs a CHANGELOG entry
+5. **Only the `amphrang` facade is semver-stable.** `amphrang.engine.*` and
+   `amphrang.server.*` are internal and may change without notice. Changing
+   anything exported from `amphrang/__init__.py` needs a CHANGELOG entry
    under the right heading.
 
 If a change needs to bend one of these, open an issue first and propose a new

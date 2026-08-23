@@ -32,6 +32,6 @@ If this PR touches detection, masking, the vault, or the leak guard:
 
 If this PR touches the benchmark:
 
-- [ ] Gold-set edits follow [docs/benchmark-contribution.md](https://github.com/Teerapat-Vatpitak/amprang/blob/main/docs/benchmark-contribution.md) — version bumped in `benchmark/gold.py`, record added under `docs/decisions/`
+- [ ] Gold-set edits follow [docs/benchmark-contribution.md](https://github.com/Teerapat-Vatpitak/amphrang/blob/main/docs/benchmark-contribution.md) — version bumped in `benchmark/gold.py`, record added under `docs/decisions/`
 - [ ] Any accuracy number quoted here comes from a report the reviewer can regenerate, and states corpus size
 - [ ] The blind set was not opened, decrypted, printed, or scored outside the documented protocol

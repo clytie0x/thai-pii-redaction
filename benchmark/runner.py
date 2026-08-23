@@ -29,8 +29,8 @@ def predict_samples(
     first load. Reset it (and restore afterward) so switching engines in one
     process actually takes effect and the benchmark never pollutes other tests.
     """
-    from amprang.engine.detectors import tb_detector
-    from amprang.engine.detectors.aggregate import detect_all
+    from amphrang.engine.detectors import tb_detector
+    from amphrang.engine.detectors.aggregate import detect_all
 
     env_by_engine = {
         "crf": "thainer",
@@ -40,9 +40,9 @@ def predict_samples(
     }
     if engine not in env_by_engine:
         raise ValueError(f"unknown engine {engine!r}; supported: {sorted(env_by_engine)}")
-    prev_env = os.environ.get("AMPRANG_NER_ENGINE")
+    prev_env = os.environ.get("AMPHRANG_NER_ENGINE")
     prev_ner = dict(tb_detector._ner_cache)
-    os.environ["AMPRANG_NER_ENGINE"] = env_by_engine[engine]
+    os.environ["AMPHRANG_NER_ENGINE"] = env_by_engine[engine]
     tb_detector._ner_cache = {}
     try:
         return [
@@ -55,15 +55,15 @@ def predict_samples(
     finally:
         tb_detector._ner_cache = prev_ner
         if prev_env is None:
-            os.environ.pop("AMPRANG_NER_ENGINE", None)
+            os.environ.pop("AMPHRANG_NER_ENGINE", None)
         else:
-            os.environ["AMPRANG_NER_ENGINE"] = prev_env
+            os.environ["AMPHRANG_NER_ENGINE"] = prev_env
 
 
 def run_benchmark(
     engine: str = "crf", seed: int = 42, size: int = 200, source: str = "synthetic"
 ) -> dict:
-    from amprang.engine.detectors.tb_detector import NERChunkDiagnostics
+    from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics
 
     samples = load_gold() if source == "gold" else build_corpus(seed=seed, size=size)
     diagnostics = NERChunkDiagnostics()
@@ -139,19 +139,19 @@ def run_strategy_comparison(source: str = "synthetic", seed: int = 42, size: int
     singleton, as run_benchmark does), composes union/route per sample, and
     scores all four with the shared scorer.
     """
-    from amprang.engine.detectors import tb_detector
-    from amprang.engine.detectors.aggregate import detect_all
+    from amphrang.engine.detectors import tb_detector
+    from amphrang.engine.detectors.aggregate import detect_all
 
     from .strategies import route_entities, union_entities
 
     samples = load_gold() if source == "gold" else build_corpus(seed=seed, size=size)
 
     def _run(engine_env: str):
-        from amprang.engine.detectors.tb_detector import NERChunkDiagnostics
+        from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics
 
         prev_ner = dict(tb_detector._ner_cache)
-        prev_env = os.environ.get("AMPRANG_NER_ENGINE")
-        os.environ["AMPRANG_NER_ENGINE"] = engine_env
+        prev_env = os.environ.get("AMPHRANG_NER_ENGINE")
+        os.environ["AMPHRANG_NER_ENGINE"] = engine_env
         tb_detector._ner_cache = {}
         diagnostics = NERChunkDiagnostics()
         try:
@@ -162,9 +162,9 @@ def run_strategy_comparison(source: str = "synthetic", seed: int = 42, size: int
         finally:
             tb_detector._ner_cache = prev_ner
             if prev_env is None:
-                os.environ.pop("AMPRANG_NER_ENGINE", None)
+                os.environ.pop("AMPHRANG_NER_ENGINE", None)
             else:
-                os.environ["AMPRANG_NER_ENGINE"] = prev_env
+                os.environ["AMPHRANG_NER_ENGINE"] = prev_env
 
     crf_ents, crf_chunks = _run("thainer")
     wcb_ents, wcb_chunks = _run("wangchanberta")

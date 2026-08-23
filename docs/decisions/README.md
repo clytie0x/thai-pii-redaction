@@ -4,12 +4,12 @@ Why the code looks the way it does. Each record is dated by when the decision
 was made and is not continuously maintained; a newer record wins over an older
 one where they overlap.
 
-## amprang (current)
+## amphrang (current)
 
 | Record | What it decides |
 |---|---|
 | [0001 Python owns all logic](0001-python-owns-all-logic.md) | Every piece of product logic lives in Python in this repository; HTML/JS is presentation only. |
-| [0002 Product surface](0002-product-surface.md) | The product is the `amprang` pip package (SDK, CLI, MCP adapter, `[server]` extra) and nothing else until a real user signal exists. |
+| [0002 Product surface](0002-product-surface.md) | The product is the `amphrang` pip package (SDK, CLI, MCP adapter, `[server]` extra) and nothing else until a real user signal exists. |
 | [0003 MCP tools never return the mapping](0003-mcp-no-plaintext-mapping.md) | `sanitize` returns an opaque session handle; the pseudonym→original mapping never enters a tool result. |
 
 ## Inherited from thai-pii-redaction
@@ -17,8 +17,8 @@ one where they overlap.
 These were written in the predecessor repository before the extraction and
 are kept because the engine, benchmark, and PDPA tooling they describe carried
 over unchanged. File paths inside them use the predecessor's layout:
-`pii_redactor/` is now `amprang/engine/`, `app/` is `amprang/server/`,
-`ai_guard.py` is `amprang/cli.py`. Anything about Desktop, Extension, Office,
+`pii_redactor/` is now `amphrang/engine/`, `app/` is `amphrang/server/`,
+`ai_guard.py` is `amphrang/cli.py`. Anything about Desktop, Extension, Office,
 native broker, or store distribution is out of scope here (see 0002).
 
 | Record | What it decides |

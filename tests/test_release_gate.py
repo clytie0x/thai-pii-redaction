@@ -37,7 +37,7 @@ def test_happy_path_returns_no_problems_and_the_notes(repo):
     cr = _load()
     assert cr.check(repo, expect_tag="v1.2.3", require_dated=True) == []
     notes = cr.release_notes(repo, "1.2.3")
-    assert notes.startswith("## amprang 1.2.3 (2026-09-01)")
+    assert notes.startswith("## amphrang 1.2.3 (2026-09-01)")
     assert "- a thing" in notes
     assert "older" not in notes
 
@@ -77,11 +77,11 @@ def test_real_repo_passes_the_ci_form_of_the_gate():
 def test_main_exit_codes(repo, capsys):
     cr = _load()
     assert cr.main(["--root", str(repo), "--expect-tag", "v1.2.3", "--notes"]) == 0
-    assert "## amprang 1.2.3" in capsys.readouterr().out
+    assert "## amphrang 1.2.3" in capsys.readouterr().out
     assert cr.main(["--root", str(repo), "--expect-tag", "v0.0.1"]) == 1
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="exec bit irrelevant on Windows")
 def test_script_has_no_third_party_imports():
     text = (ROOT / "scripts" / "check_release.py").read_text(encoding="utf-8")
-    assert "import amprang" not in text and "import requests" not in text
+    assert "import amphrang" not in text and "import requests" not in text

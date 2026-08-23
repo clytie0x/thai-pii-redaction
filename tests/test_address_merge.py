@@ -12,8 +12,8 @@ every word of it becomes a document-wide redaction fragment.
 
 from __future__ import annotations
 
-from amprang.engine.detectors.aggregate import detect_all, merge_address_spans
-from amprang.engine.detectors.fp_detector import detect_fp
+from amphrang.engine.detectors.aggregate import detect_all, merge_address_spans
+from amphrang.engine.detectors.fp_detector import detect_fp
 
 
 def _spans_of(ents, dtype):

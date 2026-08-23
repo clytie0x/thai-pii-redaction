@@ -22,10 +22,10 @@ body:
     attributes:
       label: Where it happens
       options:
-        - Python facade (import amprang)
-        - CLI (amprang ...)
-        - amprang serve / local API (/api/*)
-        - amprang-mcp
+        - Python facade (import amphrang)
+        - CLI (amphrang ...)
+        - amphrang serve / local API (/api/*)
+        - amphrang-mcp
         - Install or packaging (pip)
         - Benchmark tooling
       default: 0
@@ -51,8 +51,8 @@ body:
       label: Steps to reproduce
       description: Include the exact command where one applies. Windows callers should show whether PYTHONUTF8=1 was set.
       placeholder: |
-        1. pip install "amprang[server]"
-        2. amprang serve --no-browser
+        1. pip install "amphrang[server]"
+        2. amphrang serve --no-browser
         3. POST /api/sanitize with ...
     validations:
       required: true

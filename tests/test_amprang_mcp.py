@@ -13,7 +13,7 @@ import pytest
 
 pytest.importorskip("mcp")
 
-from amprang.mcp import _CallerKeyMiddleware, build_server, main, parse_caller_keys
+from amphrang.mcp import _CallerKeyMiddleware, build_server, main, parse_caller_keys
 
 THAI_NUMERAL_SAMPLE = "เบอร์โทรผมคือ ๐๘๑-๒๓๔-๕๖๗๘"
 
@@ -197,14 +197,14 @@ def test_caller_key_middleware_passes_non_http_scopes_through():
 
 
 def test_main_refuses_http_transport_without_any_keys(monkeypatch):
-    monkeypatch.delenv("AMPRANG_MCP_KEYS", raising=False)
-    monkeypatch.setattr(sys, "argv", ["amprang-mcp", "--transport", "http"])
-    with pytest.raises(SystemExit, match="AMPRANG_MCP_KEYS"):
+    monkeypatch.delenv("AMPHRANG_MCP_KEYS", raising=False)
+    monkeypatch.setattr(sys, "argv", ["amphrang-mcp", "--transport", "http"])
+    with pytest.raises(SystemExit, match="AMPHRANG_MCP_KEYS"):
         main()
 
 
 def test_main_refuses_http_transport_with_malformed_keys(monkeypatch):
-    monkeypatch.setenv("AMPRANG_MCP_KEYS", "not-valid")
-    monkeypatch.setattr(sys, "argv", ["amprang-mcp", "--transport", "http"])
+    monkeypatch.setenv("AMPHRANG_MCP_KEYS", "not-valid")
+    monkeypatch.setattr(sys, "argv", ["amphrang-mcp", "--transport", "http"])
     with pytest.raises(SystemExit, match="malformed"):
         main()

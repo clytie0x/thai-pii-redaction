@@ -5,7 +5,7 @@ import pytest
 
 def test_ai_guard_sanitize_nonexistent_file(tmp_path, capsys):
     """sanitize with nonexistent file should print error and exit 1."""
-    from amprang import cli
+    from amphrang import cli
 
     args_ns = type(
         "Args",
@@ -25,7 +25,7 @@ def test_ai_guard_sanitize_nonexistent_file(tmp_path, capsys):
 
 def test_ai_guard_sanitize_real_file(tmp_path, capsys):
     """sanitize with real file should print session id."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("Hello world.", encoding="utf-8")
@@ -48,7 +48,7 @@ def test_ai_guard_sanitize_real_file(tmp_path, capsys):
 
 def test_ai_guard_sanitize_with_output(tmp_path, capsys):
     """sanitize with --output writes file."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("Call 081-234-5678 please.", encoding="utf-8")
@@ -71,7 +71,7 @@ def test_ai_guard_sanitize_with_output(tmp_path, capsys):
 
 def test_ai_guard_report_nonexistent_file(tmp_path, capsys):
     """report with nonexistent file should exit 1."""
-    from amprang import cli
+    from amphrang import cli
 
     args_ns = type("Args", (), {"file": str(tmp_path / "nonexistent.txt")})()
     with pytest.raises(SystemExit) as exc:
@@ -81,7 +81,7 @@ def test_ai_guard_report_nonexistent_file(tmp_path, capsys):
 
 def test_ai_guard_report_real_file(tmp_path, capsys):
     """report with real file should print risk report."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("Call 081-234-5678 please.", encoding="utf-8")
@@ -95,7 +95,7 @@ def test_ai_guard_report_real_file(tmp_path, capsys):
 def test_ai_guard_argparse_help():
     """Parser should include both subcommands."""
 
-    from amprang import cli
+    from amphrang import cli
 
     # Verify the module has the required functions
     assert hasattr(cli, "main")
@@ -105,7 +105,7 @@ def test_ai_guard_argparse_help():
 
 def test_ai_guard_sanitize_with_phone_number(tmp_path, capsys):
     """sanitize should detect and anonymize Thai phone numbers."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("My phone: 081-234-5678", encoding="utf-8")
@@ -130,7 +130,7 @@ def test_ai_guard_sanitize_with_phone_number(tmp_path, capsys):
 
 def test_ai_guard_report_with_multiple_entities(tmp_path, capsys):
     """report should count multiple entity types."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     # Include both phone and date patterns
@@ -149,7 +149,7 @@ def test_ai_guard_sanitize_prints_masked_not_original(tmp_path, capsys):
     """Without --output, the 'Sanitized Output' section must show the MASKED
     text, not the re-identified original (which equals the input under the
     fake LLM). It used to print reverse_result.text — the un-redacted original."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("โทร 081-234-5678 นะครับ", encoding="utf-8")
@@ -174,8 +174,8 @@ def test_ai_guard_sanitize_prints_masked_not_original(tmp_path, capsys):
 def test_ai_guard_report_dedupes_fp_tb_overlap(tmp_path, capsys, monkeypatch):
     """report must not double-count a value matched by BOTH detectors (an ID or
     phone the NER also tags). It used to sum len(fp)+len(tb) with no dedupe."""
-    import amprang.engine.detectors.tb_detector as tbd
-    from amprang import cli
+    import amphrang.engine.detectors.tb_detector as tbd
+    from amphrang import cli
 
     phone = "081-234-5678"
 
@@ -185,7 +185,7 @@ def test_ai_guard_report_dedupes_fp_tb_overlap(tmp_path, capsys, monkeypatch):
             return [(phone, "B-PERSON")] if phone in chunk else []
 
     monkeypatch.setitem(tbd._ner_cache, "thainer", FakeNER())
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "thainer")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "thainer")
 
     infile = tmp_path / "input.txt"
     infile.write_text(f"เบอร์ {phone}", encoding="utf-8")
@@ -197,7 +197,7 @@ def test_ai_guard_report_dedupes_fp_tb_overlap(tmp_path, capsys, monkeypatch):
 
 def test_ai_guard_report_no_pii(tmp_path, capsys):
     """report with clean text should show Low risk."""
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("This is just some random text with no PII.", encoding="utf-8")
@@ -209,7 +209,7 @@ def test_ai_guard_report_no_pii(tmp_path, capsys):
 
 
 def test_ai_guard_report_uses_the_canonical_fallback_detector(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     infile = tmp_path / "input.txt"
     infile.write_text("รหัส 1234567890123", encoding="utf-8")

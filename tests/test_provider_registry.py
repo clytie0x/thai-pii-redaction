@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from amprang.engine.ai_client import PROVIDER_FACTORIES, get_provider_factories
+from amphrang.engine.ai_client import PROVIDER_FACTORIES, get_provider_factories
 
 EXPECTED = {"fake", "pathumma", "tokenmind", "ollama", "claude"}
 
@@ -37,7 +37,7 @@ class TestCanonicalRegistry:
 class TestSurfaceRegistries:
     def test_server_surface_has_tokenmind(self):
         pytest.importorskip("fastapi")
-        from amprang.server import server
+        from amphrang.server import server
 
         assert "tokenmind" in server._PROVIDER_FACTORIES
         assert set(server._PROVIDER_FACTORIES) == EXPECTED
@@ -46,7 +46,7 @@ class TestSurfaceRegistries:
 class TestPlaygroundDropdown:
     def _options(self):
         html = (
-            Path(__file__).parent.parent / "amprang" / "server" / "demo" / "playground.html"
+            Path(__file__).parent.parent / "amphrang" / "server" / "demo" / "playground.html"
         ).read_text(encoding="utf-8")
         select = re.search(r'<select id="provider">(.*?)</select>', html, re.DOTALL)
         assert select, "provider dropdown missing"

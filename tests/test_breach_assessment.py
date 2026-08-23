@@ -1,4 +1,4 @@
-"""Tests for amprang/engine/breach.py — the breach-assessment aggregation core.
+"""Tests for amphrang/engine/breach.py — the breach-assessment aggregation core.
 
 All PII values below are fabricated. Thai national ids are computed to pass
 the real mod-11 checksum (see `is_valid_thai_id`) so the FP detector actually
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from amprang.engine.breach import (
+from amphrang.engine.breach import (
     NoFilesAssessedError,
     _canonical_value,
     _max_risk_grade,
@@ -19,7 +19,7 @@ from amprang.engine.breach import (
 )
 
 # Fabricated, checksum-valid Thai national ids (verified against
-# amprang.engine.detectors.thai_id.is_valid_thai_id).
+# amphrang.engine.detectors.thai_id.is_valid_thai_id).
 ID_A = "1101700230708"
 ID_B = "1101200012345"
 ID_C = "3101999123453"

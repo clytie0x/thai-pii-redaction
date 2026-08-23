@@ -18,10 +18,10 @@ rejection.
 
 from __future__ import annotations
 
-from amprang.engine.detectors.fp_detector import detect_fp
-from amprang.engine.detectors.name_context import detect_name_context
-from amprang.engine.detectors.tb_detector import detect_tb
-from amprang.engine.models import Entity
+from amphrang.engine.detectors.fp_detector import detect_fp
+from amphrang.engine.detectors.name_context import detect_name_context
+from amphrang.engine.detectors.tb_detector import detect_tb
+from amphrang.engine.models import Entity
 
 
 def _fp_types(text: str, value: str) -> set[str]:
@@ -41,14 +41,14 @@ def _ctx_names(text: str) -> set[str]:
 
 
 def _upgrade(text: str, value: str) -> str | None:
-    from amprang.engine.detectors.tb_detector import _apply_cue_upgrades
+    from amphrang.engine.detectors.tb_detector import _apply_cue_upgrades
 
     lo = text.index(value)
     return _apply_cue_upgrades(text, lo, lo + len(value), "DATE")
 
 
 def _hygiene_texts(text: str, value: str) -> list[str]:
-    from amprang.engine.detectors.tb_detector import _name_hygiene
+    from amphrang.engine.detectors.tb_detector import _name_hygiene
 
     lo = text.index(value)
     return [text[s:e] for s, e in _name_hygiene(text, lo, lo + len(value))]
@@ -177,7 +177,7 @@ FN10_TEXT = (
 def test_payment_chat_name_survives_the_glued_account_number():
     # The whole chain: CRF glues the digits into the PERSON span, the FP
     # BANK_ACCOUNT overlaps its tail, and dedupe_spans dropped the WHOLE name.
-    from amprang.engine.detectors.aggregate import detect_all
+    from amphrang.engine.detectors.aggregate import detect_all
 
     ents = detect_all(FN10_TEXT)
     lo = FN10_TEXT.index("ศักดิ์ชัย รุ่งอรุณ")
@@ -202,7 +202,7 @@ def test_name_hygiene_splits_at_digit_runs():
 
 
 def _conjunction(text: str, seed_value: str) -> set[str]:
-    from amprang.engine.detectors.name_context import detect_conjunction_names
+    from amphrang.engine.detectors.name_context import detect_conjunction_names
 
     lo = text.index(seed_value)
     seed = Entity(

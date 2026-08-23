@@ -14,7 +14,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    from amprang.server.server import app
+    from amphrang.server.server import app
 
     DEPS = True
 except ImportError:
@@ -27,12 +27,12 @@ pytestmark = pytest.mark.skipif(not DEPS, reason="fastapi not installed")
 def client():
     from fastapi.testclient import TestClient
 
-    from amprang.server.server import app
+    from amphrang.server.server import app
 
     return TestClient(
         app,
         base_url="http://localhost",
-        headers={"X-Amprang-Contract-Version": "2"},
+        headers={"X-Amphrang-Contract-Version": "2"},
     )
 
 
@@ -141,8 +141,8 @@ def _mixed_pdf_with_image_pii(tmp_path) -> bytes:
 def test_redact_pdf_mixed_page_redacts_image_only_pii(client, tmp_path, monkeypatch):
     import pypdfium2 as pdfium
 
-    from amprang.engine.ingest import ocr_processor
-    from amprang.engine.models import WordBbox
+    from amphrang.engine.ingest import ocr_processor
+    from amphrang.engine.models import WordBbox
 
     phone = "081-234-5678"
     words = [WordBbox(text=phone, page=1, x=50, y=72, width=80, height=12)]
@@ -187,8 +187,8 @@ def test_redact_pdf_mixed_page_redacts_image_only_pii(client, tmp_path, monkeypa
 
 
 def test_redact_pdf_hybrid_ocr_path(client, tmp_path, monkeypatch):
-    from amprang.engine.ingest import ocr_processor
-    from amprang.engine.models import WordBbox
+    from amphrang.engine.ingest import ocr_processor
+    from amphrang.engine.models import WordBbox
 
     pdf = _scanned_pdf(tmp_path)
     fake_words = [
@@ -227,9 +227,9 @@ def test_redact_pdf_hybrid_ocr_path(client, tmp_path, monkeypatch):
 
 
 def test_redact_pdf_marks_review_in_the_audit_log(client, tmp_path, monkeypatch):
-    from amprang.engine.ingest import ocr_processor
-    from amprang.engine.models import WordBbox
-    from amprang.server import server
+    from amphrang.engine.ingest import ocr_processor
+    from amphrang.engine.models import WordBbox
+    from amphrang.server import server
 
     pdf = _scanned_pdf(tmp_path)
     fake_words = [WordBbox(text="ข้อความ", page=1, x=50, y=72, width=80, height=12)]
@@ -266,8 +266,8 @@ def test_redact_pdf_marks_review_in_the_audit_log(client, tmp_path, monkeypatch)
 def test_redact_pdf_hybrid_keeps_false_negative_scan_in_the_real_path(
     client, tmp_path, monkeypatch
 ):
-    from amprang.engine.ingest import ocr_processor
-    from amprang.engine.models import WordBbox
+    from amphrang.engine.ingest import ocr_processor
+    from amphrang.engine.models import WordBbox
 
     pdf = _scanned_pdf(tmp_path)
     misread_id = "1312271506581"
@@ -304,7 +304,7 @@ def test_redact_pdf_hybrid_keeps_false_negative_scan_in_the_real_path(
 
 
 def test_redact_pdf_hybrid_without_ocr_deps_returns_503(client, tmp_path, monkeypatch):
-    from amprang.engine.ingest import ocr_processor
+    from amphrang.engine.ingest import ocr_processor
 
     pdf = _scanned_pdf(tmp_path)
     monkeypatch.setattr(ocr_processor, "is_available", lambda: False)
@@ -321,7 +321,7 @@ def test_redact_pdf_counts_each_unreadable_image_page_for_review(
     tmp_path,
     monkeypatch,
 ):
-    from amprang.engine.ingest import ocr_processor
+    from amphrang.engine.ingest import ocr_processor
 
     pdf = _two_page_text_pdf_with_logos(tmp_path)
     monkeypatch.setattr(ocr_processor, "is_available", lambda: False)
@@ -340,11 +340,11 @@ def test_redact_pdf_counts_each_unreadable_image_page_for_review(
 
 # --- Coverage-gap regression: adjacent word bboxes of one entity must merge
 # into a single padded rectangle so no glyph fragment is exposed between them
-# (see amprang/engine/redactor.py REDACT_PAD_PT / REDACT_MERGE_GAP_PT). ---
+# (see amphrang/engine/redactor.py REDACT_PAD_PT / REDACT_MERGE_GAP_PT). ---
 
 
 def test_merge_boxes_joins_adjacent_same_line_words():
-    from amprang.engine.redactor import _merge_boxes
+    from amphrang.engine.redactor import _merge_boxes
 
     # Two word boxes on the same line ("สมชาย" then "ใจดี"), 3.4pt apart --
     # simulates a multi-word NAME entity. They must collapse into one box.
@@ -361,7 +361,7 @@ def test_merge_boxes_joins_adjacent_same_line_words():
 
 
 def test_merge_boxes_keeps_separate_lines_apart():
-    from amprang.engine.redactor import _merge_boxes
+    from amphrang.engine.redactor import _merge_boxes
 
     # Two boxes on different lines (large vertical gap) must NOT merge.
     boxes = [
@@ -373,7 +373,7 @@ def test_merge_boxes_keeps_separate_lines_apart():
 
 
 def test_merge_boxes_keeps_far_apart_words_on_same_line_separate():
-    from amprang.engine.redactor import _merge_boxes
+    from amphrang.engine.redactor import _merge_boxes
 
     # Same line, but far apart horizontally (beyond REDACT_MERGE_GAP_PT) --
     # e.g. an unredacted label sitting between two redacted words.
@@ -392,12 +392,12 @@ def test_redact_pdf_covers_full_padded_span_on_sample_document():
     ("สมชาย ใจดี") and the full multi-word ADDRESS line, with no exposed pixel
     gap between the words that make up a single entity/line.
     """
-    from amprang.engine.detectors.fp_detector import detect_fp
-    from amprang.engine.detectors.tb_detector import detect_tb
-    from amprang.engine.ingest.file_detector import detect_source_type
-    from amprang.engine.ingest.text_extractor import extract
-    from amprang.engine.models import EntityRegistry
-    from amprang.engine.redactor import (
+    from amphrang.engine.detectors.fp_detector import detect_fp
+    from amphrang.engine.detectors.tb_detector import detect_tb
+    from amphrang.engine.ingest.file_detector import detect_source_type
+    from amphrang.engine.ingest.text_extractor import extract
+    from amphrang.engine.models import EntityRegistry
+    from amphrang.engine.redactor import (
         REDACT_PAD_PT,
         REDACT_PAD_TOP_PT,
         _map_entities_to_boxes,
@@ -481,12 +481,12 @@ def test_redact_pdf_blacks_out_sample_house_number_pixels(tmp_path):
     """The actual rendered output must contain no visible pixels from house no. 99."""
     import pypdfium2 as pdfium
 
-    from amprang.engine.detectors.fp_detector import detect_fp
-    from amprang.engine.detectors.tb_detector import detect_tb
-    from amprang.engine.ingest.file_detector import detect_source_type
-    from amprang.engine.ingest.text_extractor import extract
-    from amprang.engine.models import EntityRegistry
-    from amprang.engine.redactor import RENDER_SCALE, redact_pdf
+    from amphrang.engine.detectors.fp_detector import detect_fp
+    from amphrang.engine.detectors.tb_detector import detect_tb
+    from amphrang.engine.ingest.file_detector import detect_source_type
+    from amphrang.engine.ingest.text_extractor import extract
+    from amphrang.engine.models import EntityRegistry
+    from amphrang.engine.redactor import RENDER_SCALE, redact_pdf
 
     sample = Path(__file__).resolve().parents[1] / "examples" / "sample_document.pdf"
     if not sample.exists():
@@ -559,7 +559,7 @@ def test_redact_pdf_covers_thai_numeral_phone_number(client, tmp_path):
     Regression test for the half-fix in 2aeb219: that commit made detection
     run on a length-preserving normalisation of the extracted text (Thai
     digits -> Arabic digits), so a Thai-numeral phone number is now detected.
-    But amprang/engine/redactor.py still matched WordBbox.text (raw PDF text,
+    But amphrang/engine/redactor.py still matched WordBbox.text (raw PDF text,
     still Thai digits) against redact_fragments (the normalised entity text,
     Arabic digits) via plain substring comparison -- neither side is a
     substring of the other, so nothing matched and no black box was drawn.
@@ -573,9 +573,9 @@ def test_redact_pdf_covers_thai_numeral_phone_number(client, tmp_path):
     np = pytest.importorskip("numpy")
     import pypdfium2 as pdfium
 
-    from amprang.engine.ingest.file_detector import detect_source_type
-    from amprang.engine.ingest.text_extractor import extract
-    from amprang.engine.redactor import RENDER_SCALE
+    from amphrang.engine.ingest.file_detector import detect_source_type
+    from amphrang.engine.ingest.text_extractor import extract
+    from amphrang.engine.redactor import RENDER_SCALE
 
     pdf_path = _pdf_with_thai_numeral_phone(tmp_path)
     pdf_bytes = pdf_path.read_bytes()
@@ -627,12 +627,12 @@ def test_redact_pdf_no_visible_ink_above_boxes(tmp_path):
     np = pytest.importorskip("numpy")
     import pypdfium2 as pdfium
 
-    from amprang.engine.detectors.fp_detector import detect_fp
-    from amprang.engine.detectors.tb_detector import detect_tb
-    from amprang.engine.ingest.file_detector import detect_source_type
-    from amprang.engine.ingest.text_extractor import extract
-    from amprang.engine.models import EntityRegistry
-    from amprang.engine.redactor import REDACT_PAD_TOP_PT, RENDER_SCALE, redact_pdf
+    from amphrang.engine.detectors.fp_detector import detect_fp
+    from amphrang.engine.detectors.tb_detector import detect_tb
+    from amphrang.engine.ingest.file_detector import detect_source_type
+    from amphrang.engine.ingest.text_extractor import extract
+    from amphrang.engine.models import EntityRegistry
+    from amphrang.engine.redactor import REDACT_PAD_TOP_PT, RENDER_SCALE, redact_pdf
 
     sample = Path(__file__).resolve().parents[1] / "examples" / "sample_document.pdf"
     if not sample.exists():

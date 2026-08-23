@@ -4,11 +4,11 @@ from dataclasses import asdict
 
 import pytest
 
-import amprang.engine.session_service as svc_mod
-import amprang.engine.stateless as stateless_mod
-from amprang.engine.detectors.ner_failure import NERFailureError
-from amprang.engine.models import Entity
-from amprang.engine.session_service import (
+import amphrang.engine.session_service as svc_mod
+import amphrang.engine.stateless as stateless_mod
+from amphrang.engine.detectors.ner_failure import NERFailureError
+from amphrang.engine.models import Entity
+from amphrang.engine.session_service import (
     ModeMismatchError,
     OutboundLeakError,
     RestoreTransactionError,
@@ -17,7 +17,7 @@ from amprang.engine.session_service import (
     SessionExpiredError,
     SessionService,
 )
-from amprang.engine.session_vault import SessionVault, VaultTimeoutError
+from amphrang.engine.session_vault import SessionVault, VaultTimeoutError
 
 
 def _svc(**kw):
@@ -85,7 +85,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("amprang.engine.", "amprang.server.")):
+        if module.startswith(("amphrang.engine.", "amphrang.server.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -206,7 +206,7 @@ def test_cap_evicts_oldest_and_clears_vault():
     clock["t"] += 1
     import time as _time
 
-    from amprang.engine.models import VaultRecord
+    from amphrang.engine.models import VaultRecord
 
     s1.vault.write(
         VaultRecord(
@@ -251,7 +251,7 @@ def test_drop_blocks_while_restore_is_in_flight(monkeypatch):
     import threading
     import time as _time
 
-    import amprang.engine.session_service as svc_mod
+    import amphrang.engine.session_service as svc_mod
 
     svc, _ = _svc()
     out = svc.sanitize("เบอร์ 081-234-5678")
@@ -354,12 +354,12 @@ def test_sanitize_registry_accumulates_across_turns():
 
 def test_sanitize_raises_outbound_leak_when_fp_survives(monkeypatch):
     """If a checksum-valid FP value somehow survives anonymization, refuse."""
-    import amprang.engine.session_service as svc_mod
+    import amphrang.engine.session_service as svc_mod
 
     svc, _ = _svc()
 
     def fake_scan(text, vault):
-        from amprang.engine.models import Entity
+        from amphrang.engine.models import Entity
 
         return [
             Entity(
@@ -568,9 +568,9 @@ def test_failed_sanitize_does_not_consume_the_next_token_ordinal(monkeypatch):
 
 
 def test_token_nonce_exhaustion_is_value_free_and_does_not_publish(monkeypatch):
-    import amprang.engine.anonymizer.anonymizer as anonymizer_mod
-    import amprang.engine.session_vault as vault_mod
-    from amprang.engine.anonymizer.token_generator import generate_token
+    import amphrang.engine.anonymizer.anonymizer as anonymizer_mod
+    import amphrang.engine.session_vault as vault_mod
+    from amphrang.engine.anonymizer.token_generator import generate_token
 
     namespace = "a" * 25
     nonce = "n" * 20
@@ -796,12 +796,12 @@ def test_drop_cannot_run_while_transaction_state_is_staged():
 
 
 def test_sanitize_tb_leak_blocks_without_publishing_session(monkeypatch):
-    import amprang.engine.session_service as svc_mod
+    import amphrang.engine.session_service as svc_mod
 
     svc, _ = _svc()
 
     def fake_scan(text, vault):
-        from amprang.engine.models import Entity
+        from amphrang.engine.models import Entity
 
         return [
             Entity(
@@ -843,7 +843,7 @@ def test_detector_independent_residual_preserves_existing_session(monkeypatch):
     assert _service_state(svc) == before
 
 
-from amprang.engine.session_service import RestoreOutcome
+from amphrang.engine.session_service import RestoreOutcome
 
 
 def test_restore_round_trip_token_mode():
@@ -917,7 +917,7 @@ def test_restore_warns_on_ai_generated_text_based_pii():
 
 
 def test_restore_warning_discards_retained_validator_exception(monkeypatch):
-    from amprang.engine.output_validator import PIILeakError as OutputPIILeakError
+    from amphrang.engine.output_validator import PIILeakError as OutputPIILeakError
 
     svc, _ = _svc()
     out = svc.sanitize("เบอร์ 081-234-5678")
@@ -957,7 +957,7 @@ def test_replacement_session_cannot_silently_restore_an_old_token_to_new_data(
     lifecycle,
     replacement_mode,
 ):
-    import amprang.engine.session_vault as vault_mod
+    import amphrang.engine.session_vault as vault_mod
 
     namespaces = iter(("a" * 25, "f" * 25))
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: next(namespaces))
@@ -1003,8 +1003,8 @@ def test_replacement_session_cannot_silently_restore_an_old_token_to_new_data(
 def test_foreign_future_token_cannot_become_trusted_later_in_same_session(
     monkeypatch,
 ):
-    import amprang.engine.anonymizer.anonymizer as anonymizer_mod
-    from amprang.engine.anonymizer.token_generator import generate_token
+    import amphrang.engine.anonymizer.anonymizer as anonymizer_mod
+    from amphrang.engine.anonymizer.token_generator import generate_token
 
     nonces = iter(("a" * 20, "b" * 20))
     monkeypatch.setattr(anonymizer_mod, "new_token_nonce", lambda: next(nonces))

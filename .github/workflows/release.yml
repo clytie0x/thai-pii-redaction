@@ -4,7 +4,7 @@ name: release
 # dated `## [X.Y.Z] - YYYY-MM-DD` section. The gate refuses anything else
 # before a wheel is built; the wheel goes to PyPI via trusted publishing
 # (no API token in secrets — configure the publisher once on pypi.org:
-# project `amprang`, owner `Teerapat-Vatpitak`, repo `amprang`, workflow
+# project `amphrang`, owner `Teerapat-Vatpitak`, repo `amphrang`, workflow
 # `release.yml`, environment `pypi`), and a GitHub Release carries the same
 # sdist + wheel with the CHANGELOG section as its body.
 
@@ -46,13 +46,13 @@ jobs:
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --quiet dist/*.whl
           /tmp/smoke/bin/python - <<'EOF'
-          import importlib.resources as r, amprang
-          assert amprang.__version__ == open("VERSION").read().strip(), amprang.__version__
-          fonts = r.files("amprang.engine") / "fonts"
+          import importlib.resources as r, amphrang
+          assert amphrang.__version__ == open("VERSION").read().strip(), amphrang.__version__
+          fonts = r.files("amphrang.engine") / "fonts"
           assert (fonts / "IBMPlexSansThaiLooped-Regular.ttf").is_file()
           assert (fonts / "OFL-1.1.txt").is_file()
-          assert (r.files("amprang.server") / "demo" / "playground.html").is_file()
-          print("wheel ok", amprang.__version__)
+          assert (r.files("amphrang.server") / "demo" / "playground.html").is_file()
+          print("wheel ok", amphrang.__version__)
           EOF
       - run: python scripts/check_release.py --expect-tag "$GITHUB_REF_NAME" --notes > dist/RELEASE_NOTES.md
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/amprang/
+      url: https://pypi.org/project/amphrang/
     permissions:
       id-token: write # OIDC trusted publishing
     steps:
@@ -92,6 +92,6 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "amprang ${GITHUB_REF_NAME#v}" \
+            --title "amphrang ${GITHUB_REF_NAME#v}" \
             --notes-file dist/RELEASE_NOTES.md \
             dist/*.whl dist/*.tar.gz

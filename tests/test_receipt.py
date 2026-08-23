@@ -18,15 +18,15 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 
-from amprang.engine.models import Entity
-from amprang.engine.receipt import (
+from amphrang.engine.models import Entity
+from amphrang.engine.receipt import (
     RECEIPT_SCHEMA,
     build_receipt,
     result_digest,
     verify_receipt,
 )
-from amprang.engine.receipt_pdf import render_receipt
-from amprang.engine.thai_pdf_text import register_thai_font
+from amphrang.engine.receipt_pdf import render_receipt
+from amphrang.engine.thai_pdf_text import register_thai_font
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -103,7 +103,7 @@ def test_digest_survives_hash_randomization_across_processes(tmp_path):
 
     script = (
         "import sys;"
-        "from amprang.engine.receipt import process_for_receipt, result_digest;"
+        "from amphrang.engine.receipt import process_for_receipt, result_digest;"
         "print(result_digest(process_for_receipt(sys.argv[1]).entities))"
     )
     digests = []
@@ -164,7 +164,7 @@ def test_receipt_records_source_result_and_environment(tmp_path):
 
 
 def test_receipt_counts_agree_with_the_detection_it_describes(tmp_path):
-    from amprang.engine.receipt import process_for_receipt
+    from amphrang.engine.receipt import process_for_receipt
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -344,7 +344,7 @@ def test_verify_refuses_an_unknown_schema(tmp_path):
     doc.write_text(PII_TEXT, encoding="utf-8")
 
     receipt = build_receipt(doc)
-    receipt["schema"] = "amprang.processing-receipt/99"
+    receipt["schema"] = "amphrang.processing-receipt/99"
 
     result = verify_receipt(receipt, doc)
     assert not result.ok
@@ -422,7 +422,7 @@ def test_receipt_pdf_does_not_promise_more_than_it_can_keep(tmp_path):
 
 
 def test_cli_issue_then_verify_round_trip(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -442,7 +442,7 @@ def test_cli_issue_then_verify_round_trip(tmp_path, capsys):
 
 
 def test_cli_issue_writes_a_pdf_when_asked(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -456,7 +456,7 @@ def test_cli_issue_writes_a_pdf_when_asked(tmp_path, capsys):
 
 
 def test_cli_issue_prints_the_receipt_when_no_output_given(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -469,7 +469,7 @@ def test_cli_issue_prints_the_receipt_when_no_output_given(tmp_path, capsys):
 
 def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
     """A receipt is evidence someone kept; clobbering one needs to be asked for."""
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -485,7 +485,7 @@ def test_cli_issue_refuses_to_overwrite_an_existing_receipt(tmp_path):
 
 
 def test_cli_issue_overwrites_when_asked(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -506,7 +506,7 @@ def test_cli_issue_overwrites_when_asked(tmp_path, capsys):
 
 
 def test_cli_verify_exits_1_when_the_document_does_not_match(tmp_path, capsys):
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -524,7 +524,7 @@ def test_cli_verify_exits_1_when_the_document_does_not_match(tmp_path, capsys):
 def test_cli_issue_writes_nothing_when_a_destination_is_unwritable(tmp_path, capsys):
     """A bad --pdf path used to surface only after the JSON had landed, so the
     run ended with a success line, a raw traceback, and half a receipt."""
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -546,7 +546,7 @@ def test_cli_issue_writes_nothing_when_a_destination_is_unwritable(tmp_path, cap
 
 
 def test_cli_verify_exits_1_on_an_unreadable_receipt(tmp_path):
-    from amprang import cli
+    from amphrang import cli
 
     doc = tmp_path / "doc.txt"
     doc.write_text(PII_TEXT, encoding="utf-8")
@@ -559,7 +559,7 @@ def test_cli_verify_exits_1_on_an_unreadable_receipt(tmp_path):
 
 
 def test_cli_parser_exposes_receipt_issue_and_verify():
-    from amprang import cli
+    from amphrang import cli
 
     assert hasattr(cli, "cmd_receipt_issue")
     assert hasattr(cli, "cmd_receipt_verify")

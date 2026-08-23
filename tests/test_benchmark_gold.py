@@ -9,7 +9,7 @@ import re
 
 import pytest
 
-from amprang.engine.detectors.fp_detector import detect_fp
+from amphrang.engine.detectors.fp_detector import detect_fp
 from benchmark.gold import (
     _DATA_PATH,
     GOLD_DOCS,

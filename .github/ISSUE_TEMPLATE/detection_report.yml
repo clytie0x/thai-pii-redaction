@@ -61,10 +61,10 @@ body:
     attributes:
       label: Where you saw it
       options:
-        - Python facade (import amprang)
-        - CLI (amprang ...)
-        - amprang serve / local API (/api/*)
-        - amprang-mcp
+        - Python facade (import amphrang)
+        - CLI (amphrang ...)
+        - amphrang serve / local API (/api/*)
+        - amphrang-mcp
         - Benchmark run
       default: 0
     validations:

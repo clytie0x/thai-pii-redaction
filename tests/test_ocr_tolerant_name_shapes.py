@@ -23,12 +23,12 @@ from __future__ import annotations
 
 import uuid
 
-import amprang.engine.detectors.tb_detector as tbd
-from amprang.engine.detectors.name_context import (
+import amphrang.engine.detectors.tb_detector as tbd
+from amphrang.engine.detectors.name_context import (
     detect_name_context,
     detect_parallel_record_names,
 )
-from amprang.engine.models import Entity
+from amphrang.engine.models import Entity
 
 
 def _names(text):
@@ -182,7 +182,7 @@ class LineOnlyNER:
 
 def _with_engine(monkeypatch, engine):
     monkeypatch.setitem(tbd._ner_cache, "thainer", engine)
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "thainer")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "thainer")
 
 
 def test_isolated_line_retry_admits_a_glued_name_line(monkeypatch):

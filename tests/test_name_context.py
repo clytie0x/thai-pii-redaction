@@ -1,7 +1,7 @@
 """Context-based name detection (recall booster) + integration with detect_tb."""
 
-from amprang.engine.detectors.name_context import detect_name_context
-from amprang.engine.detectors.tb_detector import detect_tb
+from amphrang.engine.detectors.name_context import detect_name_context
+from amphrang.engine.detectors.tb_detector import detect_tb
 
 
 def _names(text, fn=detect_name_context):

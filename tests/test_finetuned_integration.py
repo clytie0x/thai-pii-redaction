@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from amprang.engine.detectors import tb_detector
-from amprang.engine.detectors.aggregate import detect_all
-from amprang.engine.models import Entity
+from amphrang.engine.detectors import tb_detector
+from amphrang.engine.detectors.aggregate import detect_all
+from amphrang.engine.models import Entity
 
 
 class _FakeEngine:
@@ -25,7 +25,7 @@ class _FakeEngine:
 
 @pytest.fixture()
 def finetuned_env(monkeypatch):
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
 
     def install(spans):
         monkeypatch.setitem(tb_detector._finetuned_cache, "engine", _FakeEngine(spans))
@@ -35,10 +35,10 @@ def finetuned_env(monkeypatch):
 
 
 def test_selected_but_absent_engine_fails_loud(monkeypatch):
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "finetuned")
-    monkeypatch.delenv("AMPRANG_FINETUNED_MODEL_DIR", raising=False)
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
+    monkeypatch.delenv("AMPHRANG_FINETUNED_MODEL_DIR", raising=False)
     tb_detector._finetuned_cache.pop("engine", None)
-    from amprang.engine.detectors.finetuned_engine import FinetunedEngineUnavailableError
+    from amphrang.engine.detectors.finetuned_engine import FinetunedEngineUnavailableError
 
     with pytest.raises(FinetunedEngineUnavailableError):
         tb_detector.detect_tb("นายสมชาย ใจดี")
@@ -95,7 +95,7 @@ def test_student_id_relabel_past_fp_dedupe(finetuned_env):
 
 
 def test_relabel_is_noop_for_crf(monkeypatch):
-    monkeypatch.delenv("AMPRANG_NER_ENGINE", raising=False)
+    monkeypatch.delenv("AMPHRANG_NER_ENGINE", raising=False)
     text = "อ้างอิง 66019901 ตามระบบ"
     ents = detect_all(text)
     assert not [e for e in ents if e.data_type == "STUDENT_ID"]
@@ -104,7 +104,7 @@ def test_relabel_is_noop_for_crf(monkeypatch):
 def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
     # Calibrated floors (part of the model artifact) drop the low-confidence
     # tail per label without touching other labels.
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
     text = "พบ สมชาย ทดสอบ วันที่ 12 มีนาคม 2569"
     name_lo = text.index("สมชาย")
     date_lo = text.index("12 มีนาคม")
@@ -126,7 +126,7 @@ def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
 
 
 def test_relabel_helper_contract():
-    from amprang.engine.detectors.aggregate import _relabel_student_ids
+    from amphrang.engine.detectors.aggregate import _relabel_student_ids
 
     tb = [Entity("x", "TB", "STUDENT_ID", (5, 13), 0.9, "66019901")]
     kept = [Entity("y", "FP", "ID_NUMBER", (5, 13), 0.8, "66019901")]

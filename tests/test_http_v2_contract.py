@@ -13,13 +13,13 @@ pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-import amprang.engine.stateless as stateless_module
-import amprang.server.server as server
-from amprang.engine.detectors.ner_failure import NERFailureError
-from amprang.engine.models import Entity
-from amprang.engine.session_service import RestoreOutcome, SessionService
-from amprang.engine.session_vault import SessionVault
-from amprang.server.http_v2 import (
+import amphrang.engine.stateless as stateless_module
+import amphrang.server.server as server
+from amphrang.engine.detectors.ner_failure import NERFailureError
+from amphrang.engine.models import Entity
+from amphrang.engine.session_service import RestoreOutcome, SessionService
+from amphrang.engine.session_vault import SessionVault
+from amphrang.server.http_v2 import (
     AnalyzeResponse,
     HealthResponse,
     PdfWarning,
@@ -31,8 +31,8 @@ from amprang.server.http_v2 import (
     error_payload,
 )
 
-V2_HEADERS = {"X-Amprang-Contract-Version": "2"}
-V2_RESPONSE_HEADER = "X-Amprang-Contract-Version"
+V2_HEADERS = {"X-Amphrang-Contract-Version": "2"}
+V2_RESPONSE_HEADER = "X-Amphrang-Contract-Version"
 SYNTHETIC_TEXT = "ติดต่อ 081-234-5678"
 AUTH_NOW = 1_800_000_000.0
 
@@ -104,9 +104,9 @@ def test_health_is_exact_open_v2_contract(client, monkeypatch):
     response = client.get(
         "/api/health",
         headers={
-            "X-Amprang-Contract-Version": "wrong",
-            "X-Amprang-Key": "wrong",
-            "X-Amprang-Token": "wrong",
+            "X-Amphrang-Contract-Version": "wrong",
+            "X-Amphrang-Key": "wrong",
+            "X-Amphrang-Token": "wrong",
         },
     )
 
@@ -155,9 +155,9 @@ def test_health_rejects_query_and_body_without_reading_credentials(
         "GET",
         f"/api/health{query}",
         headers={
-            "X-Amprang-Contract-Version": "wrong",
-            "X-Amprang-Key": "wrong",
-            "X-Amprang-Token": "wrong",
+            "X-Amphrang-Contract-Version": "wrong",
+            "X-Amphrang-Key": "wrong",
+            "X-Amphrang-Token": "wrong",
         },
         content=content,
     )
@@ -181,7 +181,7 @@ def test_contract_assertion_fails_before_body_or_service(client, monkeypatch, va
         raise AssertionError("service must not run")
 
     monkeypatch.setattr(server.SERVICE, "sanitize_transaction", forbidden)
-    headers = {} if value is None else {"X-Amprang-Contract-Version": value}
+    headers = {} if value is None else {"X-Amphrang-Contract-Version": value}
     marker = "SYNTHETIC-PRIVATE-BODY-MARKER"
 
     response = client.post(
@@ -212,8 +212,8 @@ def test_duplicate_contract_assertion_is_rejected_before_service(client, monkeyp
     response = client.post(
         "/api/sanitize",
         headers=[
-            ("X-Amprang-Contract-Version", "2"),
-            ("X-Amprang-Contract-Version", "2"),
+            ("X-Amphrang-Contract-Version", "2"),
+            ("X-Amphrang-Contract-Version", "2"),
         ],
         json={"text": SYNTHETIC_TEXT},
     )
@@ -740,7 +740,7 @@ def test_api_key_covers_every_main_data_route(client, monkeypatch, path, payload
 
     authorized = client.post(
         path,
-        headers={**V2_HEADERS, "X-Amprang-Key": "expected-key"},
+        headers={**V2_HEADERS, "X-Amphrang-Key": "expected-key"},
         json=payload,
     )
     assert authorized.status_code != 401
@@ -760,7 +760,7 @@ def test_control_token_is_separate_from_data_plane_authority(client, monkeypatch
         denied = client.request(
             method,
             path,
-            headers={**V2_HEADERS, "X-Amprang-Key": "data-secret"},
+            headers={**V2_HEADERS, "X-Amphrang-Key": "data-secret"},
         )
         _assert_error(
             denied,
@@ -775,7 +775,7 @@ def test_control_token_is_separate_from_data_plane_authority(client, monkeypatch
         allowed = client.request(
             method,
             path,
-            headers={**V2_HEADERS, "X-Amprang-Token": authorization},
+            headers={**V2_HEADERS, "X-Amphrang-Token": authorization},
         )
         assert allowed.status_code == 200
         assert allowed.headers.get_list(V2_RESPONSE_HEADER) == ["2"]
@@ -794,8 +794,8 @@ def test_non_ascii_api_key_is_a_safe_mismatch_before_service(client, monkeypatch
     response = client.post(
         "/api/sanitize",
         headers=[
-            (b"X-Amprang-Contract-Version", b"2"),
-            (b"X-Amprang-Key", b"\xff"),
+            (b"X-Amphrang-Contract-Version", b"2"),
+            (b"X-Amphrang-Key", b"\xff"),
         ],
         json={"text": SYNTHETIC_TEXT},
     )
@@ -821,8 +821,8 @@ def test_non_ascii_control_token_is_a_safe_mismatch_before_route_work(client, mo
     response = client.post(
         "/api/shutdown",
         headers=[
-            (b"X-Amprang-Contract-Version", b"2"),
-            (b"X-Amprang-Token", b"\xff"),
+            (b"X-Amphrang-Contract-Version", b"2"),
+            (b"X-Amphrang-Token", b"\xff"),
         ],
     )
 
@@ -856,7 +856,7 @@ def test_query_and_bodyless_routes_reject_extra_input(
     headers = dict(V2_HEADERS)
     if method == "DELETE":
         monkeypatch.setattr(server, "_BOOT_TOKEN", "control-secret")
-        headers["X-Amprang-Token"] = _disposal_authorization("session-1")
+        headers["X-Amphrang-Token"] = _disposal_authorization("session-1")
     response = client.request(
         method,
         path,
@@ -963,7 +963,7 @@ def test_strict_cors_preflight_exposes_only_contract_header(client):
         headers={
             "Origin": origin,
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": ("content-type, x-amprang-contract-version"),
+            "Access-Control-Request-Headers": ("content-type, x-amphrang-contract-version"),
         },
     )
 
@@ -971,10 +971,10 @@ def test_strict_cors_preflight_exposes_only_contract_header(client):
     assert response.headers["access-control-allow-origin"] == origin
     assert response.headers["access-control-allow-methods"] == "GET, POST"
     assert response.headers["access-control-allow-headers"].lower() == (
-        "content-type, x-amprang-contract-version"
+        "content-type, x-amphrang-contract-version"
     )
     assert response.headers["access-control-expose-headers"].lower() == (
-        "x-amprang-contract-version"
+        "x-amphrang-contract-version"
     )
     assert V2_RESPONSE_HEADER not in response.headers
 
@@ -983,8 +983,8 @@ def test_strict_cors_preflight_exposes_only_contract_header(client):
     ("method", "headers"),
     [
         ("DELETE", "content-type"),
-        ("POST", "content-type, x-amprang-key"),
-        ("POST", "content-type, x-amprang-token"),
+        ("POST", "content-type, x-amphrang-key"),
+        ("POST", "content-type, x-amphrang-token"),
     ],
 )
 def test_disallowed_cors_preflight_is_not_permissive(client, method, headers):
@@ -1017,7 +1017,7 @@ def test_cross_origin_shutdown_preflight_is_rejected_before_service(client, monk
         headers={
             "Origin": origin,
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "x-amprang-contract-version",
+            "Access-Control-Request-Headers": "x-amphrang-contract-version",
         },
     )
 
@@ -1032,22 +1032,22 @@ def test_cross_origin_shutdown_preflight_is_rejected_before_service(client, monk
     [
         ([], 426, "contract_version_required", "contract"),
         (
-            [("X-Amprang-Contract-Version", "1")],
+            [("X-Amphrang-Contract-Version", "1")],
             426,
             "contract_version_required",
             "contract",
         ),
         (
             [
-                ("X-Amprang-Contract-Version", "2"),
-                ("X-Amprang-Contract-Version", "2"),
+                ("X-Amphrang-Contract-Version", "2"),
+                ("X-Amphrang-Contract-Version", "2"),
             ],
             426,
             "contract_version_required",
             "contract",
         ),
         (
-            [("X-Amprang-Contract-Version", "2")],
+            [("X-Amphrang-Contract-Version", "2")],
             403,
             "control_forbidden",
             "authentication",
@@ -1145,7 +1145,7 @@ def test_actual_cors_request_still_requires_contract_and_exact_origin(client):
     )
     assert allowed.headers["access-control-allow-origin"] == allowed_origin
     assert allowed.headers["access-control-expose-headers"].lower() == (
-        "x-amprang-contract-version"
+        "x-amphrang-contract-version"
     )
 
     disallowed = client.post(
@@ -1338,7 +1338,7 @@ def test_analyze_model_rejects_noncanonical_quasi_and_duplicate_breakdown():
             {
                 "level": "high",
                 "title": "Direct PII detected",
-                "desc": "ใช้ Amprang เพื่อปกปิดข้อมูลทั้งหมดก่อนส่งให้ AI ภายนอก",
+                "desc": "ใช้ Amphrang เพื่อปกปิดข้อมูลทั้งหมดก่อนส่งให้ AI ภายนอก",
             }
         ],
     }

@@ -16,7 +16,7 @@ import pytest
 try:
     from fastapi.testclient import TestClient
 
-    from amprang.server.server import app
+    from amphrang.server.server import app
 
     DEPS = True
 except ImportError:
@@ -32,12 +32,12 @@ PROMPTS = sorted((EXAMPLES / "prompts").glob("*.txt"))
 def client():
     from fastapi.testclient import TestClient
 
-    from amprang.server.server import app
+    from amphrang.server.server import app
 
     return TestClient(
         app,
         base_url="http://localhost",
-        headers={"X-Amprang-Contract-Version": "2"},
+        headers={"X-Amphrang-Contract-Version": "2"},
     )
 
 

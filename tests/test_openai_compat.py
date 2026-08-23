@@ -2,7 +2,7 @@
 
 import pytest
 
-from amprang.engine.openai_compat import (
+from amphrang.engine.openai_compat import (
     chat_completions_url,
     extract_chat_content,
     is_sse_response,

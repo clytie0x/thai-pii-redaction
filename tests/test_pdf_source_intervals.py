@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from amprang.engine.models import Entity, EntityRegistry, WordBbox
+from amphrang.engine.models import Entity, EntityRegistry, WordBbox
 
 SYNTHETIC_MARKER = "synthetic-marker"
 
@@ -50,7 +50,7 @@ def _box(
 
 
 def _mapped_x(registry: EntityRegistry, boxes: list[WordBbox]) -> list[list[float]]:
-    from amprang.engine.redactor import _map_entities_to_boxes
+    from amphrang.engine.redactor import _map_entities_to_boxes
 
     return [[box.x for box in mapped] for mapped in _map_entities_to_boxes(registry, boxes)]
 
@@ -75,7 +75,7 @@ def _make_pdf(tmp_path: Path, pages: list[list[tuple[float, float, str]]]) -> Pa
 def _is_solid_black(pdf_path: Path, page_index: int, box: WordBbox) -> bool:
     import pypdfium2 as pdfium
 
-    from amprang.engine.redactor import RENDER_SCALE
+    from amphrang.engine.redactor import RENDER_SCALE
 
     document = pdfium.PdfDocument(str(pdf_path))
     try:
@@ -200,7 +200,7 @@ def test_conflicting_pages_for_the_same_source_interval_fail_closed():
 
 
 def test_malformed_inconsistent_and_uncovered_intervals_fail_closed():
-    from amprang.engine.redactor import PdfSourceMappingError, _map_entities_to_boxes
+    from amphrang.engine.redactor import PdfSourceMappingError, _map_entities_to_boxes
 
     cases = [
         (_registry(_entity(0, "alpha")), [_box("alpha", page=1, x=10, source_span=(0, 4))]),
@@ -215,7 +215,7 @@ def test_malformed_inconsistent_and_uncovered_intervals_fail_closed():
 
 
 def test_box_page_outside_the_document_fails_closed():
-    from amprang.engine.redactor import PdfSourceMappingError, _map_entities_to_boxes
+    from amphrang.engine.redactor import PdfSourceMappingError, _map_entities_to_boxes
 
     box = _box("alpha", page=2, x=10, source_span=(0, 5))
     with pytest.raises(PdfSourceMappingError):
@@ -223,7 +223,7 @@ def test_box_page_outside_the_document_fails_closed():
 
 
 def test_text_extractors_return_exact_source_slices_on_each_page(tmp_path):
-    from amprang.engine.ingest.text_extractor import _extract_pdf_pypdfium2, extract
+    from amphrang.engine.ingest.text_extractor import _extract_pdf_pypdfium2, extract
 
     source = _make_pdf(
         tmp_path,
@@ -257,16 +257,16 @@ def test_pdfplumber_keeps_thai_combining_character_offsets(tmp_path):
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas
 
-    from amprang.engine.ingest.text_extractor import extract
+    from amphrang.engine.ingest.text_extractor import extract
 
     font_path = (
         Path(__file__).resolve().parents[1]
-        / "amprang"
+        / "amphrang"
         / "engine"
         / "fonts"
         / "IBMPlexSansThaiLooped-Regular.ttf"
     )
-    font_name = "AmprangSyntheticThaiIntervals"
+    font_name = "AmphrangSyntheticThaiIntervals"
     pdfmetrics.registerFont(TTFont(font_name, font_path))
     source = tmp_path / "thai-combining.pdf"
     output = canvas.Canvas(str(source), pagesize=letter)
@@ -290,8 +290,8 @@ def test_pdfplumber_keeps_thai_combining_character_offsets(tmp_path):
 
 
 def test_real_redaction_leaves_the_undetected_identical_occurrence_untouched(tmp_path):
-    from amprang.engine.ingest.text_extractor import extract
-    from amprang.engine.redactor import redact_pdf
+    from amphrang.engine.ingest.text_extractor import extract
+    from amphrang.engine.redactor import redact_pdf
 
     source = _make_pdf(
         tmp_path,
@@ -317,8 +317,8 @@ def test_real_redaction_leaves_the_undetected_identical_occurrence_untouched(tmp
 
 
 def test_real_redaction_does_not_cross_page_boundaries(tmp_path):
-    from amprang.engine.ingest.text_extractor import extract
-    from amprang.engine.redactor import redact_pdf
+    from amphrang.engine.ingest.text_extractor import extract
+    from amphrang.engine.redactor import redact_pdf
 
     source = _make_pdf(
         tmp_path,
@@ -342,7 +342,7 @@ def test_real_redaction_does_not_cross_page_boundaries(tmp_path):
 
 
 def test_unmappable_interval_fails_before_output_and_drops_input_graph(tmp_path):
-    from amprang.engine.redactor import redact_pdf
+    from amphrang.engine.redactor import redact_pdf
 
     source = _make_pdf(tmp_path, [[(50, 72, SYNTHETIC_MARKER)]])
     output = tmp_path / "must-not-exist.pdf"
@@ -359,7 +359,7 @@ def test_unmappable_interval_fails_before_output_and_drops_input_graph(tmp_path)
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith("amprang.engine."):
+        if module.startswith("amphrang.engine."):
             assert SYNTHETIC_MARKER not in repr(traceback.tb_frame.f_locals)
         traceback = traceback.tb_next
     assert not output.exists()
@@ -370,7 +370,7 @@ def test_http_mapping_failure_keeps_the_existing_fixed_v2_error(
     tmp_path,
     monkeypatch,
 ):
-    from amprang.server import server
+    from amphrang.server import server
 
     source = _make_pdf(tmp_path, [[(50, 72, SYNTHETIC_MARKER)]])
     box = _box(SYNTHETIC_MARKER, page=1, x=50, source_span=None)
@@ -400,10 +400,10 @@ def client():
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from amprang.server.server import app
+    from amphrang.server.server import app
 
     return TestClient(
         app,
         base_url="http://localhost",
-        headers={"X-Amprang-Contract-Version": "2"},
+        headers={"X-Amphrang-Contract-Version": "2"},
     )

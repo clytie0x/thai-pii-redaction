@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from amprang.engine.models import Entity, WordBbox
+from amphrang.engine.models import Entity, WordBbox
 from benchmark.probe_document import (
     COVERAGE_FULL,
     INK_STRIP_PT,
@@ -644,7 +644,7 @@ def test_render_ocr_overrides_a_fully_black_bbox(tmp_path, monkeypatch):
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
 
-    from amprang.engine.ingest import ocr_processor
+    from amphrang.engine.ingest import ocr_processor
 
     phone = "081-234-5678"
     pdf = tmp_path / "phone.pdf"
@@ -728,7 +728,7 @@ def test_fixture_region_overrides_a_shifted_ocr_box(tmp_path, monkeypatch):
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
-    from amprang.engine.ingest import ocr_processor
+    from amphrang.engine.ingest import ocr_processor
 
     phone = "081-234-5678"
     image = Image.new("RGB", (612, 792), "white")
@@ -803,7 +803,7 @@ def test_probe_measures_hybrid_redaction_with_ocr_boxes(tmp_path, monkeypatch):
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
-    from amprang.engine.ingest import ocr_processor
+    from amphrang.engine.ingest import ocr_processor
 
     phone = "081-234-5678"
     marker = "WQXZ-4417"
@@ -873,7 +873,7 @@ def test_probe_uses_close_ocr_match_to_measure_a_misread_id(tmp_path, monkeypatc
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
-    from amprang.engine.ingest import ocr_processor
+    from amphrang.engine.ingest import ocr_processor
 
     expected_id = "1312271505581"
     ocr_id = "1312271506581"
@@ -948,7 +948,7 @@ def test_ink_strip_never_exceeds_the_redactors_top_pad():
     """The strip inspects the zone the redaction box's own pad owns. Taller
     than the pad and it reads the legitimate line above on tight leading;
     shorter and it misses a box painted short or in the wrong space."""
-    from amprang.engine.redactor import REDACT_PAD_TOP_PT
+    from amphrang.engine.redactor import REDACT_PAD_TOP_PT
 
     assert INK_STRIP_PT == REDACT_PAD_TOP_PT
 

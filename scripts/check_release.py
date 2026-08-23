@@ -78,7 +78,7 @@ def release_notes(root: Path, version: str) -> str:
     if section is None:
         raise ValueError(f"no CHANGELOG section for {version}")
     date, body = section
-    heading = f"## amprang {version}" + (f" ({date})" if date else "")
+    heading = f"## amphrang {version}" + (f" ({date})" if date else "")
     return f"{heading}\n\n{body}\n"
 
 

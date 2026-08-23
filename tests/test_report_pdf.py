@@ -8,8 +8,8 @@ names), never raw text or entity values — the PII-free property is structural
 import pypdfium2 as pdfium
 import pytest
 
-from amprang.engine.report_pdf import render_pdpa_report
-from amprang.engine.thai_pdf_text import register_thai_font
+from amphrang.engine.report_pdf import render_pdpa_report
+from amphrang.engine.thai_pdf_text import register_thai_font
 
 requires_thai_font = pytest.mark.skipif(
     register_thai_font() == "Helvetica",
@@ -38,14 +38,14 @@ ANALYSIS = {
         {
             "level": "high",
             "title": "Remove or pseudonymize 3 direct PII entities",
-            "desc": "ใช้ Amprang เพื่อปกปิดข้อมูลทั้งหมดก่อนส่งให้ AI ภายนอก",
+            "desc": "ใช้ Amphrang เพื่อปกปิดข้อมูลทั้งหมดก่อนส่งให้ AI ภายนอก",
         },
     ],
 }
 
 
 def _text_of(pdf_bytes: bytes) -> str:
-    # pypdfium2, not pdfplumber: draw_text() (amprang/engine/thai_pdf_text.py) draws
+    # pypdfium2, not pdfplumber: draw_text() (amphrang/engine/thai_pdf_text.py) draws
     # an invisible real-character layer plus the visible shaped glyphs on affected
     # lines. pdfminer/pdfplumber discards text render mode entirely at the LTChar
     # layer and re-sorts characters by x-position, so it interleaves the two

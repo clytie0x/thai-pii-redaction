@@ -7,8 +7,8 @@ without loading any NER model.
 
 from __future__ import annotations
 
-from amprang.engine.detectors.aggregate import dedupe_spans
-from amprang.engine.models import Entity
+from amphrang.engine.detectors.aggregate import dedupe_spans
+from amphrang.engine.models import Entity
 
 
 def union_entities(crf: list[Entity], wcb: list[Entity]) -> list[Entity]:

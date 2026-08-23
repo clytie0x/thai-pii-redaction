@@ -5,15 +5,15 @@ import uuid
 
 import pytest
 
-from amprang.engine.models import (
+from amphrang.engine.models import (
     AIResponse,
     Entity,
     EntityRegistry,
     ReverseResult,
     VaultRecord,
 )
-from amprang.engine.reverse_mapper import reverse_map
-from amprang.engine.session_vault import SessionVault, VaultTimeoutError
+from amphrang.engine.reverse_mapper import reverse_map
+from amphrang.engine.session_vault import SessionVault, VaultTimeoutError
 
 
 def _make_ai_response(text: str) -> AIResponse:
@@ -261,9 +261,9 @@ def test_audit_summary_keeps_only_replacement_count():
     import time as _t
     import uuid as _u
 
-    from amprang.engine.models import AIResponse, EntityRegistry, VaultRecord
-    from amprang.engine.reverse_mapper import reverse_map
-    from amprang.engine.session_vault import SessionVault
+    from amphrang.engine.models import AIResponse, EntityRegistry, VaultRecord
+    from amphrang.engine.reverse_mapper import reverse_map
+    from amphrang.engine.session_vault import SessionVault
 
     vault = SessionVault()
     vault.write(

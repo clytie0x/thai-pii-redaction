@@ -1,5 +1,5 @@
-from amprang.engine.reid_risk import ReidRiskResult, assess_reid_risk
-from amprang.engine.report import PDPAReport, analyze_text, generate_report
+from amphrang.engine.reid_risk import ReidRiskResult, assess_reid_risk
+from amphrang.engine.report import PDPAReport, analyze_text, generate_report
 
 
 def test_reid_risk_no_qi():
@@ -85,7 +85,7 @@ def test_section26_covers_all_ten_statutory_categories():
     """PDPA Section 26 enumerates ten sensitive-data categories; the keyword
     scan must know every one of them, so a missing category is a test failure
     rather than a silent legal-coverage gap."""
-    from amprang.engine.report import _SECTION26_KEYWORDS
+    from amphrang.engine.report import _SECTION26_KEYWORDS
 
     assert set(_SECTION26_KEYWORDS) == {
         "RACE_ETHNICITY",
@@ -151,8 +151,8 @@ def test_analyze_text_matches_the_canonical_fallback_detector():
 
 
 def test_analyze_text_runs_detection_once(monkeypatch):
-    import amprang.engine.report as report_module
-    from amprang.engine.models import Entity
+    import amphrang.engine.report as report_module
+    from amphrang.engine.models import Entity
 
     calls = []
 

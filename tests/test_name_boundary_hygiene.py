@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import pytest
 
-import amprang.engine.detectors.tb_detector as tbd
-from amprang.engine.detectors.name_context import detect_name_context
-from amprang.engine.models import Entity
+import amphrang.engine.detectors.tb_detector as tbd
+from amphrang.engine.detectors.name_context import detect_name_context
+from amphrang.engine.models import Entity
 
 
 def _hygiene_texts(entity_text: str) -> list[str]:
@@ -250,7 +250,7 @@ def test_second_person_in_a_wide_crf_span_stays_covered():
 
 
 def test_second_person_stays_covered_through_detect_all():
-    from amprang.engine.detectors.aggregate import detect_all
+    from amphrang.engine.detectors.aggregate import detect_all
 
     ents = detect_all(GUARANTOR_TWO_PERSON_TEXT)
     for value in ("ไพโรจน์ สุขสมบูรณ์", "เพ็ญศรี ทองอินทร์"):

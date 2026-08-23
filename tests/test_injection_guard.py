@@ -1,7 +1,7 @@
 """Tests for the dependency-light Thai prompt-injection warning guard."""
 
-import amprang.engine.guard.injection as injection_guard
-from amprang.engine.guard.injection import GuardFinding, scan_injection, to_wire
+import amphrang.engine.guard.injection as injection_guard
+from amphrang.engine.guard.injection import GuardFinding, scan_injection, to_wire
 
 
 class TestDetects:

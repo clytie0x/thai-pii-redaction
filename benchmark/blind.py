@@ -12,7 +12,7 @@ repository. The mechanisms here exist for that one purpose:
   file can decrypt, and that is fine; the threat model is self-deception, not
   attackers.
 - The key lives OUTSIDE the repository and is supplied explicitly via the
-  ``AMPRANG_BLIND_KEY_FILE`` environment variable. There is no default
+  ``AMPHRANG_BLIND_KEY_FILE`` environment variable. There is no default
   discovery path, so routine tooling cannot stumble into the plaintext.
 - ``data/<version>.lock.json`` pins the plaintext and ciphertext hashes plus
   aggregate composition counts. Scoring refuses a corpus whose hash does not
@@ -108,9 +108,16 @@ def load_master(key_path: str | Path) -> bytes:
     return master
 
 
+# Key-derivation contexts are part of the blind-v1 wire format, not branding:
+# blind-v1.enc was sealed under these literals in the predecessor (AI Guard),
+# and a rename silently turns the committed blob into "wrong key or tampered".
+_KDF_ENC_CONTEXT = b"aiguard-blind-enc"
+_KDF_AUTH_CONTEXT = b"aiguard-blind-auth"
+
+
 def _subkeys(master: bytes) -> tuple[bytes, bytes]:
-    enc = hmac.new(master, b"amprang-blind-enc", hashlib.sha256).digest()
-    auth = hmac.new(master, b"amprang-blind-auth", hashlib.sha256).digest()
+    enc = hmac.new(master, _KDF_ENC_CONTEXT, hashlib.sha256).digest()
+    auth = hmac.new(master, _KDF_AUTH_CONTEXT, hashlib.sha256).digest()
     return enc, auth
 
 
@@ -438,12 +445,12 @@ def run_blind(
 ) -> dict:
     if not key_file:
         raise BlindError(
-            "set AMPRANG_BLIND_KEY_FILE to the key file path (kept outside the repository)"
+            "set AMPHRANG_BLIND_KEY_FILE to the key file path (kept outside the repository)"
         )
     if not reason.strip():
         raise BlindError("a blind run must state --reason (it is recorded in the audit log)")
 
-    from amprang.engine.detectors.tb_detector import NERChunkDiagnostics
+    from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics
 
     from .runner import predict_samples
 

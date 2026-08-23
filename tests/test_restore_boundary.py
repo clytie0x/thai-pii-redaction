@@ -13,16 +13,16 @@ class TestServerRestoreBoundary:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from amprang.server.server import app
+        from amphrang.server.server import app
 
         return TestClient(
             app,
             base_url="http://localhost",
-            headers={"X-Amprang-Contract-Version": "2"},
+            headers={"X-Amphrang-Contract-Version": "2"},
         )
 
     def test_restore_defect_is_clean_500(self, client, monkeypatch):
-        from amprang.server import server
+        from amphrang.server import server
 
         def boom(text, *, mapping):
             raise RuntimeError("internal defect detail")
@@ -37,8 +37,8 @@ class TestServerRestoreBoundary:
         assert "internal defect detail" not in resp.text
 
     def test_non_string_provider_return_is_502(self, client, monkeypatch):
-        from amprang.engine.ai_client import AIProvider
-        from amprang.server import server
+        from amphrang.engine.ai_client import AIProvider
+        from amphrang.server import server
 
         class Broken(AIProvider):
             def complete(self, system, user, *, timeout=30.0):
@@ -55,8 +55,8 @@ class TestServerRestoreBoundary:
     def test_provider_protocol_error_is_502_not_500(self, client, monkeypatch):
         # spec testing item 4: empty/protocol-violating content must surface as
         # 502 on the HTTP path (the first spec draft had this inverted)
-        from amprang.engine.ai_client import AIProvider, ProviderProtocolError
-        from amprang.server import server
+        from amphrang.engine.ai_client import AIProvider, ProviderProtocolError
+        from amphrang.server import server
 
         class Protocol(AIProvider):
             def complete(self, system, user, *, timeout=30.0):

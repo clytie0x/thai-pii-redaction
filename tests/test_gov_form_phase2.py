@@ -18,8 +18,8 @@ from PIL import ImageChops
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfgen import canvas
 
-from amprang.engine.ingest.file_detector import detect_source_type
-from amprang.engine.ingest.text_extractor import extract
+from amphrang.engine.ingest.file_detector import detect_source_type
+from amphrang.engine.ingest.text_extractor import extract
 from benchmark.data.probe.gov_forms.generate_inputs import (
     _register_font,
     _render_pdf,

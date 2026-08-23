@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "amprang"
+name = "amphrang"
 description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
 readme = "README.md"
 license = "Apache-2.0"
@@ -26,14 +26,14 @@ classifiers = [
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
-amprang = "amprang.cli:main"
-amprang-mcp = "amprang.mcp:main"
+amphrang = "amphrang.cli:main"
+amphrang-mcp = "amphrang.mcp:main"
 
 [project.urls]
-Homepage = "https://github.com/Teerapat-Vatpitak/amprang"
-Changelog = "https://github.com/Teerapat-Vatpitak/amprang/blob/main/CHANGELOG.md"
-Security = "https://github.com/Teerapat-Vatpitak/amprang/blob/main/SECURITY.md"
-Issues = "https://github.com/Teerapat-Vatpitak/amprang/issues"
+Homepage = "https://github.com/Teerapat-Vatpitak/amphrang"
+Changelog = "https://github.com/Teerapat-Vatpitak/amphrang/blob/main/CHANGELOG.md"
+Security = "https://github.com/Teerapat-Vatpitak/amphrang/blob/main/SECURITY.md"
+Issues = "https://github.com/Teerapat-Vatpitak/amphrang/issues"
 
 [tool.setuptools.dynamic]
 version = { file = "VERSION" }
@@ -44,21 +44,21 @@ optional-dependencies.ml = { file = "requirements-ml.txt" }
 optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 
 [tool.setuptools]
-# `amprang`'s top-level module (amprang/__init__.py, cli.py, mcp.py,
+# `amphrang`'s top-level module (amphrang/__init__.py, cli.py, mcp.py,
 # serve.py) is the public facade and the only import surface with a semver
-# contract. `amprang.engine` and `amprang.server` ship the internal
+# contract. `amphrang.engine` and `amphrang.server` ship the internal
 # engine and the optional local HTTP server; they carry no cross-release
-# stability promise. Everything lives under the `amprang` distribution
+# stability promise. Everything lives under the `amphrang` distribution
 # name so nothing installs a generic top-level import name (`app`,
 # `pii_redactor`) that could collide with an unrelated package.
 packages = [
-  "amprang",
-  "amprang.engine",
-  "amprang.engine.detectors",
-  "amprang.engine.anonymizer",
-  "amprang.engine.guard",
-  "amprang.engine.ingest",
-  "amprang.server",
+  "amphrang",
+  "amphrang.engine",
+  "amphrang.engine.detectors",
+  "amphrang.engine.anonymizer",
+  "amphrang.engine.guard",
+  "amphrang.engine.ingest",
+  "amphrang.server",
 ]
 
 # The Thai font travels with the package: a `pip install` user renders the
@@ -67,8 +67,8 @@ packages = [
 # The font is SIL OFL-1.1, which requires its license text to travel with the
 # font file, so OFL-1.1.txt ships alongside it.
 [tool.setuptools.package-data]
-"amprang.engine" = ["fonts/*.ttf", "fonts/OFL-1.1.txt"]
-"amprang.server" = ["demo/*.html"]
+"amphrang.engine" = ["fonts/*.ttf", "fonts/OFL-1.1.txt"]
+"amphrang.server" = ["demo/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -101,7 +101,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011", "E402", "F401", "F841", "RUF043"]
-"amprang/server/server.py" = ["E402"]
+"amphrang/server/server.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

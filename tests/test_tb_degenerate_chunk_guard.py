@@ -13,7 +13,7 @@ import logging
 
 import pytest
 
-import amprang.engine.detectors.tb_detector as tbd
+import amphrang.engine.detectors.tb_detector as tbd
 
 # Reproduced คร.1 (family registration form) print-quality OCR text from the
 # Track A gov-form investigation (M6-P0). Synthetic -- no real personal data.
@@ -40,7 +40,7 @@ KHOR_ROR_1_OCR_TEXT = (
 
 def _with_engine(monkeypatch, engine):
     monkeypatch.setitem(tbd._ner_cache, "thainer", engine)
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "thainer")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "thainer")
 
 
 class DegenerateWholeChunkNER:
@@ -209,7 +209,7 @@ def test_degenerate_chunk_logs_label_and_length_only_no_text(monkeypatch, caplog
     _with_engine(monkeypatch, ner)
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 
-    with caplog.at_level(logging.INFO, logger="amprang.engine.detectors.tb_detector"):
+    with caplog.at_level(logging.INFO, logger="amphrang.engine.detectors.tb_detector"):
         tbd.detect_tb(text)
 
     degenerate_records = [r for r in caplog.records if "Degenerate whole-chunk" in r.message]
@@ -223,7 +223,7 @@ def test_degenerate_chunk_logs_label_and_length_only_no_text(monkeypatch, caplog
 
 
 def test_explicit_tner_degenerate_line_failure_aborts_the_request(monkeypatch):
-    from amprang.engine.detectors.tner_client import TnerUnavailableError
+    from amphrang.engine.detectors.tner_client import TnerUnavailableError
 
     class DegenerateThenUnavailable:
         def tag(self, chunk):
@@ -232,7 +232,7 @@ def test_explicit_tner_degenerate_line_failure_aborts_the_request(monkeypatch):
             raise TnerUnavailableError("network")
 
     monkeypatch.setitem(tbd._ner_cache, "tner", DegenerateThenUnavailable())
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "tner")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
 
     with pytest.raises(tbd.NERFailureError) as excinfo:
         tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
@@ -250,9 +250,9 @@ def test_explicit_tner_never_logs_a_provider_supplied_label(monkeypatch, caplog)
             return [(chunk, f"B-{marker}")]
 
     monkeypatch.setitem(tbd._ner_cache, "tner", UntrustedRemoteLabel())
-    monkeypatch.setenv("AMPRANG_NER_ENGINE", "tner")
+    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
 
-    with caplog.at_level(logging.WARNING, logger="amprang.engine.detectors.tb_detector"):
+    with caplog.at_level(logging.WARNING, logger="amphrang.engine.detectors.tb_detector"):
         tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
 
     assert marker not in caplog.text

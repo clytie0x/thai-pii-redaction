@@ -1,11 +1,11 @@
-Amprang — Thai PII detection and redaction
-Copyright 2026 Amprang contributors
+Amphrang — Thai PII detection and redaction
+Copyright 2026 Amphrang contributors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-The name "Amprang" and any associated logos are not covered by the Apache
+The name "Amphrang" and any associated logos are not covered by the Apache
 License (see Section 6, Trademarks). Forks and derived works may use the
-code under Apache-2.0 but may not present themselves as Amprang.
+code under Apache-2.0 but may not present themselves as Amphrang.
 
 This product depends on the following third-party components, each under its
 own permissive license (none is redistributed inside this package; pip
@@ -31,13 +31,13 @@ NER model (downloaded by PyThaiNLP on first use, not bundled in this package):
   License: https://creativecommons.org/licenses/by/4.0/
   Deployments that redistribute the model file must carry this attribution.
 
-Bundled font (amprang/engine/fonts/, used to draw Thai text into generated
+Bundled font (amphrang/engine/fonts/, used to draw Thai text into generated
 PDFs — PDPA report, processing receipt, breach and DSAR artifacts):
 
 - IBM Plex Sans Thai Looped (SIL Open Font License 1.1) — Copyright 2017 IBM
   Corp. with Reserved Font Name "Plex".
   Source: https://github.com/IBM/plex
-  License text: amprang/engine/fonts/OFL-1.1.txt (OFL-1.1 requires the
+  License text: amphrang/engine/fonts/OFL-1.1.txt (OFL-1.1 requires the
   license to travel with the font file; it ships inside the wheel).
   The TTF is the upstream face converted from WOFF2 to a container reportlab
   can read — container change only; the design, the name table and all 520
@@ -46,11 +46,11 @@ PDFs — PDPA report, processing receipt, breach and DSAR artifacts):
 Optional components (installed separately via extras, not part of the core
 distribution):
 
-- fastapi / uvicorn / python-multipart (`amprang[server]`) — local HTTP server.
-- mcp (`amprang[mcp]`) — Model Context Protocol server.
-- torch / transformers / sentencepiece / sentence-transformers (`amprang[ml]`)
+- fastapi / uvicorn / python-multipart (`amphrang[server]`) — local HTTP server.
+- mcp (`amphrang[mcp]`) — Model Context Protocol server.
+- torch / transformers / sentencepiece / sentence-transformers (`amphrang[ml]`)
   — optional WangchanBERTa NER engine and semantic Section-26 detector.
-- paddleocr / paddlepaddle (`amprang[ocr]`) — optional scanned-PDF OCR.
+- paddleocr / paddlepaddle (`amphrang[ocr]`) — optional scanned-PDF OCR.
 
 PyMuPDF (AGPL) is NOT used; it was replaced by the permissive libraries above
 so this project can be distributed under the Apache-2.0 license.

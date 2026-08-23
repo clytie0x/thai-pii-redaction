@@ -13,14 +13,14 @@ from pathlib import Path
 
 import pytest
 
-import amprang.engine.detectors.tb_detector as tbd
-from amprang.engine.detectors.aggregate import detect_all
-from amprang.engine.detectors.tb_detector import detect_tb
-from amprang.engine.ingest.text_cleaner import clean
-from amprang.engine.session_service import SessionService
+import amphrang.engine.detectors.tb_detector as tbd
+from amphrang.engine.detectors.aggregate import detect_all
+from amphrang.engine.detectors.tb_detector import detect_tb
+from amphrang.engine.ingest.text_cleaner import clean
+from amphrang.engine.session_service import SessionService
 
 FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "prompts" / "02_medical_consult.txt"
-V2_HEADERS = {"X-Amprang-Contract-Version": "2"}
+V2_HEADERS = {"X-Amphrang-Contract-Version": "2"}
 
 
 def _fixture_text_and_name() -> tuple[str, str]:
@@ -31,7 +31,7 @@ def _fixture_text_and_name() -> tuple[str, str]:
 
 
 def _use_default_crf(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("AMPRANG_NER_ENGINE", raising=False)
+    monkeypatch.delenv("AMPHRANG_NER_ENGINE", raising=False)
     monkeypatch.setattr(tbd, "_ner_cache", {})
 
 
@@ -64,7 +64,7 @@ def test_issue_82_fixture_round_trips_through_api_and_session(monkeypatch):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from amprang.server import server
+    from amphrang.server import server
 
     text, expected_name = _fixture_text_and_name()
     expected_clean = clean(text).text

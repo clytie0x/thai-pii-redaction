@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from amprang.engine.exporter import ExportError, ExportResult, export
-from amprang.engine.models import ReverseResult
-from amprang.engine.output_validator import ValidationResult
+from amphrang.engine.exporter import ExportError, ExportResult, export
+from amphrang.engine.models import ReverseResult
+from amphrang.engine.output_validator import ValidationResult
 
 
 def _make_validation_result(halt: bool = False, l2_ok: bool = True) -> ValidationResult:

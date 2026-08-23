@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import random
 
-from amprang.engine.anonymizer import fp_generator as fg
-from amprang.engine.anonymizer.tb_generator import (
+from amphrang.engine.anonymizer import fp_generator as fg
+from amphrang.engine.anonymizer.tb_generator import (
     DISTRICTS,
     FEMALE_NAMES,
     MALE_NAMES,

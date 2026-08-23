@@ -8,9 +8,9 @@ body:
       value: |
         The gold set is what makes accuracy claims here checkable, so it is
         governed rather than open: every value is fabricated, every label follows
-        [docs/annotation-guidelines.md](https://github.com/Teerapat-Vatpitak/amprang/blob/main/docs/annotation-guidelines.md),
+        [docs/annotation-guidelines.md](https://github.com/Teerapat-Vatpitak/amphrang/blob/main/docs/annotation-guidelines.md),
         and a change lands with its own record. The full workflow is in
-        [docs/benchmark-contribution.md](https://github.com/Teerapat-Vatpitak/amprang/blob/main/docs/benchmark-contribution.md).
+        [docs/benchmark-contribution.md](https://github.com/Teerapat-Vatpitak/amphrang/blob/main/docs/benchmark-contribution.md).
 
         Propose the document here first. Do not open a pull request against
         `benchmark/data/gold.jsonl` before the slice and labels are agreed.

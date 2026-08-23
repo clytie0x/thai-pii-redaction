@@ -3,7 +3,7 @@
 import httpx
 import pytest
 
-from amprang.engine.ai_client import ProviderProtocolError, TokenmindProvider
+from amphrang.engine.ai_client import ProviderProtocolError, TokenmindProvider
 
 BASE = "https://tokenmind.example/v1"
 
@@ -200,8 +200,8 @@ class TestSingleAttempt:
 
 class TestSendToAiRetryOwnership:
     def test_shared_policy_owns_tokenmind_retries_without_stacking(self, monkeypatch):
-        from amprang.engine import ai_client
-        from amprang.engine.ai_client import complete_provider_with_retry_policy
+        from amphrang.engine import ai_client
+        from amphrang.engine.ai_client import complete_provider_with_retry_policy
 
         calls = {"n": 0}
 
@@ -230,10 +230,10 @@ class TestSendToAiRetryOwnership:
         assert delays == [1, 2]
 
     def test_send_to_ai_owns_retries_even_if_legacy_flag_is_present(self, monkeypatch):
-        from amprang.engine import ai_client
-        from amprang.engine.ai_client import AIProvider, send_to_ai
-        from amprang.engine.models import EntityRegistry
-        from amprang.engine.session_vault import SessionVault
+        from amphrang.engine import ai_client
+        from amphrang.engine.ai_client import AIProvider, send_to_ai
+        from amphrang.engine.models import EntityRegistry
+        from amphrang.engine.session_vault import SessionVault
 
         monkeypatch.setattr(ai_client, "_sleep", lambda s: None)
         calls = {"n": 0}
@@ -252,10 +252,10 @@ class TestSendToAiRetryOwnership:
         assert calls["n"] == 3
 
     def test_send_to_ai_still_retries_plain_providers(self, monkeypatch):
-        from amprang.engine import ai_client
-        from amprang.engine.ai_client import AIProvider, send_to_ai
-        from amprang.engine.models import EntityRegistry
-        from amprang.engine.session_vault import SessionVault
+        from amphrang.engine import ai_client
+        from amphrang.engine.ai_client import AIProvider, send_to_ai
+        from amphrang.engine.models import EntityRegistry
+        from amphrang.engine.session_vault import SessionVault
 
         monkeypatch.setattr(ai_client, "_sleep", lambda s: None)
         calls = {"n": 0}

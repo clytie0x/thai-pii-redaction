@@ -9,6 +9,8 @@ strings and every output channel is asserted sentinel-free.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import subprocess
 from pathlib import Path
@@ -181,7 +183,7 @@ def test_run_blind_is_aggregate_only_and_logs_chain(frozen_blind, capsys):
 
 def test_run_blind_requires_key_and_reason(frozen_blind):
     data_dir, key_file, _ = frozen_blind
-    with pytest.raises(blind.BlindError, match="AMPRANG_BLIND_KEY_FILE"):
+    with pytest.raises(blind.BlindError, match="AMPHRANG_BLIND_KEY_FILE"):
         blind.run_blind(engine="crf", key_file=None, reason="x", data_dir=data_dir)
     with pytest.raises(blind.BlindError, match="reason"):
         blind.run_blind(engine="crf", key_file=key_file, reason="  ", data_dir=data_dir)
@@ -270,3 +272,16 @@ def test_blind_blob_is_marked_binary_in_gitattributes():
     assert proc.stdout.strip().endswith("unset"), (
         "benchmark/data/*.enc must have `-text` in .gitattributes; got: " + proc.stdout
     )
+
+
+def test_kdf_contexts_are_the_blind_v1_wire_constants():
+    """The committed blind-v1.enc was sealed under the predecessor's literals;
+    a rebrand that renames them turns the blob into "wrong key or tampered"
+    (which is exactly what happened once, silently, because the key file is
+    never in CI). The MAC of the real blob authenticates only under these."""
+    assert blind._KDF_ENC_CONTEXT == b"aiguard-blind-enc"
+    assert blind._KDF_AUTH_CONTEXT == b"aiguard-blind-auth"
+    master = b"\x07" * 32
+    enc, auth = blind._subkeys(master)
+    assert enc == hmac.new(master, b"aiguard-blind-enc", hashlib.sha256).digest()
+    assert auth == hmac.new(master, b"aiguard-blind-auth", hashlib.sha256).digest()
