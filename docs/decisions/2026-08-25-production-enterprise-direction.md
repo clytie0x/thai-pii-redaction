@@ -50,7 +50,7 @@ Explicitly rejected alternatives:
 | Surface | User | Status |
 |---|---|---|
 | Sanitizing proxy (`/v1/chat/completions`) | Platform/infra engineer who wants existing apps protected with zero code change | **New — Phase 2** |
-| Python SDK (`amphrang.detect/anonymize/restore/analyze/Session`) | Developer embedding PII handling in an app | Exists; needs 1.0 stability promise |
+| Python SDK (`amphrang.detect/anonymize/restore/analyze/Session`) | Developer embedding PII handling in an app | Exists; needs a published stability policy |
 | MCP server (`amphrang-mcp`) | Teams running AI agents (Claude Code, agent frameworks) | Exists; needs setup recipes |
 
 ### Scope cut (2026-08-25)
@@ -83,14 +83,18 @@ in production.
 3. **Async + batch API.** Detection is CPU-bound, so async means threadpool
    offload, not asyncio rewrites: `detect_batch`/`anonymize_batch` and
    documented multi-worker guidance for the server. No API redesign.
-4. **1.0 release.** Semver policy, deprecation policy (one minor version
-   warning), documented public surface = `amphrang/__init__.py` exactly as
-   today. `check_release.py` gate extended to block accidental surface changes.
-   **Shipping 1.0 requires the owner's explicit approval** — it is not
-   automatic on completing this checklist (owner decision, 2026-08-25).
+4. **API stability policy (still 0.x).** Semver policy, deprecation policy
+   (one minor version warning), documented public surface =
+   `amphrang/__init__.py` exactly as today. `check_release.py` gate extended
+   to block accidental surface changes. Phase 1 ships as 0.x releases.
+
+**Version 1.0 is defined as enterprise-serviceable** (owner decision,
+2026-08-25): it is reached only when the Phase 3 enterprise layer can be
+offered to a customer — not on completing this Phase 1 checklist — and
+shipping it additionally requires the owner's explicit approval.
 
 Exit criteria: benchmark docs exist with real numbers from this machine + CI
-runners; 1.0.0 tagged; a stranger can read the README and know latency,
+runners; a 0.x release tagged under the stability policy; a stranger can read the README and know latency,
 throughput, and accuracy before installing.
 
 ## Phase 2 — Sanitizing proxy (the adoption product)
@@ -199,7 +203,7 @@ wrapping the open core; the open core never regresses to require it.
 ## Testing
 
 - Phase 1: performance harness is itself CI-run (subset); release gate blocks
-  1.0 surface drift.
+  facade surface drift.
 - Phase 2: contract tests against the OpenAI API schema; chunk-boundary fuzz
   tests for the stream restorer; end-to-end test with a fake upstream asserting
   no raw PII ever appears in forwarded requests (assert on the fake upstream's
