@@ -15,6 +15,32 @@ pip install -e ".[server,mcp]" ruff pytest
 
 Python 3.11+ is required. The PyThaiNLP NER model downloads on first use.
 
+Then activate the commit hooks (same ruff config as CI, plus line-ending and
+merge-conflict checks — see `.pre-commit-config.yaml`):
+
+```
+pip install pre-commit
+pre-commit install
+```
+
+## Trying the API (Bruno)
+
+`bruno/` is a committed [Bruno](https://www.usebruno.com/) collection covering
+the local server's endpoints (health, detect, sanitize → reidentify,
+roundtrip, analyze, guard, audit-log), with the `X-Amphrang-Contract-Version`
+header and request-chaining already wired. Open the folder in the Bruno app
+(collection → Open, pick `bruno/`, environment `local`), or run it headless
+with the CLI while `amphrang serve` is running:
+
+```
+npm install -g @usebruno/cli
+cd bruno && bru run --env local
+```
+
+Requests use synthetic personal data only — same rule as tests. The Sanitize
+request keeps its session handle in runtime variables, never in the committed
+environment file.
+
 ## Before you open a pull request
 
 Run exactly what CI runs:
