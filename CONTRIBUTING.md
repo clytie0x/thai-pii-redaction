@@ -103,7 +103,9 @@ proposing anything structural.
 5. **Only the `amphrang` facade is semver-stable.** `amphrang.engine.*` and
    `amphrang.server.*` are internal and may change without notice. Changing
    anything exported from `amphrang/__init__.py` needs a CHANGELOG entry
-   under the right heading.
+   under the right heading **and** a matching `docs/api-surface.txt` update —
+   `scripts/check_release.py` fails CI when the manifest and `__all__`
+   disagree (see README "Stability" for the full policy).
 
 If a change needs to bend one of these, open an issue first and propose a new
 decision record; do not fold the bend into a feature PR.

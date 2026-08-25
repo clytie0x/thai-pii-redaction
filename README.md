@@ -159,6 +159,22 @@ Only the `amphrang` module surface follows semver — `detect`, `detect_batch`,
 (detection/masking core) and `amphrang.server.*` (local HTTP server) are
 internal; import them at your own risk.
 
+The policy, concretely:
+
+- **While 0.x**: patch releases (0.x.Y) never change the public surface or
+  its behavior; breaking changes to the surface only land in a minor release
+  (0.X.0), always listed under **Removed**/**Changed** in the CHANGELOG.
+- **Deprecation before removal**: a public name slated for removal emits a
+  `DeprecationWarning` for at least one minor release before it goes.
+- **The surface is pinned**: `docs/api-surface.txt` mirrors
+  `amphrang.__all__`, and CI (`scripts/check_release.py`) fails when they
+  disagree — the surface can only change as a deliberate manifest + CHANGELOG
+  diff, never by accident.
+- **1.0 is not an API milestone**: it is reserved for enterprise
+  serviceability (see
+  `docs/decisions/2026-08-25-production-enterprise-direction.md`); the
+  stability rules above already apply at 0.x.
+
 ## Provenance
 
 Extracted from [thai-pii-redaction](https://github.com/Teerapat-Vatpitak/thai-pii-redaction)

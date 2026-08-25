@@ -11,6 +11,12 @@ when they change shape.
 
 ### Added
 
+- API stability policy (README "Stability"): 0.x patch releases never change
+  the public surface, breaking surface changes only in minor releases with a
+  CHANGELOG entry, `DeprecationWarning` at least one minor release before any
+  removal. The surface is pinned in `docs/api-surface.txt` and
+  `scripts/check_release.py` now fails CI when it and `amphrang.__all__`
+  disagree.
 - `amphrang.detect_batch` and `amphrang.anonymize_batch`: many texts in one
   call, item-for-item identical to the single-call functions, with an opt-in
   `workers=N` process-parallel path (each worker loads the NER model once).

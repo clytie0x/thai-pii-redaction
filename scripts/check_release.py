@@ -17,11 +17,15 @@ GitHub Release body. Exit 1 with every problem listed otherwise.
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import sys
 from pathlib import Path
 
 _SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
+
+_SURFACE_MANIFEST = Path("docs") / "api-surface.txt"
+_FACADE = Path("amphrang") / "__init__.py"
 
 
 def read_version(root: Path) -> str:
@@ -73,6 +77,59 @@ def check(root: Path, *, expect_tag: str | None = None, require_dated: bool = Fa
     return problems
 
 
+def _facade_all(root: Path) -> set[str] | str:
+    """Names in the facade's ``__all__`` (parsed, never imported), or an error."""
+    path = root / _FACADE
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError) as error:
+        return f"{_FACADE}: {error}"
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "__all__" for target in node.targets
+        ):
+            try:
+                names = ast.literal_eval(node.value)
+            except ValueError:
+                return f"{_FACADE}: __all__ is not a literal list"
+            return set(names)
+    return f"{_FACADE}: no __all__ found"
+
+
+def check_surface(root: Path) -> list[str]:
+    """The facade's ``__all__`` must equal docs/api-surface.txt exactly.
+
+    A surface change is only legitimate as a deliberate two-file diff (facade
+    plus manifest, with a CHANGELOG entry per the stability policy); this
+    catches the accidental one-file kind.
+    """
+    manifest_path = root / _SURFACE_MANIFEST
+    try:
+        lines = manifest_path.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        return [f"{_SURFACE_MANIFEST}: {error}"]
+    declared = {line.strip() for line in lines if line.strip() and not line.startswith("#")}
+    actual = _facade_all(root)
+    if isinstance(actual, str):
+        return [actual]
+    problems: list[str] = []
+    added = sorted(actual - declared)
+    removed = sorted(declared - actual)
+    if added:
+        problems.append(
+            f"public surface grew: {', '.join(added)} in __all__ but not in "
+            f"{_SURFACE_MANIFEST} — if intentional, update the manifest in the same "
+            "commit and record the addition in CHANGELOG.md"
+        )
+    if removed:
+        problems.append(
+            f"public surface shrank: {', '.join(removed)} in {_SURFACE_MANIFEST} but "
+            "not in __all__ — removing a public name is a breaking change; update the "
+            "manifest deliberately and record it in CHANGELOG.md"
+        )
+    return problems
+
+
 def release_notes(root: Path, version: str) -> str:
     section = _section(root, version)
     if section is None:
@@ -93,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     problems = check(
         args.root, expect_tag=args.expect_tag, require_dated=args.expect_tag is not None
     )
+    problems += check_surface(args.root)
     if problems:
         for problem in problems:
             print(f"release gate: {problem}", file=sys.stderr)

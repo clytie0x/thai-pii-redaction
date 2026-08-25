@@ -33,6 +33,20 @@ def repo(tmp_path):
     return tmp_path
 
 
+def _write_surface(root, facade_names, manifest_names=None):
+    """Minimal facade + manifest pair for the surface gate."""
+    pkg = root / "amphrang"
+    pkg.mkdir(exist_ok=True)
+    body = ", ".join(repr(n) for n in facade_names)
+    (pkg / "__init__.py").write_text(f"__all__ = [{body}]\n", encoding="utf-8")
+    docs = root / "docs"
+    docs.mkdir(exist_ok=True)
+    names = facade_names if manifest_names is None else manifest_names
+    (docs / "api-surface.txt").write_text(
+        "# frozen public surface\n" + "".join(f"{n}\n" for n in names), encoding="utf-8"
+    )
+
+
 def test_happy_path_returns_no_problems_and_the_notes(repo):
     cr = _load()
     assert cr.check(repo, expect_tag="v1.2.3", require_dated=True) == []
@@ -74,8 +88,62 @@ def test_real_repo_passes_the_ci_form_of_the_gate():
     assert cr.check(ROOT) == []
 
 
+# --- public-surface gate ----------------------------------------------------
+
+
+def test_surface_gate_passes_when_manifest_matches(repo):
+    cr = _load()
+    _write_surface(repo, ["anonymize", "detect"])
+    assert cr.check_surface(repo) == []
+
+
+def test_surface_gate_fails_on_an_added_export(repo):
+    cr = _load()
+    _write_surface(
+        repo, ["anonymize", "detect", "new_thing"], manifest_names=["anonymize", "detect"]
+    )
+    problems = cr.check_surface(repo)
+    assert len(problems) == 1
+    assert "new_thing" in problems[0]
+    assert "api-surface.txt" in problems[0]
+
+
+def test_surface_gate_fails_on_a_removed_export(repo):
+    cr = _load()
+    _write_surface(repo, ["detect"], manifest_names=["anonymize", "detect"])
+    problems = cr.check_surface(repo)
+    assert len(problems) == 1
+    assert "anonymize" in problems[0]
+
+
+def test_surface_gate_fails_when_the_manifest_is_missing(repo):
+    cr = _load()
+    _write_surface(repo, ["detect"])
+    (repo / "docs" / "api-surface.txt").unlink()
+    assert any("api-surface.txt" in problem for problem in cr.check_surface(repo))
+
+
+def test_surface_gate_ignores_manifest_comments_and_order(repo):
+    cr = _load()
+    _write_surface(repo, ["detect", "anonymize"], manifest_names=["anonymize", "detect"])
+    assert cr.check_surface(repo) == []
+
+
+def test_real_repo_surface_matches_the_manifest():
+    cr = _load()
+    assert cr.check_surface(ROOT) == []
+
+
+def test_main_fails_on_surface_drift(repo, capsys):
+    cr = _load()
+    _write_surface(repo, ["detect", "sneaky"], manifest_names=["detect"])
+    assert cr.main(["--root", str(repo)]) == 1
+    assert "sneaky" in capsys.readouterr().err
+
+
 def test_main_exit_codes(repo, capsys):
     cr = _load()
+    _write_surface(repo, ["detect"])
     assert cr.main(["--root", str(repo), "--expect-tag", "v1.2.3", "--notes"]) == 0
     assert "## amphrang 1.2.3" in capsys.readouterr().out
     assert cr.main(["--root", str(repo), "--expect-tag", "v0.0.1"]) == 1
