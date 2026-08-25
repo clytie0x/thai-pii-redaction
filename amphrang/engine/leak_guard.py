@@ -356,19 +356,25 @@ def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
     return signals
 
 
+def _is_field_label(candidate: str) -> bool:
+    """A NAME finding that is really a known form-field label, per the same
+    non-person gate the retag path uses (`is_non_person_segment`)."""
+    from amphrang.engine.detectors.name_context import is_non_person_segment
+
+    return is_non_person_segment(candidate.strip())
+
+
 def _segment_leaks(segment: str) -> list[Entity]:
     """Detector findings in one between-token segment that count as leaks.
 
     The CRF tags bare field labels ("เลขบัตรประชาชน") as PERSON when a segment
-    is re-scanned in isolation, so NAME findings pass the same non-person gate
-    the retag path uses (`is_non_person_segment`); everything else counts.
+    is re-scanned in isolation, so NAME findings pass the field-label gate;
+    everything else counts.
     """
-    from amphrang.engine.detectors.name_context import is_non_person_segment
-
     return [
         entity
         for entity in detect_fp(segment) + detect_tb(segment)
-        if not (entity.data_type == "NAME" and is_non_person_segment(entity.original_text.strip()))
+        if not (entity.data_type == "NAME" and _is_field_label(entity.original_text))
     ]
 
 
@@ -381,6 +387,11 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
     real_leaks = []
     for entity in detect_fp(text) + detect_tb(text):
         if entity.original_text in trusted:
+            continue
+        if entity.data_type == "NAME" and _is_field_label(entity.original_text):
+            # On masked text the CRF tags bare field labels as PERSON; gate
+            # them here too, not only in the segment rescan, so the variant
+            # that never overlaps a trusted range cannot fail closed either.
             continue
         start, end = entity.span
         overlapping = [

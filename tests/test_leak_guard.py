@@ -379,3 +379,20 @@ def test_long_document_with_record_name_lines_is_not_leak_blocked():
     lines = build_perf_documents()["L"].split("\n")
     result = amphrang.anonymize("\n".join(lines[:55]), mode="token", salt="s")
     assert result.text
+
+
+# --- rescan invariants ------------------------------------------------------
+
+
+def test_scan_still_flags_a_real_name_left_next_to_a_token():
+    """Blanking the tokens must not blind the rescan: an actual unmasked name
+    sitting beside a trusted token is still a leak."""
+    from amphrang.engine.leak_guard import scan_outbound_leaks
+
+    token = "[ชื่อ_afffacdccdcebdfbdfeeebaae_qkulookzwtpmgmddkcfe_1]"
+    context = OutboundGuardContext(_trusted=frozenset({token}))
+    masked = f"ข้าพเจ้า {token} และภรรยา นางมาลี รักดี เลขบัตรประชาชน 1101700230708"
+    leaks = scan_outbound_leaks(masked, context)
+    types = {leak.data_type for leak in leaks}
+    assert "THAI_ID" in types
+    assert "NAME" in types
