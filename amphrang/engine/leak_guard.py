@@ -356,6 +356,22 @@ def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
     return signals
 
 
+def _segment_leaks(segment: str) -> list[Entity]:
+    """Detector findings in one between-token segment that count as leaks.
+
+    The CRF tags bare field labels ("เลขบัตรประชาชน") as PERSON when a segment
+    is re-scanned in isolation, so NAME findings pass the same non-person gate
+    the retag path uses (`is_non_person_segment`); everything else counts.
+    """
+    from amphrang.engine.detectors.name_context import is_non_person_segment
+
+    return [
+        entity
+        for entity in detect_fp(segment) + detect_tb(segment)
+        if not (entity.data_type == "NAME" and is_non_person_segment(entity.original_text.strip()))
+    ]
+
+
 def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]:
     """Return real leaks in pseudonymized text (empty list = safe to send)."""
     # Only replacements minted or reused this turn may excuse a hit; caller-seeded mappings are
@@ -388,8 +404,7 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
                 if position < end:
                     segments.append(text[position:end])
                 segments_clean = all(
-                    not segment.strip() or (not detect_fp(segment) and not detect_tb(segment))
-                    for segment in segments
+                    not segment.strip() or not _segment_leaks(segment) for segment in segments
                 )
                 if segments_clean and not _cue_leak_in_window(
                     text,

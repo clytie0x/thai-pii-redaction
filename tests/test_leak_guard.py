@@ -347,3 +347,35 @@ def test_policy_error_replaces_pii_shaped_injected_type_label():
     assert error.leak_types == ["THAI_ID", "UNCLASSIFIED_RESIDUAL"]
     assert injected not in str(error)
     assert injected not in str(vars(error))
+
+
+# --- field-label false positives on masked text -----------------------------
+
+
+def test_segment_rescan_ignores_known_field_labels():
+    """The CRF tags a bare field label ("เลขบัตรประชาชน") as PERSON when it is
+    re-scanned in isolation between two trusted tokens; the segment check must
+    apply the same non-person gate the retag path already uses, or every
+    "ข้าพเจ้า <token> เลขบัตรประชาชน <token>" line fails closed."""
+    from amphrang.engine.leak_guard import _segment_leaks
+
+    assert _segment_leaks("เลขบัตรประชาชน ") == []
+
+
+def test_segment_rescan_still_flags_a_real_name():
+    from amphrang.engine.leak_guard import _segment_leaks
+
+    leaks = _segment_leaks("นายอานนท์ สุขใจ")
+    assert any(e.data_type == "NAME" for e in leaks)
+
+
+def test_long_document_with_record_name_lines_is_not_leak_blocked():
+    """Regression for the perf-harness finding: anonymize failed closed on the
+    L/XL perf documents because the masked-text rescan confirmed CRF
+    hallucinations over field labels. Bisected minimal repro: 55 lines."""
+    import amphrang
+    from benchmark.perf import build_perf_documents
+
+    lines = build_perf_documents()["L"].split("\n")
+    result = amphrang.anonymize("\n".join(lines[:55]), mode="token", salt="s")
+    assert result.text

@@ -32,6 +32,16 @@ when they change shape.
   `anonymize_batch` fails closed as a unit; the raised `LeakBlockedError`
   carries the offending position in `batch_index`.
 
+### Fixed
+
+- Long documents no longer fail closed spuriously. `anonymize` on documents
+  past ~20k characters raised `LeakBlockedError` because the outbound
+  rescan's segment check re-ran the NER on isolated between-token segments,
+  where the CRF tags bare field labels ("เลขบัตรประชาชน") as person names —
+  confirming its own hallucination. The segment check now applies the same
+  non-person gate the retag path already uses; real names in a segment are
+  still flagged. Found by the performance harness on the L/XL classes.
+
 ### Changed
 
 - Packaging: dependencies are declared statically in `pyproject.toml`
