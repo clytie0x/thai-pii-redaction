@@ -3,7 +3,7 @@
 - วันที่: 2026-07-19 +07:00
 - บริบท: audit รอบใหม่ทั้ง repo ตาม Phase 1 ข้อ 2 ของ roadmap v2 (`2026-07-17-roadmap-v2-design.md`) เหตุผลคือ audit "tier 1-6" รอบก่อนไม่มีเอกสาร findings เป็น artifact จึงยืนยันความครบไม่ได้ เอกสารนี้คือ artifact ถาวรที่กติกา audit ของ owner บังคับ
 - วิธีทำ: multi-agent 6 ตัวขนานกัน แบ่งตาม subsystem (detection/anonymization, vault/AI/restore, web API, extension, desktop, scripts/CI/release) ทุก finding ต้องมี file:line + code excerpt จริง ห้ามเดาจากชื่อไฟล์
-- การ verify ของ owner-side (Claude ตัวหลัก): finding ระดับ critical และ high ทุกตัวถูก reproduce/อ่านโค้ดยืนยันเองอีกชั้น สถานะระบุต่อ finding
+- การ verify ของ owner-side: finding ระดับ critical และ high ทุกตัวถูก reproduce/อ่านโค้ดยืนยันเองอีกชั้น สถานะระบุต่อ finding
 - ขอบเขตที่ครอบ: `pii_redactor/`, `app/`, `extension/`, `desktop/`, `scripts/`, `.github/workflows/`, packaging, Docker
 - สิ่งที่ยังไม่ได้ปิดในเอกสารนี้: การแก้โค้ด เอกสารนี้เป็นแค่ findings การแก้จะทำเป็น branch/PR แยกตามลำดับความรุนแรง
 
@@ -76,7 +76,7 @@ DET-1 WEAKNESS เรื่อง dot/paren separator เป็น pre-existing 
 | Rust | `toolchain: stable` | `1.97.0` |
 | pip | `install --upgrade pip` | `pip==26.1.2` |
 
-apt จงใจไม่ pin (archive ของ Ubuntu ลบเวอร์ชันเก่า pin แล้วจะพังตอน archive หมุน) และเขียนระบุข้อยกเว้นไว้ใน release.yml header, CLAUDE.md, README.md แทนการปล่อยให้ประโยค "every build input is pinned" อ้างเกินจริง มี `tests/test_workflow_pins.py` กันถอยหลัง พิสูจน์แล้วว่าจับ regression ได้จริงไม่ใช่ผ่านลอย ๆ
+apt จงใจไม่ pin (archive ของ Ubuntu ลบเวอร์ชันเก่า pin แล้วจะพังตอน archive หมุน) และเขียนระบุข้อยกเว้นไว้ใน release.yml header, README.md แทนการปล่อยให้ประโยค "every build input is pinned" อ้างเกินจริง มี `tests/test_workflow_pins.py` กันถอยหลัง พิสูจน์แล้วว่าจับ regression ได้จริงไม่ใช่ผ่านลอย ๆ
 
 ข้อจำกัดเดิมที่ยังไม่ assert platform coverage ใน REL-3 ถูกยกเลิกหลัง release
 v2.3.0 และ v2.4.0 รันจริงสำเร็จแล้ว ปัจจุบัน gate ต้องเห็น asset ของ Windows,
@@ -208,7 +208,7 @@ Medium/Low ที่เหลือยังไม่ปิด (งานรอ�
 | VAULT-4 | `app/server.py:326` | `/api/reidentify` เขียน pseudonym เต็มลง audit log ผ่าน flag `leftover:{t}` ผิด invariant ที่ log ห้ามมี pseudonym และ `/api/audit-log` ก็ serve กลับออกมา | FIXED | log แค่ count + data_type ไม่ใช่ตัว token |
 | VAULT-5 | `output_validator.py:139-144` | truncation heuristic flag ข้อความ >20 ตัวที่จบด้วยเลข/อักษรละติน → `halt=True` → exporter raise ExportError กับ output ปกติ (reproduce: จบด้วยเบอร์โทรที่ restore แล้ว) path web รอดเพราะ `_NOISY_PREFIXES` filter | FIXED | invert เป็น blocklist ตัวอักษร/เลขทุก script + ตัวปิด (วงเล็บ/เครื่องหมายคำพูด) เป็น ending ที่ valid เหลือ flag เฉพาะ ending กลางประโยคจริง (จบด้วย comma/hyphen/วงเล็บเปิด) trade-off ที่รับไว้ การตัดที่พอดีขอบตัวอักษร/เลขตรวจไม่ได้ |
 
-หมายเหตุ VAULT-5 ทับซ้อนกับที่ CLAUDE.md อธิบายว่า Layer 3 เป็น Thai-aware แล้ว แต่ heuristic ยังพลาดกรณีจบด้วยเลข/อังกฤษ ซึ่งพบบ่อยมาก (บรรทัดสุดท้ายเป็นเบอร์โทร)
+หมายเหตุ VAULT-5 ทับซ้อนกับข้อสรุปเดิมที่ว่า Layer 3 เป็น Thai-aware แล้ว แต่ heuristic ยังพลาดกรณีจบด้วยเลข/อังกฤษ ซึ่งพบบ่อยมาก (บรรทัดสุดท้ายเป็นเบอร์โทร)
 
 ### Web API
 
