@@ -4,7 +4,9 @@ The public, semver-stable surface of the ``amphrang`` package is exactly what
 this module exports:
 
     detect(text)                     -> list[Entity]
+    detect_batch(texts)              -> list[list[Entity]]
     anonymize(text, mode=...)        -> AnonymizeResult   (.text, .mapping)
+    anonymize_batch(texts, mode=...) -> list[AnonymizeResult]
     restore(text, mapping)           -> RestoreResult     (.text)
     analyze(text)                    -> dict              (PDPA risk analysis)
     Session(...)                     — multi-turn anonymize/restore with an
@@ -59,7 +61,9 @@ __all__ = [
     "SessionExpiredError",
     "analyze",
     "anonymize",
+    "anonymize_batch",
     "detect",
+    "detect_batch",
     "restore",
 ]
 
@@ -173,6 +177,76 @@ def restore(
         generated_pii_count=result.generated_pii_count,
         foreign_replacement_count=result.foreign_replacement_count,
     )
+
+
+_LEAK_SENTINEL = "__amphrang_leak_blocked__"
+
+
+def _detect_one(text: str) -> list[Entity]:
+    return detect(text)
+
+
+def _anonymize_one(job: tuple[str, str, str | None]):
+    """One anonymize for the batch paths. A leak block comes back as a plain
+    tuple, not the exception: exceptions with keyword-only constructors do
+    not survive the process-pool pickle round trip."""
+    text, mode, salt = job
+    try:
+        return anonymize(text, mode=mode, salt=salt)
+    except LeakBlockedError as error:
+        return (_LEAK_SENTINEL, list(error.leak_types), list(error.policy_categories))
+
+
+def _run_in_pool(fn, jobs: list, workers: int) -> list:
+    from concurrent.futures import ProcessPoolExecutor
+
+    with ProcessPoolExecutor(max_workers=min(workers, len(jobs))) as pool:
+        return list(pool.map(fn, jobs))
+
+
+def detect_batch(texts: list[str], *, workers: int = 1) -> list[list[Entity]]:
+    """``detect`` over many texts, one entity list per input, in order.
+
+    ``workers > 1`` runs across a process pool; every worker pays the NER
+    model load once, so it only pays off for large batches. Results are
+    identical to calling ``detect`` in a loop.
+    """
+    texts = list(texts)
+    if workers > 1 and len(texts) > 1:
+        return _run_in_pool(_detect_one, texts, workers)
+    return [detect(text) for text in texts]
+
+
+def anonymize_batch(
+    texts: list[str],
+    *,
+    mode: str = "token",
+    salt: str | None = None,
+    workers: int = 1,
+) -> list[AnonymizeResult]:
+    """``anonymize`` over many texts, one ``AnonymizeResult`` per input.
+
+    Items are independent: with ``salt=None`` each gets its own random salt
+    (same as calling ``anonymize`` in a loop); passing a ``salt`` makes the
+    whole batch reproducible. Fails closed as a unit — the first item whose
+    mask would still leak raises ``LeakBlockedError`` with the offending
+    position in ``batch_index``, and no partial batch is returned.
+    ``workers`` behaves as in ``detect_batch``.
+    """
+    jobs = [(text, mode, salt) for text in texts]
+    if workers > 1 and len(jobs) > 1:
+        outcomes = _run_in_pool(_anonymize_one, jobs, workers)
+    else:
+        outcomes = [_anonymize_one(job) for job in jobs]
+
+    results: list[AnonymizeResult] = []
+    for index, outcome in enumerate(outcomes):
+        if isinstance(outcome, tuple) and outcome and outcome[0] == _LEAK_SENTINEL:
+            error = LeakBlockedError(outcome[1], policy_categories=outcome[2])
+            error.batch_index = index
+            raise error
+        results.append(outcome)
+    return results
 
 
 def analyze(text: str) -> dict:

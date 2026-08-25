@@ -117,9 +117,9 @@ AMPHRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" amphrang-mcp --transport http --
 
 ## Stability
 
-Only the `amphrang` module surface follows semver — `detect`, `anonymize`,
-`restore`, `analyze`, `Session`, `Entity`, `LeakBlockedError`,
-`SessionExpiredError`, and the result dataclasses. `amphrang.engine.*`
+Only the `amphrang` module surface follows semver — `detect`, `detect_batch`,
+`anonymize`, `anonymize_batch`, `restore`, `analyze`, `Session`, `Entity`,
+`LeakBlockedError`, `SessionExpiredError`, and the result dataclasses. `amphrang.engine.*`
 (detection/masking core) and `amphrang.server.*` (local HTTP server) are
 internal; import them at your own risk.
 

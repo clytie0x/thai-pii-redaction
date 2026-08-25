@@ -9,6 +9,14 @@ when they change shape.
 
 ## [Unreleased]
 
+### Added
+
+- `amphrang.detect_batch` and `amphrang.anonymize_batch`: many texts in one
+  call, item-for-item identical to the single-call functions, with an opt-in
+  `workers=N` process-parallel path (each worker loads the NER model once).
+  `anonymize_batch` fails closed as a unit; the raised `LeakBlockedError`
+  carries the offending position in `batch_index`.
+
 ### Changed
 
 - Packaging: dependencies are declared statically in `pyproject.toml`

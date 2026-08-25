@@ -86,6 +86,8 @@ in production.
 4. **1.0 release.** Semver policy, deprecation policy (one minor version
    warning), documented public surface = `amphrang/__init__.py` exactly as
    today. `check_release.py` gate extended to block accidental surface changes.
+   **Shipping 1.0 requires the owner's explicit approval** — it is not
+   automatic on completing this checklist (owner decision, 2026-08-25).
 
 Exit criteria: benchmark docs exist with real numbers from this machine + CI
 runners; 1.0.0 tagged; a stranger can read the README and know latency,
