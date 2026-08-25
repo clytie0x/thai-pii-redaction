@@ -23,6 +23,14 @@ pip install pre-commit
 pre-commit install
 ```
 
+With GNU make installed, `make install` does both steps above in one go, and
+`make install-locked` does the same with every transitive dependency pinned by
+`requirements.lock` (regenerate it with `make lock` after editing any
+`requirements*.txt`; needs [uv](https://docs.astral.sh/uv/)). The other chores
+are one word each — `make lint`, `make test`, `make bench`, `make serve`,
+`make api-test` — and each target body is exactly the commands documented
+below, so make is a convenience, never a requirement.
+
 ## Trying the API (Bruno)
 
 `bruno/` is a committed [Bruno](https://www.usebruno.com/) collection covering
@@ -39,7 +47,9 @@ cd bruno && bru run --env local
 
 Requests use synthetic personal data only — same rule as tests. The Sanitize
 request keeps its session handle in runtime variables, never in the committed
-environment file.
+environment file. CI runs this collection against a live server (the
+`api-collection` job), so a PR that changes the API must update the
+collection with it.
 
 ## Before you open a pull request
 
