@@ -11,6 +11,15 @@ when they change shape.
 
 ### Added
 
+- `amphrang[proxy]` / `amphrang-proxy`: OpenAI-compatible sanitizing reverse
+  proxy (`POST /v1/chat/completions`, streaming included). Outbound messages
+  are masked in token mode with one consistent token per value across the
+  history; replies are restored, streamed replies through a bounded-holdback
+  restorer that survives tokens split across chunk boundaries. Fail closed:
+  leak-blocked requests answer 422 and are never forwarded; tools, tool
+  calls, and non-text content parts are rejected (v1 scope). Loopback only;
+  upstream configured via `AMPHRANG_PROXY_UPSTREAM` /
+  `AMPHRANG_PROXY_UPSTREAM_KEY`.
 - API stability policy (README "Stability"): 0.x patch releases never change
   the public surface, breaking surface changes only in minor releases with a
   CHANGELOG entry, `DeprecationWarning` at least one minor release before any

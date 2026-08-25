@@ -101,6 +101,32 @@ amphrang report document.txt
 Prints a value-free PII risk report (entity counts by type plus a risk level)
 for a text file.
 
+## Sanitizing proxy (zero-code LLM firewall)
+
+`pip install "amphrang[proxy]"` adds `amphrang-proxy` — an OpenAI-compatible
+reverse proxy. Point any existing app's `base_url` at it and its chat traffic
+is masked on the way out and restored on the way back, streaming included;
+the token→original mapping lives only in request-scoped proxy memory.
+
+```
+AMPHRANG_PROXY_UPSTREAM=https://api.openai.com \
+AMPHRANG_PROXY_UPSTREAM_KEY=sk-... \
+amphrang-proxy --port 8400
+```
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://127.0.0.1:8400/v1", api_key="anything")
+# use it exactly as before — no other change
+```
+
+Scope (v1): `POST /v1/chat/completions` only, loopback only, one configured
+upstream (any OpenAI-compatible server — OpenAI, vLLM, Ollama). Fail closed:
+a request whose mask would still leak is answered 422 and never forwarded,
+and requests the proxy cannot mask end-to-end (tools, tool calls, image
+parts) are rejected rather than passed through.
+
 ## Run the local API server
 
 ```
@@ -147,6 +173,7 @@ AMPHRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" amphrang-mcp --transport http --
 
 | Extra | Adds |
 |---|---|
+| `amphrang[proxy]` | `amphrang-proxy` OpenAI-compatible sanitizing proxy |
 | `amphrang[server]` | Local FastAPI HTTP server (`amphrang.server.server`) |
 | `amphrang[mcp]` | `amphrang-mcp` Model Context Protocol server |
 | `amphrang[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |

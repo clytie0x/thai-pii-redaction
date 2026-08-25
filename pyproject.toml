@@ -38,6 +38,10 @@ server = [
   "python-multipart>=0.0.9",
 ]
 mcp = ["mcp>=2.0"]
+proxy = [
+  "fastapi>=0.111.0",
+  "uvicorn[standard]>=0.30.0",
+]
 ml = [
   "torch>=2.3.0",
   "transformers>=4.41.0",
@@ -58,6 +62,7 @@ dev = [
 [project.scripts]
 amphrang = "amphrang.cli:main"
 amphrang-mcp = "amphrang.mcp:main"
+amphrang-proxy = "amphrang.proxy.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/Teerapat-Vatpitak/amphrang"
@@ -83,6 +88,7 @@ packages = [
   "amphrang.engine.anonymizer",
   "amphrang.engine.guard",
   "amphrang.engine.ingest",
+  "amphrang.proxy",
   "amphrang.server",
 ]
 
