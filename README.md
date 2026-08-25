@@ -1,8 +1,8 @@
 # amphrang
 
-*amphrang* (อำพราง, "to conceal") — Thai PII detection and anonymization for
-Python: mask personal data before it reaches an external AI, restore it
-locally.
+*amphrang* (อำพราง, pronounced *ahm-prahng* [ʔam.pʰraːŋ], Thai for "to
+conceal, to camouflage") — Thai PII detection and anonymization for Python:
+mask personal data before it reaches an external AI, restore it locally.
 
 ```
 pip install amphrang
