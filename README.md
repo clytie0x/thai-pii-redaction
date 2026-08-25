@@ -42,6 +42,42 @@ hand-authored, twice-adjudicated gold corpus (in `benchmark/`), including a
 negative (no-PII) slice so the false-positive rate is a reported number, not
 a guess.
 
+## Measured accuracy
+
+Default engine (thainer-CRF, offline) on the open gold corpus, run 2026-08-25
+(`python -m benchmark --source gold`, 648 gold entities):
+
+| entity | n | recall | precision |
+|---|---|---|---|
+| THAI_ID | 51 | 1.000 | 1.000 |
+| CREDIT_CARD | 24 | 1.000 | 1.000 |
+| DATE_OF_BIRTH | 45 | 1.000 | 1.000 |
+| EMAIL | 47 | 1.000 | 1.000 |
+| BANK_ACCOUNT | 35 | 1.000 | 0.972 |
+| PASSPORT | 25 | 1.000 | 0.962 |
+| ADDRESS | 58 | 1.000 | 0.935 |
+| NAME | 199 | 0.990 | 0.995 |
+| PHONE | 81 | 0.988 | 1.000 |
+| VEHICLE_PLATE | 26 | 0.962 | 1.000 |
+| STUDENT_ID | 57 | 0.719 | 1.000 |
+| **overall** | **648** | **0.969** | **0.867** |
+
+Overall F2 0.947 (95% CI 0.928–0.964). Precision counts every flagged span
+that is not a gold entity, including spans outside the labeling scheme — the
+recall-first design accepts that trade. The weakest type is honest too:
+STUDENT_ID recall is 0.719, mostly free-form student-number shapes. On the
+negative (no-PII) slice, 31 of 45 documents come through with zero false
+positives.
+
+The gold corpus is open and the detectors are tuned against it, so it is an
+upper bound. The held-out **blind corpus** (encrypted in-repo, 185 documents,
+479 entities, scored under an audited reveal budget — see
+`docs/decisions/2026-07-28-blind-set-protocol.md`) puts the default engine at
+**recall 0.960, precision 0.713, F2 0.898**, and the opt-in fine-tuned engine
+at recall 0.983, F2 0.916. Those figures are quoted from the hash-chained
+score log (`benchmark/data/blind-scores.jsonl`, reveals 5–6 of 6) — no new
+reveal was spent publishing them.
+
 ## Design promises
 
 - **Fail closed.** If a masked result would still carry residual PII
