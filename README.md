@@ -114,6 +114,12 @@ AMPHRANG_PROXY_UPSTREAM_KEY=sk-... \
 amphrang-proxy --port 8400
 ```
 
+For a local model, point it at Ollama instead (no key needed):
+
+```
+AMPHRANG_PROXY_UPSTREAM=http://127.0.0.1:11434 amphrang-proxy --port 8400
+```
+
 ```python
 from openai import OpenAI
 
