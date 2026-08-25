@@ -2,7 +2,6 @@
 
 /api/detect    — detection-only, no session, offsets align with input text
 /api/roundtrip — stateless mask -> LLM -> restore in one request
-/demo          — gated behind AMPHRANG_DEMO=1
 """
 
 import httpx
@@ -949,32 +948,6 @@ def test_reidentify_encoding_failure_is_fixed_and_scrubs_restored_text(client, m
     assert response.json()["error"]["code"] == "restore_failed"
     assert private_marker not in response.text
     assert captured == []
-
-
-class TestDemoGate:
-    def test_demo_404_by_default(self, client, monkeypatch):
-        monkeypatch.delenv("AMPHRANG_DEMO", raising=False)
-        assert client.get("/demo").status_code == 404
-
-    def test_demo_served_when_enabled(self, client, monkeypatch):
-        monkeypatch.setenv("AMPHRANG_DEMO", "1")
-        resp = client.get("/demo")
-        assert resp.status_code == 200
-        assert "text/html" in resp.headers["content-type"]
-        assert "Amphrang" in resp.text
-        assert "ข้อมูลจริงไม่เคยออกจากเครื่องฝั่งผู้ใช้" not in resp.text
-        assert "ข้อมูลจริงไม่ถูกส่งต่อไปยังโมเดลปลายทาง" not in resp.text
-        assert "ก่อนเรียกโมเดล demo จะบล็อก residual PII" in resp.text
-        assert "ผลลัพธ์ไม่ถูกนำไปแสดงหรือใช้งาน" in resp.text
-
-    def test_roundtrip_failure_uses_safe_local_copy(self, client, monkeypatch):
-        monkeypatch.setenv("AMPHRANG_DEMO", "1")
-
-        resp = client.get("/demo")
-
-        assert resp.status_code == 200
-        assert "ส่งไม่สำเร็จ ผลลัพธ์ไม่ถูกนำไปแสดงหรือใช้งาน" in resp.text
-        assert "body.detail" not in resp.text
 
 
 class TestAnalyzeReport:

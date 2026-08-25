@@ -68,7 +68,6 @@ packages = [
 # font file, so OFL-1.1.txt ships alongside it.
 [tool.setuptools.package-data]
 "amphrang.engine" = ["fonts/*.ttf", "fonts/OFL-1.1.txt"]
-"amphrang.server" = ["demo/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

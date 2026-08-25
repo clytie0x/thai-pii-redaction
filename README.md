@@ -72,18 +72,17 @@ amphrang breach assess ./leaked_files -o breach.json --pdf breach.pdf
 amphrang dsar locate ./documents --subject-file subject.txt -o dsar.json
 ```
 
-## Try it in a browser
+## Run the local API server
 
 ```
 pip install "amphrang[server]"
 amphrang serve
 ```
 
-One process, loopback only, opens the playground at `http://127.0.0.1:8000/demo`
-— paste Thai text, see detection highlights and masked output live. Nothing
-leaves the machine. (`--no-browser`, `--no-demo`, `--port` available; a
-non-loopback bind requires an explicit `--allow-remote` **and**
-`AMPHRANG_API_KEY`, so the data plane is never silently open to a network.)
+One process, loopback only; opens the API docs at `http://127.0.0.1:8000/docs`.
+(`--no-browser`, `--port` available; a non-loopback bind requires an explicit
+`--allow-remote` **and** `AMPHRANG_API_KEY`, so the data plane is never
+silently open to a network.)
 
 For a host instead of a laptop, the repository's `Dockerfile` packages the
 same server; it refuses to start without `AMPHRANG_API_KEY` (the data plane is

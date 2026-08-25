@@ -1,4 +1,4 @@
-"""`amphrang serve` — run the local FastAPI backend with the demo playground and open a browser.
+"""`amphrang serve` — run the local FastAPI backend and open a browser to its API docs.
 
 Binds loopback only unless `--allow-remote` is passed: data-plane auth (`AMPHRANG_API_KEY`) is
 optional, so an unkeyed non-loopback bind would expose sanitize/reidentify to the network.
@@ -20,12 +20,7 @@ def add_serve_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--no-browser",
         action="store_true",
-        help="do not open the playground in a browser",
-    )
-    parser.add_argument(
-        "--no-demo",
-        action="store_true",
-        help="serve the API only, without the /demo playground page",
+        help="do not open the API docs in a browser",
     )
     parser.add_argument(
         "--allow-remote",
@@ -60,9 +55,6 @@ def run_serve(args: argparse.Namespace) -> None:
         allow_remote=args.allow_remote,
         api_key_set=bool(os.environ.get("AMPHRANG_API_KEY")),
     )
-    if not args.no_demo:
-        os.environ["AMPHRANG_DEMO"] = "1"
-
     try:
         import uvicorn
 
@@ -72,7 +64,7 @@ def run_serve(args: argparse.Namespace) -> None:
             "amphrang serve needs the server extra: pip install 'amphrang[server]'"
         ) from None
 
-    url = f"http://{args.host}:{args.port}" + ("" if args.no_demo else "/demo")
+    url = f"http://{args.host}:{args.port}"
     print(f"amphrang serving on {url} (Ctrl+C to stop)")
     if not args.no_browser:
         # Fire after uvicorn has had a moment to bind; a missed open is not an error.
@@ -86,7 +78,7 @@ def run_serve(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="amphrang-serve",
-        description="Run the local amphrang backend with the demo playground",
+        description="Run the local amphrang backend",
     )
     add_serve_arguments(parser)
     run_serve(parser.parse_args())

@@ -528,10 +528,8 @@ def main():
     )
     locate_parser.set_defaults(func=cmd_dsar_locate)
 
-    # serve subcommand — local backend + demo playground (needs [server] extra)
-    serve_parser = subparsers.add_parser(
-        "serve", help="Run the local backend with the demo playground"
-    )
+    # serve subcommand — local backend (needs [server] extra)
+    serve_parser = subparsers.add_parser("serve", help="Run the local backend")
     from amphrang.serve import add_serve_arguments, run_serve
 
     add_serve_arguments(serve_parser)

@@ -27,7 +27,7 @@ and is not repeated here.
 - `amphrang` CLI: `sanitize`, `report`, and the PDPA artifact generators
   `receipt issue` (มาตรา 39), `breach assess` (มาตรา 37(4)), `dsar locate`
   (มาตรา 30), each producing a value-free JSON + Thai PDF pair.
-- `amphrang serve`: one-command local playground, loopback-only by default; a
+- `amphrang serve`: one-command local API server, loopback-only by default; a
   non-loopback bind requires both `--allow-remote` and `AMPHRANG_API_KEY`.
 - `amphrang-mcp` (`amphrang[mcp]`): Model Context Protocol server exposing
   `detect_pii`, `sanitize`, `reidentify`, `pdpa_analyze`, `guard_prompt`,

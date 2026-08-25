@@ -132,7 +132,7 @@ def test_hosted_adapter_exposes_only_allowlisted_v2_routes():
         "c = TestClient(app, base_url='http://localhost')\n"
         "h = {'X-Amphrang-Contract-Version': '2', 'X-Amphrang-Key': 'synthetic-hosted-key'}\n"
         "assert c.get('/api/health').status_code == 200\n"
-        "for path in ('/', '/docs', '/redoc', '/openapi.json', '/demo', '/api/analyze-report', '/api/redact-pdf', '/api/audit-log', '/api/shutdown', '/api/session/synthetic'):\n"
+        "for path in ('/', '/docs', '/redoc', '/openapi.json', '/api/analyze-report', '/api/redact-pdf', '/api/audit-log', '/api/shutdown', '/api/session/synthetic'):\n"
         "    method = c.delete if path.startswith('/api/session/') else c.post if path == '/api/shutdown' else c.get\n"
         "    response = method(path, headers=h)\n"
         "    assert response.status_code == 404, (path, response.status_code)\n"

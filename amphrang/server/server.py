@@ -27,9 +27,8 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Query, Request, UploadFile
-from fastapi import HTTPException as FastAPIHTTPException
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.responses import Response
@@ -511,22 +510,6 @@ def _api_key_ok(supplied: str | None) -> bool:
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse(url="/docs")
-
-
-def _demo_page_path() -> Path:
-    """Demo page shipped as package data (amphrang/server/demo/playground.html)."""
-    return Path(__file__).resolve().parent / "demo" / "playground.html"
-
-
-@app.get("/demo", include_in_schema=False)
-def demo_page():
-    """Demo playground; served only when AMPHRANG_DEMO=1, read per request so tests can flip it."""
-    if os.environ.get("AMPHRANG_DEMO") != "1":
-        raise FastAPIHTTPException(status_code=404, detail="Not Found")
-    page = _demo_page_path()
-    if not page.is_file():
-        raise FastAPIHTTPException(status_code=404, detail="Not Found")
-    return FileResponse(page, media_type="text/html")
 
 
 def _schedule_exit() -> None:

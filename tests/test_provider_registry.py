@@ -1,8 +1,5 @@
 """One provider registry, consumed by every surface (spec: no copied lists)."""
 
-import re
-from pathlib import Path
-
 import pytest
 
 from amphrang.engine.ai_client import PROVIDER_FACTORIES, get_provider_factories
@@ -41,19 +38,3 @@ class TestSurfaceRegistries:
 
         assert "tokenmind" in server._PROVIDER_FACTORIES
         assert set(server._PROVIDER_FACTORIES) == EXPECTED
-
-
-class TestPlaygroundDropdown:
-    def _options(self):
-        html = (
-            Path(__file__).parent.parent / "amphrang" / "server" / "demo" / "playground.html"
-        ).read_text(encoding="utf-8")
-        select = re.search(r'<select id="provider">(.*?)</select>', html, re.DOTALL)
-        assert select, "provider dropdown missing"
-        return re.findall(r'<option value="([^"]+)"', select.group(1))
-
-    def test_playground_offers_tokenmind(self):
-        assert "tokenmind" in self._options()
-
-    def test_playground_options_match_registry(self):
-        assert set(self._options()) == EXPECTED

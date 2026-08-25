@@ -30,15 +30,6 @@ def test_non_loopback_binding_allowed_when_explicit_and_keyed():
     check_binding("0.0.0.0", allow_remote=True, api_key_set=True)
 
 
-def test_demo_page_ships_inside_the_server_package():
-    from amphrang.server.server import _demo_page_path
-
-    page = _demo_page_path()
-    assert page.is_file()
-    assert page.parent.name == "demo"
-    assert page.parent.parent.name == "server"
-
-
 def test_cli_exposes_serve_subcommand():
     import subprocess
     import sys
