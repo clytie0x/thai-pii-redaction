@@ -279,7 +279,7 @@ def test_bank_cue_far_before_number_still_wins():
 # ── WangchanBERTa gold comparison (opt-in) ─────────────────────────────
 @pytest.mark.skipif(
     importlib.util.find_spec("transformers") is None,
-    reason="requires requirements-ml.txt",
+    reason="requires amphrang[ml]",
 )
 def test_wangchanberta_gold_runs():
     r = run_benchmark(engine="wangchanberta", source="gold")

@@ -22,7 +22,7 @@ from benchmark.scorer import score
 
 @pytest.mark.skipif(
     importlib.util.find_spec("transformers") is None,
-    reason="requires requirements-ml.txt",
+    reason="requires amphrang[ml]",
 )
 def test_product_union_reproduces_adr_recall_on_gold(monkeypatch):
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "union")

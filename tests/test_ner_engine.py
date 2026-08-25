@@ -45,7 +45,7 @@ def test_wangchanberta_without_transformers_raises(monkeypatch):
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
-    with pytest.raises(tb_detector.NEREngineUnavailableError, match="requirements-ml.txt"):
+    with pytest.raises(tb_detector.NEREngineUnavailableError, match=r"amphrang\[ml\]"):
         tb_detector._get_ner()
 
 
@@ -101,7 +101,7 @@ def test_union_without_transformers_raises(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
     from amphrang.engine.detectors.tb_detector import detect_tb
 
-    with pytest.raises(tb_detector.NEREngineUnavailableError, match="requirements-ml.txt"):
+    with pytest.raises(tb_detector.NEREngineUnavailableError, match=r"amphrang\[ml\]"):
         detect_tb("นายสมชาย ใจดี อยู่กรุงเทพมหานคร")
 
 

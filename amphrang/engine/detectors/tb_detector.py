@@ -410,7 +410,7 @@ def _load_ner(name: str) -> NER:
             except ImportError:
                 raise NEREngineUnavailableError(
                     f"AMPHRANG_NER_ENGINE={name!r} requires {requires!r}. "
-                    f"Run: pip install -r requirements-ml.txt"
+                    f'Run: pip install "amphrang[ml]"'
                 ) from None
         _ner_cache[name] = NER(engine=config["ner_engine"])
     return _ner_cache[name]

@@ -3,16 +3,18 @@
 
 PY ?= python
 
-.PHONY: install install-locked lint test bench serve api-test lock
+.PHONY: install sync lint test bench serve api-test lock
 
+# pip path — range-resolved, same as what a library consumer gets.
+# --group needs pip >= 25.1.
 install:
-	$(PY) -m pip install -e ".[server,mcp]" ruff pytest pre-commit
+	$(PY) -m pip install -e ".[server,mcp]" --group dev
 	pre-commit install
 
-# Same extras, but every transitive dependency pinned by requirements.lock.
-install-locked:
-	$(PY) -m pip install -r requirements.lock -e ".[server,mcp]" ruff pytest pre-commit
-	pre-commit install
+# uv path — reproducible dev env pinned by uv.lock (dev group installs by default).
+sync:
+	uv sync --extra server --extra mcp
+	uv run pre-commit install
 
 lint:
 	ruff check .
@@ -31,6 +33,6 @@ serve:
 api-test:
 	cd bruno && bru run --env local
 
-# Re-pin requirements.lock after editing any requirements*.txt (needs uv).
+# Re-pin uv.lock after editing dependencies in pyproject.toml (CI fails when stale).
 lock:
-	uv pip compile requirements.txt requirements-web.txt requirements-mcp.txt --universal --python-version 3.11 -o requirements.lock
+	uv lock

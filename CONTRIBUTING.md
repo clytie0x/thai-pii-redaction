@@ -5,31 +5,40 @@ below exist to keep it that way.
 
 ## Setup
 
+With [uv](https://docs.astral.sh/uv/) (recommended — reproducible dev env,
+every transitive dependency pinned by the committed `uv.lock`):
+
 ```
 git clone https://github.com/Teerapat-Vatpitak/amphrang
 cd amphrang
+uv sync --extra server --extra mcp
+uv run pre-commit install
+```
+
+Or with plain pip (range-resolved, same as what a library consumer gets;
+`--group` needs pip 25.1+):
+
+```
 python -m venv .venv
 # Windows: .venv\Scripts\activate   macOS/Linux: source .venv/bin/activate
-pip install -e ".[server,mcp]" ruff pytest
-```
-
-Python 3.11+ is required. The PyThaiNLP NER model downloads on first use.
-
-Then activate the commit hooks (same ruff config as CI, plus line-ending and
-merge-conflict checks — see `.pre-commit-config.yaml`):
-
-```
-pip install pre-commit
+pip install -e ".[server,mcp]" --group dev
 pre-commit install
 ```
 
-With GNU make installed, `make install` does both steps above in one go, and
-`make install-locked` does the same with every transitive dependency pinned by
-`requirements.lock` (regenerate it with `make lock` after editing any
-`requirements*.txt`; needs [uv](https://docs.astral.sh/uv/)). The other chores
-are one word each — `make lint`, `make test`, `make bench`, `make serve`,
-`make api-test` — and each target body is exactly the commands documented
-below, so make is a convenience, never a requirement.
+Python 3.11+ is required. The PyThaiNLP NER model downloads on first use.
+The `pre-commit install` line activates the commit hooks (same ruff config as
+CI, plus line-ending and merge-conflict checks — see
+`.pre-commit-config.yaml`).
+
+Dependencies live in `pyproject.toml` only: runtime under
+`[project.dependencies]` and the extras, dev tools under
+`[dependency-groups]`. After editing them run `make lock` (or `uv lock`) to
+re-pin `uv.lock` — CI fails when the lock is stale.
+
+With GNU make installed the chores are one word each — `make sync` /
+`make install` (the two setups above), `make lint`, `make test`, `make bench`,
+`make serve`, `make api-test`, `make lock` — and each target body is exactly
+the commands documented here, so make is a convenience, never a requirement.
 
 ## Trying the API (Bruno)
 

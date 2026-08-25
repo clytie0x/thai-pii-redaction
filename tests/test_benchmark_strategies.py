@@ -44,7 +44,7 @@ def test_route_takes_address_from_wcb_and_name_from_crf():
 
 @pytest.mark.skipif(
     importlib.util.find_spec("transformers") is None,
-    reason="requires requirements-ml.txt",
+    reason="requires amphrang[ml]",
 )
 def test_run_strategy_comparison_returns_four_reports():
     reports = run_strategy_comparison(source="gold")

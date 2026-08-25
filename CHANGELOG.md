@@ -9,6 +9,16 @@ when they change shape.
 
 ## [Unreleased]
 
+### Changed
+
+- Packaging: dependencies are declared statically in `pyproject.toml`
+  (`[project.dependencies]`, `[project.optional-dependencies]`, PEP 735
+  `[dependency-groups]` for dev tools) instead of dynamically from
+  `requirements*.txt`, which are gone. Reproducible dev installs come from
+  the committed `uv.lock` (`uv sync --extra server --extra mcp`); published
+  metadata is unchanged in spirit — same floors, same extras. The build
+  backend stays setuptools and `VERSION` still drives the version.
+
 ### Removed
 
 Refocused on guarding LLM traffic (decision record

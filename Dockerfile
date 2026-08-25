@@ -14,7 +14,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN useradd --create-home --uid 10001 amphrang
 WORKDIR /build
-COPY pyproject.toml VERSION README.md LICENSE NOTICE MANIFEST.in requirements*.txt ./
+COPY pyproject.toml VERSION README.md LICENSE NOTICE MANIFEST.in ./
 COPY amphrang ./amphrang
 RUN pip install ".[server]" && rm -rf /build
 

@@ -280,10 +280,10 @@ def test_ci_gate_crf_recall_floors():
     assert r["overall"]["coverage_recall"] >= 0.90, r["overall"]
 
 
-# ── WangchanBERTa comparison (opt-in; requires requirements-ml.txt) ─────
+# ── WangchanBERTa comparison (opt-in; requires amphrang[ml]) ─────
 @pytest.mark.skipif(
     importlib.util.find_spec("transformers") is None,
-    reason="requires requirements-ml.txt",
+    reason="requires amphrang[ml]",
 )
 def test_wangchanberta_engine_runs_and_switches():
     # Assert the engine actually LOADS and RUNS (the singleton-reset in

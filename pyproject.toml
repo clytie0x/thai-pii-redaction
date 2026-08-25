@@ -23,7 +23,36 @@ classifiers = [
   "Topic :: Security",
   "Topic :: Text Processing :: Linguistic",
 ]
-dynamic = ["version", "dependencies", "optional-dependencies"]
+dynamic = ["version"]
+dependencies = [
+  "pythainlp>=5.0.0",
+  "python-crfsuite>=0.9.9",
+  "regex>=2024.0.0",
+  "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+server = [
+  "fastapi>=0.111.0",
+  "uvicorn[standard]>=0.30.0",
+  "python-multipart>=0.0.9",
+]
+mcp = ["mcp>=2.0"]
+ml = [
+  "torch>=2.3.0",
+  "transformers>=4.41.0",
+  "sentencepiece>=0.2.0",
+  "sentence-transformers>=2.7.0",
+]
+
+# Dev-only tools (PEP 735); never part of the published metadata.
+# `uv sync` installs them by default; pip users: `pip install --group dev`.
+[dependency-groups]
+dev = [
+  "ruff",
+  "pytest",
+  "pre-commit",
+]
 
 [project.scripts]
 amphrang = "amphrang.cli:main"
@@ -37,10 +66,6 @@ Issues = "https://github.com/Teerapat-Vatpitak/amphrang/issues"
 
 [tool.setuptools.dynamic]
 version = { file = "VERSION" }
-dependencies = { file = "requirements.txt" }
-optional-dependencies.server = { file = "requirements-web.txt" }
-optional-dependencies.mcp = { file = "requirements-mcp.txt" }
-optional-dependencies.ml = { file = "requirements-ml.txt" }
 
 [tool.setuptools]
 # `amphrang`'s top-level module (amphrang/__init__.py, cli.py, mcp.py,
@@ -95,4 +120,3 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "double"
-
