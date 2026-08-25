@@ -26,6 +26,10 @@ test:
 bench:
 	$(PY) -m benchmark --source gold
 
+# Full performance run; writes nothing — pass --markdown/--json to publish.
+perf:
+	$(PY) -m benchmark.perf
+
 serve:
 	$(PY) -m amphrang.cli serve --no-browser
 

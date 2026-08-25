@@ -52,6 +52,7 @@ dev = [
   "ruff",
   "pytest",
   "pre-commit",
+  "psutil", # peak-RSS sampling in benchmark/perf.py (harness degrades without it)
 ]
 
 [project.scripts]
