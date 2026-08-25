@@ -342,7 +342,7 @@ def test_partial_name_expansion_respects_the_hard_call_cap(monkeypatch):
     assert sum(e.original_text == "สมชาย" for e in names) == 5
 
 
-@pytest.mark.parametrize("engine_name", ["wangchanberta", "tner"])
+@pytest.mark.parametrize("engine_name", ["wangchanberta"])
 def test_isolated_line_fallback_never_adds_calls_for_other_single_engines(monkeypatch, engine_name):
     ner = GreedyIsolatedNER()
     monkeypatch.setitem(tbd._ner_cache, engine_name, ner)

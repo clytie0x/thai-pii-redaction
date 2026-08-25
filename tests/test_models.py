@@ -8,89 +8,10 @@ from amphrang.engine.models import (
     AIResponse,
     Entity,
     EntityRegistry,
-    NormalizedDocumentModel,
     PseudonymizedDocument,
     ReverseResult,
     VaultRecord,
-    WordBbox,
 )
-
-
-class TestWordBbox:
-    """Tests for WordBbox dataclass."""
-
-    def test_word_bbox_instantiation(self):
-        """Test that WordBbox can be instantiated with expected fields."""
-        wb = WordBbox(text="สวัสดี", page=0, x=10.0, y=20.0, width=50.0, height=12.0)
-        assert wb.text == "สวัสดี"
-        assert wb.page == 0
-        assert wb.x == 10.0
-        assert wb.y == 20.0
-        assert wb.width == 50.0
-        assert wb.height == 12.0
-        assert wb.source_span is None
-
-    def test_word_bbox_fields_exist(self):
-        """Test that all expected fields exist in WordBbox."""
-        field_names = {f.name for f in fields(WordBbox)}
-        expected_fields = {"text", "page", "x", "y", "width", "height", "source_span"}
-        assert field_names == expected_fields
-
-    def test_word_bbox_english_text(self):
-        """Test WordBbox with English text."""
-        wb = WordBbox(text="hello", page=1, x=5.5, y=15.5, width=30.0, height=10.0)
-        assert wb.text == "hello"
-        assert wb.page == 1
-
-
-class TestNormalizedDocumentModel:
-    """Tests for NormalizedDocumentModel dataclass."""
-
-    def test_normalized_document_instantiation(self):
-        """Test that NormalizedDocumentModel can be instantiated."""
-        words = [
-            WordBbox(text="test", page=0, x=0.0, y=0.0, width=20.0, height=10.0),
-        ]
-        ndm = NormalizedDocumentModel(
-            text="test document",
-            words=words,
-            language="th",
-            source_type="pdf_text",
-            metadata={"quality_score": 0.95},
-        )
-        assert ndm.text == "test document"
-        assert len(ndm.words) == 1
-        assert ndm.language == "th"
-        assert ndm.source_type == "pdf_text"
-        assert ndm.metadata["quality_score"] == 0.95
-
-    def test_normalized_document_metadata_default(self):
-        """Test that metadata defaults to empty dict."""
-        ndm = NormalizedDocumentModel(
-            text="test",
-            words=[],
-            language="en",
-            source_type="text",
-        )
-        assert ndm.metadata == {}
-        assert isinstance(ndm.metadata, dict)
-
-    def test_normalized_document_fields_exist(self):
-        """Test that all expected fields exist."""
-        field_names = {f.name for f in fields(NormalizedDocumentModel)}
-        expected_fields = {"text", "words", "language", "source_type", "metadata"}
-        assert field_names == expected_fields
-
-    def test_normalized_document_multiple_languages(self):
-        """Test with different language codes."""
-        for lang in ["th", "en"]:
-            ndm = NormalizedDocumentModel(
-                text="test",
-                words=[],
-                language=lang,
-                source_type="text",
-            )
-            assert ndm.language == lang
 
 
 class TestEntity:
@@ -435,21 +356,7 @@ class TestDataclassIntegration:
 
     def test_full_pipeline_model_flow(self):
         """Test a complete flow through the data models."""
-        # Step 1: NormalizedDocumentModel
-        words = [
-            WordBbox(text="สวัสดี", page=0, x=0.0, y=0.0, width=40.0, height=12.0),
-            WordBbox(text="1101200012345", page=0, x=50.0, y=0.0, width=80.0, height=12.0),
-        ]
-        ndm = NormalizedDocumentModel(
-            text="สวัสดี 1101200012345",
-            words=words,
-            language="th",
-            source_type="pdf_text",
-            metadata={"quality_score": 0.95},
-        )
-        assert len(ndm.words) == 2
-
-        # Step 2: Entity detection
+        # Step 1: Entity detection
         entities = [
             Entity(
                 entity_id=str(uuid4()),
@@ -462,7 +369,7 @@ class TestDataclassIntegration:
         ]
         entity_registry = EntityRegistry(entities=entities, fp_count=1, tb_count=0)
 
-        # Step 3: Pseudonymization
+        # Step 2: Pseudonymization
         pseudonymized = PseudonymizedDocument(
             text="สวัสดี [REDACT_0]",
             entity_registry=entity_registry,
@@ -482,14 +389,14 @@ class TestDataclassIntegration:
         )
         assert vault_record.original == "1101200012345"
 
-        # Step 5: AI response
+        # Step 3: AI response
         ai_response = AIResponse(
             text="สวัสดี [REDACT_0] is a valid ID.",
             request_id=str(uuid4()),
             latency=0.5,
         )
 
-        # Step 6: Reverse mapping
+        # Step 4: Reverse mapping
         reverse_result = ReverseResult(
             text="สวัสดี 1101200012345 is a valid ID.",
             flags=[],

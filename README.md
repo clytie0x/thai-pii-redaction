@@ -1,8 +1,8 @@
 # amphrang
 
-*amphrang* (อำพราง, "to conceal") — Thai PII detection, anonymization, and PDF
-redaction for Python: mask personal data before it reaches an external AI,
-restore it locally.
+*amphrang* (อำพราง, "to conceal") — Thai PII detection and anonymization for
+Python: mask personal data before it reaches an external AI, restore it
+locally.
 
 ```
 pip install amphrang
@@ -30,9 +30,6 @@ with amphrang.Session(mode="token") as session:
 
 # PDPA risk analysis (no raw values in the result)
 amphrang.analyze(text)
-
-# Permanent PDF blackout (flattened; scanned PDFs need `pip install amphrang[ocr]`)
-amphrang.redact_pdf("input.pdf", "redacted.pdf")
 ```
 
 ## What it detects
@@ -59,18 +56,14 @@ a guess.
   is labeled `DATE`, not a fake birthday, and an invoice number is not a
   passport.
 
-## PDPA tooling (CLI)
-
-The `amphrang` console command carries the PDPA artifact generators —
-processing receipt (มาตรา 39), breach assessment (มาตรา 37(4)), and DSAR
-locate (มาตรา 30) — each producing a value-free JSON + Thai PDF pair:
+## CLI
 
 ```
 amphrang report document.txt
-amphrang receipt issue document.txt -o receipt.json --pdf receipt.pdf
-amphrang breach assess ./leaked_files -o breach.json --pdf breach.pdf
-amphrang dsar locate ./documents --subject-file subject.txt -o dsar.json
 ```
+
+Prints a value-free PII risk report (entity counts by type plus a risk level)
+for a text file.
 
 ## Run the local API server
 
@@ -121,12 +114,11 @@ AMPHRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" amphrang-mcp --transport http --
 | `amphrang[server]` | Local FastAPI HTTP server (`amphrang.server.server`) |
 | `amphrang[mcp]` | `amphrang-mcp` Model Context Protocol server |
 | `amphrang[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
-| `amphrang[ocr]` | PaddleOCR pipeline for scanned/hybrid PDFs |
 
 ## Stability
 
 Only the `amphrang` module surface follows semver — `detect`, `anonymize`,
-`restore`, `analyze`, `redact_pdf`, `Session`, `Entity`, `LeakBlockedError`,
+`restore`, `analyze`, `Session`, `Entity`, `LeakBlockedError`,
 `SessionExpiredError`, and the result dataclasses. `amphrang.engine.*`
 (detection/masking core) and `amphrang.server.*` (local HTTP server) are
 internal; import them at your own risk.
@@ -134,6 +126,8 @@ internal; import them at your own risk.
 ## Provenance
 
 Extracted from [thai-pii-redaction](https://github.com/Teerapat-Vatpitak/thai-pii-redaction)
-(AI Guard 3.0.0), keeping the detection engine, benchmark corpus, and PDPA
-tooling; the browser-extension/desktop/native-broker storefronts stayed
-behind. Apache-2.0.
+(AI Guard 3.0.0), keeping the detection engine and benchmark corpus; the
+browser-extension/desktop/native-broker storefronts stayed behind, and the
+inherited PDF-redaction and PDPA document-generator surfaces were removed
+when the project refocused on guarding LLM traffic (see
+`docs/decisions/2026-08-25-production-enterprise-direction.md`). Apache-2.0.

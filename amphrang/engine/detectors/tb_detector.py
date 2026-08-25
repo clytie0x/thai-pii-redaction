@@ -388,9 +388,6 @@ def _raise_explicit_ner_failure(
 _ENGINE_CONFIG: dict[str, dict[str, str | None]] = {
     "thainer": {"ner_engine": "thainer", "requires": None},
     "wangchanberta": {"ner_engine": "thainer-v2", "requires": "transformers"},
-    # AI for Thai TNER. Opt-in only so detection stays offline by default; absent
-    # AIFORTHAI_API_KEY raises rather than falls back (no phantom recall).
-    "tner": {"ner_engine": "tner", "requires": "env:AIFORTHAI_API_KEY"},
 }
 
 # Lazy NER cache keyed by engine name; a dict so `union` can hold both engines.
@@ -408,34 +405,14 @@ def _load_ner(name: str) -> NER:
         config = _ENGINE_CONFIG[name]
         requires = config["requires"]
         if requires is not None:
-            if requires.startswith("env:"):
-                env_var = requires[len("env:") :]
-                if not env_var:
-                    raise NEREngineUnavailableError(
-                        f"AMPHRANG_NER_ENGINE={name!r} has a malformed requirement "
-                        f"{requires!r} (env: prefix with no variable name)"
-                    )
-                if not os.environ.get(env_var):
-                    raise NEREngineUnavailableError(
-                        f"AMPHRANG_NER_ENGINE={name!r} requires the {env_var} "
-                        f"environment variable to be set."
-                    )
-            else:
-                try:
-                    __import__(requires)
-                except ImportError:
-                    raise NEREngineUnavailableError(
-                        f"AMPHRANG_NER_ENGINE={name!r} requires {requires!r}. "
-                        f"Run: pip install -r requirements-ml.txt"
-                    ) from None
-        if name == "tner":
-            # TNER is an HTTP service, not a PyThaiNLP engine (NER(engine="tner") raises);
-            # TnerEngine exposes the same .tag() contract.
-            from amphrang.engine.detectors.tner_client import TnerEngine
-
-            _ner_cache[name] = TnerEngine(api_key=os.environ.get("AIFORTHAI_API_KEY", ""))
-        else:
-            _ner_cache[name] = NER(engine=config["ner_engine"])
+            try:
+                __import__(requires)
+            except ImportError:
+                raise NEREngineUnavailableError(
+                    f"AMPHRANG_NER_ENGINE={name!r} requires {requires!r}. "
+                    f"Run: pip install -r requirements-ml.txt"
+                ) from None
+        _ner_cache[name] = NER(engine=config["ner_engine"])
     return _ner_cache[name]
 
 
@@ -979,26 +956,12 @@ def _detect_tb_impl(
     name = _resolve_engine_name()
     if name == "finetuned":
         return _detect_tb_finetuned(text)
-    try:
-        if name == "union":
-            ners = [_load_ner("thainer"), _load_ner("wangchanberta")]
-        else:
-            ners = [_load_ner(name)]
-    except Exception as error:
-        if name == "tner":
-            _raise_explicit_ner_failure(
-                error,
-                default_category=(
-                    "configuration"
-                    if isinstance(error, NEREngineUnavailableError)
-                    else "dependency"
-                ),
-                default_count=0,
-            )
-        raise
+    if name == "union":
+        ners = [_load_ner("thainer"), _load_ner("wangchanberta")]
+    else:
+        ners = [_load_ner(name)]
 
     candidates: list[Entity] = []
-    fail_closed = name == "tner"
     for ner in ners:
         candidates.extend(
             _ner_candidates(
@@ -1007,7 +970,6 @@ def _detect_tb_impl(
                 sentence_offsets,
                 window_size,
                 diagnostics=diagnostics,
-                fail_closed=fail_closed,
             )
         )
 

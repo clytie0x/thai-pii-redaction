@@ -7,8 +7,6 @@
 import httpx
 import pytest
 
-from amphrang.engine.thai_pdf_text import register_thai_font
-
 try:
     from fastapi.testclient import TestClient
 
@@ -19,11 +17,6 @@ except ImportError:
     FASTAPI_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(not FASTAPI_AVAILABLE, reason="fastapi not installed")
-
-requires_thai_font = pytest.mark.skipif(
-    register_thai_font() == "Helvetica",
-    reason="no Thai-capable font on this machine — Thai text cannot render or extract",
-)
 
 THAI_TEXT = "ผมชื่อ นายสมชาย ใจดี เลขบัตรประชาชน 1101700230708 โทร 081-234-5678"
 SICK_LEAVE_TEXT = (
@@ -948,37 +941,6 @@ def test_reidentify_encoding_failure_is_fixed_and_scrubs_restored_text(client, m
     assert response.json()["error"]["code"] == "restore_failed"
     assert private_marker not in response.text
     assert captured == []
-
-
-class TestAnalyzeReport:
-    def test_returns_valid_pdf_b64(self, client):
-        resp = client.post("/api/analyze-report", json={"text": THAI_TEXT})
-        assert resp.status_code == 200
-        body = resp.json()
-        import base64
-
-        pdf = base64.b64decode(body["report_pdf_b64"])
-        assert pdf[:5] == b"%PDF-"
-        assert isinstance(body["overall_score"], (int, float))
-        assert body["overall_grade"]
-
-    @requires_thai_font
-    def test_report_pdf_is_pii_free_end_to_end(self, client):
-        import base64
-        import io
-
-        import pdfplumber
-
-        resp = client.post("/api/analyze-report", json={"text": THAI_TEXT})
-        pdf = base64.b64decode(resp.json()["report_pdf_b64"])
-        with pdfplumber.open(io.BytesIO(pdf)) as doc:
-            text = "\n".join(page.extract_text() or "" for page in doc.pages)
-        assert "สมชาย" not in text
-        assert "1101700230708" not in text
-        assert "081-234-5678" not in text and "0812345678" not in text
-
-    def test_empty_text_400(self, client):
-        assert client.post("/api/analyze-report", json={"text": " "}).status_code == 400
 
 
 class TestGuardEndpoint:

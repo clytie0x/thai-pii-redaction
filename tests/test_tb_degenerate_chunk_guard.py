@@ -222,42 +222,6 @@ def test_degenerate_chunk_logs_label_and_length_only_no_text(monkeypatch, caplog
     assert text not in message
 
 
-def test_explicit_tner_degenerate_line_failure_aborts_the_request(monkeypatch):
-    from amphrang.engine.detectors.tner_client import TnerUnavailableError
-
-    class DegenerateThenUnavailable:
-        def tag(self, chunk):
-            if "\n" in chunk:
-                return [(chunk, "B-LAW")]
-            raise TnerUnavailableError("network")
-
-    monkeypatch.setitem(tbd._ner_cache, "tner", DegenerateThenUnavailable())
-    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
-
-    with pytest.raises(tbd.NERFailureError) as excinfo:
-        tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
-
-    assert excinfo.value.code == "ner_unavailable"
-    assert excinfo.value.category == "network"
-    assert excinfo.value.count == 1
-
-
-def test_explicit_tner_never_logs_a_provider_supplied_label(monkeypatch, caplog):
-    marker = "SYNTHETIC-PII-MARKER-DO-NOT-LOG"
-
-    class UntrustedRemoteLabel:
-        def tag(self, chunk):
-            return [(chunk, f"B-{marker}")]
-
-    monkeypatch.setitem(tbd._ner_cache, "tner", UntrustedRemoteLabel())
-    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
-
-    with caplog.at_level(logging.WARNING, logger="amphrang.engine.detectors.tb_detector"):
-        tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
-
-    assert marker not in caplog.text
-
-
 def test_detect_tb_on_reproduced_gov_form_ocr_text_recovers_names():
     """End-to-end regression on the reproduced คร.1 OCR text (real thainer
     CRF, no monkeypatching): before the guard this yielded zero NAME

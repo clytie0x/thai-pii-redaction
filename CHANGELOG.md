@@ -9,6 +9,30 @@ when they change shape.
 
 ## [Unreleased]
 
+### Removed
+
+Refocused on guarding LLM traffic (decision record
+`docs/decisions/2026-08-25-production-enterprise-direction.md`); the
+inherited surfaces that served other jobs were removed. **Breaking** for the
+facade: `redact_pdf` and `RedactionResult` are gone from `amphrang`.
+
+- PDF redaction: `amphrang.redact_pdf`, `POST /api/redact-pdf`, the ingest
+  chain (`file_detector`, `text_extractor`, `ocr_processor`,
+  `quality_validator`), and the `amphrang[ocr]` extra.
+- PDPA document generators and their CLI verbs: `receipt issue`/`verify`
+  (มาตรา 39), `breach assess` (มาตรา 37(4)), `dsar locate` (มาตรา 30), the
+  Thai PDF renderers, the bundled IBM Plex Sans Thai Looped font, and
+  `POST /api/analyze-report`. `analyze()` (value-free risk analysis) stays.
+- The legacy 8-step `run_pipeline` orchestrator and the `amphrang sanitize`
+  CLI verb (`anonymize`/`restore`/`Session` are the supported path).
+- The `tner` remote NER engine (`AMPHRANG_NER_ENGINE=tner`): a detector that
+  ships text to an external API contradicts the local-only promise. Offline
+  engines (`thainer` default, `wangchanberta`, `union`, `finetuned`) are
+  unchanged.
+- Core dependencies dropped with the PDF stack: pypdfium2, reportlab,
+  uharfbuzz, Pillow, pdfplumber. `pip install amphrang` now pulls only
+  pythainlp, python-crfsuite, regex, and httpx.
+
 ## [0.1.0] — 2026-08-23
 
 First release of amphrang, extracted from

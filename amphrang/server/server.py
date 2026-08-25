@@ -1,4 +1,4 @@
-"""FastAPI server for the Amphrang Thai PII redaction pipeline.
+"""FastAPI server for the Amphrang Thai PII engine.
 
 Session-namespaced TOKEN-mode pseudonymization; the token -> original map lives in
 `amphrang.engine.session_service.SessionService` in backend memory. HTTP contract v2
@@ -8,25 +8,20 @@ returns only strict, data-minimized projections.
 from __future__ import annotations
 
 import atexit
-import base64
 import glob
-import hashlib
 import json
 import logging
 import os
 import re
 import secrets
-import shutil
-import tempfile
 import threading
 import time
 import uuid
 from functools import wraps
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, Query, Request, UploadFile
+from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -43,11 +38,7 @@ from amphrang.engine.audit import write_process_log
 from amphrang.engine.detectors.aggregate import detect_all
 from amphrang.engine.detectors.ner_failure import NERFailureError, ner_failure_metadata
 from amphrang.engine.guard.injection import scan_injection
-from amphrang.engine.ingest.file_detector import detect_source_type
-from amphrang.engine.ingest.ocr_processor import OCRUnavailableError
-from amphrang.engine.ingest.quality_validator import OCR_CONFIDENCE_THRESHOLD
 from amphrang.engine.ingest.text_cleaner import clean, clean_length_preserving
-from amphrang.engine.ingest.text_extractor import extract
 from amphrang.engine.leak_guard import (
     OutboundPolicyError,
     enforce_outbound_policy,
@@ -55,10 +46,7 @@ from amphrang.engine.leak_guard import (
     scan_outbound_leaks,
     scan_residual_signals,
 )
-from amphrang.engine.models import EntityRegistry
-from amphrang.engine.redactor import redact_pdf as redact_pdf_file
-from amphrang.engine.report import analyze_text, scan_section26
-from amphrang.engine.report_pdf import render_pdpa_report
+from amphrang.engine.report import analyze_text
 from amphrang.engine.safe_errors import discard_exception_graph
 from amphrang.engine.stateless import (
     StatelessLeakError,
@@ -71,7 +59,6 @@ from amphrang.server.http_v2 import (
     CONTRACT_VERSION,
     ERROR_SPECS,
     RECOMMENDATION_TEMPLATES,
-    AnalyzeReportResponse,
     AnalyzeResponse,
     AuditLogResponse,
     ContractError,
@@ -79,7 +66,6 @@ from amphrang.server.http_v2 import (
     DetectResponse,
     GuardResponse,
     HealthResponse,
-    RedactPdfResponse,
     ReidentifyRequest,
     ReidentifyResponse,
     RoundtripRequest,
@@ -147,7 +133,7 @@ __version__ = _read_version()
 
 app = FastAPI(
     title="Amphrang API",
-    description="Thai PII detection, anonymization, and redaction",
+    description="Thai PII detection and anonymization",
     version=__version__,
     redirect_slashes=False,
 )
@@ -1067,39 +1053,6 @@ def analyze(request: AnalyzeRequest):
     return validated_payload(AnalyzeResponse, _analyze_projection(result))
 
 
-@app.post("/api/analyze-report", response_model=AnalyzeReportResponse)
-@_contain_public_errors
-def analyze_report(request: AnalyzeRequest):
-    """PDPA risk report as a downloadable PDF.
-
-    report_pdf draws whitelist fields only (source text never reaches the canvas); the sha256
-    prefix ties a report to its source without embedding any of it.
-    """
-    start = time.time()
-    _validate_text_input(request.text)
-    text = clean(request.text).text
-    analysis = analyze_text(text)
-    source_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
-    pdf_bytes = render_pdpa_report(analysis, version=__version__, source_sha256_12=source_hash)
-    write_process_log(
-        session_id=str(uuid.uuid4()),
-        step="api_analyze_report",
-        entity_count=analysis["direct_pii_count"],
-        validation_result="pass",
-        flags=[],
-        latency_ms=(time.time() - start) * 1000,
-        output_dir=_get_audit_log_dir(),
-    )
-    return validated_payload(
-        AnalyzeReportResponse,
-        {
-            "report_pdf_b64": base64.b64encode(pdf_bytes).decode("ascii"),
-            "overall_score": float(analysis["overall_score"]),
-            "overall_grade": analysis["overall_grade"],
-        },
-    )
-
-
 @app.post("/api/detect", response_model=DetectResponse)
 @_contain_public_errors
 def detect(request: DetectRequest):
@@ -1336,22 +1289,6 @@ def guard(request: GuardRequest):
     )
 
 
-def _first_page_png(pdf_path: str) -> str:
-    """Render page 1 of a PDF to a base64 PNG (for before/after previews)."""
-    from amphrang.engine.pdf_render import render_page_png
-
-    png = render_page_png(pdf_path, page_index=0)
-    return base64.b64encode(png).decode("ascii")
-
-
-# Upload cap for /api/redact-pdf, enforced while streaming so an oversize body is never buffered.
-_MAX_PDF_BYTES = 50 * 1024 * 1024
-
-# Work caps: byte size alone does not bound OCR work (hundreds of pages, or one gigapixel
-# MediaBox). Read at import; hosted deployments tune via env, tests monkeypatch the globals.
-_MAX_PDF_PAGES = int(os.environ.get("AMPHRANG_PDF_MAX_PAGES", "100"))
-_MAX_PDF_PAGE_POINTS = float(os.environ.get("AMPHRANG_PDF_MAX_PAGE_POINTS", "5000"))
-
 # Text work cap: NER/masking scales with length; far above any legitimate paste, tune via env.
 _MAX_TEXT_CHARS = int(os.environ.get("AMPHRANG_MAX_TEXT_CHARS", "200000"))
 
@@ -1362,181 +1299,3 @@ def _validate_text_input(text: str) -> None:
         raise ContractError("invalid_request")
     if len(text) > _MAX_TEXT_CHARS:
         raise ContractError("payload_too_large")
-
-
-def _check_pdf_work_caps(pdf_path: Path) -> None:
-    """Reject page-count / page-size bombs before any render or OCR work.
-
-    Raises a fixed v2 error (never the parser's text) on a cap violation or unreadable document.
-    """
-    import pypdfium2 as pdfium
-
-    try:
-        pdf = pdfium.PdfDocument(str(pdf_path))
-    except Exception as error:
-        discard_exception_graph(error)
-        raise ContractError("document_invalid") from None
-    try:
-        n_pages = len(pdf)
-        if n_pages > _MAX_PDF_PAGES:
-            raise ContractError("payload_too_large")
-        for i in range(n_pages):
-            page = pdf.get_page(i)
-            try:
-                width, height = page.get_size()
-            finally:
-                page.close()
-            if width > _MAX_PDF_PAGE_POINTS or height > _MAX_PDF_PAGE_POINTS:
-                raise ContractError("payload_too_large")
-    finally:
-        pdf.close()
-
-
-async def _strict_pdf_upload(
-    request: Request,
-    pdf_file: Annotated[UploadFile, File()],
-) -> UploadFile:
-    """Reject missing, repeated, or additional multipart fields."""
-    try:
-        form = await request.form()
-    except Exception as error:
-        discard_exception_graph(error)
-        raise ContractError("request_schema_invalid", count=1) from None
-    items = list(form.multi_items())
-    invalid_count = sum(key != "pdf_file" for key, _value in items)
-    pdf_count = sum(key == "pdf_file" for key, _value in items)
-    if pdf_count != 1:
-        invalid_count += abs(pdf_count - 1)
-    form = None
-    items = []
-    if invalid_count:
-        raise ContractError("request_schema_invalid", count=invalid_count)
-    return pdf_file
-
-
-@app.post("/api/redact-pdf", response_model=RedactPdfResponse)
-@_contain_public_errors
-def redact_pdf(pdf_file: Annotated[UploadFile, Depends(_strict_pdf_upload)]):
-    """Redact PII in a text-layer or scanned PDF; returns the redacted file + previews.
-
-    Detection uses clean_length_preserving (1:1 digit substitution), never clean(), so entity
-    offsets stay aligned with the word bboxes drawn as black boxes, while Thai-numeral phone
-    numbers are still detected. Scanned PDFs go through OCR page by page; no OCR deps -> 503.
-    """
-    start = time.time()
-    if not pdf_file.filename or not pdf_file.filename.lower().endswith(".pdf"):
-        raise ContractError("document_invalid")
-
-    # Sync endpoint on purpose: heavy OCR/NER/render work must run in FastAPI's threadpool, not
-    # on the event loop. pdf_file.file is the SpooledTemporaryFile, readable without await.
-    chunks: list[bytes] = []
-    size = 0
-    while chunk := pdf_file.file.read(64 * 1024):
-        size += len(chunk)
-        if size > _MAX_PDF_BYTES:
-            raise ContractError("payload_too_large")
-        chunks.append(chunk)
-    contents = b"".join(chunks)
-    tmp_dir = Path(tempfile.mkdtemp(prefix="amphrang_redact_"))
-    in_path = tmp_dir / "input.pdf"
-    out_path = tmp_dir / "redacted.pdf"
-    try:
-        in_path.write_bytes(contents)
-        _check_pdf_work_caps(in_path)
-        try:
-            source_type = detect_source_type(in_path)
-            raw_text, word_bboxes, extract_meta = extract(in_path, source_type)
-        except OCRUnavailableError as error:
-            discard_exception_graph(error)
-            raise ContractError("ocr_unavailable") from None
-        except ContractError:
-            raise
-        except Exception as error:
-            discard_exception_graph(error)
-            raise ContractError("document_invalid") from None
-
-        detect_text = clean_length_preserving(raw_text)
-        entities = detect_all(detect_text)
-        fp_count = sum(entity.redact_type == "FP" for entity in entities)
-        registry = EntityRegistry(
-            entities=entities,
-            fp_count=fp_count,
-            tb_count=len(entities) - fp_count,
-        )
-
-        redact_pdf_file(str(in_path), registry, word_bboxes, str(out_path))
-
-        counts: dict[str, int] = {}
-        for entity in entities:
-            counts[entity.data_type] = counts.get(entity.data_type, 0) + 1
-
-        # Unique type/class pairs in first-detection order.
-        seen: set[tuple[str, str]] = set()
-        fields: list[dict[str, str]] = []
-        for e in entities:
-            pair = (e.data_type, e.redact_type)
-            if pair not in seen:
-                seen.add(pair)
-                fields.append({"data_type": e.data_type, "redact_type": e.redact_type})
-
-        human_review = bool(extract_meta.get("human_review", False))
-        ocr_warnings = extract_meta.get("warnings", [])
-        pages_ocred = extract_meta.get("pages_ocred", [])
-        ocr_affected_pages = (
-            len({page for page in pages_ocred if type(page) is int and page > 0})
-            if isinstance(pages_ocred, list)
-            else 0
-        )
-        human_review_pages = extract_meta.get("human_review_pages", [])
-        review_affected_pages = (
-            len({page for page in human_review_pages if type(page) is int and page > 0})
-            if isinstance(human_review_pages, list)
-            else 0
-        )
-        confidence = finite_nonnegative(extract_meta.get("ocr_confidence"))
-        if confidence is not None and confidence > 1:
-            confidence = None
-        warnings: list[dict[str, object]] = []
-        if confidence is not None and confidence < OCR_CONFIDENCE_THRESHOLD:
-            warnings.append(
-                {
-                    "code": "ocr_low_confidence",
-                    "count": max(1, ocr_affected_pages),
-                }
-            )
-        if human_review:
-            warnings.append(
-                {
-                    "code": "human_review_required",
-                    "count": max(1, review_affected_pages),
-                }
-            )
-        audit_flags = [f"source_type:{source_type}"]
-        if human_review:
-            audit_flags.append("ocr_review_required")
-        write_process_log(
-            session_id=str(uuid.uuid4()),
-            step="api_redact_pdf",
-            entity_count=len(entities),
-            validation_result="warn" if (human_review or ocr_warnings) else "pass",
-            flags=audit_flags,
-            latency_ms=(time.time() - start) * 1000,
-            output_dir=_get_audit_log_dir(),
-        )
-        return validated_payload(
-            RedactPdfResponse,
-            {
-                "source_type": source_type,
-                "ocr_confidence": confidence,
-                "human_review": human_review,
-                "warnings": warnings,
-                "detected_entity_count": len(entities),
-                "entity_type_counts": counts,
-                "fields": fields,
-                "section26_categories": _section26_categories(scan_section26(raw_text)),
-                "redacted_pdf_b64": base64.b64encode(out_path.read_bytes()).decode("ascii"),
-                "after_png_b64": _first_page_png(str(out_path)),
-            },
-        )
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)

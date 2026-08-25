@@ -877,7 +877,7 @@ def test_tb_ner_failure_is_logged_not_silent(monkeypatch, caplog):
     """A NER engine that raises must not silently swallow a whole chunk of
     text — the failure has to be logged so missed PII is observable. Called
     bare on purpose: the diagnostics-free default is the path every
-    production caller (server, worker, pipeline, receipt, leak_guard) runs."""
+    production caller (facade, server, MCP, leak_guard) runs."""
     import logging
 
     import amphrang.engine.detectors.tb_detector as tbd
@@ -919,91 +919,6 @@ def test_tb_ner_failure_counts_into_diagnostics(monkeypatch, caplog):
     joined = "\n".join(r.getMessage() for r in caplog.records)
     assert secret not in joined
     assert diagnostics.as_dict() == {"attempted": 1, "succeeded": 0, "skipped": 1}
-
-
-def test_explicit_tner_failure_aborts_instead_of_skipping(monkeypatch, caplog):
-    """The opt-in remote engine must never turn one failed chunk into partial
-    detections while the offline/default engines retain their resilient skip."""
-    import logging
-
-    import amphrang.engine.detectors.tb_detector as tbd
-    from amphrang.engine.detectors.tner_client import TnerUnavailableError
-
-    secret = "SYNTHETIC-TNER-BODY-DO-NOT-LOG"
-
-    class BoomTner:
-        def tag(self, _chunk):
-            error = TnerUnavailableError("network")
-            error.provider_body = secret
-            raise error
-
-    monkeypatch.setitem(tbd._ner_cache, "tner", BoomTner())
-    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
-    diagnostics = tbd.NERChunkDiagnostics()
-
-    with caplog.at_level(logging.WARNING, logger="amphrang.engine.detectors.tb_detector"):
-        with pytest.raises(tbd.NERFailureError) as excinfo:
-            tbd.detect_tb(
-                "วันนี้อากาศดีมากเลยครับ ไปเที่ยวกันเถอะ",
-                diagnostics=diagnostics,
-            )
-
-    assert excinfo.value.code == "ner_unavailable"
-    assert excinfo.value.category == "network"
-    assert excinfo.value.retryable is True
-    assert excinfo.value.count == 1
-    assert diagnostics.as_dict() == {"attempted": 1, "succeeded": 0, "skipped": 1}
-    assert secret not in "\n".join(record.getMessage() for record in caplog.records)
-    assert secret not in repr(excinfo.value)
-
-
-def test_explicit_tner_later_chunk_failure_discards_earlier_candidates(monkeypatch):
-    import amphrang.engine.detectors.tb_detector as tbd
-    from amphrang.engine.detectors.tner_client import TnerIncompleteError
-
-    calls = []
-
-    class PartialThenIncomplete:
-        def tag(self, chunk):
-            calls.append(chunk)
-            if len(calls) == 1:
-                return [(chunk, "B-PER")]
-            raise TnerIncompleteError()
-
-    text = "สมชาย ไปดี ต่อไป"
-    monkeypatch.setattr(tbd, "_CHUNK_CORE_CHARS", 5)
-    monkeypatch.setattr(
-        tbd,
-        "sent_tokenize",
-        lambda _text, engine: ["สมชาย", "ไปดี", "ต่อไป"],
-    )
-    monkeypatch.setitem(tbd._ner_cache, "tner", PartialThenIncomplete())
-    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
-    diagnostics = tbd.NERChunkDiagnostics()
-
-    with pytest.raises(tbd.NERFailureError) as excinfo:
-        tbd.detect_tb(text, diagnostics=diagnostics)
-
-    assert len(calls) == 2
-    assert excinfo.value.code == "ner_incomplete"
-    assert excinfo.value.count == 1
-    assert diagnostics.as_dict() == {"attempted": 2, "succeeded": 1, "skipped": 1}
-
-
-def test_explicit_tner_missing_configuration_has_zero_failed_chunks(monkeypatch):
-    import amphrang.engine.detectors.tb_detector as tbd
-
-    monkeypatch.setattr(tbd, "_ner_cache", {})
-    monkeypatch.setenv("AMPHRANG_NER_ENGINE", "tner")
-    monkeypatch.delenv("AIFORTHAI_API_KEY", raising=False)
-
-    with pytest.raises(tbd.NERFailureError) as excinfo:
-        tbd.detect_tb("ข้อความทดสอบ")
-
-    assert excinfo.value.code == "ner_unavailable"
-    assert excinfo.value.category == "configuration"
-    assert excinfo.value.retryable is False
-    assert excinfo.value.count == 0
 
 
 def test_tb_chunk_diagnostics_count_success_without_global_state(monkeypatch):

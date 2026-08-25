@@ -25,7 +25,6 @@ ErrorCategory = Literal[
     "authentication",
     "session",
     "privacy",
-    "document",
     "provider",
     "configuration",
     "dependency",
@@ -56,14 +55,12 @@ ERROR_SPECS: dict[str, _ErrorSpec] = {
     "rate_limited": _ErrorSpec(status=429, category="service", retryable=True),
     "payload_too_large": _ErrorSpec(status=413, category="request", retryable=False),
     "residual_pii": _ErrorSpec(status=422, category="privacy", retryable=False),
-    "document_invalid": _ErrorSpec(status=422, category="document", retryable=False),
     "provider_unavailable": _ErrorSpec(status=502, category="upstream", retryable=True),
     "provider_rejected": _ErrorSpec(status=502, category="upstream", retryable=False),
     "provider_response_invalid": _ErrorSpec(status=502, category="upstream", retryable=False),
     "ner_incomplete": _ErrorSpec(status=502, category="upstream", retryable=False),
     "provider_configuration": _ErrorSpec(status=503, category="configuration", retryable=False),
     "dependency_unavailable": _ErrorSpec(status=503, category="dependency", retryable=False),
-    "ocr_unavailable": _ErrorSpec(status=503, category="dependency", retryable=False),
     "ner_unavailable": _ErrorSpec(status=503, category="dependency", retryable=False),
     "service_unavailable": _ErrorSpec(status=503, category="service", retryable=True),
     "restore_failed": _ErrorSpec(status=500, category="internal", retryable=False),
@@ -103,14 +100,12 @@ ErrorCode = Literal[
     "rate_limited",
     "payload_too_large",
     "residual_pii",
-    "document_invalid",
     "provider_unavailable",
     "provider_rejected",
     "provider_response_invalid",
     "ner_incomplete",
     "provider_configuration",
     "dependency_unavailable",
-    "ocr_unavailable",
     "ner_unavailable",
     "service_unavailable",
     "restore_failed",
@@ -301,14 +296,6 @@ def _validate_restore_warnings(value: list[RestoreWarning]) -> list[RestoreWarni
     return value
 
 
-def _validate_pdf_warnings(value: list[PdfWarning]) -> list[PdfWarning]:
-    codes = [item.code for item in value]
-    expected = [code for code in ("ocr_low_confidence", "human_review_required") if code in codes]
-    if codes != expected:
-        raise ValueError("invalid warning order")
-    return value
-
-
 class HealthCapabilities(StrictDTO):
     control_token_required: bool
     api_key_required: bool
@@ -364,11 +351,6 @@ class SanitizeWarning(StrictDTO):
 
 class RestoreWarning(StrictDTO):
     code: Literal["generated_pii", "foreign_replacement"]
-    count: Annotated[int, Field(gt=0)]
-
-
-class PdfWarning(StrictDTO):
-    code: Literal["ocr_low_confidence", "human_review_required"]
     count: Annotated[int, Field(gt=0)]
 
 
@@ -623,63 +605,6 @@ class GuardResponse(StrictDTO):
     def validate_flag(self):
         if self.flagged != bool(self.guard_findings):
             raise ValueError("guard flag mismatch")
-        return self
-
-
-class AnalyzeReportResponse(StrictDTO):
-    report_pdf_b64: str
-    overall_score: Annotated[float, Field(ge=0, le=100, allow_inf_nan=False)]
-    overall_grade: Literal["A", "B", "C", "D", "F"]
-
-
-class PdfField(StrictDTO):
-    data_type: str
-    redact_type: Literal["FP", "TB"]
-
-    @field_validator("data_type")
-    @classmethod
-    def validate_data_type(cls, value: str) -> str:
-        if _DATA_TYPE.fullmatch(value) is None:
-            raise ValueError("invalid data type")
-        return value
-
-
-class RedactPdfResponse(StrictDTO):
-    source_type: Literal["pdf_text", "pdf_hybrid"]
-    ocr_confidence: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None
-    human_review: bool
-    warnings: list[PdfWarning]
-    detected_entity_count: Annotated[int, Field(ge=0)]
-    entity_type_counts: dict[str, int]
-    fields: list[PdfField]
-    section26_categories: list[
-        Literal[
-            "RACE_ETHNICITY",
-            "POLITICAL_OPINION",
-            "RELIGION",
-            "HEALTH",
-            "SEXUAL_BEHAVIOR",
-            "CRIMINAL_RECORD",
-            "DISABILITY",
-            "LABOR_UNION",
-            "GENETIC",
-            "BIOMETRIC",
-        ]
-    ]
-    redacted_pdf_b64: str
-    after_png_b64: str
-
-    _count_map = field_validator("entity_type_counts")(_validate_count_map)
-    _section26_order = field_validator("section26_categories")(_validate_section26_order)
-    _warning_order = field_validator("warnings")(_validate_pdf_warnings)
-
-    @model_validator(mode="after")
-    def validate_counts(self):
-        if self.detected_entity_count != sum(self.entity_type_counts.values()):
-            raise ValueError("detected count mismatch")
-        pairs = [(item.data_type, item.redact_type) for item in self.fields]
-        if len(pairs) != len(set(pairs)):
-            raise ValueError("duplicate PDF field")
         return self
 
 

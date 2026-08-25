@@ -140,7 +140,7 @@ class PathummaProvider(AIProvider):
     """Pathumma LLM (NECTEC, AI for Thai). Requires AIFORTHAI_API_KEY env var.
 
     The API accepts form-encoded bodies ONLY; a JSON body draws a misleading 422 "Field
-    required". Same Apikey header and env var as detectors/tner_client.py.
+    required".
     """
 
     API_URL = "https://api.aiforthai.in.th/textqa/completion"

@@ -128,14 +128,12 @@ def test_public_surface_is_exactly_the_documented_set():
         "AnonymizeResult",
         "Entity",
         "LeakBlockedError",
-        "RedactionResult",
         "RestoreResult",
         "Session",
         "SessionExpiredError",
         "analyze",
         "anonymize",
         "detect",
-        "redact_pdf",
         "restore",
     }
     assert set(amphrang.__all__) == documented

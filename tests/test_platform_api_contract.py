@@ -222,7 +222,6 @@ def test_api_key_rejection_precedes_private_shape_validation(monkeypatch):
             },
         ),
         ("/api/analyze", {"text": {"nested": [VALIDATION_PRIVATE_MARKER]}}),
-        ("/api/analyze-report", {"text": {"nested": [VALIDATION_PRIVATE_MARKER]}}),
         ("/api/detect", {"text": {"nested": [VALIDATION_PRIVATE_MARKER]}}),
         ("/api/roundtrip", {"text": {"nested": [VALIDATION_PRIVATE_MARKER]}}),
         ("/api/guard", {"text": {"nested": [VALIDATION_PRIVATE_MARKER]}}),

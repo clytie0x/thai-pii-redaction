@@ -3,72 +3,6 @@
 import pytest
 
 
-def test_ai_guard_sanitize_nonexistent_file(tmp_path, capsys):
-    """sanitize with nonexistent file should print error and exit 1."""
-    from amphrang import cli
-
-    args_ns = type(
-        "Args",
-        (),
-        {
-            "file": str(tmp_path / "nonexistent.txt"),
-            "output": None,
-            "fmt": "txt",
-            "provider": "fake",
-            "overwrite": False,
-        },
-    )()
-    with pytest.raises(SystemExit) as exc:
-        cli.cmd_sanitize(args_ns)
-    assert exc.value.code == 1
-
-
-def test_ai_guard_sanitize_real_file(tmp_path, capsys):
-    """sanitize with real file should print session id."""
-    from amphrang import cli
-
-    infile = tmp_path / "input.txt"
-    infile.write_text("Hello world.", encoding="utf-8")
-
-    args_ns = type(
-        "Args",
-        (),
-        {
-            "file": str(infile),
-            "output": None,
-            "fmt": "txt",
-            "provider": "fake",
-            "overwrite": False,
-        },
-    )()
-    cli.cmd_sanitize(args_ns)
-    captured = capsys.readouterr()
-    assert "Session:" in captured.out
-
-
-def test_ai_guard_sanitize_with_output(tmp_path, capsys):
-    """sanitize with --output writes file."""
-    from amphrang import cli
-
-    infile = tmp_path / "input.txt"
-    infile.write_text("Call 081-234-5678 please.", encoding="utf-8")
-    outfile = tmp_path / "output.txt"
-
-    args_ns = type(
-        "Args",
-        (),
-        {
-            "file": str(infile),
-            "output": str(outfile),
-            "fmt": "txt",
-            "provider": "fake",
-            "overwrite": False,
-        },
-    )()
-    cli.cmd_sanitize(args_ns)
-    assert outfile.exists()
-
-
 def test_ai_guard_report_nonexistent_file(tmp_path, capsys):
     """report with nonexistent file should exit 1."""
     from amphrang import cli
@@ -93,39 +27,13 @@ def test_ai_guard_report_real_file(tmp_path, capsys):
 
 
 def test_ai_guard_argparse_help():
-    """Parser should include both subcommands."""
+    """Module keeps its CLI entry points."""
 
     from amphrang import cli
 
     # Verify the module has the required functions
     assert hasattr(cli, "main")
-    assert hasattr(cli, "cmd_sanitize")
     assert hasattr(cli, "cmd_report")
-
-
-def test_ai_guard_sanitize_with_phone_number(tmp_path, capsys):
-    """sanitize should detect and anonymize Thai phone numbers."""
-    from amphrang import cli
-
-    infile = tmp_path / "input.txt"
-    infile.write_text("My phone: 081-234-5678", encoding="utf-8")
-
-    args_ns = type(
-        "Args",
-        (),
-        {
-            "file": str(infile),
-            "output": None,
-            "fmt": "txt",
-            "provider": "fake",
-            "overwrite": False,
-        },
-    )()
-    cli.cmd_sanitize(args_ns)
-    captured = capsys.readouterr()
-    assert "Entities detected:" in captured.out
-    # Should detect at least 1 entity (phone number)
-    assert "FP=" in captured.out
 
 
 def test_ai_guard_report_with_multiple_entities(tmp_path, capsys):
@@ -143,32 +51,6 @@ def test_ai_guard_report_with_multiple_entities(tmp_path, capsys):
     captured = capsys.readouterr()
     assert "Risk Level:" in captured.out
     assert "Total entities detected:" in captured.out
-
-
-def test_ai_guard_sanitize_prints_masked_not_original(tmp_path, capsys):
-    """Without --output, the 'Sanitized Output' section must show the MASKED
-    text, not the re-identified original (which equals the input under the
-    fake LLM). It used to print reverse_result.text — the un-redacted original."""
-    from amphrang import cli
-
-    infile = tmp_path / "input.txt"
-    infile.write_text("โทร 081-234-5678 นะครับ", encoding="utf-8")
-    args_ns = type(
-        "Args",
-        (),
-        {
-            "file": str(infile),
-            "output": None,
-            "fmt": "txt",
-            "provider": "fake",
-            "overwrite": False,
-        },
-    )()
-    cli.cmd_sanitize(args_ns)
-    out = capsys.readouterr().out
-    assert "--- Sanitized Output ---" in out
-    # the real phone must NOT surface under the "Sanitized" header
-    assert "081-234-5678" not in out
 
 
 def test_ai_guard_report_dedupes_fp_tb_overlap(tmp_path, capsys, monkeypatch):

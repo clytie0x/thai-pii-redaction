@@ -22,8 +22,6 @@ from amphrang.engine.session_vault import SessionVault
 from amphrang.server.http_v2 import (
     AnalyzeResponse,
     HealthResponse,
-    PdfWarning,
-    RedactPdfResponse,
     Restoration,
     RestoreWarning,
     RoundtripResponse,
@@ -686,15 +684,11 @@ def test_framework_route_and_method_errors_use_exact_safe_envelope(client):
     )
 
 
-def test_api_key_covers_document_and_introspection_routes_before_body(client, monkeypatch):
+def test_api_key_covers_introspection_routes_before_body(client, monkeypatch):
     monkeypatch.setattr(server, "_API_KEY", "expected-key")
     marker = "SYNTHETIC-UNPARSED-MARKER"
 
-    for method, path in (
-        ("POST", "/api/analyze-report"),
-        ("POST", "/api/redact-pdf"),
-        ("GET", "/api/audit-log"),
-    ):
+    for method, path in (("GET", "/api/audit-log"),):
         response = client.request(
             method,
             path,
@@ -925,35 +919,6 @@ def test_audit_query_accepts_canonical_decimal_integers(client):
     body = _assert_v2(response, 200)
     assert body["limit"] == 1
     assert body["offset"] == 0
-
-
-def test_redact_pdf_rejects_extra_or_repeated_multipart_fields(client):
-    extra = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files=[
-            ("pdf_file", ("synthetic.pdf", b"%PDF-1.4", "application/pdf")),
-            ("extra", (None, "SYNTHETIC-MARKER")),
-        ],
-    )
-    repeated = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files=[
-            ("pdf_file", ("one.pdf", b"%PDF-1.4", "application/pdf")),
-            ("pdf_file", ("two.pdf", b"%PDF-1.4", "application/pdf")),
-        ],
-    )
-
-    for response in (extra, repeated):
-        _assert_error(
-            response,
-            status=422,
-            code="request_schema_invalid",
-            category="request",
-            count=1,
-        )
-        assert "SYNTHETIC-MARKER" not in response.text
 
 
 def test_strict_cors_preflight_exposes_only_contract_header(client):
@@ -1418,40 +1383,6 @@ def test_response_models_reject_duplicate_warnings_and_inconsistent_restoration(
             }
         )
 
-    base_pdf = {
-        "source_type": "pdf_hybrid",
-        "ocr_confidence": 0.5,
-        "human_review": True,
-        "warnings": [],
-        "detected_entity_count": 0,
-        "entity_type_counts": {},
-        "fields": [],
-        "section26_categories": [],
-        "redacted_pdf_b64": "safe",
-        "after_png_b64": "safe",
-    }
-    with pytest.raises(ValidationError):
-        RedactPdfResponse.model_validate(
-            {
-                **base_pdf,
-                "warnings": [
-                    PdfWarning(code="human_review_required", count=1),
-                    PdfWarning(code="ocr_low_confidence", count=1),
-                ],
-            }
-        )
-    with pytest.raises(ValidationError):
-        RedactPdfResponse.model_validate(
-            {
-                **base_pdf,
-                "detected_entity_count": 1,
-                "entity_type_counts": {"PHONE": 1},
-                "fields": [
-                    {"data_type": "PHONE", "redact_type": "FP"},
-                    {"data_type": "PHONE", "redact_type": "FP"},
-                ],
-            }
-        )
     with pytest.raises(ValidationError):
         HealthResponse.model_validate(
             {
@@ -1662,8 +1593,8 @@ def test_http_roundtrip_tner_failure_never_invokes_provider(client, monkeypatch)
     assert calls == []
 
 
-@pytest.mark.parametrize("path", ["/api/analyze", "/api/analyze-report"])
-def test_http_analysis_paths_translate_tner_failure(client, monkeypatch, path):
+@pytest.mark.parametrize("path", ["/api/analyze"])
+def test_http_analysis_paths_translate_ner_failure(client, monkeypatch, path):
     def fail_analysis(_text):
         raise NERFailureError("ner_incomplete", category="upstream", count=1)
 
@@ -1678,40 +1609,6 @@ def test_http_analysis_paths_translate_tner_failure(client, monkeypatch, path):
     assert response.status_code == 502
     assert response.json()["error"]["code"] == "ner_incomplete"
     assert "result" not in response.json()
-
-
-def test_http_pdf_tner_failure_removes_temporary_files(client, monkeypatch, tmp_path):
-    work_dir = tmp_path / "tner-pdf-work"
-
-    def make_work_dir(*_args, **_kwargs):
-        work_dir.mkdir()
-        return str(work_dir)
-
-    monkeypatch.setattr(server.tempfile, "mkdtemp", make_work_dir)
-    monkeypatch.setattr(server, "_check_pdf_work_caps", lambda _path: None)
-    monkeypatch.setattr(server, "detect_source_type", lambda _path: "pdf_text")
-    monkeypatch.setattr(
-        server,
-        "extract",
-        lambda _path, _source_type: ("ข้อความทดสอบ", [], {}),
-    )
-    monkeypatch.setattr(
-        server,
-        "detect_all",
-        lambda _text: (_ for _ in ()).throw(
-            NERFailureError("ner_unavailable", category="network", count=1)
-        ),
-    )
-
-    response = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files={"pdf_file": ("synthetic.pdf", b"%PDF-synthetic", "application/pdf")},
-    )
-
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "ner_unavailable"
-    assert not work_dir.exists()
 
 
 def test_consistency_replacements_have_authoritative_sanitized_offsets(monkeypatch):

@@ -2,14 +2,13 @@
 
 Six small generic changes that let a hosted port run the same core:
 AMPHRANG_ALLOWED_HOSTS, AMPHRANG_PROVIDERS, the acceptance-script header fix,
-the audit-dir boot check, AMPHRANG_AUDIT_STDOUT, and the redact-pdf/text work
-caps. Env-driven import-time behavior is tested in a subprocess so this
+the audit-dir boot check, AMPHRANG_AUDIT_STDOUT, and the text work cap.
+Env-driven import-time behavior is tested in a subprocess so this
 process's `amphrang.server.server` module stays untouched.
 """
 
 from __future__ import annotations
 
-import io
 import json
 import subprocess
 import sys
@@ -132,37 +131,10 @@ def test_hosted_adapter_exposes_only_allowlisted_v2_routes():
         "c = TestClient(app, base_url='http://localhost')\n"
         "h = {'X-Amphrang-Contract-Version': '2', 'X-Amphrang-Key': 'synthetic-hosted-key'}\n"
         "assert c.get('/api/health').status_code == 200\n"
-        "for path in ('/', '/docs', '/redoc', '/openapi.json', '/api/analyze-report', '/api/redact-pdf', '/api/audit-log', '/api/shutdown', '/api/session/synthetic'):\n"
+        "for path in ('/', '/docs', '/redoc', '/openapi.json', '/api/audit-log', '/api/shutdown', '/api/session/synthetic'):\n"
         "    method = c.delete if path.startswith('/api/session/') else c.post if path == '/api/shutdown' else c.get\n"
         "    response = method(path, headers=h)\n"
         "    assert response.status_code == 404, (path, response.status_code)\n"
-        "print('OK')\n"
-    )
-    proc = subprocess.run(
-        [sys.executable, "-c", code],
-        capture_output=True,
-        text=True,
-        cwd=ROOT,
-        timeout=180,
-    )
-    assert proc.returncode == 0, proc.stderr[-2000:]
-    assert "OK" in proc.stdout
-
-
-def test_hosted_explicit_tner_missing_configuration_fails_closed():
-    code = (
-        "import os\n"
-        "os.environ['AMPHRANG_API_KEY'] = 'synthetic-hosted-key'\n"
-        "os.environ['AMPHRANG_PROVIDERS'] = 'fake'\n"
-        "os.environ['AMPHRANG_NER_ENGINE'] = 'tner'\n"
-        "os.environ.pop('AIFORTHAI_API_KEY', None)\n"
-        "from fastapi.testclient import TestClient\n"
-        "from amphrang.server.hosted import app\n"
-        "c = TestClient(app, base_url='http://localhost')\n"
-        "h = {'X-Amphrang-Contract-Version': '2', 'X-Amphrang-Key': 'synthetic-hosted-key'}\n"
-        "r = c.post('/api/detect', headers=h, json={'text': 'ข้อความทดสอบ'})\n"
-        "assert r.status_code == 503, r.text\n"
-        "assert r.json() == {'error': {'code': 'ner_unavailable', 'category': 'configuration', 'count': 0, 'retryable': False, 'status': 503}}, r.text\n"
         "print('OK')\n"
     )
     proc = subprocess.run(
@@ -284,73 +256,6 @@ def test_audit_dir_boot_check_skipped_in_stdout_mode(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(blocker / "logs"))
     monkeypatch.setenv("AMPHRANG_AUDIT_STDOUT", "1")
     server._check_audit_dir_writable()  # no raise
-
-
-# ── redact-pdf work caps + error sanitization ──────────────────────────
-def _pdf_bytes(pages: int, size_pt: tuple[float, float] = (595, 842)) -> bytes:
-    from reportlab.pdfgen import canvas
-
-    buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=size_pt)
-    for n in range(pages):
-        c.drawString(72, 720, f"page {n + 1}")
-        c.showPage()
-    c.save()
-    return buf.getvalue()
-
-
-def _assert_payload_too_large(response):
-    assert response.status_code == 413
-    assert response.headers.get_list("X-Amphrang-Contract-Version") == ["2"]
-    assert response.json() == {
-        "error": {
-            "code": "payload_too_large",
-            "category": "request",
-            "count": 0,
-            "retryable": False,
-            "status": 413,
-        }
-    }
-
-
-def test_pdf_page_count_cap(client, monkeypatch):
-    monkeypatch.setattr(server, "_MAX_PDF_PAGES", 2)
-    r = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files={"pdf_file": ("x.pdf", _pdf_bytes(3), "application/pdf")},
-    )
-    _assert_payload_too_large(r)
-
-
-def test_pdf_page_dimension_cap(client, monkeypatch):
-    monkeypatch.setattr(server, "_MAX_PDF_PAGE_POINTS", 100.0)
-    r = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files={"pdf_file": ("x.pdf", _pdf_bytes(1), "application/pdf")},
-    )
-    _assert_payload_too_large(r)
-
-
-def test_unreadable_pdf_gets_fixed_category_not_parser_message(client):
-    r = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files={"pdf_file": ("x.pdf", b"%PDF-not really a pdf at all", "application/pdf")},
-    )
-    assert r.status_code == 422
-    assert r.json()["error"]["code"] == "document_invalid"
-
-
-def test_valid_small_pdf_still_processes(client):
-    r = client.post(
-        "/api/redact-pdf",
-        headers=V2_HEADERS,
-        files={"pdf_file": ("x.pdf", _pdf_bytes(1), "application/pdf")},
-    )
-    assert r.status_code == 200
-    assert r.json()["source_type"] in ("pdf_text", "pdf_scanned", "pdf_hybrid")
 
 
 # ── text length cap ────────────────────────────────────────────────────

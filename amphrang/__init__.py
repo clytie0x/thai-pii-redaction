@@ -1,4 +1,4 @@
-"""Amphrang — Thai PII detection, anonymization, and redaction.
+"""Amphrang — Thai PII detection and anonymization.
 
 The public, semver-stable surface of the ``amphrang`` package is exactly what
 this module exports:
@@ -7,7 +7,6 @@ this module exports:
     anonymize(text, mode=...)        -> AnonymizeResult   (.text, .mapping)
     restore(text, mapping)           -> RestoreResult     (.text)
     analyze(text)                    -> dict              (PDPA risk analysis)
-    redact_pdf(input, output)        -> RedactionResult
     Session(...)                     — multi-turn anonymize/restore with an
                                        in-memory vault (mapping never leaves
                                        this process)
@@ -27,12 +26,11 @@ from dataclasses import dataclass, field
 from dataclasses import replace as _dc_replace
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _dist_version
-from pathlib import Path
 
 from amphrang.engine.detectors.aggregate import detect_all as _detect_all
 from amphrang.engine.ingest.text_cleaner import clean as _clean
 from amphrang.engine.ingest.text_cleaner import clean_length_preserving as _clean_lp
-from amphrang.engine.models import Entity, EntityRegistry
+from amphrang.engine.models import Entity
 from amphrang.engine.report import analyze_text as _analyze_text
 from amphrang.engine.session_service import OutboundLeakError as _OutboundLeakError
 from amphrang.engine.session_service import SessionExpiredError, _identity_finalize
@@ -56,14 +54,12 @@ __all__ = [
     "AnonymizeResult",
     "Entity",
     "LeakBlockedError",
-    "RedactionResult",
     "RestoreResult",
     "Session",
     "SessionExpiredError",
     "analyze",
     "anonymize",
     "detect",
-    "redact_pdf",
     "restore",
 ]
 
@@ -184,53 +180,6 @@ def analyze(text: str) -> dict:
     re-identification risk score. The result contains no raw PII values."""
     # Full clean is safe here: the analyzer expects cleaned text and the result carries no spans.
     return _analyze_text(_clean(text).text)
-
-
-@dataclass
-class RedactionResult:
-    """Outcome of a PDF redaction."""
-
-    output_path: Path
-    entity_count: int
-    entity_type_counts: dict[str, int]
-    human_review: bool
-    warnings: list[str] = field(default_factory=list)
-
-
-def redact_pdf(input_path: str | Path, output_path: str | Path) -> RedactionResult:
-    """Permanently black out detected PII in a PDF and flatten the result.
-
-    Word boxes are selected only by authoritative source-interval
-    intersection; if the text-to-box mapping is missing or unsafe the call
-    fails before writing output rather than guessing. Scanned/hybrid pages
-    need the ``amphrang[ocr]`` extra.
-    """
-    from amphrang.engine.ingest.file_detector import detect_source_type
-    from amphrang.engine.ingest.text_extractor import extract
-    from amphrang.engine.redactor import redact_pdf as _redact
-
-    in_path = Path(input_path)
-    out_path = Path(output_path)
-    source_type = detect_source_type(in_path)
-    raw_text, word_bboxes, meta = extract(in_path, source_type)
-    entities = _detect_all(_clean_lp(raw_text))
-    fp_count = sum(entity.redact_type == "FP" for entity in entities)
-    registry = EntityRegistry(
-        entities=entities,
-        fp_count=fp_count,
-        tb_count=len(entities) - fp_count,
-    )
-    _redact(str(in_path), registry, word_bboxes, str(out_path))
-    counts: dict[str, int] = {}
-    for entity in entities:
-        counts[entity.data_type] = counts.get(entity.data_type, 0) + 1
-    return RedactionResult(
-        output_path=out_path,
-        entity_count=len(entities),
-        entity_type_counts=counts,
-        human_review=bool(meta.get("human_review")),
-        warnings=list(meta.get("warnings", [])),
-    )
 
 
 class Session:

@@ -5,32 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
-@dataclass
-class WordBbox:
-    """A PDF text fragment, its box, and its exact extracted-text interval."""
-
-    text: str
-    page: int
-    x: float
-    y: float
-    width: float
-    height: float
-    source_span: tuple[int, int] | None = None
-
-
-@dataclass
-class NormalizedDocumentModel:
-    """Output of Step 1 (Ingest). Passed into Step 2 (Detection)."""
-
-    text: str  # cleaned full text (all pages joined)
-    words: list[WordBbox]  # per-word bboxes (for PDF redaction in Step 8)
-    language: str  # "th" | "en"
-    source_type: str  # "text" | "pdf_text" | "pdf_hybrid"
-    metadata: dict = field(
-        default_factory=dict
-    )  # ocr_confidence, quality_score, warnings, human_review flag, etc.
-
-
 @dataclass(frozen=True)
 class Entity:
     """A single detected PII entity. Output of Step 2 (Detection)."""
@@ -42,7 +16,7 @@ class Entity:
     # RELIGION | CRIMINAL | HEALTH | DISABILITY | UNION | LOCATION | DATE | ORGANIZATION | ID_NUMBER
     # (LOCATION/DATE/ID_NUMBER are honest fallbacks that upgrade only when a nearby cue confirms)
     data_type: str
-    span: tuple[int, int]  # (start, end) char offsets in NormalizedDocumentModel.text
+    span: tuple[int, int]  # (start, end) char offsets in the cleaned detection text
     score: float  # 1.0 for FP (regex+checksum), NER confidence for TB
     original_text: str  # the actual PII text at this span
 

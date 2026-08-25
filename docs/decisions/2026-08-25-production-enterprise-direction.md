@@ -50,9 +50,21 @@ Explicitly rejected alternatives:
 | Surface | User | Status |
 |---|---|---|
 | Sanitizing proxy (`/v1/chat/completions`) | Platform/infra engineer who wants existing apps protected with zero code change | **New — Phase 2** |
-| Python SDK (`amphrang.detect/anonymize/restore/Session`) | Developer embedding PII handling in an app | Exists; needs 1.0 stability promise |
+| Python SDK (`amphrang.detect/anonymize/restore/analyze/Session`) | Developer embedding PII handling in an app | Exists; needs 1.0 stability promise |
 | MCP server (`amphrang-mcp`) | Teams running AI agents (Claude Code, agent frameworks) | Exists; needs setup recipes |
-| CLI + PDF redaction + PDPA documents | DPO / compliance officer, batch workflows | Exists; needs packaging polish |
+
+### Scope cut (2026-08-25)
+
+The inherited surfaces that served jobs other than guarding LLM traffic were
+removed the same day this direction was recorded (see the Unreleased entry in
+`CHANGELOG.md` for the full list): PDF redaction and its ingest/OCR chain, the
+PDPA document generators (receipt/breach/DSAR) with their Thai-PDF renderers
+and bundled font, the legacy 8-step `run_pipeline` orchestrator, and the
+`tner` remote NER engine (an external-API detector contradicts the local-only
+promise). `analyze()` stays: it is value-free, feeds the `safety.section26`
+signal on the sanitize path, and serves the LLM-safety story. This shrinks
+`pip install amphrang` to four pure-text dependencies, which also serves the
+Phase 1 performance and packaging goals.
 
 ## Phase 1 — Prove production readiness (before any new feature)
 

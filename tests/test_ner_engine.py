@@ -127,30 +127,19 @@ def test_union_runs_both_engines_and_merges(monkeypatch):
     assert crf_types <= uni_types
 
 
-def test_tner_is_a_known_engine_but_never_the_default(monkeypatch):
-    """The proposal names TNER as a supplementary engine while also claiming
-    detection runs offline in-container. Both hold only if tner is opt-in."""
+def test_offline_engine_stays_the_default(monkeypatch):
+    """Detection is claimed offline in-container; that holds only while the
+    default engine stays the local CRF."""
     from amphrang.engine.detectors import tb_detector
 
-    assert "tner" in tb_detector._ENGINE_CONFIG
     monkeypatch.delenv("AMPHRANG_NER_ENGINE", raising=False)
     assert tb_detector._resolve_engine_name() == "thainer"
 
 
-def test_tner_without_credentials_fails_loudly(monkeypatch):
-    """Never silently fall back to the offline engine — a caller who asked for
-    TNER and got CRF would believe they had recall they do not have."""
-    from amphrang.engine.detectors.tb_detector import NEREngineUnavailableError, _load_ner
-
-    monkeypatch.delenv("AIFORTHAI_API_KEY", raising=False)
-    with pytest.raises(NEREngineUnavailableError):
-        _load_ner("tner")
-
-
-def test_detect_resolves_the_selected_tner_engine_once(monkeypatch):
+def test_detect_resolves_the_selected_engine_once(monkeypatch):
     calls = []
 
-    class EmptyTner:
+    class EmptyEngine:
         def tag(self, _text):
             return []
 
@@ -158,10 +147,10 @@ def test_detect_resolves_the_selected_tner_engine_once(monkeypatch):
         calls.append("resolved")
         if len(calls) > 1:
             raise AssertionError("engine selection changed during one detection")
-        return "tner"
+        return "wangchanberta"
 
     monkeypatch.setattr(tb_detector, "_resolve_engine_name", resolve_once)
-    monkeypatch.setitem(tb_detector._ner_cache, "tner", EmptyTner())
+    monkeypatch.setitem(tb_detector._ner_cache, "wangchanberta", EmptyEngine())
 
     assert tb_detector.detect_tb("ข้อความทดสอบ") == []
     assert calls == ["resolved"]

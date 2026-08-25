@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "amphrang"
-description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
+description = "Thai PII detection and anonymization — mask personal data before it reaches an external AI, restore it locally"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
@@ -41,7 +41,6 @@ dependencies = { file = "requirements.txt" }
 optional-dependencies.server = { file = "requirements-web.txt" }
 optional-dependencies.mcp = { file = "requirements-mcp.txt" }
 optional-dependencies.ml = { file = "requirements-ml.txt" }
-optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 
 [tool.setuptools]
 # `amphrang`'s top-level module (amphrang/__init__.py, cli.py, mcp.py,
@@ -60,14 +59,6 @@ packages = [
   "amphrang.engine.ingest",
   "amphrang.server",
 ]
-
-# The Thai font travels with the package: a `pip install` user renders the
-# PDPA report and the processing receipt too, and without it Thai comes out
-# as black boxes wherever the machine has no Thai-capable TTF of its own.
-# The font is SIL OFL-1.1, which requires its license text to travel with the
-# font file, so OFL-1.1.txt ships alongside it.
-[tool.setuptools.package-data]
-"amphrang.engine" = ["fonts/*.ttf", "fonts/OFL-1.1.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

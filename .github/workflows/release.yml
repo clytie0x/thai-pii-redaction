@@ -39,18 +39,15 @@ jobs:
       - run: python -m build
       - run: twine check --strict dist/*
       # The built wheel, not the source tree, is what gets smoke-tested: a
-      # package-data omission (font, OFL text) shows up here and nowhere in
-      # the source-tree test suite.
+      # packaging omission shows up here and nowhere in the source-tree test
+      # suite.
       - name: Smoke-test the wheel in a clean venv
         run: |
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --quiet dist/*.whl
           /tmp/smoke/bin/python - <<'EOF'
-          import importlib.resources as r, amphrang
+          import amphrang
           assert amphrang.__version__ == open("VERSION").read().strip(), amphrang.__version__
-          fonts = r.files("amphrang.engine") / "fonts"
-          assert (fonts / "IBMPlexSansThaiLooped-Regular.ttf").is_file()
-          assert (fonts / "OFL-1.1.txt").is_file()
           print("wheel ok", amphrang.__version__)
           EOF
       - run: python scripts/check_release.py --expect-tag "$GITHUB_REF_NAME" --notes > dist/RELEASE_NOTES.md

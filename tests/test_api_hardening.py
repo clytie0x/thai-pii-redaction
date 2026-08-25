@@ -218,17 +218,6 @@ def test_sanitize_accepts_valid_modes():
         assert resp.status_code == 200
 
 
-def test_redact_pdf_rejects_oversize_upload(monkeypatch):
-    """Uploads over the size cap must 413 before the whole body is buffered."""
-    monkeypatch.setattr(server, "_MAX_PDF_BYTES", 50)
-    big = b"%PDF-1.4\n" + b"0" * 200
-    resp = _client().post(
-        "/api/redact-pdf",
-        files={"pdf_file": ("big.pdf", big, "application/pdf")},
-    )
-    assert resp.status_code == 413
-
-
 def test_audit_log_omits_session_id(tmp_path, monkeypatch):
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
     rec = {
@@ -305,12 +294,3 @@ def test_reidentify_audit_log_never_records_the_pseudonym(tmp_path, monkeypatch)
 
     served = _client().get("/api/audit-log").text
     assert secret_token not in served
-
-
-def test_redact_pdf_endpoint_is_sync_so_it_runs_in_threadpool():
-    """API-1: an async endpoint runs its body on the event loop, so the heavy
-    OCR/NER/render work would block every other request. FastAPI only moves a
-    handler into the threadpool when it is a plain function."""
-    import asyncio
-
-    assert not asyncio.iscoroutinefunction(server.redact_pdf)
