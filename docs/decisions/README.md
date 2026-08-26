@@ -13,6 +13,7 @@ one where they overlap.
 | [0003 MCP tools never return the mapping](0003-mcp-no-plaintext-mapping.md) | `sanitize` returns an opaque session handle; the pseudonym→original mapping never enters a tool result. |
 | [2026-08-25 production and enterprise direction](2026-08-25-production-enterprise-direction.md) | Staged open-core model: prove production numbers, ship an OpenAI-compatible sanitizing proxy, then a licensed on-prem enterprise layer. No SaaS. |
 | [2026-08-26 new datatype specs](2026-08-26-new-datatype-specs.md) | Frozen specs for JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID: checksum verdicts, sources, and the corrected THAI_ID/JURISTIC_ID precedence. |
+| [2026-08-26 PDPA data ontology](2026-08-26-pdpa-data-ontology.md) | The canonical registry of every PDPA data category with one treatment level each (mask / QI / ม.26 flag→span / out of scope / not personal data); source of truth for the public coverage profile. |
 
 ## Inherited from thai-pii-redaction
 
