@@ -56,6 +56,7 @@ body:
         - bank_phone
         - id_docs
         - student_id_varied
+        - business_ids
         - negative
         - none of these fit
       default: 0

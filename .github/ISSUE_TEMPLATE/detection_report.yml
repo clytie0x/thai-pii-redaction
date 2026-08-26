@@ -48,9 +48,10 @@ body:
       label: Expected vs actual
       description: |
         What the detector should return and what it actually returned. Entity type
-        names come from the 11 the project uses (NAME, ADDRESS, PHONE, EMAIL,
+        names come from the 16 the project uses (NAME, ADDRESS, PHONE, EMAIL,
         THAI_ID, CREDIT_CARD, DATE_OF_BIRTH, VEHICLE_PLATE, STUDENT_ID, PASSPORT,
-        BANK_ACCOUNT), plus LOCATION / ORGANIZATION / ID_NUMBER where they apply.
+        BANK_ACCOUNT, JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD,
+        HOUSE_REG_ID), plus LOCATION / ORGANIZATION / ID_NUMBER where they apply.
       placeholder: |
         Expected: NAME over "สมชาย ใจดี"
         Actual: nothing returned / NAME over "นายสมชาย" only

@@ -96,6 +96,19 @@ def test_bank_phone_slice_has_both_types():
     assert "PHONE" in types
 
 
+_NEW_BUSINESS_ID_TYPES = frozenset(
+    {"JURISTIC_ID", "DRIVER_LICENSE", "LINE_ID", "GPS_COORD", "HOUSE_REG_ID"}
+)
+
+
+def test_business_ids_slice_docs_each_carry_a_new_type():
+    docs = [s for s in load_gold() if s.slice == "business_ids"]
+    assert len(docs) >= 20
+    for s in docs:
+        types = {sp.entity_type for sp in s.spans}
+        assert types & _NEW_BUSINESS_ID_TYPES, (s.template_id, types)
+
+
 # ── v3: size, layers, checksums, negatives ─────────────────────────────
 def test_every_type_reaches_reportable_n():
     counts = collections.Counter(t for _, _, t, _ in _labeled_values())
