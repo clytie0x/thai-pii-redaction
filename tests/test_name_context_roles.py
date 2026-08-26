@@ -128,6 +128,35 @@ def test_name_before_passport_number():
     assert "ชนม์นิภา บุญญฤทธิ์" in names, names
 
 
+def test_name_before_driver_licence():
+    # gold-v5 business_ids miss class: the licence label or its latin form sits
+    # right after the two name groups and the CRF tags neither (bz06, bz09, bz17).
+    for text, name in (
+        ("คนขับคนที่สาม ณัฐดนัย ภูวนาถ ใบขับขี่ 94198359", "ณัฐดนัย ภูวนาถ"),
+        (
+            "สัญญาเช่ารถกระบะรายเดือน ผู้เช่าหลัก วรพล เกียรติก้องไกล ใบอนุญาตขับรถเลขที่ 96567268",
+            "วรพล เกียรติก้องไกล",
+        ),
+        ("ใบสั่งงานไรเดอร์ประจำกะเช้า\nรุจิรา แสนสุขเกษม ใบขับขี่ 52920948", "รุจิรา แสนสุขเกษม"),
+        ("ผู้สมัครตำแหน่งที่สอง ปวีณ์นุช โกศลสิริ Driver's License number 66668982", "ปวีณ์นุช โกศลสิริ"),
+    ):
+        assert name in ctx_names(text), text
+
+
+def test_assignment_role_cue_introduces_the_name():
+    # gold bz01: มอบหมายให้ is the มอบอำนาจให้ shape in a corporate letter.
+    text = "บริษัทออดิทไทย จำกัด มอบหมายให้ ปกรณ์ ตั้งสิริกุล เดินทางไปตรวจสอบสาขา"
+    assert "ปกรณ์ ตั้งสิริกุล" in ctx_names(text), ctx_names(text)
+
+
+def test_assignment_role_cue_needs_a_space_and_a_real_name():
+    for text in (
+        "มอบหมายให้ดำเนินการ แทนข้าพเจ้า ได้",
+        "มอบหมายให้ บริษัท ตัวอย่าง จำกัด ดำเนินการแทน",
+    ):
+        assert ctx_names(text) == set(), (text, ctx_names(text))
+
+
 # ── Latin names (gold miss class 3) ────────────────────────────────────────
 
 

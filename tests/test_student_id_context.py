@@ -56,6 +56,48 @@ def test_intro_plus_education_context_labels_student_id():
         assert "STUDENT_ID" in fp_types(text, value), text
 
 
+def test_exam_roster_heading_is_education_context():
+    # gold ed04 verbatim: a สอบสัมภาษณ์ shortlist, "N. <name> รหัส <digits>" per line.
+    # The third line sits 105 chars from the heading, so it also pins _EDU_WINDOW.
+    text = (
+        "ประกาศรายชื่อผู้มีสิทธิ์สอบสัมภาษณ์\n"
+        "1. วิรัลพัชร ธนาคุณ รหัส 69010021\n"
+        "2. ธนกฤต ปิยะมิตร รหัส 69010035\n"
+        "3. อาทิตยา วงศ์สถิตย์ รหัส 69010047"
+    )
+    for value in ("69010021", "69010035", "69010047"):
+        assert "STUDENT_ID" in fp_types(text, value), value
+
+
+def test_exam_seating_row_is_education_context():
+    # gold ed15 verbatim: ที่นั่งสอบ rows, latin names, bare รหัส introducer.
+    text = (
+        "รายชื่อผู้เข้าสอบวัดระดับภาษาอังกฤษ\n"
+        "ที่นั่งสอบ A12 Panuwat Chaiyaporn รหัส 66020817\n"
+        "ที่นั่งสอบ A13 Sirinya Wongchai รหัส 66020823"
+    )
+    for value in ("66020817", "66020823"):
+        assert "STUDENT_ID" in fp_types(text, value), value
+
+
+def test_examinee_person_cue_before_the_digits():
+    # gold sv09 verbatim: no introducer at all, the person word is ผู้เข้าสอบ.
+    text = "ผู้เข้าสอบลำดับที่ 14 66011204 ห้องสอบ 302"
+    assert "STUDENT_ID" in fp_types(text, "66011204")
+
+
+def test_academic_advisor_person_cue_after_the_digits():
+    # gold sv17 verbatim: no introducer before, อาจารย์ที่ปรึกษา after (tier 2).
+    text = "แจ้งผลสอบของ 66021450 ให้อาจารย์ที่ปรึกษาทราบ"
+    assert "STUDENT_ID" in fp_types(text, "66021450")
+
+
+def test_research_grant_is_education_context():
+    # gold sv11 verbatim: introducer present, ทุนวิจัย is the only education token.
+    text = "ทุนวิจัยมอบให้ผู้ถือรหัส 6402118876 จำนวน 20,000 บาท"
+    assert "STUDENT_ID" in fp_types(text, "6402118876")
+
+
 def test_intro_plus_education_context_beats_uncued_bank_shape():
     # sv-shape: a 10-digit id with a รหัส introducer and education context must
     # not be stolen by the uncued BANK_ACCOUNT pattern.

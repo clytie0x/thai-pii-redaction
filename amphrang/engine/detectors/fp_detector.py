@@ -546,7 +546,14 @@ _POSTAL_SIBLING_WINDOW = 25
 _POSTAL_GLUE_RE = re.compile(r"(?:\s|,|/|และ|หรือ)*")
 # Bare "รหัส" is deliberately NOT here: it also labels รหัสสินค้า / รหัสวิชา / รหัสไปรษณีย์,
 # which are masked as ID_NUMBER anyway, so admitting it would only cost an honest label.
-_STUDENT_CUE_RE = re.compile(r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student", re.IGNORECASE)
+# ผู้เข้าสอบ recovers gold sv09 ("ผู้เข้าสอบลำดับที่ 14 66011204 ห้องสอบ 302" — no introducer
+# at all); อาจารย์ที่ปรึกษา recovers gold sv17 ("แจ้งผลสอบของ 66021450 ให้อาจารย์ที่ปรึกษาทราบ" —
+# the only person word is behind the digits, so tier 2 needs it). Both are academic-institution
+# role words, not topic words.
+_STUDENT_CUE_RE = re.compile(
+    r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ผู้เข้าสอบ|อาจารย์ที่ปรึกษา",
+    re.IGNORECASE,
+)
 # Compound "รหัสX" code words block every student tier even with education words nearby.
 # Closed list of document-field names, not topic words.
 _STUDENT_BLOCKER_RE = re.compile(
@@ -555,17 +562,23 @@ _STUDENT_BLOCKER_RE = re.compile(
 )
 # Bare id-introducers for tier 3. \bid\b so it does not fire inside "paid"/"provider".
 _STUDENT_INTRO_RE = re.compile(r"รหัสประจำตัว|เลขประจำตัว|รหัส|\bid\b", re.IGNORECASE)
-# Deliberately narrow: no คณะ (คณะกรรมการ), no bare วิชา (วิชาชีพ), no สอบ family (civil-service
-# exams), no มหาวิทยาลัย/โรงเรียน (ambient org), no ทะเบียน (registries), no คัดเลือก (hiring).
+# Deliberately narrow: no คณะ (คณะกรรมการ), no bare สอบ and no bare วิชา (วิชาชีพ), no
+# มหาวิทยาลัย/โรงเรียน (ambient org), no ทะเบียน (registries), no คัดเลือก (hiring).
+# ที่นั่งสอบ (exam-seat row) recovers gold ed15, สอบสัมภาษณ์ recovers gold ed04's three roster
+# lines, ทุนวิจัย recovers gold sv11 — all three are exam/funding COMPOUNDS, which is why the
+# bare สอบ ban still holds.
 _EDU_CONTEXT_RE = re.compile(
     r"นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ลงทะเบียนเรียน|ภาคเรียน|สหกิจศึกษา"
-    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย",
+    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย"
+    r"|ที่นั่งสอบ|สอบสัมภาษณ์|ทุนวิจัย",
     re.IGNORECASE,
 )
 _STUDENT_PERSON_WINDOW = 60  # tier 1: person cue before the digits
 _STUDENT_AFTER_WINDOW = 45  # tier 2: person cue after the digits
 _STUDENT_INTRO_WINDOW = 20  # tier 3: introducer must be this close, same line
-_EDU_WINDOW = 100  # tier 3: education token within this many chars either side
+# tier 3: education token within this many chars either side. 120, not 100, because gold ed04's
+# THIRD roster line sits 105 characters after the สอบสัมภาษณ์ heading that vouches for the list.
+_EDU_WINDOW = 120
 # Commerce words that own a nearby number ("นักเรียนสั่งซื้อสินค้ารหัส 88910423" is an order
 # number); nearest-cue-wins against the person cue.
 _NON_STUDENT_NUM_CUE_RE = re.compile(

@@ -165,6 +165,9 @@ _ROLE_CUES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ผู้ป่วย", ("ใน", "นอก", "ราย", "ทุก", "ต้อง", "ควร", "ที่", "จะ", "ได้", "เรื้อรัง")),
     ("ผู้กู้", ("ร่วม", "ยืม", "ต้อง", "ควร")),
     ("มอบอำนาจให้", ("__require_space__",)),
+    # Same shape, corporate-letter register; recovers gold bz01
+    # ("บริษัท... มอบหมายให้ ปกรณ์ ตั้งสิริกุล เดินทางไป...").
+    ("มอบหมายให้", ("__require_space__",)),
     # Card/receipt issuance rows; __require_space__ makes glued forms (ออกให้แก่, ออกให้ทะเบียน)
     # no-ops, a stated recall cost on the แก่ form.
     ("ออกให้", ("__require_space__",)),
@@ -223,9 +226,12 @@ _ROSTER_HEADER_RE = re.compile(
 _ROSTER_CUE_RE = re.compile(r"(?m)(?:^|(?<=\s))(?:ลำดับที่[ \t]*\d+[ \t.]*|\d{1,3}\.[ \t]+)")
 _ROSTER_HEADER_WINDOW = 300
 
-# Two-group Thai name followed by a passport value or the word passport (hotel/visa rosters).
+# Two-group Thai name followed by an id-document label or value: passport (hotel/visa rosters)
+# and driver licence. The licence arm recovers gold-v5 bz06/bz09/bz17 (Thai label) and bz13
+# (the latin label), transport rows where the CRF tags no PERSON at all.
 _NAME_BEFORE_PASSPORT_RE = re.compile(
-    r"([ก-๛]{2,25})[ \t]([ก-๛]{2,25})[ \t]+(?=passport|[A-Z]{2}\d{7})"
+    r"([ก-๛]{2,25})[ \t]([ก-๛]{2,25})[ \t]+"
+    r"(?=passport|[A-Z]{2}\d{7}|ใบขับขี่|ใบอนุญาตขับ|[Dd]river'?s?[ \t]*[Ll]icen[cs]e)"
 )
 
 # Latin-script names: the Thai CRF never tags them. Cue-driven only (a global capitalized-bigram
