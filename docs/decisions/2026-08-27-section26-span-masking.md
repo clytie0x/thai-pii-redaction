@@ -15,6 +15,22 @@ and only when, its segment is linked to a person.
 Everything below was measured in the session scratchpad against a purpose-built
 dev set and the real gold corpus. No production code was changed by this task.
 
+The campaign plan names this file `2026-08-26-section26-span-masking.md`. It is
+dated `2026-08-27` for the day the spike ran and the design was frozen; that
+name supersedes the plan's, and Tasks 9 to 10 should cite this one.
+
+**Revision 2 (2026-08-27, fix round 1).** Amended after review. Substantive
+changes: the merge algorithm in §4.4 now holds its coverage invariant by
+construction rather than by luck (the first revision's one-remainder trim
+silently dropped characters whenever a blocker sat strictly inside the span
+being trimmed, a shape that occurs zero times in the dev set and zero times on
+gold, so the original measurement could not see it); §5.3's rejection of a fixed
+neutral phrase is re-argued, because the `ValueError` cited for it was an
+artifact of an earlier `redact_type="FP"` prototype and does not occur under the
+frozen `"TB"`; §6.2 specifies `_sensitive_leaks` completely; §9 names the one
+existing test the design breaks. The three acceptance gates are unchanged and
+were re-measured after every amendment.
+
 ---
 
 ## 1. Acceptance measurements
@@ -40,8 +56,15 @@ Supporting numbers from the same run:
 - End-to-end over the 40 dev positives in `mode="surrogate"`: **0/40** outbound
   guard failures, **0/40** restore failures, **0/40** new output-validator
   failures (with the Section 6 change; without it, 2/40 — see there).
-- Existing suite with the Section 6 output-validator change applied in memory:
-  **1817 passed, 9 skipped** — identical to the Task-7 baseline.
+- Existing suite with **only** the §6.3 output-validator change applied in
+  memory: **1817 passed, 9 skipped** — identical to the Task-7 baseline. That
+  number bounds the validator change alone and nothing else.
+- Existing suite with the **whole** design applied in memory (all five parts of
+  §9): **1816 passed, 1 failed, 9 skipped**. The single failure is the
+  `TOKEN_LABEL` length assertion, which Task 9 updates — see §9.
+- Merge coverage invariant (§4.4): **13140 (case, policy) pairs, 0 violations**,
+  including six synthetic fixtures built specifically to exercise the
+  two-remainder path.
 
 ### Dev set
 
@@ -65,9 +88,9 @@ formulation of 2 and 3 is refuted with measurements.
 |---|---|---|
 | 1. New module + `detect_sensitive_spans(text, person_spans)` | **accepted**, with a second exported function (Section 3) | — |
 | 2. Anchor list `นาย\|นาง\|…\|พนักงาน`, segment split on `\n` and Thai sentence spacing | **accepted in outline, refuted as written** | the flat anchor list false-flags **2 of 30** near-misses; the tiered rule flags **0 of 30**. Splitting on *any* whitespace run drops recall to **0.550**; splitting on newline / double space keeps **0.925** |
-| 3. Span = the keyword expanded to its space/punctuation-bounded **segment** | **refuted** | the segment shape swallows the anchor itself, and with a self-anchoring rule recall collapses to **0.375**; it also over-masks **+0.68x** vs **+0.03x** for the accepted forward-only shape |
+| 3. Span = the keyword expanded to its space/punctuation-bounded **segment** | **refuted** | at the matched `TIERED`/`TRIM_TB` configuration the segment shape swallows the anchor itself and recall collapses to **0.375** against **0.925**, while over-masking **+0.21x** against **+0.03x**. (Revision 1 quoted **+0.68x** here; that figure is the `SEGMENT`/`NAIVE`/`ADDITIVE` cell of the measurement grid, a different anchor rule and a different merge policy, so it was not the comparable number. Corrected.) |
 | 4. Labels already reserved in `leak_guard.py`/`http_v2.py`; `redact_type="FP"` | **both halves refuted** | only 4 of 10 names are in `SAFE_OUTBOUND_LEAK_TYPES` today (Section 6); `redact_type` must be `"TB"`, not `"FP"` (Section 5) |
-| 5. Surrogate mode: choose token-style or a fixed neutral phrase | **decided: token-style (option a)**; option (b) is not merely undesirable, it **crashes** | a fixed phrase per category raises `ValueError: unable to generate a unique pseudonym … after 64 attempts` on any document with two spans of one category |
+| 5. Surrogate mode: choose token-style or a fixed neutral phrase | **decided: token-style (option a)** | the governing reason is false-assertion harm — a realistic surrogate fabricates a health, criminal or religious claim about a person. Option (b) is separately rejected because it carries no per-entity restore identity (§5.3). **Correction to revision 1:** option (b) was reported there as crashing with `ValueError`; that was an artifact of the earlier `redact_type="FP"` prototype and does **not** happen under the frozen `"TB"` |
 | 6. Default ON, no facade knob unless the budget fails | **accepted**, budget held | negative slice +0 |
 
 ---
@@ -112,9 +135,18 @@ def merge_sensitive_spans(
 ```
 
 `person_spans` are the `NAME`/`SURNAME` spans the pipeline already produced.
-`blocked_spans` are the retained `FP` spans; a sensitive candidate is trimmed
-away from them and dropped when nothing survives, so a `THAI_ID` inside a
-sensitive phrase always stays `THAI_ID`.
+
+`blocked_spans` are the retained `FP` spans. It is an **early clamp, not a
+guarantee**: it lets the detector stop a candidate at a precise structured hit
+before the span shape runs, which keeps the emitted span tidy. The guarantee
+that a `THAI_ID` inside a sensitive phrase stays `THAI_ID` comes from **merge
+rule 1** (§4.4), which subtracts every retained `FP` span from every candidate
+regardless of what was passed here. Passing `blocked_spans=None` changes span
+boundaries, never correctness.
+
+`entity_id` is a fresh `str(uuid.uuid4())` per emitted span, the same convention
+every other detector in `amphrang/engine/detectors/` uses. See §4.4 for what
+happens to an id when the merge splits a span.
 
 `amphrang/engine/detectors/aggregate.py` — the wiring is the **last** step of
 `detect_all`, after `_relabel_student_ids`:
@@ -154,6 +186,14 @@ _SPAN_PATTERNS = {
     r"|สแกน(?:ใบหน้า|นิ้ว)|จดจำใบหน้า)",
 }
 ```
+
+**Compile flags: `re.UNICODE` and nothing else.** No `IGNORECASE` — `DNA` is
+matched in upper case only, exactly as the flag table in `report.py` has always
+done, and lower-case `dna` is a known non-match carried over unchanged rather
+than silently widened here. No `MULTILINE` or `DOTALL`: no pattern uses `^`,
+`$` or `.`, and scanning is bounded per segment with
+`pattern.finditer(text, segment_start, segment_end)`, never with a sliced
+string, so match offsets are always document offsets.
 
 Two departures from the flag table, both required:
 
@@ -261,10 +301,33 @@ if still > MAX_SPAN_CHARS:
 Stop set (used only in the overrun fallback):
 `มา เมื่อ ตั้งแต่ จาก ใน และ จึง ของ ต่อ อย่าง ไว้ เพื่อ แต่ โดย ซึ่ง หลัง ก่อน ขณะ จน หรือ กับ แล้ว ยัง ทั้งนี้ ส่วน รวมทั้ง`
 
+**Stop-set boundary: the span ends BEFORE the stop token.** The function word is
+excluded from the span, along with everything after it. Walking the tokens, the
+end offset advances by `len(token)` for each token, and the walk breaks on the
+first token that is in the stop set without advancing past it.
+
+**Exact tokenizer.** A module-level lazy singleton, built once:
+
+```python
+from pythainlp.corpus.common import thai_words
+from pythainlp.tokenize import Tokenizer
+
+_tokenizer = Tokenizer(custom_dict=thai_words(), engine="newmm")
+```
+
+It is applied **only to the tail** `text[m.end():hard_end]`, where `hard_end` is
+the whitespace-bounded end — never to the whole document and never to text
+before the match. The keyword match itself is never re-tokenized, so a keyword
+that newmm would split cannot move the span start. `thai_words()` is the
+installed pythainlp dictionary (5.3.7 in the reference environment); a
+dictionary change can move a fallback boundary by a token, which is why the
+fallback is confined to the overrun path and never runs on a well-formed span.
+
 Why forward-only rather than the brief's whole segment: the anchor sits *before*
 the keyword in nearly every Thai construction ("ผู้ป่วยรายนี้มี**ประวัติการรักษา**…"),
 so a backward-expanding span eats its own anchor. Measured cost of the segment
-shape: recall 0.375 and over-masking +0.68x, against 0.925 and +0.03x.
+shape at the matched configuration: recall 0.375 and over-masking +0.21x,
+against 0.925 and +0.03x.
 
 Why whitespace-bounded rather than always tokenizing: measured over the 40 dev
 spans, the whitespace rule over-masks 20 characters and under-masks 10; the
@@ -285,24 +348,119 @@ annotation law; **Task 9 must not tune the span rule to them.**
 
 ### 4.4 Merge — `merge_sensitive_spans`
 
-Three rules, in order:
+**The binding requirement is the invariant, and the algorithm below is written
+so the invariant holds by construction:**
 
-1. A sensitive candidate is trimmed away from every retained **FP** entity and
-   from every retained **TB** entity that is not one of the three honest-fallback
-   labels; dropped when nothing survives.
+> The merge never uncovers a character that the pipeline's entity list already
+> covered, never emits overlapping spans, and never emits two entities with the
+> same `entity_id`.
+
+Revision 1 stated the same invariant but implemented a trim that returned a
+single remainder and kept "the longer side" when a blocker fell strictly inside
+the span being trimmed. That silently dropped the shorter side:
+`_trim_candidate((0, 20), [(5, 10)])` returned `(10, 20)`, uncovering characters
+0 to 4. The shape occurs **zero** times in the dev set and **zero** times across
+the 304 gold documents (counted directly), so the original 1122-pair
+measurement could not see it. It is fixed here by making subtraction total.
+
+#### The primitive
+
+```python
+def _subtract(
+    span: tuple[int, int],
+    blockers: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    """Every maximal sub-interval of `span` that no blocker covers, in order."""
+    pieces = [span]
+    for bs, be in sorted(blockers):
+        nxt = []
+        for start, end in pieces:
+            if be <= start or bs >= end:
+                nxt.append((start, end))
+                continue
+            if bs > start:
+                nxt.append((start, min(bs, end)))
+            if be < end:
+                nxt.append((max(be, start), end))
+        pieces = [(s, e) for s, e in nxt if e > s]
+        if not pieces:
+            return []
+    return pieces
+```
+
+`_subtract` is **total**: the union of what it returns plus the union of the
+blockers covers `span` exactly. That is the whole proof of the invariant — every
+character a span loses is a character some other retained entity covers, so no
+merge step can reduce total coverage.
+
+#### The three rules
+
+1. A sensitive candidate is `_subtract`ed against every retained **FP** entity
+   and every retained **TB** entity that is not one of the three
+   honest-fallback labels. **Every** remainder is kept, each as its own entity
+   of the same `data_type`; the candidate is dropped only when `_subtract`
+   returns nothing.
 2. A retained TB entity of `LOCATION`, `ORGANIZATION` or `DATE` **yields** its
-   overlapping characters to the sensitive span, and keeps its non-overlapping
-   remainder as an entity of its own type (dropped when nothing remains). Those
-   three labels are the ontology's declared "honest-labels catch-alls, not PDPA
-   categories themselves", so a ม.26 claim on the same characters is strictly
-   more specific. This is the `_relabel_student_ids` precedent applied to a
-   partial overlap.
-3. Sensitive candidates never overlap each other; the first one claimed wins.
+   overlapping characters to the sensitive span, and keeps **every** remaining
+   piece as an entity of its own type. Those three labels are the ontology's
+   declared "honest-labels catch-alls, not PDPA categories themselves", so a
+   ม.26 claim on the same characters is strictly more specific. This is the
+   `_relabel_student_ids` precedent applied to a partial overlap.
+3. Sensitive candidates never overlap each other; the first one claimed wins,
+   and later candidates are `_subtract`ed against what is already claimed.
 
-**Invariant, and Task 9 must pin it as a test:** the merge never uncovers a
-character and never produces overlapping spans. Verified over 1122 (document,
-policy) pairs — all 70 dev documents and all 304 gold documents, under all three
-merge policies considered — with **zero** violations.
+Worked example of the two-remainder path, on a fixture built for it — an
+`ORGANIZATION` at `(0, 20)` with a `HEALTH` span at `(5, 10)` strictly inside:
+
+```
+revision 1 (broken):  [('HEALTH', (5, 10)), ('ORGANIZATION', (10, 20))]      <- 0-4 uncovered
+this revision:        [('ORGANIZATION', (0, 5)), ('HEALTH', (5, 10)), ('ORGANIZATION', (10, 20))]
+```
+
+#### `entity_id` semantics on a split
+
+When a span becomes several pieces, **the lowest-start piece inherits the
+original `entity_id` and every further piece gets a fresh `str(uuid.uuid4())`.**
+This mirrors the existing convention for the inverse operation — both
+`merge_address_spans` and `_prefer_record_names` keep `chain[0].entity_id` when
+they merge — and it is required, not cosmetic.
+
+The `vault.get_by_entity_id` consequence, spelled out because it is the thing a
+duplicate id would corrupt:
+
+- `anonymize()` opens with `existing = vault.get_by_entity_id(entity.entity_id)`
+  and, on a hit, reuses that record's pseudonym while splicing at **this**
+  entity's span. Two pieces sharing one id would therefore be written with one
+  pseudonym and one vault record whose `original` is only one of the two
+  fragments — the other fragment's text would be unrecoverable on restore.
+  Minting a fresh id per extra piece keeps `vault._table` one-to-one, so each
+  piece gets its own `vault.write` and its own restorable record.
+- Cross-turn identity is unaffected. Every detector mints `str(uuid.uuid4())` per
+  `detect()` call, so `entity_id` is never stable across turns and cross-turn
+  continuity flows through `vault.get_by_original`, not `get_by_entity_id`. The
+  practical consequence is that a split fragment is a **new original** and draws
+  its own pseudonym, which is correct — the fragment is not the same value as the
+  unsplit span.
+
+#### Verification
+
+**Task 9 must pin the invariant as a test, and the test must include a
+two-remainder fixture** — a natural corpus does not produce one, so a test built
+only from real documents would pass on the broken algorithm.
+
+Re-measured after the fix: **13140 (case, policy) pairs, 0 violations**, across
+three merge policies and three populations:
+
+| Population | Cases | Two-remainder path exercised |
+|---|---|---|
+| Synthetic fixtures (sensitive inside `ORGANIZATION`/`LOCATION`; two sensitive inside one entity; `THAI_ID` inside a candidate; `NAME` inside a candidate; mixed) | 6 | yes, by construction |
+| Randomized fuzz over span layouts, seed 20260827 | 4000 | yes |
+| Natural corpus (70 dev + 304 gold documents) | 374 | **no — 0 occurrences** |
+
+Coverage, non-overlap and `entity_id` uniqueness were all checked on every pair.
+The three acceptance gates were re-run after the fix and are unchanged: dev
+recall 0.925, impersonal 0/30, negative slice `false_positives=15
+clean_docs=31/45`.
 
 Rule 2 is what carries the design over the recall gate: without it, dev recall
 is 0.850; restricting it to full containment gives 0.875; with it, 0.925. It
@@ -369,9 +527,11 @@ Recorded hazard: **8 of these 10 labels are themselves ม.26 span keywords**
 `ความเห็นการเมือง` are clean). A re-scan of masked text therefore re-flags the
 replacement token itself. This is safe only because the hit is positionally
 contained in a trusted pseudonym occurrence — see Section 6. **Task 9 must not
-change a token label without re-checking this**, and `scripts/check_release.py`
-already gates `TOKEN_LABEL` against the coverage profile, so Task 11 will pick
-up a drift.
+change a token label without re-checking this.** There is no automated gate on
+`TOKEN_LABEL` today: `scripts/check_release.py` does not read it. The
+`check_profile()` function that will AST-parse `TOKEN_LABEL` and diff it against
+the coverage profile is **Task 11's deliverable**, and only from then on will a
+label drift be caught by CI.
 
 ### 5.3 Masking is a token in **both** modes
 
@@ -407,19 +567,31 @@ user's document as advice about the wrong condition. That is an active harm,
 not a realism trade-off. Masking removes a fact; surrogating asserts a false
 one.
 
-**Why not option (b), a fixed neutral phrase per category.** It does not merely
-read badly, it crashes. `_generate_unique_pseudonym` rejects a candidate that
-another entity already owns, and the FP branch cannot take a `#N` suffix.
-Measured on a two-`HEALTH`-span document:
+**Why not option (b), a fixed neutral phrase per category.**
+
+*Correction to revision 1.* That revision reported option (b) as crashing with
+`ValueError: unable to generate a unique pseudonym … after 64 attempts`. The
+measurement was real but it was taken while the prototype still emitted
+`redact_type="FP"`, whose branch of `_generate_unique_pseudonym` may not take a
+collision suffix. Under the frozen `"TB"` the TB branch takes the suffix and
+**option (b) does not crash.** Re-measured on the same two-`HEALTH`-span
+document:
 
 ```
-entities: [('HEALTH', 'ประวัติการรักษามะเร็งเต้านม'), ('HEALTH', 'โรคหัวใจร่วมด้วย')]
-RAISED ValueError: unable to generate a unique pseudonym for entity 69473adf (HEALTH) after 64 attempts
+entities: [('HEALTH', 'TB', 'ประวัติการรักษามะเร็งเต้านม'), ('HEALTH', 'TB', 'โรคหัวใจร่วมด้วย')]
+RESULT:   ผู้ป่วยรายนี้มี[ข้อมูลสุขภาพที่ปกปิดตามมาตรา 26]#2 และมี[ข้อมูลสุขภาพที่ปกปิดตามมาตรา 26]
 ```
 
-Two sensitive spans of one category in one document is the normal case in a
-medical record, so option (b) is not implementable without also relaxing the
-anonymizer's uniqueness invariant. Refused.
+The decision is unchanged, on the standing rationale plus what that output
+shows. Option (b) carries **no per-entity restore identity**: the anonymizer's
+uniqueness invariant forces the second span to a `#2` collision suffix, so the
+phrase is not fixed after all, and the ordinal it lands on is an artifact of
+generation order rather than a designed, restorable identity. A session token is
+exactly option (b) with that identity supplied — the same neutral bracketed Thai
+category phrase, plus the namespace, nonce and ordinal that make restore exact
+and the marker hard to forge. Option (b) is therefore strictly dominated, and
+two sensitive spans of one category in one document is the normal case in a
+medical record. Refused.
 
 ### 5.4 Restore
 
@@ -446,15 +618,76 @@ masked dev documents.
 
 ### 6.2 `scan_outbound_leaks` — sensitive detection is added
 
-`scan_outbound_leaks` gains the sensitive pass, excused by the same
-trusted-pseudonym containment rule the other detectors use:
+`scan_outbound_leaks` gains a sensitive pass. It is specified in full here
+because "runs the detector over the masked text" leaves four decisions open.
+
+**Where it lives.** A private helper in `amphrang/engine/leak_guard.py`, beside
+`_segment_leaks`. It imports `detect_sensitive_spans` from
+`amphrang.engine.detectors.sensitive_span`, which is import-cycle-safe:
+`sensitive_span.py` imports only `amphrang.engine.models`, and `aggregate.py`
+imports `sensitive_span`, not the other way round.
+
+**Exact signature and body.** `scan_outbound_leaks` already computes
+`detect_fp(text) + detect_tb(text)`; the helper **reuses that one pass** rather
+than calling `detect_all`, which would run a second NER over the masked text for
+no gain:
 
 ```python
-for entity in detect_fp(text) + detect_tb(text) + _sensitive_leaks(text):
+def _sensitive_leaks(text: str, found: list[Entity]) -> list[Entity]:
+    """ม.26 spans in already-masked text. `found` is the guard's own
+    detect_fp + detect_tb result for `text`, reused for its person anchors."""
+    return detect_sensitive_spans(
+        text,
+        [e.span for e in found if e.data_type in ("NAME", "SURNAME")],
+        blocked_spans=[e.span for e in found if e.redact_type == "FP"],
+    )
 ```
 
-where `_sensitive_leaks` runs `detect_sensitive_spans` over the masked text with
-person spans taken from that same rescan.
+- **`person_spans`** come from `found`, i.e. the guard's own `detect_fp` +
+  `detect_tb` pass over the masked text — not from `detect_all`, and not from
+  the original document's entity list, which the guard deliberately does not
+  hold.
+- **`blocked_spans`** is passed, from the same `found` list, for the reason in
+  §3: it keeps a candidate from running across a structured hit. It is a
+  boundary aid here, not the correctness mechanism.
+- **`merge_sensitive_spans` does NOT run in the guard path.** The guard is not
+  assembling an entity list for masking; it is answering "is there an unmasked
+  ม.26 phrase here". Merging would subtract candidates against entities that are
+  themselves leak findings, which is meaningless in this context.
+
+**Behaviour in the TB fuzzy-overlap branch (`leak_guard.py:424-442`).**
+Sensitive findings are `redact_type == "TB"`, so left in the main loop they
+would fall into the branch that forgives a TB span overlapping a trusted range
+when the per-segment remainder rescan and `_cue_leak_in_window` come back clean.
+**They must not.** That forgiveness exists for fuzzy CRF spans that swallow an
+embedded pseudonym, and `_segment_leaks` runs only `detect_fp` + `detect_tb`, so
+it cannot see a ม.26 phrase in the remainder at all — a sensitive span
+straddling a token boundary would be waved through on a remainder that was never
+examined for sensitive content.
+
+Sensitive findings therefore **bypass the loop and are appended after it**, with
+exactly two excuses, both strict:
+
+```python
+def scan_outbound_leaks(text, guard_context):
+    trusted = guard_context.trusted_pseudonyms()
+    trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
+    found = detect_fp(text) + detect_tb(text)
+    real_leaks = []
+    for entity in found:
+        ...  # existing loop, unchanged
+    for hit in _sensitive_leaks(text, found):
+        if hit.original_text in trusted:
+            continue  # excuse 1: the whole span is a pseudonym we wrote
+        if any(cs <= hit.span[0] and hit.span[1] <= ce for cs, ce in trusted_ranges):
+            continue  # excuse 2: positionally inside one such occurrence
+        real_leaks.append(hit)
+    return real_leaks
+```
+
+The justification for the stricter treatment is that a sensitive span comes from
+an exact regex, not from a fuzzy model: a partial overlap with a pseudonym is
+not span fuzziness to be forgiven, it is a real residual.
 
 The value this buys is **not** catching what the same detector missed — that is
 correlated by construction. It is catching an *implementation* failure: a
@@ -463,9 +696,11 @@ merge regression) is exactly the class of bug the outbound guard exists for, and
 it is uncorrelated with detector recall.
 
 Measured cost: over the 40 masked dev documents the rescan produced **25 hits,
-all 25 excused by pseudonym containment, 0 unexcused**. The self-flagging
-labels of Section 5.2 are all inside their own tokens, so containment covers
-them; a sensitive phrase that was genuinely left unmasked would not be.
+all 25 excused by containment, 0 unexcused** — identical under both the
+`detect_all` formulation first prototyped and the cheaper `detect_fp +
+detect_tb` formulation specified above, which is why the cheaper one is frozen.
+The self-flagging labels of §5.2 are all inside their own tokens, so containment
+covers them; a sensitive phrase that was genuinely left unmasked would not be.
 
 **Consequence: the ten names must be added to `SAFE_OUTBOUND_LEAK_TYPES`.** The
 brief states they are already reserved there. They are not — measured today:
@@ -575,31 +810,58 @@ Each of these is a measurement from this spike, not a suspicion.
    real fix is the CRF's over-spanning, which is out of scope here.
 2. **The keyword table is cue vocabulary, not value vocabulary.** It fires on
    document titles and section headers where the words are labels rather than
-   data, and it misses diagnoses stated without a cue word. Of the 12 gold-v6
-   hits, 6 are real health facts about a named person (`ms08`, `md03`, `md08`
-   ×2, `ed05`, `lf17`), and 5 are labels or clauses — `md07`
-   "แบบยินยอมรับ**การรักษา**", `md11` "แบบคัดกรอง**สุขภาพจิต**เบื้องต้น", `lf11`
-   "ข้อมูล**สุขภาพเพื่อการรักษาพยาบาลเท่านั้น**", `lf15` "ส่วนที่ 3 ข้อมูล**สุขภาพ**",
-   `lf17` "หนังสือส่งตัวผู้ป่วยพร้อม**ประวัติการรักษา**". In the same documents the
-   detector *misses* "ภาวะซึมเศร้า" (`lf02`), "ภาวะภูมิแพ้อากาศ และแพ้อาหารทะเล"
-   (`lf15`) and "ก้อนที่เต้านมข้างซ้าย" (`lf17`), because no cue word precedes them.
-   No header veto is frozen here on purpose: whether a section header counts as
-   ม.26 data is an **annotation** question, and Task 10 Step 1 writes the
-   guidelines before the documents. A veto fitted to 12 unannotated
+   data, and it misses diagnoses stated without a cue word. The full gold-v6
+   ledger, all 12 hits:
+
+   | # | doc | span | reading |
+   |---|---|---|---|
+   | 1 | `ms08` | `การรักษาแผนกอายุรกรรม` | real — which ward a named patient was admitted to |
+   | 2 | `md03` | `การรักษาด้วยอาการเจ็บแน่นหน้าอก` | real — a presenting symptom |
+   | 3 | `md07` | `การรักษา` | **label** — inside the form title "แบบยินยอมรับการรักษา" |
+   | 4 | `md08` | `ผลการตรวจร่างกายอยู่ในเกณฑ์ปกติ` | real — an examination finding |
+   | 5 | `md08` | `โรคที่เป็นอุปสรรคต่อการปฏิบัติงาน` | real — a negative finding is still health data |
+   | 6 | `md11` | `สุขภาพจิตเบื้องต้น` | **label** — inside "แบบคัดกรองสุขภาพจิตเบื้องต้น" |
+   | 7 | `ed05` | `สุขภาพ` | real — a student's stated reason for leave |
+   | 8 | `lf02` | `การรักษาต่อเนื่อง` | real — but it starts *after* the diagnosis "ภาวะซึมเศร้า", which is left unmasked |
+   | 9 | `lf11` | `สุขภาพเพื่อการรักษาพยาบาลเท่านั้น` | **clause** — a consent purpose statement |
+   | 10 | `lf15` | `สุขภาพ` | **header** — "ส่วนที่ 3 ข้อมูลสุขภาพ"; the data under it is not masked |
+   | 11 | `lf17` | `ประวัติการรักษา` | **label** — inside the covering-letter title |
+   | 12 | `lf17` | `โรคเบาหวานชนิดที่` | real — a diagnosis |
+
+   Seven real, five labels or clauses. In the same documents the detector
+   *misses* "ภาวะซึมเศร้า" (`lf02`, hit 8), "ภาวะภูมิแพ้อากาศ และแพ้อาหารทะเล"
+   (`lf15`, hit 10) and "ก้อนที่เต้านมข้างซ้าย" (`lf17`), because no cue word
+   precedes them. No header veto is frozen here on purpose: whether a section
+   header counts as ม.26 data is an **annotation** question, and Task 10 Step 1
+   writes the guidelines before the documents. A veto fitted to 12 unannotated
    observations would be over-fitting dressed as a rule.
-3. **`sensitive_detector.py` (the embedding pass) is not part of this design.**
+3. **The gold-side evidence covers `HEALTH` and nothing else.** All 12 hits
+   above are `HEALTH`. The other nine categories fired **zero** times across the
+   304 gold-v6 documents, so the "negative slice +0" result is a real but
+   *narrow* precision datum: it constrains `HEALTH` on real documents and
+   constrains the other nine only insofar as the corpus contains text that could
+   have triggered them, which it largely does not. For `CRIMINAL_RECORD`,
+   `RELIGION`, `RACE_ETHNICITY`, `SEXUAL_BEHAVIOR`, `POLITICAL_OPINION`,
+   `LABOR_UNION`, `DISABILITY`, `GENETIC` and `BIOMETRIC` the only precision
+   evidence in this record is the 30 authored near-misses (3 per category).
+   **Task 10 must give the nine under-evidenced categories real gold documents**,
+   both person-linked and impersonal, before any claim is made about their
+   precision in the coverage profile.
+4. **`sensitive_detector.py` (the embedding pass) is not part of this design.**
    It is `[ml]`-extra only and returns `[]` without `sentence-transformers`,
    which is not installed in the reference environment. It is the natural answer
    to limit 2 and stays where it is — an `analyze()`-only enhancement. Raising
    it to a masking detector would make masking depend on an optional extra, so
    the core install would mask less than the extra install, which the coverage
    profile could not honestly describe.
-4. **The impersonal-register vocabulary is fitted to 30 authored near-misses.**
+5. **The impersonal-register vocabulary is fitted to 30 authored near-misses.**
    Its only independent evidence is the negative gold slice, where it costs
    nothing. Task 10's ≥ 6 impersonal gold documents are the real test.
-5. **Merge rule 2 fires on 0 of 304 gold documents.** It is the rule that
-   carries the recall gate on the dev set and it is untested on real data.
-6. **Nothing here measures multi-turn or streaming behaviour.** The proxy path
+6. **Merge rule 2 fires on 0 of 304 gold documents**, and the two-remainder path
+   of §4.4 occurs 0 times there too. Both are exercised only by synthetic
+   fixtures and fuzz. They are the rules that carry the recall gate and the
+   coverage invariant respectively, and neither has real-document evidence.
+7. **Nothing here measures multi-turn or streaming behaviour.** The proxy path
    was checked for type-specific code (there is none) and the single-turn
    round-trip is verified 40/40; `stream_restore.py` was not exercised.
 
@@ -613,18 +875,41 @@ Each of these is a measurement from this spike, not a suspicion.
 `SAFE_OUTBOUND_LEAK_TYPES` and the sensitive pass inside `scan_outbound_leaks`
 (6.2); the `_layer1_pii_scan` change (6.3). No change to `report.py`,
 `fp_generator.py`, `tb_generator.py`, `_OBFUSCATED_STRUCTURED_TYPES`, the
-facade, or `docs/api-surface.txt`. Tests must pin: the coverage/non-overlap
-invariant of 4.4; the two-tier anchor including the four near-miss classes; the
+facade, or `docs/api-surface.txt`.
+
+**One existing test must be updated, and it is the only one.** Measured by
+running the whole suite with the entire design applied in memory:
+
+```
+FAILED tests/test_step3_pseudonymize.py::test_token_label_map_matches_v2_contract
+E       AssertionError: assert 37 == 27
+tests/test_step3_pseudonymize.py:604: assert len(TOKEN_LABEL) == 27
+1 failed, 1816 passed, 9 skipped
+```
+
+`tests/test_step3_pseudonymize.py:604` asserts `len(TOKEN_LABEL) == 27`; the ten
+rows of §5.2 make it **37**. Task 9 updates that assertion to `37` and leaves
+the rest of the test untouched — the other assertions are per-key label checks
+that all still hold. **The §9 gate is therefore "`pytest -q` green after that
+one assertion is updated", not "green with no test edits."** Nothing else in the
+suite moves: 1816 of 1817 pass unchanged.
+
+Tests Task 9 must add, pinning: the coverage / non-overlap / `entity_id`
+uniqueness invariant of §4.4, **including at least one two-remainder fixture**
+(a sensitive span strictly inside an `ORGANIZATION`) — a test built only from
+real documents passes on the broken algorithm, because the corpus contains zero
+such cases; the two-tier anchor including the four near-miss classes; the
 `สุขภาพระบบ` category-error drop; a two-`HEALTH`-span round trip in both modes;
 `scan_outbound_leaks` clean on masked output; the two `PIILeakError` cases of
-6.3. Gates: `pytest -q` green, gold negative slice exactly 15 / 31 of 45, every
+§6.3. Gates: `pytest -q` green, gold negative slice exactly 15 / 31 of 45, every
 per-type row at or above the Task-7 reference.
 
 **Task 10** — the annotation addendum first, ruling on: the six boundary cases
-in 4.3; whether a section header or form title is annotated (limit 2); how the
+in §4.3; whether a section header or form title is annotated (limit 2); how the
 CRF-swallowed cases of limit 1 are annotated and reported. Then ~22 documents,
-≥ 6 of them impersonal with zero sensitive spans, and the ten category names
-added to `benchmark/types.py` per the guidelines decision.
+≥ 6 of them impersonal with zero sensitive spans, **weighted towards the nine
+categories that have no gold evidence at all** (limit 3), and the ten category
+names added to `benchmark/types.py` per the guidelines decision.
 
 ---
 
@@ -637,4 +922,12 @@ run with the patch disabled reproduces the Task-7 reference table exactly, which
 is what makes the patched runs comparable. Commands used:
 `python -m pytest -q`, and the benchmark driven programmatically through
 `benchmark.runner.run_benchmark(engine="crf", source="gold", seed=42, size=200)`.
+
+The two whole-suite figures were produced by pytest plugins that apply the
+design in memory, so nothing in the repository was edited to obtain them: one
+plugin applying only the §6.3 validator change (1817 passed), one applying all
+five parts of §9 (1816 passed, 1 failed). The second rebinds `detect_all` and
+`scan_outbound_leaks` in every module that imported them by value, so the wiring
+is genuinely in force everywhere and not only at the definition site.
+
 `benchmark/data/blind-*` was not read, decrypted, or scored.
