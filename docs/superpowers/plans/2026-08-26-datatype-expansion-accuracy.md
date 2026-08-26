@@ -54,7 +54,7 @@ Shared rules for all five:
 - Value in regex **group 1** (`_make_entity` uses group 1).
 - Membership in `SAFE_OUTBOUND_LEAK_TYPES` and `_OBFUSCATED_STRUCTURED_TYPES` (all five are structured).
 - `canonical_value` folding: digits-only fold for JURISTIC_ID / DRIVER_LICENSE / HOUSE_REG_ID; strip leading `@` + casefold for LINE_ID; whitespace-fold for GPS_COORD (default branch already does this — only the first four need code).
-- Precedence facts to preserve: THAI_ID first digit is 1–8, JURISTIC_ID starts 0 → disjoint. DRIVER_LICENSE (8 digits, 0.9 cue-gated) outranks STUDENT_ID/ID_NUMBER (0.8) in `_deduplicate` by score; a doc with BOTH driver and student cues near one 8-digit run resolves by nearest cue (Task 2 step for `_disambiguate_driver_student`, modeled on `_disambiguate_bank_student` at fp_detector.py:162-195). HOUSE_REG_ID (11 digits) overlaps `_RE_STUDENT_ID` (8–12): cue-gated 0.9 beats 0.8.
+- Precedence facts to preserve (CORRECTED after Task 1 — see `docs/decisions/2026-08-26-new-datatype-specs.md`): `_RE_THAI_ID` (fp_detector.py:250) does NOT restrict the first digit, and the juristic check digit is the SAME citizen mod-11 (`is_valid_thai_id` reuses apply), so today every real juristic number is emitted as THAI_ID 1.0. Do NOT gate THAI_ID by first digit — 0-leading citizen-style IDs exist (persons without registration status) and gold has first digits 1–9. Instead: the JURISTIC_ID step emits 1.0 on 0-leading checksum-valid runs, and a new `_disambiguate_thai_juristic` pass (modeled on `_disambiguate_bank_student`, fp_detector.py:162-195) resolves the same-span THAI_ID/JURISTIC_ID pair — juristic cue in the 30-char window → keep JURISTIC_ID, otherwise keep THAI_ID (the personal label is the recall-safe default; the value is masked either way). DRIVER_LICENSE (8 digits, 0.9 cue-gated) outranks STUDENT_ID/ID_NUMBER (0.8) in `_deduplicate` by score; a doc with BOTH driver and student cues near one 8-digit run resolves by nearest cue (Task 2 step for `_disambiguate_driver_student`, modeled on `_disambiguate_bank_student` at fp_detector.py:162-195). HOUSE_REG_ID (11 digits) overlaps `_RE_STUDENT_ID` (8–12): cue-gated 0.9 beats 0.8.
 
 Baseline numbers (from README, gold v4, 2026-08-25 run): overall R 0.969 / P 0.867 / F2 0.947 (CI 0.928–0.964); STUDENT_ID R 0.719 (n=57); negative slice 31/45 clean docs. These are the regression floors and improvement targets.
 
@@ -111,9 +111,17 @@ def test_juristic_dashed_form_detected():
 
 
 def test_thai_id_never_becomes_juristic():
-    # citizen ids start 1-8; this checksum-valid citizen id must stay THAI_ID
+    # a checksum-valid citizen id with a citizen cue must stay THAI_ID
     found = _types("เลขบัตรประชาชน 1101700230708")
     assert ("THAI_ID", "1101700230708") in found
+    assert not any(t == "JURISTIC_ID" for t, _ in found)
+
+
+def test_zero_leading_id_without_juristic_cue_stays_thai_id():
+    # 0-leading checksum-valid runs are ambiguous (stateless-person ids exist);
+    # without a juristic cue the personal label wins — recall-safe default.
+    found = _types("เลขประจำตัว 0107536000102 ของผู้ยื่นคำร้อง")
+    assert any(t == "THAI_ID" for t, _ in found)
     assert not any(t == "JURISTIC_ID" for t, _ in found)
 
 
@@ -163,7 +171,8 @@ def test_bare_11_digits_without_cue_not_house_reg():
 - [ ] **Step 2: Run and watch every test fail** — `./.venv/Scripts/python.exe -m pytest -q tests/test_new_types_detection.py`; expected: FAIL/assert on every test (types not emitted yet).
 - [ ] **Step 3: Implement** — add to `fp_detector.py`, following the PASSPORT template exactly (patterns section, cue section, then numbered steps 14–18 at the end of the step list, before `_disambiguate_bank_student` is applied):
   - patterns `_RE_JURISTIC_ID = re.compile(r"(?<!\d)(0\d{12})(?!\d)")` and a dashed variant mirroring how THAI_ID's dashed form is handled (read step 1 of `detect_fp` first and mirror it); `_RE_DRIVER_LICENSE = re.compile(r"(?<!\d)(\d{8})(?!\d)")`; `_RE_LINE_ID` (cue + gap ≤12 chars + `(@?[A-Za-z0-9._-]{4,24})` in group 1, same line); `_RE_GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{4,7},\s?-?\d{1,3}\.\d{4,7})(?![\d.])")` with a range check in the step body; `_RE_HOUSE_REG = re.compile(r"(?<!\d)(\d{11})(?!\d)")`.
-  - cue regexes from the spec table; `is_valid_juristic_id` only if Task 1 verdict is `verified` (unit-test it with the 5 vectors).
+  - cue regexes from the spec table; `is_valid_juristic_id` delegates to the existing `amphrang/engine/detectors/thai_id.py::is_valid_thai_id` (Task 1 proved the algorithm is identical, 8/8 real vectors) — unit-test with those vectors from the ADR.
+  - a `_disambiguate_thai_juristic` pass (see the corrected precedence bullet in the spec section): same-span THAI_ID/JURISTIC_ID pair → juristic cue in window keeps JURISTIC_ID, otherwise THAI_ID. Must leave gold THAI_ID recall untouched (no gold THAI_ID starts with 0; verified in Task 1's histogram).
   - a `_disambiguate_driver_student` pass modeled on `_disambiguate_bank_student` (:162-195), nearest-cue-wins, tie favours DRIVER_LICENSE (cue-gated evidence is stronger than tier-3 student evidence).
 - [ ] **Step 4: Run to green** — new suite passes AND `pytest -q tests/test_step2_detection.py tests/test_recall_leaks.py tests/test_plate_precision.py tests/test_student_id_context.py tests/test_document_code_fps.py` all pass unchanged.
 - [ ] **Step 5: Commit** — subject `feat: detect JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID`.
@@ -345,7 +354,7 @@ def test_canonical_value_line_id_case_and_at():
 ### Task 8: Docs sweep (sonnet)
 
 **Files:**
-- Modify: `docs/annotation-guidelines.md` (types table + per-type annotate/do-not rows), `docs/decisions/2026-08-05-http-contract-v2.md` (:417-421 vocabulary +5), `docs/research/gov-doc-policy-ontology.md` (rows for the five types), `README.md` ("What it detects" sentence + regenerate the accuracy table from Task 9's run), `CHANGELOG.md` (Unreleased → Added entry listing the five types; Fixed entries for Tasks 6–7 with before/after numbers)
+- Modify: `docs/annotation-guidelines.md` (types table + per-type annotate/do-not rows), `docs/decisions/2026-08-05-http-contract-v2.md` (:417-421 vocabulary +5), `docs/decisions/README.md` (index rows for the two new decision records: 2026-08-26-new-datatype-specs and this initiative's outcome), `docs/research/gov-doc-policy-ontology.md` (rows for the five types), `README.md` ("What it detects" sentence + regenerate the accuracy table from Task 9's run), `CHANGELOG.md` (Unreleased → Added entry listing the five types; Fixed entries for Tasks 6–7 with before/after numbers)
 
 - [ ] **Step 1: Update each doc** — the annotation guidelines gain one row per new type in the annotate/do-not-annotate table (mirror the existing VEHICLE_PLATE row style; the do-not column carries the look-alikes from Task 5 step 2).
 - [ ] **Step 2: CHANGELOG** — under `## [Unreleased]` `### Added`: one bullet naming all five types with their gating (checksum/cue) exactly as shipped; under `### Fixed`: STUDENT_ID and negative-slice bullets with the measured before→after.
