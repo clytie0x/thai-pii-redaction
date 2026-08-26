@@ -14,6 +14,8 @@ one where they overlap.
 | [2026-08-25 production and enterprise direction](2026-08-25-production-enterprise-direction.md) | Staged open-core model: prove production numbers, ship an OpenAI-compatible sanitizing proxy, then a licensed on-prem enterprise layer. No SaaS. |
 | [2026-08-26 new datatype specs](2026-08-26-new-datatype-specs.md) | Frozen specs for JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID: checksum verdicts, sources, and the corrected THAI_ID/JURISTIC_ID precedence. |
 | [2026-08-26 PDPA data ontology](2026-08-26-pdpa-data-ontology.md) | The canonical registry of every PDPA data category with one treatment level each (mask / QI / ม.26 flag→span / out of scope / not personal data); source of truth for the public coverage profile. |
+| [2026-08-26 wave-1 format specs](2026-08-26-wave1-format-specs.md) | Frozen verdicts for `IP_ADDRESS`/`MAC_ADDRESS`/`LAND_DEED_ID` shapes and the `THAI_ID` alias coverage for ประกันสังคม/ผู้เสียภาษี. |
+| [2026-08-27 gold-v6 digital_ids authoring](2026-08-27-gold-v6-digital-ids-authoring.md) | The `digital_ids` gold slice (24 docs), its traps, and the fix-round-1 findings including the accepted `NAME` precision gap on `dg18`. |
 
 ## Inherited from thai-pii-redaction
 

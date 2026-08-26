@@ -21,11 +21,12 @@ validator cannot make.
   brackets. If the document writes a phone with Thai digits or stray spaces
   (messy slice), the value carries them.
 
-## The 16 types
+## The 19 types
 
 Only these types are annotated: NAME, ADDRESS, PHONE, EMAIL, THAI_ID,
 BANK_ACCOUNT, CREDIT_CARD, DATE_OF_BIRTH, PASSPORT, VEHICLE_PLATE,
-STUDENT_ID, JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID.
+STUDENT_ID, JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID,
+IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID.
 
 The corpora label **ground truth from the document's fiction**, not detector
 behavior: if the document presents a value as a phone number, it is PHONE
@@ -51,6 +52,9 @@ is not — so ownership rules below are deliberately broad.
 | LINE_ID | The LINE messaging handle following a LINE ID / ไลน์ไอดี cue, with or without a leading `@` | ไลน์ used as a queue/production-line noun (สายการผลิต, คิว) is not a cue |
 | GPS_COORD | A `lat, lon` decimal pair (≥4 decimals each, in range) | Two-decimal price pairs sitting near the word พิกัด are not GPS_COORD |
 | HOUSE_REG_ID | 11-digit house-registration code with a รหัสประจำบ้าน / เลขรหัสประจำบ้าน cue | Bare 11-digit runs without the cue (reference numbers, lot numbers) |
+| IP_ADDRESS | IPv4 (dotted quad, each octet 0-255) or IPv6 (full or `::`-compressed) presented as a device/connection address | Version strings (`v2.4.1.9`, `รุ่น 10.15.7.2`) — same dotted-quad shape, not an address |
+| MAC_ADDRESS | Six hex-byte pairs joined by one consistent separator (`:` or `-`) | Time ranges (`10:15-11:30`) — never six pairs, so never a real collision |
+| LAND_DEED_ID | 1-6 digit deed number (`โฉนดเลขที่` / `โฉนดที่ดินเลขที่` / `เลขที่โฉนด` / `น.ส.3ก เลขที่` cue immediately before it, same line) — no checksum exists, so the cue is the entire evidence | เลขที่ดิน (parcel-within-survey-sheet number), หน้าสำรวจ (survey-page number), ระวาง (survey-sheet number) — sibling numbers frequently printed in the same sentence as the deed number, never annotated even when digits-only and adjacent; a bare `เลขที่ <digits>` with no โฉนด-family cue (a PO/order/document number) stays unannotated too |
 
 Quasi-identifiers the DETECTOR flags on purpose but the corpora never label:
 organization names, provinces/districts standing alone, postal codes, generic
