@@ -525,6 +525,37 @@ _RE_LINE_ID = re.compile(
 # Decimal lat/lon pair. >=4 decimals on BOTH sides is what separates a coordinate from a
 # money pair ("12.50, 100.75"); the in-globe range check runs in the step body.
 _RE_GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{4,7},\s?-?\d{1,3}\.\d{4,7})(?![\d.])")
+# IPv4 dotted quad. The (?<![\d.])...(?![\d.]) pair is what rejects a five-group run
+# ("1.2.3.4.5"): the trailing dot fails the lookahead and every later start fails the
+# lookbehind. \b cannot do that. Octet range is checked in the step body.
+_RE_IP_V4 = re.compile(r"(?<![\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?![\d.])")
+# IPv6: the full form pinned at EXACTLY 8 groups, or a ::-compressed form. A 3-7 group
+# alternative would read a timestamp ("10:15:20") as an address, so only the two shapes
+# that carry their own evidence are admitted. The compressed group count is checked in
+# the step body. Alnum/colon boundaries, not \b — a Thai char is a word char.
+_RE_IP_V6 = re.compile(
+    r"(?<![0-9A-Za-z:.])("
+    r"(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}"
+    r"|(?:[0-9A-Fa-f]{1,4}:){1,7}:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6})?"
+    r"|::(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,7})?"
+    r")(?![0-9A-Za-z:.])"
+)
+# MAC: six hex pairs, ONE separator style per value (no mixed ":"/"-" form exists). Six
+# pairs is the whole gate — a time range ("10:15-11:30") is two groups and never reaches it.
+_RE_MAC = re.compile(
+    r"(?<![0-9A-Za-z:.\-])((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}"
+    r"|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2})(?![0-9A-Za-z:.\-])"
+)
+# Land-deed number: 1-6 digits, frozen by docs/decisions/2026-08-26-wave1-format-specs.md.
+# No checksum exists (the number is a per-อำเภอ sequential integer), so the cue gate is the
+# entire precision story. Like _RE_LINE_ID the cue lives INSIDE the pattern because it must
+# sit before the value on the SAME line; the gap class excludes newlines. Group 1 is the
+# digits only, so the 0.9 span wins just the deed digits in _deduplicate and leaves the
+# ตำบล/อำเภอ chain behind it for the ADDRESS pass.
+_RE_LAND_DEED = re.compile(
+    r"(?:โฉนด(?:ที่ดิน)?\s*เลขที่|เลขที่โฉนด|น\.ส\.\s*[34]\s*(?:ก|ข)?\s*เลขที่)"
+    r"[ \t:：]{0,20}(?<!\d)(\d{1,6})(?!\d)"
+)
 
 _SEP_RE = re.compile(r"[-\s]")
 _THAI_CHAR_RE = re.compile(r"[฀-๿]")
@@ -597,6 +628,14 @@ _DRIVER_CUE_RE = re.compile(
 )
 # `รหัสประจำบ้าน` already covers เลขรหัสประจำบ้าน as a substring.
 _HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
+# IPv4 cue set, promoting the catch-all to 0.9. Case-sensitive on purpose: an IGNORECASE
+# "IP" fires inside ordinary lowercase prose ("equipment", "recipient").
+_IP_CUE_RE = re.compile(
+    r"IP|ไอพี|address|แอดเดรส|server|เซิร์ฟเวอร์|host|โฮสต์|router|เราเตอร์|เชื่อมต่อ|log"
+)
+# Version strings share the dotted-quad shape exactly, so they suppress the 0.8 catch-all
+# only. A cue-gated 0.9 hit is never suppressed.
+_IP_VERSION_CUE_RE = re.compile(r"version|เวอร์ชัน|รุ่น|build", re.IGNORECASE)
 
 # A KNOWN document-code prefix glued onto the digits ("PO-2569-004512") marks one org code.
 # Closed list, NOT any letters- prefix: the generic form silenced real accounts written as
@@ -1006,6 +1045,39 @@ def detect_fp(text: str) -> list[Entity]:
     for m in _RE_HOUSE_REG.finditer(text):
         if _cue_before(_HOUSE_REG_CUE_RE, text, m.start(1)):
             candidates.append(_make_entity("HOUSE_REG_ID", m, text, score=0.9))
+
+    # 19. IP_ADDRESS — IPv4 at 0.9 with a network cue, else a 0.8 catch-all. The catch-all
+    # is suppressed for version strings, which share the dotted-quad shape byte for byte
+    # ("v1.2.3.4", "รุ่น 10.15.7.2"); a cued hit is never suppressed. IPv4 collides with no
+    # existing digit detector — the dots break every (?<!\d)...(?!\d) run.
+    for m in _RE_IP_V4.finditer(text):
+        if any(int(octet) > 255 for octet in m.group(1).split(".")):
+            continue
+        start = m.start(1)
+        if _cue_before(_IP_CUE_RE, text, start):
+            candidates.append(_make_entity("IP_ADDRESS", m, text, score=0.9))
+            continue
+        if start > 0 and text[start - 1] in "vV":
+            continue
+        if _cue_before(_IP_VERSION_CUE_RE, text, start):
+            continue
+        candidates.append(_make_entity("IP_ADDRESS", m, text, score=0.8))
+
+    # 19b. IPv6 needs no cue: the colon-group shape carries its own evidence. A compressed
+    # form must still hold at least two hex groups, so a bare "::" is never claimed.
+    for m in _RE_IP_V6.finditer(text):
+        if len([group for group in m.group(1).split(":") if group]) >= 2:
+            candidates.append(_make_entity("IP_ADDRESS", m, text, score=0.9))
+
+    # 20. MAC_ADDRESS — no cue: six hex pairs in one separator style is the evidence.
+    for m in _RE_MAC.finditer(text):
+        candidates.append(_make_entity("MAC_ADDRESS", m, text, score=0.9))
+
+    # 21. LAND_DEED_ID — cue-gated ONLY (the cue lives in the pattern). 0.9 outranks the
+    # 0.85 ADDRESS claim that already reads a deed number sitting before ตำบล as a house
+    # number, and the span covers the digits alone so the admin-area chain still masks.
+    for m in _RE_LAND_DEED.finditer(text):
+        candidates.append(_make_entity("LAND_DEED_ID", m, text, score=0.9))
 
     candidates = _disambiguate_thai_juristic(text, candidates)
     candidates = _disambiguate_driver_student(text, candidates)
