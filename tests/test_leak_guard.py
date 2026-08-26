@@ -372,18 +372,82 @@ def test_segment_rescan_still_flags_a_real_name():
     assert any(e.data_type == "NAME" for e in leaks)
 
 
-def test_long_document_with_record_name_lines_is_not_leak_blocked():
-    """Regression for the perf-harness finding: anonymize failed closed on the
-    L/XL perf documents because the masked-text rescan confirmed CRF
-    hallucinations over field labels. Bisected minimal repro, re-bisected to
-    50 lines after the wave-1 corpus append (bench: wave-1 types in synthetic
-    benchmark corpus) shifted which corpus lines land in this window."""
-    import amphrang
-    from benchmark.perf import build_perf_documents
+def test_field_label_gate_covers_primary_rescan_and_segment_rescan(monkeypatch):
+    """Direct, detector-independent regression for both `_is_field_label`
+    call sites (commits 1392ce5, f5846b1): scan_outbound_leaks's own NAME
+    check (line ~407, guards a bare label found by the full-text scan that
+    never overlaps a trusted range) and _segment_leaks's internal filter
+    (line ~393, guards a label the CRF hallucinates only once isolated,
+    reachable when a TB span partially overlaps a trusted token and its
+    uncovered remainder gets rescanned).
 
-    lines = build_perf_documents()["L"].split("\n")
-    result = amphrang.anonymize("\n".join(lines[:50]), mode="token", salt="s")
-    assert result.text
+    Probing the live detectors with a bare field label ("เลขบัตรประชาชน" /
+    "เลขผู้เสียภาษี") alone or embedded in a short masked line now returns
+    empty from both detect_fp and detect_tb -- the CRF hallucination this
+    guard exists for is no longer reproducible through the public
+    anonymize() path with the current model, so pinning a document routed
+    through it (the previous test) exercises nothing. This test replays the
+    documented hallucination directly: detect_fp/detect_tb are monkeypatched
+    to return the exact two entities the CRF used to produce (a NAME hit on
+    "เลขผู้เสียภาษี" from the full-text scan with no trusted overlap; a NAME
+    hit on "เลขบัตรประชาชน" only when that substring is rescanned alone, via
+    an ADDRESS span that partially overlaps a trusted token), so the
+    assertion is deterministic and depends only on the two real gates under
+    test, not on current CRF behavior.
+    """
+    from amphrang.engine.leak_guard import scan_outbound_leaks
+    from amphrang.engine.models import Entity
+
+    name_tok = "[ชื่อ_af00_1]"
+    id_tok = "[เลขบัตรประชาชน_af00_1]"
+    text = f"ข้าพเจ้า {name_tok} เลขบัตรประชาชน กับ {id_tok} เลขผู้เสียภาษี 1234567890123"
+
+    name_tok_start = text.index(name_tok)
+    name_tok_end = name_tok_start + len(name_tok)
+    label_end = text.index("เลขบัตรประชาชน", name_tok_end) + len("เลขบัตรประชาชน")
+    # A broad ADDRESS span that starts exactly at the trusted NAME token and
+    # extends past it into the bare label right after -- the classic
+    # partial-overlap shape that routes through the segment rescan.
+    address_entity = Entity(
+        entity_id="addr",
+        redact_type="TB",
+        data_type="ADDRESS",
+        span=(name_tok_start, label_end),
+        score=1.0,
+        original_text=text[name_tok_start:label_end],
+    )
+    segment_text = text[name_tok_end:label_end]  # " เลขบัตรประชาชน" -- the uncovered remainder
+
+    tax_start = text.index("เลขผู้เสียภาษี")
+    tax_label_entity = Entity(
+        entity_id="taxlabel",
+        redact_type="TB",
+        data_type="NAME",
+        span=(tax_start, tax_start + len("เลขผู้เสียภาษี")),
+        score=1.0,
+        original_text="เลขผู้เสียภาษี",
+    )
+    segment_label_entity = Entity(
+        entity_id="seglabel",
+        redact_type="TB",
+        data_type="NAME",
+        span=(0, len(segment_text)),
+        score=1.0,
+        original_text=segment_text.strip(),
+    )
+
+    def fake_detect_tb(candidate):
+        if candidate == text:
+            return [address_entity, tax_label_entity]
+        if candidate == segment_text:
+            return [segment_label_entity]
+        return []
+
+    monkeypatch.setattr(leak_guard_module, "detect_fp", lambda candidate: [])
+    monkeypatch.setattr(leak_guard_module, "detect_tb", fake_detect_tb)
+
+    context = OutboundGuardContext(_trusted=frozenset({name_tok, id_tok}))
+    assert scan_outbound_leaks(text, context) == []
 
 
 # --- rescan invariants ------------------------------------------------------
