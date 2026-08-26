@@ -52,6 +52,17 @@ def _date_sanity(day: int, month: int) -> bool:
     return 1 <= day <= 31 and 1 <= month <= 12
 
 
+def is_valid_juristic_id(value: str) -> bool:
+    """Return True for a 0-leading 13-digit juristic registration number.
+
+    The check digit is byte-for-byte the citizen mod-11 (verified 8/8 against real
+    public registration numbers — see docs/decisions/2026-08-26-new-datatype-specs.md),
+    so this delegates instead of carrying a second copy of the algorithm.
+    """
+    raw = _SEP_RE.sub("", value)
+    return raw.startswith("0") and is_valid_thai_id(raw)
+
+
 # ---------------------------------------------------------------------------
 # Entity factory
 # ---------------------------------------------------------------------------
@@ -195,6 +206,77 @@ def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Enti
     return out
 
 
+def _disambiguate_thai_juristic(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Resolve spans that are both THAI_ID and JURISTIC_ID.
+
+    The juristic check digit IS the citizen check digit, so every real registration
+    number validates as both and both score 1.0. A juristic cue in the preceding
+    window keeps JURISTIC_ID; without one the personal label wins, because 0-leading
+    citizen ids exist (persons without registration status) and the value is masked
+    either way — the recall-safe default.
+    """
+    types_by_span: dict[tuple[int, int], set[str]] = {}
+    for e in candidates:
+        types_by_span.setdefault(e.span, set()).add(e.data_type)
+
+    drop_thai: set[tuple[int, int]] = set()
+    drop_juristic: set[tuple[int, int]] = set()
+    for span, types in types_by_span.items():
+        if "JURISTIC_ID" not in types:
+            continue
+        if _cue_before(_JURISTIC_CUE_RE, text, span[0]):
+            drop_thai.add(span)
+        else:
+            drop_juristic.add(span)
+
+    if not drop_thai and not drop_juristic:
+        return candidates
+    out: list[Entity] = []
+    for e in candidates:
+        if e.data_type == "THAI_ID" and e.span in drop_thai:
+            continue
+        if e.data_type == "JURISTIC_ID" and e.span in drop_juristic:
+            continue
+        out.append(e)
+    return out
+
+
+def _disambiguate_driver_student(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Resolve spans that are both DRIVER_LICENSE and STUDENT_ID.
+
+    Nearest cue decides; a tie favours DRIVER_LICENSE, whose cue gate is direct
+    evidence while the student side may be tier-3 circumstantial.
+    """
+    types_by_span: dict[tuple[int, int], set[str]] = {}
+    for e in candidates:
+        types_by_span.setdefault(e.span, set()).add(e.data_type)
+
+    drop_driver: set[tuple[int, int]] = set()
+    drop_student: set[tuple[int, int]] = set()
+    for span, types in types_by_span.items():
+        if "DRIVER_LICENSE" not in types or "STUDENT_ID" not in types:
+            continue
+        ctx = text[max(0, span[0] - _CUE_WINDOW) : span[0]]
+        driver = _rightmost_cue(_DRIVER_CUE_RE, ctx)
+        driver_dist = len(ctx) - driver if driver >= 0 else None
+        student_dist = _student_evidence(text, span[0], span[1])
+        if driver_dist is not None and (student_dist is None or driver_dist <= student_dist):
+            drop_student.add(span)
+        else:
+            drop_driver.add(span)
+
+    if not drop_driver and not drop_student:
+        return candidates
+    out: list[Entity] = []
+    for e in candidates:
+        if e.data_type == "DRIVER_LICENSE" and e.span in drop_driver:
+            continue
+        if e.data_type == "STUDENT_ID" and e.span in drop_student:
+            continue
+        out.append(e)
+    return out
+
+
 def _student_evidence(text: str, start: int, end: int) -> int | None:
     """Return the distance to a student cue, or ``None``.
 
@@ -248,6 +330,11 @@ def _student_evidence(text: str, start: int, end: int) -> int | None:
 # Numeric PII uses (?<!\d)...(?!\d) instead of \b: Thai letters are word chars, so \b
 # never fires between Thai script and a digit ("เลขบัตรประชาชน1101700230708").
 _RE_THAI_ID = re.compile(r"(?<!\d)(\d{1}[-\s]?\d{4}[-\s]?\d{5}[-\s]?\d{2}[-\s]?\d{1})(?!\d)")
+# Juristic registration numbers are 13 digits led by 0 and carry the SAME mod-11 check
+# digit, so this mirrors _RE_THAI_ID's optional separators (the dashed registration form
+# "0-1075-36000-10-2" must be ONE span, byte-identical to the THAI_ID span the same text
+# produces) and only pins the leading 0. The pair is resolved by _disambiguate_thai_juristic.
+_RE_JURISTIC_ID = re.compile(r"(?<!\d)(0[-\s]?\d{4}[-\s]?\d{5}[-\s]?\d{2}[-\s]?\d{1})(?!\d)")
 _RE_CREDIT_CARD = re.compile(r"(?<!\d)(\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4})(?!\d)")
 # Total length 15-34 (real IBAN range). Do not loosen: a looser floor let a 9-char
 # passport-shaped string pass mod-97 by chance and steal the span from PASSPORT.
@@ -420,6 +507,25 @@ _RE_MEDICAL_ID = re.compile(
     r"(?<![A-Za-z])(?:HN|เวชระเบียน|ผู้ป่วยเลขที่)\s*[:：]?\s*(\d{4,9})(?!\d)", re.IGNORECASE
 )
 
+# Smart-card driving-licence number: 8 digits with no self-validating structure, so the
+# cue gate (step 15) is the whole precision story. The legacy alphanumeric form
+# ("กก.00000/00") is deliberately out of scope — it collides with _RE_VEHICLE_PLATE.
+_RE_DRIVER_LICENSE = re.compile(r"(?<!\d)(\d{8})(?!\d)")
+# House registration code (เลขรหัสประจำบ้าน): 11 digits, no verified checksum, cue-gated.
+_RE_HOUSE_REG = re.compile(r"(?<!\d)(\d{11})(?!\d)")
+# LINE handle. The cue is part of the pattern because it must sit BEFORE the value on the
+# SAME line (the gap class excludes newlines), which is the entire gate. The alnum
+# lookbehind stops "online"/"deadline" from cueing, and group 1 must start alnum (after an
+# optional "@") so a stray hyphen never leads the handle.
+_RE_LINE_ID = re.compile(
+    r"(?<![A-Za-z0-9_])(?:LINE|ไลน์)[ \t]*(?:ID|ไอดี)?[ \t:：=]{0,12}"
+    r"(@?[A-Za-z0-9][A-Za-z0-9._\-]{3,23})(?![A-Za-z0-9._\-])",
+    re.IGNORECASE,
+)
+# Decimal lat/lon pair. >=4 decimals on BOTH sides is what separates a coordinate from a
+# money pair ("12.50, 100.75"); the in-globe range check runs in the step body.
+_RE_GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{4,7},\s?-?\d{1,3}\.\d{4,7})(?![\d.])")
+
 _SEP_RE = re.compile(r"[-\s]")
 _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 
@@ -467,6 +573,17 @@ _NON_STUDENT_NUM_CUE_RE = re.compile(
     re.IGNORECASE,
 )
 _PASSPORT_CUE_RE = re.compile(r"พาสปอร์ต|หนังสือเดินทาง|passport", re.IGNORECASE)
+# JURISTIC vs THAI_ID cue. Not a gate on emission (the checksum is), only the tie-breaker
+# in _disambiguate_thai_juristic. `นิติบุคคล` already covers เลขทะเบียนนิติบุคคล as a substring.
+_JURISTIC_CUE_RE = re.compile(
+    r"นิติบุคคล|ทะเบียนบริษัท|ทะเบียนพาณิชย์|เลข(?:ประจำตัว)?ผู้เสียภาษี|tax\s*id|juristic",
+    re.IGNORECASE,
+)
+_DRIVER_CUE_RE = re.compile(
+    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er'?s?|ing)\s*licen[cs]e", re.IGNORECASE
+)
+# `รหัสประจำบ้าน` already covers เลขรหัสประจำบ้าน as a substring.
+_HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
 
 # A KNOWN document-code prefix glued onto the digits ("PO-2569-004512") marks one org code.
 # Closed list, NOT any letters- prefix: the generic form silenced real accounts written as
@@ -845,6 +962,40 @@ def detect_fp(text: str) -> list[Entity]:
     for m in _RE_MEDICAL_ID.finditer(text):
         candidates.append(_make_entity("MEDICAL_ID", m, text, score=0.9))
 
+    # 14. JURISTIC_ID — 0-leading 13-digit registration number, checksum-scored 1.0. Step 1
+    # emits the very same span as THAI_ID (same check digit); _disambiguate_thai_juristic
+    # keeps exactly one of them.
+    for m in _RE_JURISTIC_ID.finditer(text):
+        if is_valid_juristic_id(m.group(1)):
+            candidates.append(_make_entity("JURISTIC_ID", m, text, score=1.0))
+
+    # 15. DRIVER_LICENSE — cue-gated ONLY; an uncued 8-digit run still falls out as
+    # ID_NUMBER via step 10. 0.9 outranks that 0.8 catch-all in _deduplicate.
+    for m in _RE_DRIVER_LICENSE.finditer(text):
+        if _cue_before(_DRIVER_CUE_RE, text, m.start(1)):
+            candidates.append(_make_entity("DRIVER_LICENSE", m, text, score=0.9))
+
+    # 16. LINE_ID — the cue lives inside the pattern (before the value, same line), so an
+    # uncued handle is never claimed.
+    for m in _RE_LINE_ID.finditer(text):
+        candidates.append(_make_entity("LINE_ID", m, text, score=0.9))
+
+    # 17. GPS_COORD — the only new type needing no cue: the >=4-decimal pair shape plus the
+    # in-globe range check carries its own evidence.
+    for m in _RE_GPS.finditer(text):
+        lat_raw, lon_raw = m.group(1).split(",")
+        lat, lon = float(lat_raw), float(lon_raw)
+        if -90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0:
+            candidates.append(_make_entity("GPS_COORD", m, text, score=0.95))
+
+    # 18. HOUSE_REG_ID — cue-gated ONLY (no checksum is publicly verifiable); 0.9 beats the
+    # 0.8 STUDENT_ID/ID_NUMBER catch-all that also reads an 11-digit run.
+    for m in _RE_HOUSE_REG.finditer(text):
+        if _cue_before(_HOUSE_REG_CUE_RE, text, m.start(1)):
+            candidates.append(_make_entity("HOUSE_REG_ID", m, text, score=0.9))
+
+    candidates = _disambiguate_thai_juristic(text, candidates)
+    candidates = _disambiguate_driver_student(text, candidates)
     candidates = _disambiguate_bank_student(text, candidates)
     candidates = _disambiguate_bank_phone(text, candidates)
     return _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))
