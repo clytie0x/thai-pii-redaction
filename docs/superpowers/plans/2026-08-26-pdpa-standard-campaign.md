@@ -284,16 +284,16 @@ The candidate design to validate (the spike may refute any part with evidence):
 - [ ] **Step 3: Decide leak-guard interplay** — masked sensitive spans must not trip `scan_residual_signals` (the replacement text is category words — verify the rescan does not re-flag it); record the required allowlist wiring.
 - [ ] **Step 4: Write the decision record** — accepted design (or the measured fallback), the dev-set numbers, exact module/function signatures, TOKEN_LABEL rows, guard wiring, and the facade verdict (knob or no knob). Commit (subject: `docs: freeze ม.26 span-masking design (dev R=<x>)`).
 
-### Task 9: Sensitive-span detector implementation (opus — dispatch only after the orchestrator amends this task from Task 8's record)
+### Task 9: Sensitive-span detector implementation (opus — AMENDED: the frozen record `docs/decisions/2026-08-27-section26-span-masking.md` is the binding spec; where this plan section and the record disagree, the record wins)
 
-**Files:**
-- Create: `amphrang/engine/detectors/sensitive_span.py`
-- Modify: `amphrang/engine/aggregate.py` (wire into the detect pipeline per the record), `token_generator.py` (TOKEN_LABEL rows from the record), `leak_guard.py` (wiring from the record), `fp_generator.py` or the record's chosen masking path
-- Test: `tests/test_sensitive_span.py` (create)
+**Files (per the record §9):**
+- Create: `amphrang/engine/detectors/sensitive_span.py` (the record §3 signatures verbatim)
+- Modify: `amphrang/engine/detectors/aggregate.py` (end of `detect_all`), `amphrang/engine/anonymizer/token_generator.py` (10 TOKEN_LABEL rows, record §5.2), `amphrang/engine/anonymizer/anonymizer.py` (routing by data_type, §5.3), `amphrang/engine/leak_guard.py` (6 SAFE_OUTBOUND_LEAK_TYPES additions + `_sensitive_leaks` + `scan_outbound_leaks` skeleton, §6.2), `amphrang/engine/output_validator.py` (`_layer1_pii_scan` char-coverage change, §6.3), `tests/test_step3_pseudonymize.py:604` (the ONE existing-test edit: 27→37)
+- Test: `tests/test_sensitive_span.py` (create; must include a synthetic two-remainder fixture per §9)
 
 **Interfaces:**
-- Consumes: Task 8's record verbatim.
-- Produces: `detect()` emits person-linked sensitive spans; `anonymize()` masks them; round-trip restore intact.
+- Consumes: the record verbatim (redact_type="TB", token masking in both modes, default ON, no facade change).
+- Produces: `detect()` emits person-linked sensitive spans; `anonymize()` masks them; round-trip restore intact; leak guard and validator wired per §6.
 
 - [ ] **Step 1: Failing tests from the record's dev set** — port ≥12 dev-set cases (mix of all 10 categories, plus ≥4 impersonal near-misses asserting NO entity) into `tests/test_sensitive_span.py`; one round-trip test (anonymize → assert diagnosis absent → restore → exact original); one leak-guard test (masked output passes `scan_outbound_leaks`).
 - [ ] **Step 2: Verify fail, implement per the record, verify pass** — no design departures without returning to the orchestrator.
