@@ -416,7 +416,8 @@ The initial data-type vocabulary is `THAI_ID`, `PHONE`, `EMAIL`, `NAME`,
 `SURNAME`, `ADDRESS`, `POSTAL_CODE`, `MEDICAL_ID`, `BANK_ACCOUNT`,
 `CREDIT_CARD`, `DATE_OF_BIRTH`, `VEHICLE_PLATE`, `PASSPORT`, `STUDENT_ID`,
 `IBAN`, `ETHNICITY`, `POLITICAL_OPINION`, `RELIGION`, `CRIMINAL`, `HEALTH`,
-`DISABILITY`, `UNION`, `LOCATION`, `DATE`, `ORGANIZATION`, and `ID_NUMBER`.
+`DISABILITY`, `UNION`, `LOCATION`, `DATE`, `ORGANIZATION`, `ID_NUMBER`,
+`JURISTIC_ID`, `DRIVER_LICENSE`, `LINE_ID`, `GPS_COORD`, and `HOUSE_REG_ID`.
 Redaction class is `FP` or `TB`.
 
 Detect highlights are sorted, non-overlapping, in bounds, and satisfy

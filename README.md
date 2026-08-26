@@ -35,9 +35,11 @@ amphrang.analyze(text)
 ## What it detects
 
 Structured Thai identifiers with checksum validation (national ID mod-11,
-phone, bank account, credit card, passport, and more) plus names, addresses,
-dates, and organizations via Thai NER (PyThaiNLP thainer-CRF, offline) with
-context-cue recall boosters. Detection quality is measured against a
+phone, bank account, credit card, passport, and more), plus juristic/tax IDs,
+driver licences, LINE IDs, GPS coordinates, and house registration codes,
+plus names, addresses, dates, and organizations via Thai NER (PyThaiNLP
+thainer-CRF, offline) with context-cue recall boosters. Detection quality is
+measured against a
 hand-authored, twice-adjudicated gold corpus (in `benchmark/`), including a
 negative (no-PII) slice so the false-positive rate is a reported number, not
 a guess.

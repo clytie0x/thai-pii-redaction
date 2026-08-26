@@ -31,6 +31,16 @@ when they change shape.
   `workers=N` process-parallel path (each worker loads the NER model once).
   `anonymize_batch` fails closed as a unit; the raised `LeakBlockedError`
   carries the offending position in `batch_index`.
+- Five new structured PII types: `JURISTIC_ID` (13-digit `0`-leading Thai
+  juristic registration number, mod-11 checksum-verified — the same
+  algorithm as `THAI_ID` — disambiguated from `THAI_ID` by a juristic cue in
+  a 30-char window), `DRIVER_LICENSE` (8 digits, cue-gated only), `LINE_ID`
+  (LINE messaging handle, cue-gated only), `GPS_COORD` (decimal `lat, lon`
+  pair, no cue needed), `HOUSE_REG_ID` (11-digit house-registration code,
+  cue-gated only). All five score 1.000 recall / 1.000 precision on the new
+  gold `business_ids` slice. See
+  `docs/decisions/2026-08-26-new-datatype-specs.md` for the checksum
+  research and sources.
 
 ### Fixed
 
@@ -41,6 +51,20 @@ when they change shape.
   confirming its own hallucination. The segment check now applies the same
   non-person gate the retag path already uses; real names in a segment are
   still flagged. Found by the performance harness on the L/XL classes.
+- `STUDENT_ID` gold recall 0.719 -> 0.860 (precision held at 1.000) and
+  `NAME` gold recall 0.969 -> 0.991: evidence-first cue/window widenings
+  (new education-context introducers and compounds, a wider student-context
+  window, a `มอบหมายให้` role cue, a driver-licence-label lookahead on the
+  name-before-passport pass) recovered 16 STUDENT_ID and 7 NAME misses with
+  zero collateral flips elsewhere in gold.
+- `ADDRESS` gold precision 0.921 -> 0.967 and `NAME` precision 0.974 ->
+  0.987: space-free field-label segments ("เลขผู้เสียภาษี", document-title
+  lines) no longer tag as `NAME`, and post-merge `ADDRESS` spans with
+  neither a digit nor an admin-area word relabel to `LOCATION`. The
+  negative slice is unchanged at 15 false positives / 31 of 45 clean docs
+  by adjudication — the remaining predictions are deliberate
+  quasi-identifier detections (issue/deadline/effective dates and one
+  organization name) that the annotation guidelines forbid carving out.
 
 ### Changed
 

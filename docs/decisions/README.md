@@ -12,6 +12,7 @@ one where they overlap.
 | [0002 Product surface](0002-product-surface.md) | The product is the `amphrang` pip package (SDK, CLI, MCP adapter, `[server]` extra) and nothing else until a real user signal exists. |
 | [0003 MCP tools never return the mapping](0003-mcp-no-plaintext-mapping.md) | `sanitize` returns an opaque session handle; the pseudonym→original mapping never enters a tool result. |
 | [2026-08-25 production and enterprise direction](2026-08-25-production-enterprise-direction.md) | Staged open-core model: prove production numbers, ship an OpenAI-compatible sanitizing proxy, then a licensed on-prem enterprise layer. No SaaS. |
+| [2026-08-26 new datatype specs](2026-08-26-new-datatype-specs.md) | Frozen specs for JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID: checksum verdicts, sources, and the corrected THAI_ID/JURISTIC_ID precedence. |
 
 ## Inherited from thai-pii-redaction
 

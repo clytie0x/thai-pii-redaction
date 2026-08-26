@@ -21,11 +21,11 @@ validator cannot make.
   brackets. If the document writes a phone with Thai digits or stray spaces
   (messy slice), the value carries them.
 
-## The 11 types
+## The 16 types
 
 Only these types are annotated: NAME, ADDRESS, PHONE, EMAIL, THAI_ID,
 BANK_ACCOUNT, CREDIT_CARD, DATE_OF_BIRTH, PASSPORT, VEHICLE_PLATE,
-STUDENT_ID.
+STUDENT_ID, JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID.
 
 The corpora label **ground truth from the document's fiction**, not detector
 behavior: if the document presents a value as a phone number, it is PHONE
@@ -46,6 +46,11 @@ is not — so ownership rules below are deliberately broad.
 | PASSPORT | Passport numbers (Thai format `[A-Z]{2}\d{7}` or cue-bearing general format) | Visa/work-permit reference numbers without a passport cue |
 | VEHICLE_PLATE | Thai license plates | Lot numbers, equipment/asset codes that merely resemble plates |
 | STUDENT_ID | Codes the document's fiction presents as a student/enrollee code, with or without an explicit cue word (weak-cue documents are deliberate detector probes) | Order/receipt numbers even when 8-12 digits |
+| JURISTIC_ID | 13-digit `0`-leading mod-11-valid registration number with a juristic cue in context (นิติบุคคล, ทะเบียนบริษัท, ทะเบียนพาณิชย์, เลขผู้เสียภาษี, tax id) | 0-leading checksum-valid runs without a juristic cue stay THAI_ID (the personal label is the recall-safe default) |
+| DRIVER_LICENSE | 8-digit licence number with an explicit ใบขับขี่ / ใบอนุญาตขับขี่ / driving-licence cue | Invoice or document reference numbers sitting near someone else's ใบขับขี่ mention; bare 8-digit runs without the cue |
+| LINE_ID | The LINE messaging handle following a LINE ID / ไลน์ไอดี cue, with or without a leading `@` | ไลน์ used as a queue/production-line noun (สายการผลิต, คิว) is not a cue |
+| GPS_COORD | A `lat, lon` decimal pair (≥4 decimals each, in range) | Two-decimal price pairs sitting near the word พิกัด are not GPS_COORD |
+| HOUSE_REG_ID | 11-digit house-registration code with a รหัสประจำบ้าน / เลขรหัสประจำบ้าน cue | Bare 11-digit runs without the cue (reference numbers, lot numbers) |
 
 Quasi-identifiers the DETECTOR flags on purpose but the corpora never label:
 organization names, provinces/districts standing alone, postal codes, generic
@@ -93,7 +98,7 @@ decision; add new precedents here when a new dispute is settled.
 
 ## Negative slice
 
-Documents with zero annotations and zero PII of the 11 types, carrying
+Documents with zero annotations and zero PII of the 16 types, carrying
 look-alikes that must not be flagged: receipt/invoice/order numbers, case and
 statute numbers, ISBN, prices, lot/tracking numbers, public hotlines.
 Organization names and provinces are allowed and expected (see
