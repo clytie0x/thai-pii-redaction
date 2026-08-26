@@ -58,6 +58,16 @@ def _sample_value(entity_type: str, rng: random.Random) -> str:
         if num % 2 == 0:
             return f"{num} ซอย {num % 60 + 1} {district}"
         return f"{num} {district}"
+    if entity_type == "JURISTIC_ID":
+        return fg._gen_juristic_id(rng)
+    if entity_type == "DRIVER_LICENSE":
+        return fg._gen_driver_license(rng)
+    if entity_type == "LINE_ID":
+        return "@" + "".join(rng.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(9))
+    if entity_type == "GPS_COORD":
+        return f"{rng.uniform(5.6, 20.5):.6f}, {rng.uniform(97.3, 105.6):.6f}"
+    if entity_type == "HOUSE_REG_ID":
+        return "".join(str(rng.randint(0, 9)) for _ in range(11))
     raise ValueError(entity_type)
 
 
@@ -94,6 +104,16 @@ _CORE_TEMPLATES = [
             ("sid", "STUDENT_ID"),
         ],
     ),
+    (
+        "business",
+        "บริษัทจดทะเบียนเลขนิติบุคคล {juristic} ติดต่อ LINE ID {line} พิกัดสำนักงาน {gps}",
+        [("juristic", "JURISTIC_ID"), ("line", "LINE_ID"), ("gps", "GPS_COORD")],
+    ),
+    (
+        "transport",
+        "ผู้ขับ {name} ใบขับขี่ {license} เลขรหัสประจำบ้าน {housereg}",
+        [("name", "NAME"), ("license", "DRIVER_LICENSE"), ("housereg", "HOUSE_REG_ID")],
+    ),
 ]
 
 # hard-case templates mirror tests/test_recall_leaks.py: the value is glued to
@@ -117,6 +137,11 @@ _SLOT_KEY_TO_TYPE = {
     "plate": "VEHICLE_PLATE",
     "sid": "STUDENT_ID",
     "phone_intl": "PHONE",
+    "juristic": "JURISTIC_ID",
+    "line": "LINE_ID",
+    "gps": "GPS_COORD",
+    "license": "DRIVER_LICENSE",
+    "housereg": "HOUSE_REG_ID",
 }
 
 

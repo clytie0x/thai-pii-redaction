@@ -146,8 +146,8 @@ def test_f2_weights_recall():
 
 def test_shared_type_scheme_has_one_canonical_source():
     assert tuple(ENTITY_TYPES) == SHARED_ENTITY_TYPES
-    assert len(SHARED_ENTITY_TYPES) == 11
-    assert len(set(SHARED_ENTITY_TYPES)) == 11
+    assert len(SHARED_ENTITY_TYPES) == 16
+    assert len(set(SHARED_ENTITY_TYPES)) == 16
 
 
 def test_scorer_collapses_out_of_scheme_predictions_and_reports_shared_11():
