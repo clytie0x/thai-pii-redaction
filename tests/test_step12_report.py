@@ -52,6 +52,21 @@ def test_borderless_word_is_not_nationality():
     assert "nationality" not in result.qi_found
 
 
+def test_mi_sanchat_thai_is_nationality():
+    result = assess_reid_risk("เขามีสัญชาติไทยโดยกำเนิด")
+    assert "nationality" in result.qi_found
+
+
+def test_tue_sanchat_lao_is_nationality():
+    result = assess_reid_risk("ผู้ต้องหาถือสัญชาติลาว")
+    assert "nationality" in result.qi_found
+
+
+def test_nana_sanchat_is_not_nationality():
+    result = assess_reid_risk("องค์กรนานาสัญชาติจัดประชุม")
+    assert "nationality" not in result.qi_found
+
+
 def test_generate_report_returns_pdpa_report():
     result = generate_report("No PII here.")
     assert isinstance(result, PDPAReport)
