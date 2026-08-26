@@ -37,6 +37,21 @@ def test_reid_risk_grade_f():
     assert result.grade in ("D", "F")  # High enough score
 
 
+def test_nationality_is_a_qi():
+    result = assess_reid_risk("ผู้สมัคร สัญชาติไทย อาศัยในกรุงเทพ")
+    assert "nationality" in result.qi_found
+
+
+def test_body_metrics_are_a_qi():
+    result = assess_reid_risk("น้ำหนัก 62 กก. ส่วนสูง 171 ซม.")
+    assert "body_metrics" in result.qi_found
+
+
+def test_borderless_word_is_not_nationality():
+    result = assess_reid_risk("บริษัทข้ามสัญชาติขยายกิจการ")
+    assert "nationality" not in result.qi_found
+
+
 def test_generate_report_returns_pdpa_report():
     result = generate_report("No PII here.")
     assert isinstance(result, PDPAReport)
