@@ -149,4 +149,13 @@ An initial submission was rejected. The findings and how each was addressed:
   addresses the CRF's title/abbreviation confusion on `น.ส.` in a legal
   land-document context. This is a known, recorded, accepted gap — not
   silently absorbed into a new "baseline."
-- No detector code was touched by this task or its fix round.
+  **Closed 2026-08-27 by Task 6b (commit `4660dd9`)**, which landed the
+  `น.ส.`+digit guard in `tb_detector._name_hygiene`: `NAME` precision measures
+  `0.988` on this same gold set (recall unchanged at `0.992`, negative slice
+  unchanged at 15 false positives / 31 of 45 clean docs), so the floor is met
+  and the accepted gap above is closed. Residual concern recorded by that
+  task's review: the guard drops the whole head line, so a no-space form like
+  `น.ส.2สมศรี` would lose the real name behind the abbreviation — an unnatural
+  shape, absent from this gold set, noted for future work rather than fixed.
+- No detector code was touched by this task or its fix round. (Task 6b, a
+  separate task, later changed `tb_detector.py` — see the closure note above.)
