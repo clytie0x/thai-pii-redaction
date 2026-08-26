@@ -13,7 +13,8 @@ class Entity:
     redact_type: str  # "FP" (format-preserving) | "TB" (text-based)
     # THAI_ID | PHONE | EMAIL | NAME | SURNAME | ADDRESS | BANK_ACCOUNT | CREDIT_CARD |
     # DATE_OF_BIRTH | VEHICLE_PLATE | PASSPORT | STUDENT_ID | IBAN | ETHNICITY | POLITICAL_OPINION |
-    # RELIGION | CRIMINAL | HEALTH | DISABILITY | UNION | LOCATION | DATE | ORGANIZATION | ID_NUMBER
+    # RELIGION | CRIMINAL | HEALTH | DISABILITY | UNION | LOCATION | DATE | ORGANIZATION | ID_NUMBER |
+    # JURISTIC_ID | DRIVER_LICENSE | LINE_ID | GPS_COORD | HOUSE_REG_ID
     # (LOCATION/DATE/ID_NUMBER are honest fallbacks that upgrade only when a nearby cue confirms)
     data_type: str
     span: tuple[int, int]  # (start, end) char offsets in the cleaned detection text

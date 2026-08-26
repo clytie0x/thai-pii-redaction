@@ -240,6 +240,9 @@ def test_scan_residual_structured_pii_through_repeated_internal_spaces(
         ("ที่อยู่ 12\u200b/3 ถนนสุขุมวิท", "ADDRESS"),
         ("ที่อยู่กรุงเทพ 10\u200b100", "POSTAL_CODE"),
         ("วันเกิด 01\u200b/02/2540", "DATE_OF_BIRTH"),
+        ("เลขทะเบียนนิติบุคคล 0107\u200b536000102", "JURISTIC_ID"),
+        ("ใบขับขี่ 6301\u200b2345", "DRIVER_LICENSE"),
+        ("รหัสประจำบ้าน 1024\u200b0012345", "HOUSE_REG_ID"),
     ],
 )
 def test_scan_residual_covers_other_detector_confirmed_structured_types(

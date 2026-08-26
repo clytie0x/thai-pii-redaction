@@ -29,6 +29,38 @@ def _gen_thai_id(rng: random.Random) -> str:
     return "".join(str(d) for d in digits) + str(check)
 
 
+def _gen_juristic_id(rng: random.Random) -> str:
+    """Generate a checksum-valid Thai juristic registration number (0 + 12 digits)."""
+    digits = [0] + [rng.randint(0, 9) for _ in range(11)]
+    weights = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
+    total = sum(d * w for d, w in zip(digits, weights))
+    check = (11 - (total % 11)) % 10
+    return "".join(str(d) for d in digits) + str(check)
+
+
+def _gen_driver_license(rng: random.Random) -> str:
+    """Generate an 8-digit Thai driving-licence number (shape only, no checksum)."""
+    return "".join(str(rng.randint(0, 9)) for _ in range(8))
+
+
+def _gen_line_id(rng: random.Random, original: str) -> str:
+    """Generate a LINE ID: lowercase letters+digits, same length, leading @ preserved."""
+    has_at = original.startswith("@")
+    body_length = len(original) - 1 if has_at else len(original)
+    body = "".join(rng.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(body_length))
+    return f"@{body}" if has_at else body
+
+
+def _gen_gps(rng: random.Random) -> str:
+    """Generate a synthetic Thailand-range GPS lat/lon pair."""
+    return f"{rng.uniform(5.6, 20.5):.6f}, {rng.uniform(97.3, 105.6):.6f}"
+
+
+def _gen_house_reg(rng: random.Random) -> str:
+    """Generate an 11-digit house registration code (shape only, no checksum)."""
+    return "".join(str(rng.randint(0, 9)) for _ in range(11))
+
+
 def _gen_phone(rng: random.Random) -> str:
     """Generate a Thai phone number in one of the written forms people use.
 
@@ -176,5 +208,15 @@ def generate_fp(data_type: str, original: str, *, salt: str, attempt: int = 0) -
         return _gen_date(rng, original)
     elif data_type == "ID_NUMBER":
         return "".join(str(rng.randint(0, 9)) for _ in range(len(original)))
+    elif data_type == "JURISTIC_ID":
+        return _gen_juristic_id(rng)
+    elif data_type == "DRIVER_LICENSE":
+        return _gen_driver_license(rng)
+    elif data_type == "LINE_ID":
+        return _gen_line_id(rng, original)
+    elif data_type == "GPS_COORD":
+        return _gen_gps(rng)
+    elif data_type == "HOUSE_REG_ID":
+        return _gen_house_reg(rng)
     else:
         return _gen_generic(rng, original)
