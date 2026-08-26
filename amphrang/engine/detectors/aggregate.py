@@ -197,6 +197,37 @@ def _extend_address_chains(text: str, entities: list[Entity], tb: list[Entity]) 
     return merge_address_spans(text, out)
 
 
+# An ADDRESS with no number at all. docs/annotation-guidelines.md precedent 3: an address
+# is read "from the first locatable component (house number, named soi/road with number, or
+# a tambon/amphoe/province chain)", so a span carrying neither a digit nor an admin-area
+# word is a vague place mention. Runs POST-merge, so a real address's label-less fragment
+# has already been absorbed into a chain that carries the chain's digits; every digit-free
+# ADDRESS left on gold-v5 is a measured false positive (ms04 เมือง, lf19 ถนนมิตรภาพ, bz03
+# บ้านตามทะเบียนบ้าน) and none of the 58 gold ADDRESS spans is matched by one. RELABELS to
+# LOCATION rather than dropping: the characters stay masked, only the claim changes.
+_ADMIN_AREA_RE = re.compile(r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่|ต\.|อ\.|จ\.|ม\.")
+
+
+def _relabel_numberless_addresses(entities: list[Entity]) -> list[Entity]:
+    out: list[Entity] = []
+    for e in entities:
+        if (
+            e.data_type == "ADDRESS"
+            and not any(ch.isdigit() for ch in e.original_text)
+            and not _ADMIN_AREA_RE.search(e.original_text)
+        ):
+            e = Entity(
+                entity_id=e.entity_id,
+                redact_type=e.redact_type,
+                data_type="LOCATION",
+                span=e.span,
+                score=e.score,
+                original_text=e.original_text,
+            )
+        out.append(e)
+    return out
+
+
 # Bare facility designators (a bookable meeting room) are furniture, not a place tied to a
 # person; the CRF emits them as LOCATION. Runs post-merge so a facility word inside a real
 # address is already absorbed. Dropping UNMASKS, so absence of evidence is not evidence
@@ -280,5 +311,6 @@ def detect_all(
     deduped = dedupe_spans(fp + tb + fn + record_names)
     kept = merge_address_spans(text, _prefer_record_names(deduped, record_names))
     kept = _extend_address_chains(text, kept, tb)
+    kept = _relabel_numberless_addresses(kept)
     kept = _drop_unanchored_facility_spans(text, kept)
     return _relabel_student_ids(tb, kept)

@@ -174,6 +174,31 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str 
     return data_type
 
 
+def _spaceless_run_is_not_a_name(segment: str) -> bool:
+    """True when a space-free Thai NAME segment is a form label, not a person.
+
+    A space-free Thai run the CRF called PERSON carries no space evidence at all, so it
+    is judged by the two facts that hold for every name: it is at most
+    `_GLUED_NAME_MAX_CHARS` long (gold's longest NAME value of any shape is 24 chars;
+    its longest SPACELESS one is 9), and it does not open with a form-label token
+    (`is_non_person_segment`, the same gate tail segments already pass).
+
+    Rejects gold-v5 bz07 (เลขผู้เสียภาษี -- label token), bz17 and bz19 (27- and 36-char
+    document-title lines). Keeps all three spaceless TRUE positives (nc12 ทิพย์มณี /
+    fn03 วรากร / lf02 อริยะสกุล) and a plain dictionary-word given name (มานพ), which is
+    why the multi-token `is_glued_name_run` test is NOT used here: it answers "did OCR
+    delete a space", not "is this a name". Latin and mixed-script runs are left alone.
+    """
+    from amphrang.engine.detectors.name_context import (
+        _GLUED_NAME_MAX_CHARS,
+        is_non_person_segment,
+    )
+
+    if not _ISOLATED_GLUED_LINE_RE.fullmatch(segment):
+        return False
+    return len(segment) > _GLUED_NAME_MAX_CHARS or is_non_person_segment(segment)
+
+
 def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     """Shared NAME span hygiene for every neural engine (CRF and fine-tuned).
 
@@ -233,6 +258,8 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         t_lo, t_hi = trim_same_line_name_edges(entity_text)
         if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(entity_text[t_lo:t_hi]):
             return []
+        if _spaceless_run_is_not_a_name(entity_text[t_lo:t_hi]):
+            return []
         return [(start + t_lo, start + t_hi)]
 
     if "\n" in entity_text:
@@ -263,6 +290,8 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
             # compound the role word was glued in front of.
             t_lo, t_hi = trim_same_line_name_edges(seg)
             if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(seg[t_lo:t_hi]):
+                continue
+            if _spaceless_run_is_not_a_name(seg[t_lo:t_hi]):
                 continue
             spans.append((line_start + t_lo, line_start + t_hi))
             continue

@@ -416,3 +416,44 @@ def test_real_names_sharing_compound_prefixes_survive():
     for value in ("สัญญา ธรรมศักดิ์", "แบบบุญมี สายทอง"):
         text = "ผู้ลงนาม " + value + " ตามเอกสารแนบ"
         assert _hygiene_texts(text, value) == [value], value
+
+
+# ── L. spaceless CRF NAME spans (gold-v5 business_ids precision dip) ───────
+# Gold has 223 NAME values and NOT ONE of them is spaceless (guideline
+# precedent 2: single-word names are never annotated), so a CRF NAME span with
+# no internal space is either an OCR-glued name or a form label the model
+# hallucinated a PERSON on. `is_glued_name_run` is already the module's
+# discriminator for exactly that question; these three gold-v5 documents are
+# the measured leaks it rejects.
+
+
+def test_spaceless_crf_name_spans_that_are_form_labels_are_rejected():
+    for text, value in (
+        (
+            "ทำเนียบคู่ค้าธุรกิจประจำไตรมาส\n"
+            "บริษัท เวิลด์กรีนโลจิสติกส์ จำกัด นิติบุคคลเลขที่ 0237657716914\n"
+            "บริษัท ศิลาทองก่อสร้าง จำกัด เลขผู้เสียภาษี 0256378068745",
+            "เลขผู้เสียภาษี",
+        ),
+        (
+            "ใบสั่งงานไรเดอร์ประจำกะเช้า\nรุจิรา แสนสุขเกษม ใบขับขี่ 52920948",
+            "ใบสั่งงานไรเดอร์ประจำกะเช้า",
+        ),
+        (
+            "ทำเนียบไลน์ไอดีตัวแทนจำหน่ายแฟรนไชส์\nภาคเหนือ ไลน์ไอดี @g3l28rbixdla4",
+            "ทำเนียบไลน์ไอดีตัวแทนจำหน่ายแฟรนไชส์",
+        ),
+    ):
+        assert "NAME" not in _tb_types(text, value), (value, _tb_types(text, value))
+
+
+def test_ocr_glued_single_run_names_still_detected():
+    # The three spaceless NAME predictions gold-v5 scores as TRUE positives
+    # (nc12 / fn03 / lf02): each passes `is_glued_name_run`, so the gate above
+    # must leave them alone.
+    for text, value in (
+        ("คำสั่งแต่งตั้ง ชนิดา ทิพย์มณี ให้รักษาการหัวหน้าแผนกการเงิน", "ทิพย์มณี"),
+        ("ได้รับเงินจาก วรากร นิติธรรม ชำระด้วยบัตรเครดิต", "วรากร"),
+        ("ญาติผู้ติดต่อได้ สุมาลี อริยะสกุล ความสัมพันธ์ ภรรยา", "อริยะสกุล"),
+    ):
+        assert "NAME" in _tb_types(text, value), (value, _tb_types(text, value))

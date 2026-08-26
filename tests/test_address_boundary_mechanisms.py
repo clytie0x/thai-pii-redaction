@@ -292,3 +292,68 @@ def test_patient_building_beside_a_hospital_stays_masked():
 def test_facility_span_beside_a_person_stays_masked():
     text = "คุณสมชาย ใจดี อยู่ชั้น 12 อาคาร 7 ติดต่อเบอร์ 081-234-5678"
     assert _covered(detect_all(text), text, "อาคาร 7")
+
+
+# ── digit-free ADDRESS spans (gold-v5 precision campaign) ──────────────────
+# Guideline precedent 3: an address is annotated from the first locatable
+# component — a house number, a named soi/road WITH a number, or a
+# tambon/amphoe/province chain. Every digit-free ADDRESS prediction on gold-v5
+# is a false positive (ms04 / lf19 / bz03, measured), so a span with neither a
+# digit nor an administrative-area word is a place mention, not an address.
+
+
+def test_digit_free_address_fragments_are_relabelled_location():
+    for text, value in (
+        # ms04: a bare issuing district behind a card label.
+        ("เลขบัตร8107583270701ออกให้ ณ อำเภอเมือง", "เมือง"),
+        # lf19: the road an accident happened on, no number anywhere.
+        ("เกิดเหตุวันที่ 20 กรกฎาคม 2569 บริเวณถนนมิตรภาพ กิโลเมตรที่ 42", "ถนนมิตรภาพ"),
+        # bz03: the CRF cut the HOUSE_REG_ID field label at บ้าน.
+        (
+            "ผู้สมัครคนแรก ศิรดา ผลาสินธุ์ ใบอนุญาตขับขี่เลขที่ 54297626 เลขรหัสประจำบ้านตามทะเบียนบ้าน 28987313217",
+            "บ้านตามทะเบียนบ้าน",
+        ),
+    ):
+        lo = text.index(value)
+        hi = lo + len(value)
+        ents = detect_all(text)
+        overlapping = [a for a in _addresses(ents) if a.span[0] < hi and lo < a.span[1]]
+        assert not overlapping, [(e.data_type, e.original_text) for e in ents]
+        # Relabelled, never unmasked: the characters keep an entity over them.
+        assert [e for e in ents if e.span[0] < hi and lo < e.span[1]], [
+            (e.data_type, e.original_text) for e in ents
+        ]
+
+
+def test_addresses_carrying_a_number_or_an_admin_chain_survive():
+    # Recall controls. The first three are the gold ADDRESS spans whose matching
+    # prediction starts glued to a Thai letter (ad10 / id27 / lf12); the last is
+    # the digit-free shape precedent 3 DOES admit — a tambon/amphoe/province chain.
+    for text, first, last in (
+        (
+            "โรงงานตั้งอยู่ที่ นิคมอุตสาหกรรมอมตะนคร 700/1 หมู่ 6 ตำบลดอนหัวฬ่อ อำเภอเมือง ชลบุรี",
+            "อมตะนคร",
+            "ชลบุรี",
+        ),
+        (
+            "จัดส่งบัตรไปที่ เลขที่ 9 ซอยอารีย์ 5 แขวงสามเสนใน เขตพญาไท กรุงเทพฯ 10400",
+            "อารีย์",
+            "10400",
+        ),
+        (
+            "ที่อยู่บริษัท 199 อาคารทัวร์ไทย ชั้น 5 ถนนพระราม 9 แขวงห้วยขวาง เขตห้วยขวาง กรุงเทพมหานคร 10310",
+            "ไทย ชั้น",
+            "10310",
+        ),
+        (
+            "ที่อยู่ ตำบลบางพระ อำเภอศรีราชา จังหวัดชลบุรี",
+            "ตำบลบางพระ",
+            "จังหวัดชลบุรี",
+        ),
+    ):
+        lo = text.index(first)
+        hi = text.index(last) + len(last)
+        ents = detect_all(text)
+        assert [a for a in _addresses(ents) if a.span[0] < hi and lo < a.span[1]], [
+            (e.data_type, e.original_text) for e in ents
+        ]
