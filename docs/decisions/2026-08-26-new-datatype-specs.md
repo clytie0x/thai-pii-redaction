@@ -150,8 +150,13 @@ this session:
 
 ```
 'เลขทะเบียนนิติบุคคล 0107536000102 ของบริษัทจดทะเบียน'   -> THAI_ID '0107536000102' 1.0
-'เลขประจำตัวผู้เสียภาษี 0-1075-36000-10-2 ตามหนังสือรับรอง' -> JURISTIC_ID '0-1075-36000-10-2' 1.0
+'เลขประจำตัวผู้เสียภาษี 0-1075-36000-10-2 ตามหนังสือรับรอง' -> THAI_ID '0-1075-36000-10-2' 1.0
 ```
+
+**Superseded 2026-08-27.** The block above records behaviour *before* step 1 routed the
+`0`-leading case. Since the PDPA-standard campaign's Task 2 landed, both strings yield
+`JURISTIC_ID` at 1.0 — re-run and quoted in
+`docs/decisions/2026-08-26-wave1-format-specs.md` §2.4.
 
 Every real juristic number is therefore already emitted as THAI_ID at score 1.0.
 Task 2 must make step 1 route the `0`-leading case, or the plan's

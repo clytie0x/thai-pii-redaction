@@ -525,26 +525,30 @@ _RE_LINE_ID = re.compile(
 # Decimal lat/lon pair. >=4 decimals on BOTH sides is what separates a coordinate from a
 # money pair ("12.50, 100.75"); the in-globe range check runs in the step body.
 _RE_GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{4,7},\s?-?\d{1,3}\.\d{4,7})(?![\d.])")
-# IPv4 dotted quad. The (?<![\d.])...(?![\d.]) pair is what rejects a five-group run
-# ("1.2.3.4.5"): the trailing dot fails the lookahead and every later start fails the
-# lookbehind. \b cannot do that. Octet range is checked in the step body.
-_RE_IP_V4 = re.compile(r"(?<![\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?![\d.])")
+# IPv4 dotted quad. The trailing guard is (?!\.?\d), NOT (?![\d.]): a sentence-final period
+# ("เข้าถึงจาก IP 192.168.1.44.") must not kill the match, while a fifth dotted group still
+# must ("1.2.3.4.5" — the "." IS followed by a digit). Together with (?<![\d.]), which blocks
+# every later start inside such a run, that is what rejects five groups. \b cannot do either.
+# Octet range is checked in the step body.
+_RE_IP_V4 = re.compile(r"(?<![\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?!\.?\d)")
 # IPv6: the full form pinned at EXACTLY 8 groups, or a ::-compressed form. A 3-7 group
 # alternative would read a timestamp ("10:15:20") as an address, so only the two shapes
-# that carry their own evidence are admitted. The compressed group count is checked in
-# the step body. Alnum/colon boundaries, not \b — a Thai char is a word char.
+# that carry their own evidence are admitted. The compressed group count is bounded to
+# 2..8 in the step body. Alnum/colon boundaries, not \b — a Thai char is a word char. "."
+# is deliberately NOT in the boundary classes: it would drop a sentence-final address.
 _RE_IP_V6 = re.compile(
-    r"(?<![0-9A-Za-z:.])("
+    r"(?<![0-9A-Za-z:])("
     r"(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}"
     r"|(?:[0-9A-Fa-f]{1,4}:){1,7}:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6})?"
     r"|::(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,7})?"
-    r")(?![0-9A-Za-z:.])"
+    r")(?![0-9A-Za-z:])"
 )
 # MAC: six hex pairs, ONE separator style per value (no mixed ":"/"-" form exists). Six
 # pairs is the whole gate — a time range ("10:15-11:30") is two groups and never reaches it.
+# Same reason as IPv6 for keeping "." out of the boundary classes.
 _RE_MAC = re.compile(
-    r"(?<![0-9A-Za-z:.\-])((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}"
-    r"|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2})(?![0-9A-Za-z:.\-])"
+    r"(?<![0-9A-Za-z:\-])((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}"
+    r"|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2})(?![0-9A-Za-z:\-])"
 )
 # Land-deed number: 1-6 digits, frozen by docs/decisions/2026-08-26-wave1-format-specs.md.
 # No checksum exists (the number is a per-อำเภอ sequential integer), so the cue gate is the
@@ -1063,10 +1067,11 @@ def detect_fp(text: str) -> list[Entity]:
             continue
         candidates.append(_make_entity("IP_ADDRESS", m, text, score=0.8))
 
-    # 19b. IPv6 needs no cue: the colon-group shape carries its own evidence. A compressed
-    # form must still hold at least two hex groups, so a bare "::" is never claimed.
+    # 19b. IPv6 needs no cue: the colon-group shape carries its own evidence. The group count
+    # is bounded both ways — below 2 a bare "::" would be claimed, above 8 the value is not an
+    # address at all (the compressed alternative can spell more groups than IPv6 allows).
     for m in _RE_IP_V6.finditer(text):
-        if len([group for group in m.group(1).split(":") if group]) >= 2:
+        if 2 <= len([group for group in m.group(1).split(":") if group]) <= 8:
             candidates.append(_make_entity("IP_ADDRESS", m, text, score=0.9))
 
     # 20. MAC_ADDRESS — no cue: six hex pairs in one separator style is the evidence.
@@ -1076,8 +1081,15 @@ def detect_fp(text: str) -> list[Entity]:
     # 21. LAND_DEED_ID — cue-gated ONLY (the cue lives in the pattern). 0.9 outranks the
     # 0.85 ADDRESS claim that already reads a deed number sitting before ตำบล as a house
     # number, and the span covers the digits alone so the admin-area chain still masks.
+    # Deed numbering starts at 1, so a 1-digit deed is a real value: it takes the same
+    # single_char_ok exemption from _deduplicate's 2-char floor that บ้านเลขที่/หมู่ take.
+    # Unconditional, unlike theirs — the in-pattern cue IS the evidence, so no sibling
+    # fragment is needed to vouch for it.
     for m in _RE_LAND_DEED.finditer(text):
-        candidates.append(_make_entity("LAND_DEED_ID", m, text, score=0.9))
+        ent = _make_entity("LAND_DEED_ID", m, text, score=0.9)
+        candidates.append(ent)
+        if ent.span[1] - ent.span[0] < 2:
+            single_char_ok.add(ent.span)
 
     candidates = _disambiguate_thai_juristic(text, candidates)
     candidates = _disambiguate_driver_student(text, candidates)
