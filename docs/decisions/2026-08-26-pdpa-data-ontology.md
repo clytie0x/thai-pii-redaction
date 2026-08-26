@@ -12,8 +12,11 @@ from. A category not in this registry is a registry bug, not an implicit
 Legal basis reviewed 2026-08-26 (agent research, sources at the bottom):
 มาตรา 6 (definition of personal data — identifies a natural person directly
 or indirectly; excludes the deceased), มาตรา 26 (sensitive categories),
-มาตรา 4 (application exemptions), plus PDPC-aligned guidance on indirect
-identifiers (IP address, cookie ID, location data).
+มาตรา 4 (application exemptions). Indirect identifiers (IP address, MAC
+address, cookie ID, location data) enter via ม.6's "ไม่ว่าทางตรงหรือทางอ้อม"
+limb as read by Thai practitioner consensus. Citation audit 2026-08-26
+(Task 1): no PDPC publication states this — the basis is the statute plus
+consensus, not regulator guidance.
 
 ## Treatment levels
 
@@ -31,8 +34,8 @@ identifiers (IP address, cookie ID, location data).
 |---|---|---|
 | ชื่อ นามสกุล (ม.6) | `NAME`, `SURNAME` | shipped, gold R 0.991 / P 0.987 |
 | เลขบัตรประชาชน (ม.6) | `THAI_ID` | shipped, 1.000/1.000, mod-11 checksum |
-| เลขประกันสังคม (ม.6) | alias of `THAI_ID` (see open verdicts) | pending Task 1 verdict |
-| เลขผู้เสียภาษีบุคคลธรรมดา (ม.6) | alias of `THAI_ID` (see open verdicts) | pending Task 1 verdict |
+| เลขประกันสังคม (ม.6) | covered via `THAI_ID` | alias verdict 2026-08-26; no new detector, foreign-worker gap recorded |
+| เลขผู้เสียภาษีบุคคลธรรมดา (ม.6) | covered via `THAI_ID` | alias verdict 2026-08-26; no new detector, foreigner-TIN gap recorded |
 | หนังสือเดินทาง (ม.6) | `PASSPORT` | shipped, 1.000/0.962 |
 | ใบขับขี่ (ม.6) | `DRIVER_LICENSE` | shipped, 1.000/1.000 |
 | เบอร์โทรศัพท์ (ม.6) | `PHONE` | shipped, 0.988/1.000 |
@@ -46,9 +49,9 @@ identifiers (IP address, cookie ID, location data).
 | LINE ID (ม.6) | `LINE_ID` | shipped, 1.000/1.000 |
 | รหัสนักศึกษา (ม.6) | `STUDENT_ID` | shipped, 0.860/1.000 |
 | เลขเวชระเบียน (ม.6) | `MEDICAL_ID` | shipped (unmeasured — profile must say so) |
-| **IP address** (indirect identifier, PDPC guidance) | `IP_ADDRESS` | **campaign Wave 1** |
-| **MAC address** (indirect identifier) | `MAC_ADDRESS` | **campaign Wave 1** |
-| **เลขโฉนดที่ดิน** (ม.6, links person to property) | `LAND_DEED_ID` | **campaign Wave 1, shape pending Task 1** |
+| **IP address** (indirect identifier, ม.6 "ทางอ้อม") | `IP_ADDRESS` | **campaign Wave 1** |
+| **MAC address** (indirect identifier, ม.6 "ทางอ้อม") | `MAC_ADDRESS` | **campaign Wave 1** |
+| **เลขโฉนดที่ดิน** (ม.6, links person to property) | `LAND_DEED_ID` | **campaign Wave 1**; shape frozen 2026-08-26 — 1–6 digits, cue-gated, no checksum |
 | Fallback labels (recall net) | `LOCATION`, `DATE`, `ORGANIZATION`, `ID_NUMBER` | shipped; honest-labels catch-alls, not PDPA categories themselves |
 
 ## Level B — quasi-identifiers (analyze-only)
@@ -106,17 +109,30 @@ dated amendment, which is what "being the standard" obliges us to track.
 - Activities exempted by ม.4 (personal/household use, state security organs,
   press/art under ethics codes, parliament/courts, credit-bureau data).
 
-## Open verdicts (owned by campaign Task 1)
+## Frozen verdicts (campaign Task 1, 2026-08-26)
 
-1. **เลขประกันสังคม**: expected verdict — for Thai insured persons the SSO
-   number IS the 13-digit citizen ID, so coverage = `THAI_ID` alias (no new
-   detector); verify, and check whether foreign-worker SSO numbers pass the
-   citizen mod-11 (if not, decide cue-gated handling or a recorded gap).
-2. **เลขผู้เสียภาษีบุคคลธรรมดา**: expected verdict — personal TIN = citizen
-   ID since 2012; legacy 10-digit TINs are a recorded gap unless evidence
-   shows they still circulate.
-3. **เลขโฉนดที่ดิน**: shape unverified (candidate 1–8 digits, cue-gated
-   only); Task 1 freezes it or records "shape too loose to ship".
+Full evidence, sources, and probe output:
+`docs/decisions/2026-08-26-wave1-format-specs.md`.
+
+1. **เลขประกันสังคม** — `thai_id_alias` (2026-08-26). สปส.1-03 field 2.3 makes
+   the citizen ID the insured-person identifier; no new detector. Recorded gaps:
+   the SSO-issued `เลขที่บัตรประกันสังคม` for foreign insured persons has no
+   public format, and the citizen mod-11 is unverified for DOPA type-`0`
+   numbers. `_RE_THAI_ID` is not loosened.
+2. **เลขผู้เสียภาษีบุคคลธรรมดา** — `thai_id_alias` (2026-08-26). ประกาศอธิบดี
+   กรมสรรพากร (ฉบับที่ 3), in force 1 ก.พ. 2555; no new detector. The legacy
+   10-digit TIN is a **closed** gap (transition ended 31 ม.ค. 2556); the
+   RD-issued 13-digit TIN for individuals without a citizen ID stays open.
+3. **เลขโฉนดที่ดิน** — shape frozen (2026-08-26): **1–6 digits, cue-gated only,
+   no checksum** (narrowed from the 1–8 candidate; กรมที่ดิน numbers deeds
+   sequentially per อำเภอ from 1). `เลขที่ดิน`, `หน้าสำรวจ`, `ระวาง`, and condo
+   `N/M` titles are out of scope. `LAND_DEED_ID` must score above the 0.85
+   `ADDRESS` claim already made on `<deed number> ตำบล…`.
+4. **IP / MAC citation audit** — the former "PDPC guidance" basis for IP address
+   was **not supported** by either source cited below; no PDPC publication says
+   it. The basis is ม.6's `ทางอ้อม` limb plus practitioner consensus, and the
+   Level A / Level B placement of `IP_ADDRESS` is flagged in the record as a
+   treatment choice rather than one the sources compel.
 
 ## Sources
 
@@ -125,9 +141,14 @@ dated amendment, which is what "being the standard" obliges us to track.
 - มาตรา-by-มาตรา mirrors — https://pdpa.sidata.plus/article-6/ ,
   https://pdpa.sidata.plus/article-26/
 - Scope and exemptions — https://www.dharmniti.co.th/pdpa-scope-exceptions/
-- Personal-data examples incl. indirect identifiers —
-  https://t-reg.co/blog/t-reg-knowledge/what-is-personal-data/ ,
-  https://www.marketingoops.com/data/personal-data-in-pdpa-2019/
+- Personal-data examples (general) —
+  https://t-reg.co/blog/t-reg-knowledge/what-is-personal-data/ (checked
+  2026-08-26: does **not** mention IP/MAC/cookie — do not cite it for those)
+- Device identifiers as ข้อมูลส่วนบุคคล, practitioner consensus without
+  attribution — https://www.marketingoops.com/data/personal-data-in-pdpa-2019/ ,
+  https://www.dharmniti.co.th/pdpa-liability-for-business-owners/
+- IP address in isolation vs in combination —
+  https://pdpathailand.com/pdpa/content/article9943.php
 - Repo inventory verified against `benchmark/types.py`,
   `amphrang/engine/anonymizer/token_generator.py`,
   `amphrang/engine/report.py`, `amphrang/engine/reid_risk.py`,
