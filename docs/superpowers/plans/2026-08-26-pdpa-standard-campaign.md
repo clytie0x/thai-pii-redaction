@@ -241,6 +241,20 @@ def test_borderless_word_is_not_nationality():
 - [ ] **Step 2: Bump gold-v6 + run** — `python -m benchmark --source gold`; every new type ≥20 n; existing per-type rows at or above baseline; negative slice exactly 15 FP / 31 of 45.
 - [ ] **Step 3: Commit** — subject `bench: gold-v6 digital_ids slice (24 docs)`; body quotes the three new per-type rows and OVERALL.
 
+### Task 6b: น.ส.3 document-abbreviation NAME fix (opus — inserted after Task 6's adjudication)
+
+**Files:**
+- Modify: the name-detection path (`amphrang/engine/detectors/tb_detector.py` / `name_context.py` — locate the exact site by evidence)
+- Test: extend the appropriate existing name-context test file
+
+**Why:** Task 6's review proved the CRF reads `น.ส.3ก` (the land-document type, น.ส. followed immediately by a digit) as the person-title น.ส. and emits spurious NAMEs (`น.ส.`, `ก เดิม`) — measured on gold dg18, NAME precision 0.980 vs the 0.987 floor, accepted temporarily by ruling.
+
+- [ ] **Step 1: Evidence first** — reproduce on the live gold doc dg18 and on minimal probes (`น.ส.3ก เดิม`, `น.ส.4จ`, `น.ส.3`), and enumerate every gold NAME span starting with น.ส. to bound collateral: a REAL person reference `น.ส.สมศรี` must keep detecting.
+- [ ] **Step 2: Failing test** — pin: `น.ส.3ก เดิม` and `น.ส.4จ` produce no NAME entity; `น.ส.สมศรี ใจดี` still produces one.
+- [ ] **Step 3: Minimal fix** — a guard at the evidence-located site: น.ส. immediately followed by a digit is a document abbreviation, never a person-title prefix. No broader refactor.
+- [ ] **Step 4: Gates** — full `pytest -q` green; `python -m benchmark --source gold`: NAME precision back ≥ 0.987 with recall ≥ 0.991, every other row at/above baseline, negative slice exactly 15 FP / 31 of 45.
+- [ ] **Step 5: Commit** — subject `fix: น.ส.+digit is a document abbreviation, not a person title`; body quotes the NAME row before/after.
+
 ### Task 7: Wave-1 measurement checkpoint (sonnet — run + report, no code)
 
 - [ ] **Step 1: Full verification run** — `pytest -q` (expect ≥ current 1763 passing), `scripts/check_release.py` GATE-OK, `python -m benchmark --source gold` full table.
