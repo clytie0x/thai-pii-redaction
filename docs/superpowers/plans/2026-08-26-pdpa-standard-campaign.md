@@ -49,7 +49,7 @@
 |---|---|---|---|---|---|
 | `IP_ADDRESS` | `ไอพี` | IPv4 dotted quad, each octet 0–255, `(?<![\d.])…(?![\d.])`; or IPv6 (full / `::`-compressed, ≥2 groups) | IPv4 0.9 cue-gated, 0.8 catch-all with version suppression; IPv6 0.9 no cue | `IP\|ไอพี\|address\|แอดเดรส\|server\|เซิร์ฟเวอร์\|host\|โฮสต์\|router\|เราเตอร์\|เชื่อมต่อ\|log` | `f"10.{rng.randint(0, 255)}.{rng.randint(0, 255)}.{rng.randint(1, 254)}"` |
 | `MAC_ADDRESS` | `แมคแอดเดรส` | six hex pairs joined by `:` or `-` (one separator style per value) | 0.9 no cue | — | six random hex pairs joined by the original separator |
-| `LAND_DEED_ID` | `โฉนด` | 1–8 digits (Task 1 may correct), cue-gated ONLY, value within 20 chars after the cue on the same line | 0.9 | cue BEFORE value `โฉนด(?:ที่ดิน)?\s*เลขที่\|เลขที่โฉนด\|น\.ส\.\s*[34]\s*(?:ก\|ข)?\s*เลขที่` | digits, length-preserving |
+| `LAND_DEED_ID` | `โฉนด` | 1–6 digits (frozen by Task 1 — `docs/decisions/2026-08-26-wave1-format-specs.md`), cue-gated ONLY, value within 20 chars after the cue on the same line | 0.9 | cue BEFORE value `โฉนด(?:ที่ดิน)?\s*เลขที่\|เลขที่โฉนด\|น\.ส\.\s*[34]\s*(?:ก\|ข)?\s*เลขที่` | digits, length-preserving |
 
 Version suppression for the IPv4 catch-all (the 0.8 step, not the cue-gated 0.9 step): skip the match when the char immediately before is `v`/`V`, or when `version|เวอร์ชัน|รุ่น|build` appears in the 30-char `_cue_before` window. A cue-gated 0.9 hit is never suppressed.
 
@@ -57,7 +57,7 @@ Shared rules for all three (identical to the 2026-08-26 five-type campaign):
 - `redact_type="FP"`; value in regex **group 1** (`_make_entity` uses group 1).
 - Membership in `SAFE_OUTBOUND_LEAK_TYPES` and `_OBFUSCATED_STRUCTURED_TYPES`.
 - `canonical_value` folding: MAC_ADDRESS strips `:`/`-` and casefolds; LAND_DEED_ID digits-only fold; IP_ADDRESS casefold only (IPv6 letters) — whitespace-fold default branch covers the rest.
-- Precedence: LAND_DEED_ID (0.9 cue-gated, 1–8 digits) overlaps `_RE_STUDENT_ID` (8–12) only at exactly 8 digits; 0.9 beats 0.8 in `_deduplicate`. A doc with both โฉนด and student cues near one 8-digit run resolves by nearest cue — extend the `_disambiguate_driver_student` pattern (fp_detector.py, modeled on `_disambiguate_bank_student`) with the โฉนด cue set. IPv4 never collides with existing digit detectors (dots break `(?<!\d)…(?!\d)` runs); MAC never collides (hex pairs + separators).
+- Precedence (amended after Task 1): LAND_DEED_ID is 1–6 digits, so it never overlaps `_RE_STUDENT_ID` (8–12) — no student disambiguator is needed. The real collision is ADDRESS — the Task 1 probe shows `<deed number> ตำบล…` is already claimed at 0.85 by the address pass, so the 0.9 LAND_DEED_ID entity must win the deed digits in dedupe while the admin-area chain after it stays masked as ADDRESS/LOCATION — Task 2 must pin this with a test (deed digits → `LAND_DEED_ID`, and ตำบล/อำเภอ text still masked, not dropped by overlap dedupe). IPv4 never collides with existing digit detectors (dots break `(?<!\d)…(?!\d)` runs); MAC never collides (hex pairs + separators).
 
 New QI spec (Level B rows "campaign Wave 1" in the ontology):
 
