@@ -331,7 +331,7 @@ def test_canonical_value_line_id_case_and_at():
 - Modify: `amphrang/engine/detectors/fp_detector.py` (`_student_evidence` :198-241, cues :441-468, steps 10/10b :716-735)
 - Test: `tests/test_student_id_context.py` (extend), `tests/test_document_code_fps.py` (must stay green)
 
-**Interfaces:** consumes gold-v5; produces STUDENT_ID gold recall ≥ 0.85 with precision still 1.000-ish (≥ 0.97) and zero new negative-slice predictions.
+**Interfaces:** consumes gold-v5; produces STUDENT_ID gold recall ≥ 0.85 with precision still 1.000-ish (≥ 0.97) and zero new negative-slice predictions. SCOPE EXTENSION (post-Task-5 evidence): gold-v5's business_ids slice exposed ~7 missed NAME spans (NAME recall 0.990 on v4 docs -> 0.969 corpus-wide). Enumerate those NAME misses verbatim with the same evidence-first method and recover them; target NAME recall ≥ 0.985 on gold-v5 without new NAME false positives.
 
 - [ ] **Step 1: Evidence first (no code)** — run `python -m benchmark --source gold --json <scratch>/gold.json`, then list EVERY missed STUDENT_ID span verbatim with its document text (write a script over the json + `benchmark/gold.py.load_gold()`; misses = gold spans with no overlapping prediction of the right type). Group the misses by cause (cue distance beyond `_STUDENT_PERSON_WINDOW`? unseen introducer word? dashed variants? length?). Record the grouped list in the task report — this is the deliverable that justifies each change.
 - [ ] **Step 2: For each cause group, one failing test** in `tests/test_student_id_context.py` reproducing a real missed span (copy the gold text verbatim).
@@ -345,7 +345,7 @@ def test_canonical_value_line_id_case_and_at():
 - Modify: whatever the evidence names — expected: `amphrang/engine/detectors/tb_detector.py` cue-upgrade/date handling, `amphrang/engine/detectors/name_context.py` non-person lexicon
 - Test: `tests/test_document_code_fps.py` (extend with the exact FP texts)
 
-**Interfaces:** consumes gold-v5; produces negative-slice clean docs ≥ 38/45 with zero recall loss anywhere.
+**Interfaces:** consumes gold-v5; produces negative-slice clean docs ≥ 38/45 with zero recall loss anywhere. SCOPE EXTENSION (post-Task-5 evidence): business_ids also dipped ADDRESS precision (0.935 -> 0.921 corpus-wide) and NAME precision (0.995 -> 0.973); enumerate those new-slice false positives too and restore ADDRESS precision ≥ 0.93 and NAME precision ≥ 0.985 on gold-v5.
 
 - [ ] **Step 1: Evidence first (no code)** — enumerate every prediction on every `negative` document (14 dirty docs, baseline 15 FPs; the weakness-closure record says the remainder are document-issue, deadline and effective dates). List each: doc_id, predicted type, exact span text.
 - [ ] **Step 2: Classify each FP**: (a) label noise the detector is RIGHT to flag → propose a gold adjudication note instead of code (do not edit gold to flatter the detector — flag to orchestrator); (b) genuine FP → one failing test with the verbatim text.
@@ -369,7 +369,7 @@ def test_canonical_value_line_id_case_and_at():
 - Modify: `README.md` (accuracy table), Create: nothing else
 
 - [ ] **Step 1: Full gates** — run and record raw output of ALL of: `ruff check .`, `ruff format --check .`, `python -m pytest -q` (expect 0 failures), `python scripts/check_release.py`, `python -m benchmark --source gold`, `python -m benchmark` (synthetic), `python -m benchmark.perf --profile ci`.
-- [ ] **Step 2: Regression matrix** — compare against the baselines in this plan's spec section: every pre-existing type recall ≥ baseline; STUDENT_ID ≥ 0.85; clean negative docs ≥ 38/45; five new types recall ≥ 0.95 and precision ≥ 0.90 each. Any miss → STOP and hand back to the orchestrator with the exact rows (do not patch code in this task).
+- [ ] **Step 2: Regression matrix** — baselines are gold-v4 numbers for types whose documents did not change; for NAME and ADDRESS the gold-v5 targets from Tasks 6-7 apply (NAME recall ≥ 0.985, NAME precision ≥ 0.985, ADDRESS precision ≥ 0.93). Then: every pre-existing type recall ≥ its applicable baseline; STUDENT_ID ≥ 0.85; clean negative docs ≥ 38/45; five new types recall ≥ 0.95 and precision ≥ 0.90 each. Any miss → STOP and hand back to the orchestrator with the exact rows (do not patch code in this task).
 - [ ] **Step 3: Refresh the README accuracy table** from the fresh gold run (same format, new date line, now with 16 type rows), keeping the blind paragraph byte-identical (blind was not re-run).
 - [ ] **Step 4: Commit** — subject `bench+docs: publish gold-v5 accuracy (16 types)`, body = the full per-type table and the regression matrix verdicts.
 
