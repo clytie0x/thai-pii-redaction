@@ -1,4 +1,4 @@
-"""Hand-authored Thai PII gold set (v5).
+"""Hand-authored Thai PII gold set (v6).
 
 Realistic, un-templated Thai documents with fake PII, labeled inline with
 [[TYPE|value]] markup that parse_gold() converts to exact-span Samples.
@@ -9,10 +9,15 @@ negative-slice look-alike fix, and a per-document long_form boundary
 guarantee. v5 (2026-08-26) adds the `business_ids` slice: 28 documents
 covering the five new structured types (JURISTIC_ID, DRIVER_LICENSE, LINE_ID,
 GPS_COORD, HOUSE_REG_ID) added by the data-type expansion plan, each reaching
->=20 gold instances. Annotation conventions live in
-docs/annotation-guidelines.md. The documents live in `data/gold.jsonl` (one
-JSON object per line) so the set can be released as a paper artifact without
-shipping Python; this module is only the parser and loader.
+>=20 gold instances. v6 (2026-08-26/27) adds the `digital_ids` slice: 24
+documents (IT-incident reports, router-log emails, land-office letters) for
+the wave-1 types (IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID) added by the PDPA-
+standard campaign, each reaching >=20 gold instances, plus three alias-proof
+documents proving a citizen ID stays THAI_ID in ประกันสังคม/ผู้เสียภาษี context
+per docs/decisions/2026-08-26-wave1-format-specs.md. Annotation conventions
+live in docs/annotation-guidelines.md. The documents live in `data/gold.jsonl`
+(one JSON object per line) so the set can be released as a paper artifact
+without shipping Python; this module is only the parser and loader.
 
 Two layers share one set, tagged per document:
 
@@ -20,9 +25,9 @@ Two layers share one set, tagged per document:
   after the structure of ordinary Thai paperwork. Entity mix follows what those
   documents actually contain, so overall numbers mean something.
 - `balanced` -- slices `name_no_cue` / `address_varied` / `messy` /
-  `bank_phone` / `id_docs` / `student_id_varied` / `business_ids`, which push
-  the rare types up to a reportable n and vary one format axis at a time so a
-  miss names its own cause.
+  `bank_phone` / `id_docs` / `student_id_varied` / `business_ids` /
+  `digital_ids`, which push the rare types up to a reportable n and vary one
+  format axis at a time so a miss names its own cause.
 
 `long_form` sits in the natural layer but exists for a second reason: every
 other document here is short enough to fit in one NER chunk, so the stride-chunk
@@ -51,7 +56,7 @@ from pathlib import Path
 
 from .types import GoldSpan, Sample
 
-GOLD_VERSION = "gold-v5"
+GOLD_VERSION = "gold-v6"
 
 # slice -> layer. `negative` is its own layer because it is scored differently
 # (no gold spans, so recall is undefined and only false positives count).
@@ -63,6 +68,7 @@ SLICE_LAYERS: dict[str, str] = {
     "id_docs": "balanced",
     "student_id_varied": "balanced",
     "business_ids": "balanced",
+    "digital_ids": "balanced",
     "gov_form": "natural",
     "medical": "natural",
     "finance": "natural",

@@ -109,6 +109,27 @@ def test_business_ids_slice_docs_each_carry_a_new_type():
         assert types & _NEW_BUSINESS_ID_TYPES, (s.template_id, types)
 
 
+_WAVE1_DIGITAL_ID_TYPES = frozenset({"IP_ADDRESS", "MAC_ADDRESS", "LAND_DEED_ID"})
+
+
+def test_digital_ids_slice_docs_each_carry_a_new_type_or_thai_id_alias():
+    # Every digital_ids doc carries a wave-1 type, EXCEPT the alias-proof docs
+    # (dg19-dg21), which deliberately carry only THAI_ID to prove a citizen ID
+    # stays THAI_ID in a ประกันสังคม/ผู้เสียภาษี context (no new type there by
+    # design -- see docs/decisions/2026-08-26-wave1-format-specs.md).
+    docs = [s for s in load_gold() if s.slice == "digital_ids"]
+    assert len(docs) >= 20
+    for s in docs:
+        types = {sp.entity_type for sp in s.spans}
+        assert (types & _WAVE1_DIGITAL_ID_TYPES) or "THAI_ID" in types, (s.template_id, types)
+
+
+def test_digital_ids_slice_has_alias_proof_docs():
+    docs = [s for s in load_gold() if s.slice == "digital_ids"]
+    alias_docs = [s for s in docs if any(sp.entity_type == "THAI_ID" for sp in s.spans)]
+    assert len(alias_docs) >= 3, alias_docs
+
+
 # ── v3: size, layers, checksums, negatives ─────────────────────────────
 def test_every_type_reaches_reportable_n():
     counts = collections.Counter(t for _, _, t, _ in _labeled_values())
