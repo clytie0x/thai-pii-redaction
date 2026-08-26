@@ -47,7 +47,7 @@
 
 | data_type | Thai token label | Shape | Score | Cue regex (30-char window before) | Surrogate |
 |---|---|---|---|---|---|
-| `IP_ADDRESS` | `ไอพี` | IPv4 dotted quad, each octet 0–255, `(?<![\d.])…(?![\d.])`; or IPv6 (full / `::`-compressed, ≥2 groups) | IPv4 0.9 cue-gated, 0.8 catch-all with version suppression; IPv6 0.9 no cue | `IP\|ไอพี\|address\|แอดเดรส\|server\|เซิร์ฟเวอร์\|host\|โฮสต์\|router\|เราเตอร์\|เชื่อมต่อ\|log` | `f"10.{rng.randint(0, 255)}.{rng.randint(0, 255)}.{rng.randint(1, 254)}"` |
+| `IP_ADDRESS` | `ไอพี` | IPv4 dotted quad, each octet 0–255, `(?<![\d.])…(?!\.?\d)` (amended in fix round 1 — a sentence-final `.` must not kill the match; a fifth dotted group still does); or IPv6 (full / `::`-compressed, ≥2 groups, ≤8 groups total) | IPv4 0.9 cue-gated, 0.8 catch-all with version suppression; IPv6 0.9 no cue | `IP\|ไอพี\|address\|แอดเดรส\|server\|เซิร์ฟเวอร์\|host\|โฮสต์\|router\|เราเตอร์\|เชื่อมต่อ\|log` | `f"10.{rng.randint(0, 255)}.{rng.randint(0, 255)}.{rng.randint(1, 254)}"` |
 | `MAC_ADDRESS` | `แมคแอดเดรส` | six hex pairs joined by `:` or `-` (one separator style per value) | 0.9 no cue | — | six random hex pairs joined by the original separator |
 | `LAND_DEED_ID` | `โฉนด` | 1–6 digits (frozen by Task 1 — `docs/decisions/2026-08-26-wave1-format-specs.md`), cue-gated ONLY, value within 20 chars after the cue on the same line | 0.9 | cue BEFORE value `โฉนด(?:ที่ดิน)?\s*เลขที่\|เลขที่โฉนด\|น\.ส\.\s*[34]\s*(?:ก\|ข)?\s*เลขที่` | digits, length-preserving |
 
