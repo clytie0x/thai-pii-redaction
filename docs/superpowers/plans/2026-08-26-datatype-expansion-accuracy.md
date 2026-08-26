@@ -246,9 +246,7 @@ def test_canonical_value_folds_dashes_for_juristic():
 
 
 def test_canonical_value_line_id_case_and_at():
-    assert canonical_value("LINE_ID", "@Somchai_J99") == canonical_value(
-        "LINE_ID", "somchai_j99"
-    )
+    assert canonical_value("LINE_ID", "@Somchai_J99") == canonical_value("LINE_ID", "somchai_j99")
 ```
 
 - [ ] **Step 2: Watch them fail** — expected KeyError/assert on registration test first.
@@ -285,16 +283,20 @@ def test_canonical_value_line_id_case_and_at():
 - [ ] **Step 3: Append two templates at the END of `_CORE_TEMPLATES`** (appending keeps earlier rotation byte-stable; verify with the perf/leak tests below):
 
 ```python
+(
     (
         "business",
         "บริษัทจดทะเบียนเลขนิติบุคคล {juristic} ติดต่อ LINE ID {line} พิกัดสำนักงาน {gps}",
         [("juristic", "JURISTIC_ID"), ("line", "LINE_ID"), ("gps", "GPS_COORD")],
     ),
+)
+(
     (
         "transport",
         "ผู้ขับ {name} ใบขับขี่ {license} เลขรหัสประจำบ้าน {housereg}",
         [("name", "NAME"), ("license", "DRIVER_LICENSE"), ("housereg", "HOUSE_REG_ID")],
     ),
+)
 ```
 
   plus `_SLOT_KEY_TO_TYPE` entries `"juristic"`, `"line"`, `"gps"`, `"license"`, `"housereg"`.
