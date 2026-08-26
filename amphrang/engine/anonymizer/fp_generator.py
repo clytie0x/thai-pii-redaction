@@ -166,6 +166,24 @@ def _gen_vehicle_plate(rng: random.Random) -> str:
     return f"{c1}{c2} {nums}"
 
 
+def _gen_ip_address(rng: random.Random) -> str:
+    """Generate a synthetic IPv4-shaped surrogate (used for IPv6 originals too — a fake IPv6
+    is not required for privacy and complicates shape checks)."""
+    return f"10.{rng.randint(0, 255)}.{rng.randint(0, 255)}.{rng.randint(1, 254)}"
+
+
+def _gen_mac_address(rng: random.Random, original: str) -> str:
+    """Generate six random hex pairs joined by the original's separator style."""
+    sep = "-" if "-" in original else ":"
+    pairs = [f"{rng.randint(0, 255):02x}" for _ in range(6)]
+    return sep.join(pairs)
+
+
+def _gen_land_deed(rng: random.Random, original: str) -> str:
+    """Generate a length-preserving digit string for a land deed ID."""
+    return "".join(str(rng.randint(0, 9)) for _ in range(len(original)))
+
+
 def _gen_generic(rng: random.Random, original: str) -> str:
     """Fallback: same length, same char class (digit->digit, letter->letter)."""
     result = []
@@ -218,5 +236,11 @@ def generate_fp(data_type: str, original: str, *, salt: str, attempt: int = 0) -
         return _gen_gps(rng)
     elif data_type == "HOUSE_REG_ID":
         return _gen_house_reg(rng)
+    elif data_type == "IP_ADDRESS":
+        return _gen_ip_address(rng)
+    elif data_type == "MAC_ADDRESS":
+        return _gen_mac_address(rng, original)
+    elif data_type == "LAND_DEED_ID":
+        return _gen_land_deed(rng, original)
     else:
         return _gen_generic(rng, original)

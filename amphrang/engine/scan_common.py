@@ -16,8 +16,10 @@ def canonical_value(data_type: str, value: str) -> str:
     """
     if data_type == "THAI_ID":
         return re.sub(r"\D", "", value)
-    if data_type in ("JURISTIC_ID", "DRIVER_LICENSE", "HOUSE_REG_ID"):
+    if data_type in ("JURISTIC_ID", "DRIVER_LICENSE", "HOUSE_REG_ID", "LAND_DEED_ID"):
         return re.sub(r"\D", "", value)
+    if data_type == "MAC_ADDRESS":
+        return re.sub(r"[:-]", "", value).casefold()
     if data_type == "LINE_ID":
         return value.strip().lstrip("@").casefold()
     if data_type == "PASSPORT":
