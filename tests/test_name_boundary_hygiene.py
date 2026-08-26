@@ -103,6 +103,47 @@ def test_digit_truncation_and_label_trim_compose():
     assert segs == ["อรุณี วัฒนสิทธิ์"], segs
 
 
+@pytest.mark.parametrize(
+    "entity_text",
+    [
+        "น.ส.3ก เดิม",  # gold dg18 line 1, verbatim
+        "น.ส.4จ",
+        "น.ส.3",
+    ],
+)
+def test_land_document_abbreviation_is_never_a_name(entity_text):
+    # น.ส. followed immediately by a digit is the land-document class
+    # (หนังสือรับรองการทำประโยชน์ น.ส.3ก), not the person title น.ส. Without the
+    # guard the digit-run split minted TWO names out of one abbreviation: the
+    # head น.ส. and whatever the tail rule accepted after the digits (ก เดิม).
+    assert _hygiene_texts(entity_text) == [], entity_text
+
+
+def test_land_document_abbreviation_line_drops_but_the_person_line_survives():
+    # gold dg18 shape: the CRF emits ONE PERSON span from the abbreviation on
+    # line 1 through the owner's name on line 2. Only line 1 is dropped.
+    segs = _hygiene_texts("น.ส.3ก เดิม\nเจ้าของที่ดิน สุทธิดา อินทรกำแหง")
+    assert segs == ["เจ้าของที่ดิน สุทธิดา อินทรกำแหง"], segs
+
+
+@pytest.mark.parametrize(
+    "entity_text",
+    ["น.ส.สมศรี ใจดี", "น.ส. สมศรี ใจดี"],
+)
+def test_the_person_title_form_of_the_same_prefix_still_detects(entity_text):
+    # Control: น.ส. before a LETTER is the real person title and must survive
+    # both the hygiene layer and the full TB path.
+    assert _hygiene_texts(entity_text) == [entity_text], entity_text
+    assert entity_text in _tb_names(entity_text), entity_text
+
+
+def test_land_document_abbreviation_yields_no_name_through_detect_tb():
+    text = "หนังสือรับรองการทำประโยชน์ น.ส.3ก เดิม\nเจ้าของที่ดิน สุทธิดา อินทรกำแหง"
+    names = _tb_names(text)
+    assert not any("น.ส." in n or n.startswith("ก ") for n in names), names
+    assert any("สุทธิดา อินทรกำแหง" in n for n in names), names
+
+
 # ── D. safety controls: whole-token evidence, group floor, titles ──────────
 
 

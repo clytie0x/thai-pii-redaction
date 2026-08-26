@@ -111,6 +111,12 @@ _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
 # contain digits, so no name text is lost); tail segments keep their wholesale shape rejection
 # instead — see the loop below.
 _NAME_DIGIT_RUN_RE = re.compile(r"[0-9][0-9\s./-]*")
+# น.ส. followed IMMEDIATELY by a digit is the land-document class (น.ส.3ก, น.ส.4จ — the
+# หนังสือรับรองการทำประโยชน์ series), never the person title น.ส. Checked before the digit-run
+# split, which otherwise mints two names from one abbreviation (head "น.ส." plus whatever the
+# tail rule accepts after the digits, gold dg18 "ก เดิม"). A letter after the dot is the real
+# title (น.ส.สมศรี) and never reaches this regex.
+_LAND_DOC_ABBREV_RE = re.compile(r"น\.ส\.\d")
 
 
 # A CRF "location" that is really document numbering: the span IS a เลขที่<document> field
@@ -273,6 +279,10 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         line_start = start + offset
         offset += len(line) + 1
         if index == 0:
+            # A land-document abbreviation owns the whole head line: drop it before the digit
+            # split so neither the truncated head nor the after-digits tail becomes a NAME.
+            if _LAND_DOC_ABBREV_RE.match(line.lstrip()):
+                continue
             # HEAD only: split at the first digit run (tail lines keep wholesale shape rejection;
             # truncating them would mint "วันที่" from "วันที่ 1 สิงหาคม"). BOTH sides are judged:
             # prefix-only dropped numbered roster lines ("1. สมชาย ใจดี"); the part AFTER the
