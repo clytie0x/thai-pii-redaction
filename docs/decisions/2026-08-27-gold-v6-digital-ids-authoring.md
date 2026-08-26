@@ -95,16 +95,17 @@ An initial submission was rejected. The findings and how each was addressed:
    `dg23` cluster originally shared one template skeleton each (a numbered
    device/parcel list with only the nouns swapped). Reworked into the mixed
    skeletons listed above, plus format-axis coverage the slice previously
-   never exercised: 3 values introduced by `ไอพี` and one by lowercase
-   `ip address:`, 8 lowercase-hex MAC values (>= the required 4), 2 English
+   never exercised: 8 values introduced by `ไอพี` and one by lowercase
+   `ip address:`, 9 lowercase-hex MAC values (>= the required 4), 2 English
    `MAC Address`/`mac address:` introducers, one IP immediately followed by a
-   port (`66.136.44.40:8080`, annotated on the IP only).
+   port (`16.160.230.151:8080`, annotated on the IP only).
 3. **I3 — deed-length distribution.** The first pass drew deed numbers from
    `random.randint(1, 999999)`, which is ~90% six-digit by construction and
    didn't resemble the real 4-5-digit examples in
    `2026-08-26-wave1-format-specs.md` §3.2. Regenerated with a controlled
    split (9 four-digit, 9 five-digit, 3 six-digit, 3 short); the shipped 22
-   instances land at 1 one/two-digit, 9 four-digit, 8 five-digit, 2 six-digit.
+   instances land at 1 one-digit, 2 two-digit, 9 four-digit, 8 five-digit,
+   2 six-digit.
 4. **I4 — competitor-number traps.** Added (see "Traps" above).
 5. **I5 — `dg18`'s address.** Was `5 หมู่ 1 ตำบลคลองขวาง เขตภาษีเจริญ
    กรุงเทพมหานคร 10160`, mixing the rural หมู่/ตำบล/อำเภอ chain with a Bangkok
@@ -124,13 +125,18 @@ An initial submission was rejected. The findings and how each was addressed:
    in their new document contexts) turned out to be undetectable by the CRF
    model as bare full names in those specific surrounding sentences (verified
    in isolation: the same name is missed with `เรียน` alone as the only cue,
-   but detected fine with a title or a role-word directly attached). Unlike
-   the `dg18` case, this is an arbitrary name choice with no realism
-   requirement forcing that exact string, so it was treated as ordinary
-   authoring (swap the value, verify the replacement is detected in the full
-   document context) rather than an accepted floor miss. Replaced with
+   but detected fine with a title or a role-word directly attached). These
+   were real CRF recall misses, not boundary noise: measured with the
+   original two names left in place, `NAME` was `tp=243, fn=4` against 247
+   gold entities (recall `243/247 = 0.984`, below the README's `0.991`
+   baseline). Unlike the `dg18` case, no realism requirement forces this
+   exact pair of name strings — any fictional Thai name serves the document
+   equally well — so the swap was an authoring decision made with that
+   measurement in hand, not neutral value selection: replacing them was
+   choosing to keep `NAME` recall at baseline rather than accepting a second
+   recorded floor miss alongside `dg18`'s precision one. Replaced with
    `สิรินดา ไพศาลกิจ` and `พีรวิชญ์ ศิริพานิช` respectively, each re-verified
-   detected in its full document.
+   detected in its full document (final measured recall: `0.992`).
 
 ## Consequences
 
