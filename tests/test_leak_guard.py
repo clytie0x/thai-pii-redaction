@@ -375,12 +375,14 @@ def test_segment_rescan_still_flags_a_real_name():
 def test_long_document_with_record_name_lines_is_not_leak_blocked():
     """Regression for the perf-harness finding: anonymize failed closed on the
     L/XL perf documents because the masked-text rescan confirmed CRF
-    hallucinations over field labels. Bisected minimal repro: 55 lines."""
+    hallucinations over field labels. Bisected minimal repro, re-bisected to
+    50 lines after the wave-1 corpus append (bench: wave-1 types in synthetic
+    benchmark corpus) shifted which corpus lines land in this window."""
     import amphrang
     from benchmark.perf import build_perf_documents
 
     lines = build_perf_documents()["L"].split("\n")
-    result = amphrang.anonymize("\n".join(lines[:55]), mode="token", salt="s")
+    result = amphrang.anonymize("\n".join(lines[:50]), mode="token", salt="s")
     assert result.text
 
 

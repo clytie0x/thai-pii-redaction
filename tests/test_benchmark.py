@@ -94,6 +94,30 @@ def test_corpus_has_hard_case_slice():
     assert any("+66" in s.text or "เลขบัตรประชาชน" in s.text for s in hard)
 
 
+def test_ip_address_slot_yields_ip_gold_span():
+    docs = [s for s in build_corpus(seed=3, size=200) if s.template_id == "it_incident"]
+    assert docs
+    for s in docs:
+        span = next(sp for sp in s.spans if sp.entity_type == "IP_ADDRESS")
+        assert s.text[span.start : span.end]
+
+
+def test_mac_address_slot_yields_mac_gold_span():
+    docs = [s for s in build_corpus(seed=3, size=200) if s.template_id == "it_incident"]
+    assert docs
+    for s in docs:
+        span = next(sp for sp in s.spans if sp.entity_type == "MAC_ADDRESS")
+        assert s.text[span.start : span.end]
+
+
+def test_land_deed_id_slot_yields_land_deed_gold_span():
+    docs = [s for s in build_corpus(seed=3, size=200) if s.template_id == "land_transaction"]
+    assert docs
+    for s in docs:
+        span = next(sp for sp in s.spans if sp.entity_type == "LAND_DEED_ID")
+        assert s.text[span.start : span.end]
+
+
 # ── scorer ─────────────────────────────────────────────────────────────
 def _s(text, spans):
     return Sample(text=text, spans=[GoldSpan(*x) for x in spans], template_id="t", slice="core")
@@ -146,8 +170,8 @@ def test_f2_weights_recall():
 
 def test_shared_type_scheme_has_one_canonical_source():
     assert tuple(ENTITY_TYPES) == SHARED_ENTITY_TYPES
-    assert len(SHARED_ENTITY_TYPES) == 16
-    assert len(set(SHARED_ENTITY_TYPES)) == 16
+    assert len(SHARED_ENTITY_TYPES) == 19
+    assert len(set(SHARED_ENTITY_TYPES)) == 19
 
 
 def test_scorer_collapses_out_of_scheme_predictions_and_reports_shared_11():

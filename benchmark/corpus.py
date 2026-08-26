@@ -68,6 +68,13 @@ def _sample_value(entity_type: str, rng: random.Random) -> str:
         return f"{rng.uniform(5.6, 20.5):.6f}, {rng.uniform(97.3, 105.6):.6f}"
     if entity_type == "HOUSE_REG_ID":
         return "".join(str(rng.randint(0, 9)) for _ in range(11))
+    if entity_type == "IP_ADDRESS":
+        return fg._gen_ip_address(rng)
+    if entity_type == "MAC_ADDRESS":
+        sep = rng.choice(":-")
+        return sep.join(f"{rng.randint(0, 255):02x}" for _ in range(6))
+    if entity_type == "LAND_DEED_ID":
+        return "".join(str(rng.randint(0, 9)) for _ in range(rng.randint(1, 6)))
     raise ValueError(entity_type)
 
 
@@ -114,6 +121,21 @@ _CORE_TEMPLATES = [
         "ผู้ขับ {name} ใบขับขี่ {license} เลขรหัสประจำบ้าน {housereg}",
         [("name", "NAME"), ("license", "DRIVER_LICENSE"), ("housereg", "HOUSE_REG_ID")],
     ),
+    (
+        "it_incident",
+        "เจ้าหน้าที่ {name} รายงานเหตุการณ์เครือข่าย พบการเชื่อมต่อจาก IP {ip_address} ผ่านการ์ด MAC {mac_address} ผิดปกติ ติดต่อกลับที่ {phone}",
+        [
+            ("name", "NAME"),
+            ("ip_address", "IP_ADDRESS"),
+            ("mac_address", "MAC_ADDRESS"),
+            ("phone", "PHONE"),
+        ],
+    ),
+    (
+        "land_transaction",
+        "สัญญาซื้อขายที่ดินฉบับนี้ทำขึ้นระหว่างผู้ขาย {name} โฉนดที่ดินเลขที่ {land_deed_id} ตั้งอยู่ที่ {addr}",
+        [("name", "NAME"), ("land_deed_id", "LAND_DEED_ID"), ("addr", "ADDRESS")],
+    ),
 ]
 
 # hard-case templates mirror tests/test_recall_leaks.py: the value is glued to
@@ -142,6 +164,9 @@ _SLOT_KEY_TO_TYPE = {
     "gps": "GPS_COORD",
     "license": "DRIVER_LICENSE",
     "housereg": "HOUSE_REG_ID",
+    "ip_address": "IP_ADDRESS",
+    "mac_address": "MAC_ADDRESS",
+    "land_deed_id": "LAND_DEED_ID",
 }
 
 

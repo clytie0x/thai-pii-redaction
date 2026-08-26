@@ -33,6 +33,9 @@ SYSTEM_PROMPT = """คุณคือระบบตรวจจับข้อ�
 - LINE_ID ไลน์ไอดี
 - GPS_COORD พิกัด
 - HOUSE_REG_ID รหัสประจำบ้าน
+- IP_ADDRESS หมายเลขไอพี
+- MAC_ADDRESS หมายเลขแมคแอดเดรส
+- LAND_DEED_ID เลขโฉนดที่ดิน
 
 กฎการตอบ
 1. ตอบเป็น JSON array อย่างเดียว ห้ามมีคำอธิบาย ห้ามมี markdown code fence
