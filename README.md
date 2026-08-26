@@ -46,30 +46,39 @@ a guess.
 
 ## Measured accuracy
 
-Default engine (thainer-CRF, offline) on the open gold corpus, run 2026-08-25
-(`python -m benchmark --source gold`, 648 gold entities):
+Default engine (thainer-CRF, offline) on the open gold corpus, run 2026-08-26
+(`python -m benchmark --source gold`, gold-v5, 788 gold entities):
 
 | entity | n | recall | precision |
 |---|---|---|---|
-| THAI_ID | 51 | 1.000 | 1.000 |
 | CREDIT_CARD | 24 | 1.000 | 1.000 |
 | DATE_OF_BIRTH | 45 | 1.000 | 1.000 |
+| DRIVER_LICENSE | 24 | 1.000 | 1.000 |
 | EMAIL | 47 | 1.000 | 1.000 |
+| GPS_COORD | 23 | 1.000 | 1.000 |
+| HOUSE_REG_ID | 23 | 1.000 | 1.000 |
+| JURISTIC_ID | 23 | 1.000 | 1.000 |
+| LINE_ID | 23 | 1.000 | 1.000 |
+| THAI_ID | 51 | 1.000 | 1.000 |
 | BANK_ACCOUNT | 35 | 1.000 | 0.972 |
+| ADDRESS | 58 | 1.000 | 0.967 |
 | PASSPORT | 25 | 1.000 | 0.962 |
-| ADDRESS | 58 | 1.000 | 0.935 |
-| NAME | 199 | 0.990 | 0.995 |
+| NAME | 223 | 0.991 | 0.987 |
 | PHONE | 81 | 0.988 | 1.000 |
 | VEHICLE_PLATE | 26 | 0.962 | 1.000 |
-| STUDENT_ID | 57 | 0.719 | 1.000 |
-| **overall** | **648** | **0.969** | **0.867** |
+| STUDENT_ID | 57 | 0.860 | 1.000 |
+| **overall** | **788** | **0.985** | **0.878** |
 
-Overall F2 0.947 (95% CI 0.928–0.964). Precision counts every flagged span
+Overall F2 0.961 (95% CI 0.949–0.972). Precision counts every flagged span
 that is not a gold entity, including spans outside the labeling scheme — the
-recall-first design accepts that trade. The weakest type is honest too:
-STUDENT_ID recall is 0.719, mostly free-form student-number shapes. On the
-negative (no-PII) slice, 31 of 45 documents come through with zero false
-positives.
+recall-first design accepts that trade. STUDENT_ID recall is 0.860 (up from
+0.719 pre-campaign), still the weakest type: free-form student numbers with
+no nearby cue fall back to the generic ID_NUMBER label, an honest miss
+rather than a guess. On the negative (no-PII) slice, 31 of 45 documents come
+through with zero false positives. The remaining 14 documents carry 15
+flags that are deliberate quasi-identifier detections — issue, deadline, and
+effective dates plus one organization name — kept by policy, not overlooked
+defects.
 
 The gold corpus is open and the detectors are tuned against it, so it is an
 upper bound. The held-out **blind corpus** (encrypted in-repo, 185 documents,
@@ -78,7 +87,9 @@ upper bound. The held-out **blind corpus** (encrypted in-repo, 185 documents,
 **recall 0.960, precision 0.713, F2 0.898**, and the opt-in fine-tuned engine
 at recall 0.983, F2 0.916. Those figures are quoted from the hash-chained
 score log (`benchmark/data/blind-scores.jsonl`, reveals 5–6 of 6) — no new
-reveal was spent publishing them.
+reveal was spent publishing them. Those blind figures predate the five new
+types added 2026-08-26 (JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD,
+HOUSE_REG_ID); blind was not re-run for this release.
 
 ## Design promises
 
