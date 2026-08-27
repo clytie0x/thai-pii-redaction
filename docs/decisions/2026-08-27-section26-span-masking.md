@@ -31,6 +31,19 @@ frozen `"TB"`; §6.2 specifies `_sensitive_leaks` completely; §9 names the one
 existing test the design breaks. The three acceptance gates are unchanged and
 were re-measured after every amendment.
 
+**Revision 3 (2026-08-27, post-Task-9).** Documentation only; no design change
+and no gate re-measurement. Task 9 implemented this record and its review round
+closed one ambiguity and two observations. Substantive changes: §4.2 now defines
+explicitly that "the hit" means the **raw regex match span**, not the shaped span
+of §4.3 (the reading Task 9 shipped, now binding); §8 limit 2's gold ledger goes
+from 12 rows to **13** and `excluded` on gold-v6 from 128 to **129**, superseding
+the prototype's measurement, which evidently used the shaped-span reading; §8
+gains limits 8 and 9, recording a guard limitation the reviewer measured and the
+unclamped specificity window. The three acceptance gates are untouched by all of
+this and were re-run by Task 9 and again by its reviewer: dev design unchanged,
+negative slice `false_positives=15 clean_docs=31/45`, every per-type gold row
+byte-identical to the Task-7 reference.
+
 ---
 
 ## 1. Acceptance measurements
@@ -46,13 +59,17 @@ Supporting numbers from the same run:
 - Character coverage of the 40 gold dev spans (`R_mask`, the safety view): **0.900**.
 - Over-masking: **+0.03x** of gold span length (20 characters over, 10 under,
   across 40 spans).
-- Gold-v6 behaviour: **12** sensitive spans fired across 304 documents,
-  **0** of them in the `negative` slice.
+- Gold-v6 behaviour: ~~**12**~~ **13** sensitive spans fired across 304 documents,
+  **0** of them in the `negative` slice. (Superseded by revision 3: the 12 was
+  measured under the shaped-span reading of "the hit", which §4.2 now rules
+  against. See §8 limit 2 row 13.)
 - Full gold table with the design patched in: every per-type row byte-identical
   to the Task-7 reference; `shared_11 R=0.987 P=0.992 F2=0.988` unchanged.
   `OVERALL` precision moves 0.879 → 0.868 only because gold-v6 carries no
-  sensitive annotations, so all 12 predictions land in the `OUT_OF_SCHEME`
-  bucket (`excluded` 116 → 128). Task 10 converts them into scored spans.
+  sensitive annotations, so all predictions land in the `OUT_OF_SCHEME`
+  bucket (`excluded` 116 → ~~128~~ **129**, superseded as above; the precision
+  figure 0.868 is unchanged by the extra span). Task 10 converts them into
+  scored spans.
 - End-to-end over the 40 dev positives in `mode="surrogate"`: **0/40** outbound
   guard failures, **0/40** restore failures, **0/40** new output-validator
   failures (with the Section 6 change; without it, 2/40 — see there).
@@ -247,6 +264,23 @@ anchor itself. (The same principle as `_drop_unanchored_facility_spans`, which
 blanks facility spans so they cannot be their own register evidence.) This one
 rule alone kills the `สมาคมลูกจ้างในประเทศไทย` near-miss, where the only
 "person" word is the `ลูกจ้าง` inside the union's own name.
+
+**"The hit" means the RAW REGEX MATCH span `(m.start(), m.end())`, never the
+shaped span of §4.3.** (Ruling, revision 3, 2026-08-27 post-Task-9; binding.)
+Anchoring is therefore decided *before* the span shape runs, consistent with §3's
+description of `blocked_spans` as an early clamp "before the span shape runs" and
+with §3's own interchangeable use of "hit" and "match" in the category-error rule.
+The `สมาคมลูกจ้าง` example above does **not** discriminate between the two readings —
+`ลูกจ้าง` lies inside the match and inside the shaped span alike — so it is not
+evidence either way, and the ruling is made on the ordering argument instead.
+
+The two readings differ on exactly one real document in the whole corpus
+(`lf17`, §8 limit 2 row 13), and they differ in the direction of **more** masking:
+the shaped-span reading suppresses that span, the match reading emits it.
+Recall-first settles a one-document tie towards masking. The prototype
+measurements in §1 and the original 12-row ledger were taken under the
+shaped-span reading; the match reading supersedes them, and the only numbers that
+move are the two named in revision 3's note. No acceptance gate moves.
 
 **Tier 1 — never vetoed.**
 
@@ -811,7 +845,8 @@ Each of these is a measurement from this spike, not a suspicion.
 2. **The keyword table is cue vocabulary, not value vocabulary.** It fires on
    document titles and section headers where the words are labels rather than
    data, and it misses diagnoses stated without a cue word. The full gold-v6
-   ledger, all 12 hits:
+   ledger, all **13** hits (rows 1 to 12 are the prototype's; row 13 was added in
+   revision 3 — see the note under the table):
 
    | # | doc | span | reading |
    |---|---|---|---|
@@ -827,8 +862,33 @@ Each of these is a measurement from this spike, not a suspicion.
    | 10 | `lf15` | `สุขภาพ` | **header** — "ส่วนที่ 3 ข้อมูลสุขภาพ"; the data under it is not masked |
    | 11 | `lf17` | `ประวัติการรักษา` | **label** — inside the covering-letter title |
    | 12 | `lf17` | `โรคเบาหวานชนิดที่` | real — a diagnosis |
+   | 13 | `lf17` | `การรักษาโดย` | **unadjudicated** — see the note below |
 
-   Seven real, five labels or clauses. In the same documents the detector
+   **Row 13, added in revision 3 (2026-08-27, post-Task-9).** Task 9's gold run
+   emits `HEALTH (468, 479) 'การรักษาโดย'` in `lf17`, a thirteenth span the
+   prototype did not produce. Measured, not inferred:
+
+   ```
+   segment (425, 492): 'เหตุผลการส่งตัว เพื่อตรวจชิ้นเนื้อและวางแผนการรักษาโดยแพทย์เฉพาะทาง'
+   entities:  TB HEALTH (468,479) 'การรักษาโดย'   TB NAME (479,492) 'แพทย์เฉพาะทาง'
+   ```
+
+   Its anchor is a **CRF `NAME` false positive** over `แพทย์เฉพาะทาง`, which is not a
+   person name at all. That NAME sits in the segment and outside the `การรักษา`
+   match at `(468, 476)`, so under the §4.2 ruling it is a tier-1 anchor; merge
+   rule 1 then trims the candidate at the NAME, giving `(468, 479)`. The
+   prototype's 12-row ledger and its `excluded` figure were taken under the
+   shaped-span reading, where the NAME is swallowed and the span is suppressed;
+   **the frozen reading supersedes them**, so gold-v6 carries **13** sensitive
+   spans and `excluded` is **129**, not 128/12. Every acceptance gate is
+   unaffected: negative slice `false_positives=15 clean_docs=31/45`, every
+   per-type row byte-identical, `OVERALL` precision on the already-predicted
+   0.868. **Task 10's annotation addendum must adjudicate this row** — whether
+   `วางแผนการรักษาโดยแพทย์เฉพาะทาง` in a referral letter about a named patient is ม.26
+   data, and separately whether a span anchored only by a NAME false positive
+   should count at all.
+
+   Seven real, five labels or clauses, one unadjudicated. In the same documents the detector
    *misses* "ภาวะซึมเศร้า" (`lf02`, hit 8), "ภาวะภูมิแพ้อากาศ และแพ้อาหารทะเล"
    (`lf15`, hit 10) and "ก้อนที่เต้านมข้างซ้าย" (`lf17`), because no cue word
    precedes them. No header veto is frozen here on purpose: whether a section
@@ -864,6 +924,21 @@ Each of these is a measurement from this spike, not a suspicion.
 7. **Nothing here measures multi-turn or streaming behaviour.** The proxy path
    was checked for type-specific code (there is none) and the single-turn
    round-trip is verified 40/40; `stream_restore.py` was not exercised.
+8. **The §6.2 guard pass is blind to a sensitive span whose only anchor was a
+   name that got tokenized** — measured by the Task-9 reviewer: `_sensitive_leaks`
+   sources its `person_spans` from the guard's own `detect_fp + detect_tb` over the
+   *masked* text, so once the anchoring `NAME` has become a bracket token there is
+   no anchor left to re-find and an unspliced sensitive value goes unflagged. This
+   is faithful to §6.2's own specification, not a defect against it, and it does not
+   weaken the stated value of the pass (catching a detected-but-not-masked span,
+   which is an implementation failure, not a recall correlation); recorded for
+   Tasks 10 and 12 rather than fixed here.
+9. **The 12-character specificity window of §4.2 is not clamped at the segment
+   end**, unlike the span shape of §4.3, which says "clamped at the segment end"
+   where it means it — so a `รายนี้` sitting just past a segment boundary can promote
+   a tier-2 role word across that boundary. No dev or gold document exercises it;
+   **Task 10 should include a cross-segment promotion probe document** so the
+   reading has real evidence either way.
 
 ---
 
@@ -905,8 +980,11 @@ such cases; the two-tier anchor including the four near-miss classes; the
 per-type row at or above the Task-7 reference.
 
 **Task 10** — the annotation addendum first, ruling on: the six boundary cases
-in §4.3; whether a section header or form title is annotated (limit 2); how the
-CRF-swallowed cases of limit 1 are annotated and reported. Then ~22 documents,
+in §4.3; whether a section header or form title is annotated (limit 2); the
+`lf17` row 13 of that same ledger, including whether a span anchored only by a
+CRF `NAME` false positive counts at all; how the CRF-swallowed cases of limit 1
+are annotated and reported. It should also carry a cross-segment promotion probe
+document for limit 9. Then ~22 documents,
 ≥ 6 of them impersonal with zero sensitive spans, **weighted towards the nine
 categories that have no gold evidence at all** (limit 3), and the ten category
 names added to `benchmark/types.py` per the guidelines decision.
