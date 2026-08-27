@@ -308,6 +308,18 @@ The candidate design to validate (the spike may refute any part with evidence):
 - [ ] **Step 2: Author ~22 docs** — medical certificates, HR records, court summaries, temple/union membership prose; every doc person-linked; ≥20 sensitive spans total across categories (per-category minimums are NOT required in v7 — record that as a known limit); include ≥6 impersonal near-miss docs annotated with zero sensitive spans.
 - [ ] **Step 3: gold-v7 run + commit** — full gold table; sensitive-category recall/precision reported; baselines hold; negative slice +0. Subject `bench: gold-v7 sensitive slice (22 docs)`.
 
+### Task 10b: sensitive_span detector fixes from gold-v7 evidence (opus — inserted after Task 10's review)
+
+**Files:**
+- Modify: `amphrang/engine/detectors/sensitive_span.py` only (plus its test file)
+- Amend: the ม.26 record's §8 with the fix outcomes (docs)
+
+Three reviewer-reproduced findings, priority order:
+- [ ] **F4 (first): tier-1 anchor via CRF NAME false positive on legal prose** — a NAME FP like `ยื่นคำร้องตามมาตรา` anchors CRIMINAL_RECORD in person-free documents, bypassing the register veto entirely (tier 1 is never vetoed). Design the narrowest guard consistent with the frozen record (e.g. a NAME-overlap anchor no longer bypasses the register veto when the segment carries register-veto vocabulary — exact mechanism from evidence). KNOWN CONSEQUENCE to measure and adjudicate: gold ledger row 13 (`lf17`, a TP that rests on the same mechanism) may flip to a miss — if it does, report the number honestly and update the record ledger, do not tune around it.
+- [ ] **F1: `_SPECIFICITY_RE.search` window not clamped at `segment_end`** — one-line clamp; removes the `sn28` gold FP.
+- [ ] **F3 (last): HEALTH `ผล(?:การ)?ตรวจ` outranks GENETIC `ดีเอ็นเอ` 6 chars later** — same-region category collision resolves to the more specific category (GENETIC/BIOMETRIC over generic result-cue HEALTH); value stays masked either way, this is label correctness.
+- [ ] **Gates**: TDD per finding (failing test from the reviewer's probe first); full `pytest -q` green; `python -m benchmark --source gold` — negative slice EXACTLY 15 FP / 31 of 45, every non-sensitive row at/above the Task-9/10 reference, sensitive rows reported with the deltas explained (GENETIC should rise; HEALTH precision should rise from FP removals; any TP lost to F4's guard stated plainly); `check_release.py` exit 0; ruff clean. Commit with numbers in the body.
+
 ### Task 11: PDPA Coverage Profile + CI gate (sonnet)
 
 **Files:**
