@@ -4,11 +4,14 @@ Profile version `pdpa-profile-v1`. Measured on gold `gold-v7` (dated
 2026-08-27, 332 documents, 1031 entities); numbers below are a live
 `python -m benchmark --source gold` run against that set, not a copy of an
 older report. This is the public conformance artifact for amphrang against
-พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA); it is generated FROM, and must
-be kept consistent with, the canonical registry at
-`docs/decisions/2026-08-26-pdpa-data-ontology.md` (levels A-E, including the
-frozen verdicts section) — that record is the source of truth, this document
-is its published summary. The ม.26 catch-all ("ข้อมูลอื่นตามที่คณะกรรมการ
+พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA); it is written from the canonical
+registry at `docs/decisions/2026-08-26-pdpa-data-ontology.md` (levels A-E,
+including the frozen verdicts section), which is the source of truth for **which
+categories exist and how each is treated**. It is written by hand, not generated,
+and only the category-name half of that correspondence is machine-enforced (see
+the gate below). Numbers live here and nowhere else: where a dated planning
+snapshot in the registry quotes a different figure, this document is the current
+one. The ม.26 catch-all ("ข้อมูลอื่นตามที่คณะกรรมการ
 ประกาศ") has no fixed list; a new PDPC announcement enters amphrang's
 coverage only by a dated amendment to the ontology record, which then flows
 into this profile.
@@ -16,8 +19,11 @@ into this profile.
 `scripts/check_release.py`'s `check_profile()` gate enforces that every
 `data_type` this document backtick-references in a table row matches
 `TOKEN_LABEL` in `amphrang/engine/anonymizer/token_generator.py` exactly, in
-both directions. A row can go stale relative to the code only by breaking
-that gate.
+both directions. That is completeness of the type NAMES and nothing more: a
+category the code can emit but this document omits fails CI, and so does a
+category documented here that the code no longer emits. The recall and
+precision figures are **not** gated — they are refreshed by hand from a
+benchmark run, so a number can go stale with CI green.
 
 ## Level A — mask always (span entities)
 
@@ -125,9 +131,11 @@ accepted trade-offs, are the whole subject of the frozen design record
     (`_SECTION26_KEYWORDS["HEALTH"]`) is a small, literal cue vocabulary
     (โรค, การรักษา, ผล(การ)ตรวจ, สุขภาพ, ประวัติ(การ)รักษา), so any gold HEALTH
     phrasing outside that vocabulary is a miss by construction, not a model
-    failure to fix by tuning. `check_release.py` scans a Thai reader would
-    have to trust this table over any older document that quotes a
-    different HEALTH number — this one is live.
+    failure to fix by tuning. What `check_release.py` gates is the set of
+    type names in this document, not the recall and precision figures in it;
+    those are refreshed by hand from a benchmark run. This table is
+    nonetheless the live one, so where an older document quotes a different
+    HEALTH number, trust this one.
 
 Person-linkage design pointer:
 `docs/decisions/2026-08-27-section26-span-masking.md`. It records, among
@@ -162,9 +170,18 @@ documents currently exercise it; it is pinned by
 - **Foreign-worker SSO number** — the SSO-issued `เลขที่บัตรประกันสังคม` for
   foreign insured persons has no public format documented anywhere amphrang
   could verify; the `THAI_ID` alias verdict only covers the citizen-ID case.
-- **RD foreigner TIN** — the 13-digit RD-issued TIN for individuals without a
-  Thai citizen ID stays an open gap (the legacy 10-digit TIN transition
-  closed 31 ม.ค. 2556 and is not a live gap).
+- **RD foreigner TIN — a labelling honesty note, not a detection gap.** The
+  13-digit RD-issued TIN for an individual without a Thai citizen ID *is*
+  detected and *is* masked. Under a `เลขประจำตัวผู้เสียภาษี` cue a `00`-leading
+  number routes to `JURISTIC_ID`
+  (`เลขประจำตัวผู้เสียภาษี 0005600123451 ของแรงงานต่างด้าว`
+  → `JURISTIC_ID`, value replaced), so what is wrong is the label: a natural
+  person's identifier is reported under a type this document's Level E calls
+  outside PDPA scope. Nothing leaks; the entity-type counts mislead. Fixing it
+  needs a signal separating a foreign natural person from a company, which the
+  tax cue alone does not carry — see
+  `docs/decisions/2026-08-26-wave1-format-specs.md` §1(c). (The legacy 10-digit
+  TIN transition closed 31 ม.ค. 2556 and is not a live gap.)
 - **Cookie / device IDs** — declared out of scope (Level D) for lack of a
   stable text shape; not a "we forgot", a recorded refusal.
 - **The F4 accepted trade** — the ม.26 person-linkage guard that stops a CRF

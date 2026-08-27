@@ -276,9 +276,40 @@ frozen spec is:
 |---|---|
 | Shape | `\d{1,6}`, pure digits, cue-gated **only** |
 | Checksum | none — none exists |
-| Cue | `โฉนด` family (`โฉนดที่ดิน`, `โฉนดเลขที่`, `เลขที่โฉนด`), cue **before** the value |
+| Cue | `โฉนด` family (`โฉนดที่ดิน`, `โฉนดเลขที่`, `เลขที่โฉนด`), cue **before** the value — plus the `น.ส.` form family, see the amendment below |
 | Siblings out of scope | `เลขที่ดิน`, `หน้าสำรวจ`, `ระวาง` |
 | Condo titles out of scope | `N/M` slash form (อ.ช.2) |
+
+**Amendment, 2026-08-27 — the `น.ส.` form family is part of the shipped cue.** The
+table above records only the `โฉนด` family, which is what this record froze. It is
+not what shipped. `23b4744` ("feat: detect IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID")
+already added `น\.ส\.\s*[34]\s*(?:ก|ข)?\s*เลขที่` to `_RE_LAND_DEED`, and
+`docs/annotation-guidelines.md` names `น.ส.3ก เลขที่` as deed-cue annotation law, so
+code and guidelines had both moved ahead of this section. The final review round of
+the PDPA-standard campaign widened the same alternative to the full กรมที่ดิน form
+series and this amendment closes the drift; the frozen shape, checksum verdict,
+score and out-of-scope siblings above are all unchanged.
+
+The cue now reads `น\.ส\.\s*(?:3\s*[กข]?|4\s*[กขคงจ]?)\s*เลขที่`. The two halves are
+different documents and the distinction matters legally, not only lexically:
+
+| Form | Document |
+|---|---|
+| `น.ส.3`, `น.ส.3ก`, `น.ส.3ข` | หนังสือรับรองการทำประโยชน์ — a utilization certificate, not title |
+| `น.ส.4`, `น.ส.4ก`, `น.ส.4ข`, `น.ส.4ค`, `น.ส.4ง`, `น.ส.4จ` | **โฉนดที่ดิน** — the title deed itself |
+
+`น.ส.4ก`/`ข`/`ค` issue under กฎกระทรวง ฉบับที่ 5 (พ.ศ. 2497) and `น.ส.4ง` under
+ฉบับที่ 17 (พ.ศ. 2514); กรมที่ดิน has stopped issuing ก–ง, and `น.ส.4จ` is the current
+ครุฑแดง form. The retired forms stay in the cue because the paper still circulates
+and a document quoting one carries a real deed number. Sources: กรมที่ดิน Q&A on
+`น.ส.4 ง` <https://www.dol.go.th/question-answer/Q2401-006730>, and the
+`น.ส.4 จ` explainer at
+<https://www.ddproperty.com/คู่มือซื้อขาย/นส.-4-จ.-คืออะไร-ซื้อขายที่ดินได้ไหม-49768>.
+
+Measured on the corpus this record's numbers come from: **zero** of the 332 gold
+documents contain a `น.ส.3`/`น.ส.4` string at all, so the `LAND_DEED_ID` row stays
+`22 / 1.000 / 1.000` and the widening carries no measured regression — and no gold
+evidence either.
 
 ### 3.4 Current behaviour — measured, and one collision Task 2 must handle
 

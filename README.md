@@ -37,9 +37,10 @@ amphrang.analyze(text)
 Structured Thai identifiers with checksum validation (national ID mod-11,
 phone, bank account, credit card, passport, and more), plus juristic/tax IDs,
 driver licences, LINE IDs, GPS coordinates, house registration codes, IP and
-MAC addresses, and land deed numbers — 19 structured/entity types in total —
-plus names, addresses, dates, and organizations via Thai NER (PyThaiNLP
-thainer-CRF, offline) with context-cue recall boosters. Person-linked ม.26
+MAC addresses, and land deed numbers. Alongside them, names, addresses, dates,
+and organizations come from Thai NER (PyThaiNLP thainer-CRF, offline) with
+context-cue recall boosters; the two together are the 19 structured/entity
+types scored in the table below. Person-linked ม.26
 sensitive content (HEALTH, CRIMINAL_RECORD, and eight more statutory
 categories) becomes a maskable span, on by default, only when it is tied to a
 person in the same text — an impersonal mention is left alone. Detection

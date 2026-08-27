@@ -24,11 +24,21 @@ consensus, not regulator guidance.
 |---|---|---|
 | **A** | Mask always | `detect()` emits a span entity; `anonymize()` masks it; leak guard enforces it |
 | **B** | Quasi-identifier | `analyze()` reports it (reid-risk QI scan); never masked alone |
-| **C** | Sensitive content (ม.26) | today flag-only in `analyze()`; campaign target = person-linked span masking |
+| **C** | Sensitive content (ม.26) | flagged in `analyze()` and, since 2026-08-27, masked as a person-linked span |
 | **D** | Declared out of scope | documented refusal with rationale — the honest "no" |
 | **E** | Not personal data under PDPA | documented so users know why it is absent |
 
 ## Level A — mask always (span entities)
+
+**Amendment 2026-08-27 — the numbers below are a planning snapshot.** Every
+recall/precision figure in this section is what gold measured on **2026-08-26**,
+before the campaign's Wave-1 and Wave-2 work landed, and several have moved since
+(`NAME` and `STUDENT_ID` among them). They are left as recorded rather than
+hand-updated row by row: this record is a registry of *categories and treatment
+levels*, and a table of numbers maintained in two places drifts in one of them.
+**The live per-type numbers are in `docs/pdpa-coverage.md`**, refreshed from a
+`python -m benchmark --source gold` run; where the two disagree, the profile wins.
+The `campaign Wave 1` markers below have all shipped.
 
 | Category (PDPA basis) | data_type | Status 2026-08-26 |
 |---|---|---|
@@ -67,25 +77,36 @@ Detected by `amphrang/engine/reid_risk.py` (`_QI_PATTERNS`); reported via
 
 ## Level C — ม.26 sensitive content
 
+**Amendment 2026-08-27 — this section's status is superseded, its registry is not.**
+The two status sentences below are flipped inline: person-linked span masking
+**shipped on 2026-08-27**, so ม.26 content is no longer flag-only and the proxy no
+longer forwards the sensitive sentence verbatim. The enumeration, the ten category
+names and the catch-all rule are unchanged and still binding. As in Level A, no
+numbers live here — `docs/pdpa-coverage.md` carries the live per-category gold
+figures, and the frozen design and its accepted costs are in
+`docs/decisions/2026-08-27-section26-span-masking.md`.
+
 The statute's full enumeration: เชื้อชาติ, เผ่าพันธุ์, ความคิดเห็นทางการเมือง,
 ความเชื่อในลัทธิ ศาสนาหรือปรัชญา, พฤติกรรมทางเพศ, ประวัติอาชญากรรม,
 ข้อมูลสุขภาพ, ความพิการ, ข้อมูลสหภาพแรงงาน, ข้อมูลพันธุกรรม, ข้อมูลชีวภาพ,
 and the open catch-all "ข้อมูลอื่นใดตามที่คณะกรรมการประกาศ".
 
-amphrang categories (all 10 shipped as flags): `RACE_ETHNICITY`,
+amphrang categories (all 10 shipped as **span masking**, on by default, since
+2026-08-27; they remain document-level flags as well): `RACE_ETHNICITY`,
 `POLITICAL_OPINION`, `RELIGION`, `SEXUAL_BEHAVIOR`, `CRIMINAL_RECORD`,
 `HEALTH`, `DISABILITY`, `LABOR_UNION`, `GENETIC`, `BIOMETRIC` — keyword scan
 in `report.py::_SECTION26_KEYWORDS` plus the semantic detector
-(`sensitive_detector.py`, `[ml]` extra only).
+(`sensitive_detector.py`, `[ml]` extra only), and the span detector
+`detectors/sensitive_span.py` that does the masking.
 
-**The gap this registry names as the flagship**: flags are doc-level; the
-sanitizing proxy currently forwards the sensitive sentence verbatim. A
-document saying "นายสมชายเป็นมะเร็ง" masks the name and ships the diagnosis.
-Campaign Wave 2 targets **person-linked span masking**: a sensitive phrase
+**The gap this registry named as the flagship is closed.** It was: flags are
+doc-level, so the sanitizing proxy forwarded the sensitive sentence verbatim, and
+a document saying "นายสมชายเป็นมะเร็ง" masked the name and shipped the diagnosis.
+Campaign Wave 2 delivered **person-linked span masking**: a sensitive phrase
 becomes a maskable entity only when the surrounding segment is linked to a
 person (name entity or personal reference). Sensitive words in impersonal
-text ("วันสำคัญทางศาสนา") are not personal data under ม.26 and must not
-flag — that distinction is the design spike's whole job.
+text ("วันสำคัญทางศาสนา") are not personal data under ม.26 and do not
+flag — that distinction is the whole subject of the frozen design record.
 
 The ม.26 catch-all ("ข้อมูลอื่นตามที่คณะกรรมการประกาศ") has no fixed list;
 the profile will state that new PDPC announcements enter this registry by a
