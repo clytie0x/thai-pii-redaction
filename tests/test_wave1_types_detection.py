@@ -32,25 +32,63 @@ def test_version_string_is_not_an_ip():
 def test_thai_document_section_reference_is_not_an_ip():
     """Thai clause/section numbering shares the dotted-quad shape with IPv4.
 
-    All four suppress the 0.8 catch-all only; none of them carries a network cue.
+    All of these suppress the 0.8 catch-all only; none carries a network cue. The
+    number sits immediately after its reference word, which is the shape the cue
+    is anchored to.
     """
     for text in (
         "ตามข้อ 1.2.3.4 ของระเบียบนี้",
         "ตามมาตรา 26.1.2.3",
         "เอกสารหมายเลข 2.5.1.9",
+        "เอกสารหมายเลข 2.5.1.9 หน้า 3",
         "อ้างถึงหนังสือที่ ศธ 0.5.12.7",
     ):
         assert not any(t == "IP_ADDRESS" for t, _ in _types(text)), text
 
 
-def test_document_reference_suppression_does_not_reach_a_bare_address():
-    """The 0.8 catch-all is untouched where no reference word precedes the value.
+def test_a_reference_word_further_up_the_line_does_not_swallow_an_address():
+    """The reference cue is anchored to the value; an earlier occurrence must not suppress.
 
-    `ข้อมูล` is excluded from the `ข้อ` cue on purpose: it is the Thai word that most
-    often sits directly before a real address with no network cue of its own.
+    Regression for an under-mask: the cue words were once matched anywhere in the
+    30-character lookback, so any of these returned no entity at all — a real address
+    silently unmasked, which on a recall-first product is the worse direction of the
+    original over-mask bug.
     """
+    for text, value in (
+        ("หมายเลข 192.168.1.1", "192.168.1.1"),
+        ("หมายเลขเครื่อง 10.0.0.5", "10.0.0.5"),
+        ("หมายเลขอ้างอิง 8.8.8.8", "8.8.8.8"),
+        ("อุปกรณ์หมายเลข 172.16.0.9 ขัดข้อง", "172.16.0.9"),
+        ("ตามมาตรา 5 อุปกรณ์ 172.16.0.9 ขัดข้อง", "172.16.0.9"),
+        ("แจ้งตามมาตรา 9 เครื่อง 10.0.0.5", "10.0.0.5"),
+        ("อ้างถึงหนังสือที่ ศธ 0405 อุปกรณ์ 8.8.8.8", "8.8.8.8"),
+        ("เอกสารหมายเลข 7 เครื่อง 192.168.1.1", "192.168.1.1"),
+    ):
+        assert ("IP_ADDRESS", value) in _types(text), text
+
+
+def test_ordinary_thai_compounds_starting_with_the_cue_words_do_not_suppress():
+    """Anchoring replaces an exclusion list: every ข้อ-compound fails the anchor itself.
+
+    `ข้อมูล` was the case an earlier fix hard-coded a lookahead for; the anchor covers
+    it and the whole family, with no word list to keep up to date.
+    """
+    for text in (
+        "ข้อความ 8.8.8.8",
+        "ข้อสังเกต 8.8.8.8",
+        "ข้อเสนอ 8.8.8.8",
+        "ข้อกำหนด 8.8.8.8",
+        "ข้อตกลง 8.8.8.8",
+        "ข้อบังคับ 8.8.8.8",
+        "ตรวจสอบข้อมูล 203.154.77.9",
+    ):
+        assert any(t == "IP_ADDRESS" for t, _ in _types(text)), text
+
+
+def test_document_reference_suppression_does_not_reach_a_bare_address():
+    """The 0.8 catch-all is untouched where no reference word precedes the value."""
     assert ("IP_ADDRESS", "203.154.77.9") in _types("พบการเข้าถึงจาก 203.154.77.9 ในบันทึกระบบ")
-    assert ("IP_ADDRESS", "203.154.77.9") in _types("ตรวจสอบข้อมูล 203.154.77.9")
+    assert _score("พบการเข้าถึงจาก 203.154.77.9 ในบันทึกระบบ", "IP_ADDRESS") == 0.8
 
 
 def test_cue_gated_ip_is_never_suppressed_by_a_document_reference():

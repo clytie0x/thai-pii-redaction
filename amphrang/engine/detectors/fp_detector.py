@@ -645,10 +645,27 @@ _IP_CUE_RE = re.compile(
 # cue-gated 0.9 hit is never suppressed, so "IP 1.2.3.4" survives every word here. Version
 # strings share the shape byte for byte, and so do Thai document-section references:
 # "ตามข้อ 1.2.3.4", "ตามมาตรา 26.1.2.3", "เอกสารหมายเลข 2.5.1.9", "หนังสือที่ ศธ 0.5.12.7".
-# `ข้อ` carries a negative lookahead for `มูล`: ข้อมูล is by far the commonest Thai word
-# starting with it, and the one that sits beside real addresses ("ตรวจสอบข้อมูล 203.154.77.9").
+#
+# The reference words are ANCHORED at `\Z`, i.e. at the end of the `_cue_before` lookback,
+# which is the character immediately before the value. That is what a legal reference IS —
+# the section number directly follows its reference word — and anchoring is load-bearing, not
+# tidiness. Unanchored, any of these words within 30 characters silently swallowed a real
+# address: "หมายเลขเครื่อง 10.0.0.5", "ตามมาตรา 5 อุปกรณ์ 172.16.0.9 ขัดข้อง",
+# "เอกสารหมายเลข 7 เครื่อง 192.168.1.1" all returned nothing. On a recall-first product an
+# under-mask is the worse failure, so the reference shape has to be positive evidence rather
+# than a keyword anywhere nearby.
+#
+# Consequences of anchoring, all deliberate: `หมายเลข` is only ever a reference word as
+# `เอกสารหมายเลข` (bare หมายเลข introduces device and reference numbers), and `ข้อ` needs no
+# exclusion list — `ข้อมูล`, `ข้อความ`, `ข้อสังเกต`, `ข้อเสนอ`, `ข้อกำหนด` and every other
+# ข้อ-compound fails the anchor by their own following syllables. `หนังสือที่` additionally
+# allows one short Thai abbreviation ("ศธ", "กค") between the word and the number, the only
+# shape a real หนังสือที่ reference takes.
 _IP_SUPPRESS_CUE_RE = re.compile(
-    r"version|เวอร์ชัน|รุ่น|build|ข้อ(?!มูล)|มาตรา|หมายเลข|หนังสือที่", re.IGNORECASE
+    r"version|เวอร์ชัน|รุ่น|build"
+    r"|(?:ข้อ|มาตรา|เอกสารหมายเลข)[ \t:：]*\Z"
+    r"|หนังสือที่[ \t:：]*(?:[ก-๙]{1,4}[ \t]*)?\Z",
+    re.IGNORECASE,
 )
 
 # A KNOWN document-code prefix glued onto the digits ("PO-2569-004512") marks one org code.
