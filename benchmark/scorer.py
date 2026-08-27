@@ -13,7 +13,13 @@ from __future__ import annotations
 import random
 from collections import defaultdict
 
-from .types import OUT_OF_SCHEME_TYPE, SHARED_ENTITY_TYPE_SET, SHARED_ENTITY_TYPES
+from .types import (
+    OUT_OF_SCHEME_TYPE,
+    SCORED_ENTITY_TYPE_SET,
+    SHARED_ENTITY_TYPE_SET,
+    SHARED_ENTITY_TYPES,
+    Sample,
+)
 
 
 def _overlap(a, b) -> int:
@@ -130,16 +136,36 @@ def _score_group(samples, predictions):
 
 
 def _prepare_predictions(predictions, *, shared_only: bool):
+    keep = SHARED_ENTITY_TYPE_SET if shared_only else SCORED_ENTITY_TYPE_SET
     prepared = []
     for document in predictions:
         rows = []
         for start, end, entity_type in document:
-            if entity_type in SHARED_ENTITY_TYPE_SET:
+            if entity_type in keep:
                 rows.append((start, end, entity_type))
             elif not shared_only:
                 rows.append((start, end, OUT_OF_SCHEME_TYPE))
         prepared.append(rows)
     return prepared
+
+
+def _shared_samples(samples):
+    """The same documents with only shared-scheme gold spans.
+
+    The shared view drops every prediction outside the 19-type scheme, so it
+    must drop the matching gold spans too. Without this a มาตรา 26 gold span
+    would be an unanswerable false negative in a view whose predictions can
+    never contain it.
+    """
+    return [
+        Sample(
+            text=s.text,
+            spans=[g for g in s.spans if g.entity_type in SHARED_ENTITY_TYPE_SET],
+            template_id=s.template_id,
+            slice=s.slice,
+        )
+        for s in samples
+    ]
 
 
 def _score_view(samples, predictions) -> dict:
@@ -181,6 +207,8 @@ def bootstrap_f2_ci(
         raise ValueError("bootstrap confidence must be between 0 and 1")
 
     prepared = _prepare_predictions(predictions, shared_only=shared_only)
+    if shared_only:
+        samples = _shared_samples(samples)
     per_document: list[tuple[int, int, int]] = []
     for sample, document_predictions in zip(samples, prepared):
         _, overall = _score_group([sample], [document_predictions])
@@ -232,7 +260,7 @@ def score(
     unrestricted_predictions = _prepare_predictions(predictions, shared_only=False)
     shared_predictions = _prepare_predictions(predictions, shared_only=True)
     unrestricted = _score_view(samples, unrestricted_predictions)
-    shared = _score_view(samples, shared_predictions)
+    shared = _score_view(_shared_samples(samples), shared_predictions)
     corpus_by_type = unrestricted.pop("corpus_by_type")
     shared.pop("corpus_by_type")
     excluded = sum(

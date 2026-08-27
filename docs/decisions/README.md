@@ -17,6 +17,7 @@ one where they overlap.
 | [2026-08-26 wave-1 format specs](2026-08-26-wave1-format-specs.md) | Frozen verdicts for `IP_ADDRESS`/`MAC_ADDRESS`/`LAND_DEED_ID` shapes and the `THAI_ID` alias coverage for ประกันสังคม/ผู้เสียภาษี. |
 | [2026-08-27 gold-v6 digital_ids authoring](2026-08-27-gold-v6-digital-ids-authoring.md) | The `digital_ids` gold slice (24 docs), its traps, and the fix-round-1 findings including the accepted `NAME` precision gap on `dg18`. |
 | [2026-08-27 ม.26 span masking](2026-08-27-section26-span-masking.md) | Frozen design for person-linked ม.26 sensitive-span masking: two-tier linkage rule, forward-only span shape, `redact_type="TB"`, token replacement in both modes, guard and output-validator wiring, default ON with no facade knob. |
+| [2026-08-27 gold-v7 sensitive authoring](2026-08-27-gold-v7-sensitive-authoring.md) | The `sensitive` gold slice (28 docs) and the ม.26 adjudication of 17 pre-v7 documents: why old documents are re-annotated rather than grandfathered, the `lf17` row-13 ruling, and the two detector findings the probe documents produced. |
 
 ## Inherited from thai-pii-redaction
 

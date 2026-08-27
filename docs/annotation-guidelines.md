@@ -23,7 +23,9 @@ validator cannot make.
 
 ## The 19 types
 
-Only these types are annotated: NAME, ADDRESS, PHONE, EMAIL, THAI_ID,
+These are the structured-PII types; the ten ม.26 sensitive categories are
+annotated too, under their own rules (see "Sensitive spans" below). Nothing
+outside those two families is annotated: NAME, ADDRESS, PHONE, EMAIL, THAI_ID,
 BANK_ACCOUNT, CREDIT_CARD, DATE_OF_BIRTH, PASSPORT, VEHICLE_PLATE,
 STUDENT_ID, JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID,
 IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID.
@@ -62,6 +64,173 @@ dates. A detector prediction of those types on a benchmark document is scored
 as a false positive by construction — that cost is accepted and consistent
 across gold and blind; do not "fix" it by adding those types to a corpus.
 
+## Sensitive spans (มาตรา 26)
+
+Added for gold-v7. Ten more annotated types, all prose rather than structured
+identifiers: RACE_ETHNICITY, POLITICAL_OPINION, RELIGION, HEALTH,
+SEXUAL_BEHAVIOR, CRIMINAL_RECORD, DISABILITY, LABOR_UNION, GENETIC, BIOMETRIC.
+They are a second annotated family, not new members of the 19: the synthetic
+corpus never emits them and the shared-scheme view of the scorer drops them on
+both sides, so `benchmark/types.py` keeps them in `SENSITIVE_ENTITY_TYPES` and
+scores them through `SCORED_ENTITY_TYPES`.
+
+The detector design they measure is
+[2026-08-27 ม.26 span masking](decisions/2026-08-27-section26-span-masking.md);
+the gold-v7 authoring record is
+[2026-08-27 gold-v7 sensitive](decisions/2026-08-27-gold-v7-sensitive-authoring.md).
+There is no checksum and no format to lean on here, so the seven rules below
+carry the entire weight of the label.
+
+**S1 — the fact must be predicated of an identified person.** A ม.26 phrase is
+annotated only where the document's fiction states the sensitive fact *about* an
+identified or identifiable natural person. Co-occurrence with a name is not
+enough: a ประกาศ that names its contact officer does not thereby make the
+disease it discusses that officer's health data. Not annotated, therefore:
+statutes and their titles, ประกาศ / ระเบียบ / แนวทาง / หลักสูตร addressed to the
+public, research findings and statistics, seminar and exhibition topics,
+organization names that contain a category word (สหภาพแรงงาน… or สมาคมลูกจ้าง…
+as the entity's own name), and the "health" of a machine or a system.
+
+Linkage is **document-level**, not sentence- or segment-level. A lab-result line
+in a report that names its patient one line above is that patient's health data
+and is annotated as such. The detector links per segment, so some of these are
+recall misses by construction; the corpus labels ground truth, and a miss is
+recorded as a miss.
+
+**S2 — assertion, not naming.** The value is the sensitive fact the sentence
+*asserts* about the person. A category word that merely *names* a document, a
+section, a field, a purpose, a right, or a class of data is not a value:
+
+- form and letter titles — แบบยินยอมรับการรักษา (`md07`),
+  แบบคัดกรองสุขภาพจิตเบื้องต้น (`md11`), หนังสือส่งตัวผู้ป่วยพร้อมประวัติการรักษา
+  (`lf17`);
+- section headers and field labels — ส่วนที่ 3 ข้อมูลสุขภาพ (`lf15`),
+  ประวัติการเจ็บป่วย, การวินิจฉัยหลัก, เหตุผลการส่งตัว, ประวัติการแพ้ยา;
+- consent purposes — ยินยอมให้โรงพยาบาลเก็บและใช้ข้อมูลสุขภาพเพื่อการรักษาพยาบาล
+  เท่านั้น (`lf11`);
+- entitlements — สิทธิการรักษา ประกันสังคม (`lf11`),
+  สิทธิการรักษาพยาบาลตามกองทุนประกันสังคม (`dg20`).
+
+A bare category word *is* a value when the sentence asserts it of the person:
+ขอลาพักการศึกษา…เนื่องจากปัญหาสุขภาพ (`ed05`) asserts that this student has a
+health problem, so ปัญหาสุขภาพ is annotated there. A section header is never a
+value; the data underneath it is. This is the same mechanic as "contextual cues
+stay outside the brackets", applied to prose.
+
+**S3 — what counts as the fact.** A value names an attribute, state, condition,
+symptom, diagnosis, finding, disability, belief, membership, conviction, or a
+procedure or course of care the person actually underwent or was prescribed.
+The **administration around** that fact is not a value, however medical the
+document is: an appointment time or room, a referral's routing between wards or
+hospitals, the treating doctor's identity, a treatment entitlement, a consent
+clause, a record-keeping act.
+
+The line that decides the near cases is whether the sentence reports **content**
+about the person:
+
+- `md05` "มีนัดตรวจติดตามอาการ ในวันที่ 30 กันยายน 2569 … ห้องตรวจเบอร์ 7" is a
+  scheduling fact and carries **no** value; `md11` "ผลคัดกรองพบความเสี่ยงระดับปานกลาง"
+  reports a screening result and is one.
+- `md01` "ข้าพเจ้าได้ตรวจร่างกาย [ชื่อ]" states that an examination happened and
+  reports nothing from it, so no value; "เห็นควรให้หยุดพักรักษาตัวเป็นเวลา 5 วัน" in
+  the same document prescribes a course of care and is one. `md08`
+  "ผลการตรวจร่างกายอยู่ในเกณฑ์ปกติ" reports the result, so the examination there
+  *is* a value.
+- `md12` and `md13` are a referral and a blank new-patient record. Both are
+  entirely administrative and carry no ม.26 value at all.
+
+A lifestyle fact recorded as clinical history is health data
+(`lf02` ประวัติสูบบุหรี่, in a เวชระเบียน). The health of a machine or a system is
+not anyone's data (`dg03` การตรวจสอบสุขภาพระบบประจำสัปดาห์).
+
+**S4 — span boundaries.**
+
+- Field labels, headings and titles stay outside, as for every other type.
+- Leading verbs of receiving, having, being or finding stay **outside**:
+  เข้ารับ, ได้รับ, มี, เป็น, ป่วยเป็น, นับถือ, พบ / ตรวจพบ / ไม่พบ.
+  ป่วยเป็นโรคเบาหวาน annotates โรคเบาหวาน. This applies at the **start** of the
+  value only. The same verb inside the clause is part of it, which is why
+  `md11` ผลคัดกรองพบความเสี่ยงระดับปานกลาง and `md08` ไม่พบโรคที่เป็นอุปสรรคต่อการปฏิบัติงาน
+  cut differently: the first has ผลคัดกรอง in front of พบ, the second does not.
+- A verb that *is* the sensitive fact stays **inside**: ถูกฟ้อง, ต้องโทษ, จำคุก.
+  ถูกฟ้องคดีฉ้อโกง is one value, ถูก included.
+- A qualifier that is part of the attribute's own identity stays **inside** —
+  a disability class, a sentence term, a diabetes type: คนพิการประเภทที่ 3,
+  ต้องโทษจำคุก 2 ปี, โรคเบาหวานชนิดที่ 2.
+- A purely temporal or adverbial trailer stays **outside**: มาห้าปีแล้ว,
+  ตั้งแต่ปี 2560, ตั้งแต่วัยเด็ก, เมื่อเดือนมิถุนายน 2569, ตามนัดหมายของแพทย์.
+- ประวัติ in front of a condition is **inside** the value — the health-history
+  fact is the fact (มีประวัติโรคหอบหืด annotates ประวัติโรคหอบหืด). ประวัติ standing
+  alone as a form field ahead of its data is a label and stays outside
+  (ประวัติการแพ้ยา, ประวัติการเจ็บป่วย in `lf11` and `lf17`).
+- Two facts joined by a connective (และ, ร่วมกับ) are two values, not one. That
+  holds for procedures as well as conditions: `lf17`
+  เพื่อตรวจชิ้นเนื้อและวางแผนการรักษาโดยแพทย์เฉพาะทาง is two.
+
+The six boundary disputes §4.3 of the design record left open settle as:
+
+| Phrase in the source | Gold value | Rule |
+|---|---|---|
+| เคยต้องโทษจำคุก 2 ปี | `ต้องโทษจำคุก 2 ปี` | sentence term is part of the conviction |
+| เป็นคนพิการประเภทที่ 3 | `คนพิการประเภทที่ 3` | class is part of the status |
+| ถูกฟ้องคดีฉ้อโกง | `ถูกฟ้องคดีฉ้อโกง` | the passive marker is the fact |
+| ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน | `ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน` | clause-internal cue, not a field label |
+| พบสารพันธุกรรม… | `สารพันธุกรรม` | พบ is a finding verb |
+| ป่วยเป็นโรคเบาหวานมาห้าปีแล้ว | `โรคเบาหวาน` | temporal trailer excluded |
+
+**S5 — anchor evidence is not annotated.** Gold labels the fact, never the
+detector's evidence chain. A prediction that overlaps an annotated value is a
+true positive whatever anchored it, including a CRF `NAME` false positive.
+
+The adjudicated case is row 13 of the design record's §8 ledger. In `lf17` the
+detector emits `HEALTH (468, 479) 'การรักษาโดย'`, and its only person anchor is
+a CRF `NAME` span over แพทย์เฉพาะทาง, which is not a person's name at all. Both
+halves settle in favour of the label. The referral reason
+วางแผนการรักษาโดยแพทย์เฉพาะทาง is a course of care planned for a named patient,
+so it is a value under S1, S2 and S3 — the field label เหตุผลการส่งตัว stays
+outside, and the และ splits it from ตรวจชิ้นเนื้อ, which is a second value. And a
+prediction overlapping that value is a true positive however it was anchored,
+because gold cannot be conditioned on the detector's internals without
+becoming a record of detector behavior. The consequence is recorded honestly
+instead: this true positive rests on a `NAME` false positive, so fixing that
+`NAME` error would cost a ม.26 true positive. That is a fragility of the design
+(§4.2 of the record), not a defect of the annotation.
+
+**S6 — a swallowed span is still annotated.** Where a `NAME`/`SURNAME`
+prediction covers the whole ม.26 phrase, the characters are masked but the ม.26
+label is lost. The value is annotated anyway and scores as a miss on its
+category. Every authoring record for a set containing sensitive spans must state
+how many gold sensitive spans were character-covered by *some* prediction as
+against left uncovered, because those two failures differ by whether anything
+leaked.
+
+**S7 — documents written before the family existed are adjudicated, not
+grandfathered.** Opening a new annotated family makes every document in the
+corpus in scope for it. A pre-existing document that carries a ม.26 value under
+S1 to S4 is annotated, and the edit is listed line by line in that version's
+authoring record under the change-control rule at the end of this file.
+
+Two things this rule forbids. It forbids leaving old documents unannotated and
+scoring their real ม.26 content as false positives, which would publish a
+precision figure that blames the detector for being right. And it forbids the
+opposite shortcut of annotating only where the detector happened to fire: the
+audit is a **read** of every document that could carry a value, and it produces
+misses as readily as hits. gold-v7's pass over the 304 pre-v7 documents added
+27 values in 17 documents, of which the detector finds 8.
+
+**Per-category n, and value reuse.** The `n >= 20` floor of
+`tests/test_benchmark_gold.py` is **exempt for the ten ม.26 categories** and for
+them only. gold-v7 reaches it for `HEALTH` alone; the other nine sit at single
+digits, so their per-category recall and precision are indicative and must not
+be published as headline numbers. Recorded as a known limit of gold-v7, not as a
+permanent licence.
+
+The no-reuse-across-documents rule is exempt for the same ten. It exists so a
+detector cannot look good by memorising one identifier string; ม.26 values are
+ordinary Thai phrases, two people may genuinely share a diagnosis or a religion,
+and forcing every one of them to be a distinct string would deform the documents
+to satisfy a rule aimed at something else.
+
 ## Judgment-call precedents
 
 Recorded so adjudication is repeatable. Each traces to an existing corpus
@@ -99,6 +268,19 @@ decision; add new precedents here when a new dispute is settled.
 10. **A phone number as a transfer destination stays PHONE** (PromptPay:
     โอนเงิน...ปลายทาง + a mobile-format number is a phone used for payment,
     not a bank account; gold `ms14`).
+11. **A sensitive fact about an unnamed third party is not annotated**, even
+    when the sentence names someone: `nc08` แพทย์ผู้ตรวจ [ชื่อ]
+    ลงความเห็นให้พักรักษาตัว 3 วัน names the doctor, and the rest is health data
+    about a patient the document never identifies (S1, 2026-08-27
+    adjudication).
+12. **An entitlement or a scheme name is not the data it entitles you to**:
+    สิทธิการรักษา ประกันสังคม (`lf11`) and
+    หนังสือแจ้งสิทธิการรักษาพยาบาลตามกองทุนประกันสังคม (`dg20`) carry no HEALTH
+    value; a benefit is an administrative status, not a health fact.
+13. **An organization's own name is not a ม.26 value** even when it is built out
+    of a category word (สหภาพแรงงาน…, สมาคมลูกจ้าง…, a party name in a list of
+    registered parties). The membership of a named person in that organization
+    is (S1/S2, 2026-08-27 adjudication).
 
 ## Negative slice
 
@@ -125,6 +307,17 @@ codes are allowed (gold `ng23`).
   stride-chunk boundary), enforced per document since v4. Newly authored
   long-form documents should meet the stricter three-zone placement
   (before 450 / 450-550 / after 550) used by the blind set.
+- `sensitive`: ม.26 documents under the rules above. Every document carries at
+  least one of the 19 structured types as well, so the slice measures the two
+  families together; at least six documents are impersonal near-misses with
+  zero sensitive spans, which is where the design record's register-veto
+  vocabulary gets its only evidence outside the 30 authored dev near-misses.
+  The slice is weighted towards the nine categories gold-v6 had no evidence for
+  at all, and all ten must appear in it. It also carries the probe documents the
+  design record asks for by name: `sn28`, a tier-2 role word whose specificity
+  marker sits just past a segment boundary (§8 limit 9), and `sn20`, whose ม.26
+  phrase the NER swallows inside a `NAME` span (§8 limit 1). Both are authored
+  to fail, and both do — see the authoring record.
 - `messy`: OCR-like noise is the point — Thai digits, stray spaces, broken
   wraps. Values still read verbatim, noise included.
 - `student_id_varied`: varies one format/context axis per document relative

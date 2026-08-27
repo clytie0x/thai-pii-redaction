@@ -1,4 +1,4 @@
-"""Hand-authored Thai PII gold set (v6).
+"""Hand-authored Thai PII gold set (v7).
 
 Realistic, un-templated Thai documents with fake PII, labeled inline with
 [[TYPE|value]] markup that parse_gold() converts to exact-span Samples.
@@ -14,7 +14,11 @@ documents (IT-incident reports, router-log emails, land-office letters) for
 the wave-1 types (IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID) added by the PDPA-
 standard campaign, each reaching >=20 gold instances, plus three alias-proof
 documents proving a citizen ID stays THAI_ID in ประกันสังคม/ผู้เสียภาษี context
-per docs/decisions/2026-08-26-wave1-format-specs.md. Annotation conventions
+per docs/decisions/2026-08-26-wave1-format-specs.md. v7 (2026-08-27) opens a
+SECOND annotated family, the ten มาตรา 26 sensitive categories, with the
+`sensitive` slice (24 documents) and an adjudication pass that annotates the
+ม.26 values already present in 17 pre-v7 documents; see
+docs/decisions/2026-08-27-gold-v7-sensitive-authoring.md. Annotation conventions
 live in docs/annotation-guidelines.md. The documents live in `data/gold.jsonl`
 (one JSON object per line) so the set can be released as a paper artifact
 without shipping Python; this module is only the parser and loader.
@@ -26,8 +30,8 @@ Two layers share one set, tagged per document:
   documents actually contain, so overall numbers mean something.
 - `balanced` -- slices `name_no_cue` / `address_varied` / `messy` /
   `bank_phone` / `id_docs` / `student_id_varied` / `business_ids` /
-  `digital_ids`, which push the rare types up to a reportable n and vary one
-  format axis at a time so a miss names its own cause.
+  `digital_ids` / `sensitive`, which push the rare types up to a reportable n
+  and vary one format axis at a time so a miss names its own cause.
 
 `long_form` sits in the natural layer but exists for a second reason: every
 other document here is short enough to fit in one NER chunk, so the stride-chunk
@@ -56,7 +60,7 @@ from pathlib import Path
 
 from .types import GoldSpan, Sample
 
-GOLD_VERSION = "gold-v6"
+GOLD_VERSION = "gold-v7"
 
 # slice -> layer. `negative` is its own layer because it is scored differently
 # (no gold spans, so recall is undefined and only false positives count).
@@ -69,6 +73,7 @@ SLICE_LAYERS: dict[str, str] = {
     "student_id_varied": "balanced",
     "business_ids": "balanced",
     "digital_ids": "balanced",
+    "sensitive": "balanced",
     "gov_form": "natural",
     "medical": "natural",
     "finance": "natural",

@@ -23,12 +23,19 @@ from benchmark.gold import (
 )
 from benchmark.runner import run_benchmark
 from benchmark.scorer import score
+from benchmark.types import SENSITIVE_ENTITY_TYPE_SET
 
 _TITLE_CUES = ("นาย", "นาง", "นางสาว", "น.ส.", "ด.ช.", "ด.ญ.", "เด็กชาย", "เด็กหญิง")
 _INTRO_CUES = ("ลงชื่อ", "ผมชื่อ", "ดิฉันชื่อ", "ชื่อ")
 
 # Every type must reach this many instances before a per-type number from this
-# set is worth printing at all.
+# set is worth printing at all. The ten มาตรา 26 categories are exempt, and only
+# they: they are prose facts, not values a document can be built around, so
+# reaching n=20 for all ten would take a corpus written to the floor rather than
+# to what Thai paperwork actually contains. gold-v7 clears it for HEALTH alone
+# and leaves the other nine in single digits -- see the "Per-category n"
+# paragraph of docs/annotation-guidelines.md, which is what makes those nine
+# rows indicative rather than reportable.
 _MIN_PER_TYPE = 20
 
 _MARKUP = re.compile(r"\[\[([A-Z_]+)\|(.*?)\]\]")
@@ -124,6 +131,39 @@ def test_digital_ids_slice_docs_each_carry_a_new_type_or_thai_id_alias():
         assert (types & _WAVE1_DIGITAL_ID_TYPES) or "THAI_ID" in types, (s.template_id, types)
 
 
+def test_sensitive_slice_meets_its_contract():
+    # The slice contract in docs/annotation-guidelines.md: every document also
+    # carries a structured type, so the two annotated families are measured
+    # together; at least six documents are impersonal near-misses with zero
+    # sensitive spans, which is the only evidence outside the design record's
+    # 30 authored near-misses that the register veto is not over-fitted.
+    docs = [s for s in load_gold() if s.slice == "sensitive"]
+    assert len(docs) >= 20
+    impersonal = 0
+    for s in docs:
+        types = {sp.entity_type for sp in s.spans}
+        assert types - SENSITIVE_ENTITY_TYPE_SET, (s.template_id, types)
+        if not (types & SENSITIVE_ENTITY_TYPE_SET):
+            impersonal += 1
+    assert impersonal >= 6, impersonal
+
+
+def test_sensitive_categories_are_weighted_to_the_under_evidenced_nine():
+    # Limit 3 of docs/decisions/2026-08-27-section26-span-masking.md: gold-v6
+    # gave HEALTH thirteen detections and the other nine categories none at all.
+    # The slice exists to close that, so every one of the ten must appear in it.
+    spans = [
+        sp.entity_type
+        for s in load_gold()
+        if s.slice == "sensitive"
+        for sp in s.spans
+        if sp.entity_type in SENSITIVE_ENTITY_TYPE_SET
+    ]
+    missing = SENSITIVE_ENTITY_TYPE_SET - set(spans)
+    assert not missing, missing
+    assert len(spans) >= 20, len(spans)
+
+
 def test_digital_ids_slice_has_alias_proof_docs():
     docs = [s for s in load_gold() if s.slice == "digital_ids"]
     alias_docs = [s for s in docs if any(sp.entity_type == "THAI_ID" for sp in s.spans)]
@@ -132,7 +172,9 @@ def test_digital_ids_slice_has_alias_proof_docs():
 
 # ── v3: size, layers, checksums, negatives ─────────────────────────────
 def test_every_type_reaches_reportable_n():
-    counts = collections.Counter(t for _, _, t, _ in _labeled_values())
+    counts = collections.Counter(
+        t for _, _, t, _ in _labeled_values() if t not in SENSITIVE_ENTITY_TYPE_SET
+    )
     thin = {t: n for t, n in counts.items() if n < _MIN_PER_TYPE}
     assert not thin, f"types below n={_MIN_PER_TYPE}: {thin}"
 
@@ -204,10 +246,16 @@ def test_pii_values_are_not_reused_across_documents():
     #
     # bank_phone is exempt entirely: it reuses one number in a bank context and
     # a phone context on purpose, to probe that ambiguity.
+    #
+    # The ten มาตรา 26 categories are exempt too. Their values are ordinary Thai
+    # phrases -- โรคเบาหวาน, ศาสนาอิสลาม, การผ่าตัด -- and two documents about
+    # two different people may legitimately carry the same one; the rule this
+    # test enforces is about identifiers a detector could memorise, and forcing
+    # 55 distinct disease and belief strings would deform the documents instead.
     numeric = {"THAI_ID", "CREDIT_CARD", "PHONE", "BANK_ACCOUNT", "STUDENT_ID"}
     seen: dict[tuple[str, str], str] = {}
     for doc_id, slice_, etype, value in _labeled_values():
-        if slice_ == "bank_phone":
+        if slice_ == "bank_phone" or etype in SENSITIVE_ENTITY_TYPE_SET:
             continue
         # Digit-normalise the numeric types so a dashed and an undashed copy of
         # the same number still collide. Keyed per type: a student id echoed
