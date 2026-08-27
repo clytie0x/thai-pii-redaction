@@ -27,6 +27,10 @@ _SEMVER = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 _SURFACE_MANIFEST = Path("docs") / "api-surface.txt"
 _FACADE = Path("amphrang") / "__init__.py"
 
+_COVERAGE_PROFILE = Path("docs") / "pdpa-coverage.md"
+_TOKEN_GENERATOR = Path("amphrang") / "engine" / "anonymizer" / "token_generator.py"
+_PROFILE_TYPE_NAME = re.compile(r"`([A-Z][A-Z0-9_]*)`")
+
 
 def read_version(root: Path) -> str:
     return (root / "VERSION").read_text(encoding="utf-8").strip()
@@ -130,6 +134,65 @@ def check_surface(root: Path) -> list[str]:
     return problems
 
 
+def _token_label_keys(root: Path) -> set[str] | str:
+    """Keys of ``TOKEN_LABEL`` in ``token_generator.py`` (parsed, never imported), or an error."""
+    path = root / _TOKEN_GENERATOR
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError) as error:
+        return f"{_TOKEN_GENERATOR}: {error}"
+    for node in tree.body:
+        target = None
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            target = node.target
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+        if isinstance(target, ast.Name) and target.id == "TOKEN_LABEL" and node.value is not None:
+            try:
+                mapping = ast.literal_eval(node.value)
+            except ValueError:
+                return f"{_TOKEN_GENERATOR}: TOKEN_LABEL is not a literal dict"
+            return set(mapping)
+    return f"{_TOKEN_GENERATOR}: no TOKEN_LABEL found"
+
+
+def check_profile(root: Path) -> list[str]:
+    """The PDPA coverage profile's backticked data types must equal ``TOKEN_LABEL`` exactly.
+
+    Compares ``TOKEN_LABEL`` keys (every data_type the code can emit or mask)
+    against the backticked ``^[A-Z][A-Z0-9_]*$`` names in every table row
+    (line starting with ``|``) across the whole profile document — Level A
+    and Level C tables together, since the ม.26 sensitive types live in
+    Level C, not Level A. A category present in the code but undocumented,
+    or documented but no longer in the code, fails the gate with a named diff.
+    """
+    profile_path = root / _COVERAGE_PROFILE
+    try:
+        lines = profile_path.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        return [f"{_COVERAGE_PROFILE}: {error}"]
+    documented: set[str] = set()
+    for line in lines:
+        if line.startswith("|"):
+            documented.update(_PROFILE_TYPE_NAME.findall(line))
+    actual = _token_label_keys(root)
+    if isinstance(actual, str):
+        return [actual]
+    problems: list[str] = []
+    missing = sorted(actual - documented)
+    extra = sorted(documented - actual)
+    if missing:
+        problems.append(
+            f"{_COVERAGE_PROFILE}: missing data_type(s) in TOKEN_LABEL but not documented: "
+            f"{', '.join(missing)}"
+        )
+    if extra:
+        problems.append(
+            f"{_COVERAGE_PROFILE}: documented data_type(s) not in TOKEN_LABEL: {', '.join(extra)}"
+        )
+    return problems
+
+
 def release_notes(root: Path, version: str) -> str:
     section = _section(root, version)
     if section is None:
@@ -151,6 +214,7 @@ def main(argv: list[str] | None = None) -> int:
         args.root, expect_tag=args.expect_tag, require_dated=args.expect_tag is not None
     )
     problems += check_surface(args.root)
+    problems += check_profile(args.root)
     if problems:
         for problem in problems:
             print(f"release gate: {problem}", file=sys.stderr)

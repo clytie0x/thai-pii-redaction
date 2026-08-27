@@ -47,6 +47,25 @@ def _write_surface(root, facade_names, manifest_names=None):
     )
 
 
+def _write_profile(root, token_names, documented_names=None):
+    """Minimal TOKEN_LABEL + coverage-profile pair for the profile gate."""
+    pkg = root / "amphrang" / "engine" / "anonymizer"
+    pkg.mkdir(parents=True, exist_ok=True)
+    body = ", ".join(f'"{n}": "label"' for n in token_names)
+    (pkg / "token_generator.py").write_text(
+        f"TOKEN_LABEL: dict[str, str] = {{{body}}}\n", encoding="utf-8"
+    )
+    docs = root / "docs"
+    docs.mkdir(exist_ok=True)
+    names = token_names if documented_names is None else documented_names
+    rows = "".join(f"| `{n}` | label | basis | 1.000 | 1.000 |\n" for n in names)
+    (docs / "pdpa-coverage.md").write_text(
+        "# profile\n\n| data_type | label | basis | recall | precision |\n|---|---|---|---|---|\n"
+        + rows,
+        encoding="utf-8",
+    )
+
+
 def test_happy_path_returns_no_problems_and_the_notes(repo):
     cr = _load()
     assert cr.check(repo, expect_tag="v1.2.3", require_dated=True) == []
@@ -144,6 +163,7 @@ def test_main_fails_on_surface_drift(repo, capsys):
 def test_main_exit_codes(repo, capsys):
     cr = _load()
     _write_surface(repo, ["detect"])
+    _write_profile(repo, ["NAME"])
     assert cr.main(["--root", str(repo), "--expect-tag", "v1.2.3", "--notes"]) == 0
     assert "## amphrang 1.2.3" in capsys.readouterr().out
     assert cr.main(["--root", str(repo), "--expect-tag", "v0.0.1"]) == 1
@@ -153,3 +173,41 @@ def test_main_exit_codes(repo, capsys):
 def test_script_has_no_third_party_imports():
     text = (ROOT / "scripts" / "check_release.py").read_text(encoding="utf-8")
     assert "import amphrang" not in text and "import requests" not in text
+
+
+# --- PDPA coverage-profile gate ---------------------------------------------
+
+
+def test_profile_gate_passes_when_profile_matches(repo):
+    cr = _load()
+    _write_profile(repo, ["NAME", "PHONE"])
+    assert cr.check_profile(repo) == []
+
+
+def test_profile_gate_fails_on_a_type_missing_from_the_doc(repo):
+    cr = _load()
+    _write_profile(repo, ["NAME", "PHONE"], documented_names=["NAME"])
+    problems = cr.check_profile(repo)
+    assert len(problems) == 1
+    assert "PHONE" in problems[0]
+    assert "pdpa-coverage.md" in problems[0]
+
+
+def test_profile_gate_fails_on_a_type_only_in_the_doc(repo):
+    cr = _load()
+    _write_profile(repo, ["NAME"], documented_names=["NAME", "GHOST_TYPE"])
+    problems = cr.check_profile(repo)
+    assert len(problems) == 1
+    assert "GHOST_TYPE" in problems[0]
+
+
+def test_profile_gate_fails_when_the_profile_is_missing(repo):
+    cr = _load()
+    _write_profile(repo, ["NAME"])
+    (repo / "docs" / "pdpa-coverage.md").unlink()
+    assert any("pdpa-coverage.md" in problem for problem in cr.check_profile(repo))
+
+
+def test_real_repo_profile_matches_token_label():
+    cr = _load()
+    assert cr.check_profile(ROOT) == []
