@@ -257,6 +257,13 @@ the detector fires 21 times instead of 12, the extra 9 coming from an anchor in
 an unrelated part of a long document. That is the precision case for the rule,
 and it is a measurement, not an assertion.
 
+All three counts in that table were taken under the shaped-span reading of "the
+hit" that §4.2 now rules against. Under the frozen reading the accepted row is
+**13**, not 12 (§8 limit 2 row 13); the other two rows were **not** re-measured,
+so they are left as recorded rather than adjusted by inference. The comparison
+the table exists to make — segmentation costs recall nothing and buys a large
+precision margin over "no split" — is unaffected by a one-document shift.
+
 ### 4.2 Two-tier person linkage
 
 An anchor that lies **inside** the sensitive hit never counts — a phrase cannot
@@ -893,10 +900,11 @@ Each of these is a measurement from this spike, not a suspicion.
    (`lf15`, hit 10) and "ก้อนที่เต้านมข้างซ้าย" (`lf17`), because no cue word
    precedes them. No header veto is frozen here on purpose: whether a section
    header counts as ม.26 data is an **annotation** question, and Task 10 Step 1
-   writes the guidelines before the documents. A veto fitted to 12 unannotated
+   writes the guidelines before the documents. A veto fitted to 13 unannotated
    observations would be over-fitting dressed as a rule.
-3. **The gold-side evidence covers `HEALTH` and nothing else.** All 12 hits
-   above are `HEALTH`. The other nine categories fired **zero** times across the
+3. **The gold-side evidence covers `HEALTH` and nothing else.** All 13 hits
+   above are `HEALTH` — row 13 included, so revision 3 strengthens this limit
+   rather than softening it. The other nine categories fired **zero** times across the
    304 gold-v6 documents, so the "negative slice +0" result is a real but
    *narrow* precision datum: it constrains `HEALTH` on real documents and
    constrains the other nine only insofar as the corpus contains text that could
