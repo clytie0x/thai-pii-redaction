@@ -36,49 +36,102 @@ amphrang.analyze(text)
 
 Structured Thai identifiers with checksum validation (national ID mod-11,
 phone, bank account, credit card, passport, and more), plus juristic/tax IDs,
-driver licences, LINE IDs, GPS coordinates, and house registration codes,
+driver licences, LINE IDs, GPS coordinates, house registration codes, IP and
+MAC addresses, and land deed numbers — 19 structured/entity types in total —
 plus names, addresses, dates, and organizations via Thai NER (PyThaiNLP
-thainer-CRF, offline) with context-cue recall boosters. Detection quality is
-measured against a
+thainer-CRF, offline) with context-cue recall boosters. Person-linked ม.26
+sensitive content (HEALTH, CRIMINAL_RECORD, and eight more statutory
+categories) becomes a maskable span, on by default, only when it is tied to a
+person in the same text — an impersonal mention is left alone. Detection
+quality is measured against a
 hand-authored, twice-adjudicated gold corpus (in `benchmark/`), including a
 negative (no-PII) slice so the false-positive rate is a reported number, not
 a guess.
 
+## PDPA coverage
+
+`docs/pdpa-coverage.md` (`pdpa-profile-v1`) is the public conformance
+profile: every PDPA data category — มาตรา 6 identifiers, ม.26 sensitive
+categories, quasi-identifiers, and what stays explicitly out of scope — with
+how amphrang treats it and live gold numbers per category. It is generated
+from and kept consistent with the canonical registry,
+`docs/decisions/2026-08-26-pdpa-data-ontology.md`; `scripts/check_release.py`
+gates CI on the profile's type references staying in sync with the code's
+own `TOKEN_LABEL` table.
+
 ## Measured accuracy
 
-Default engine (thainer-CRF, offline) on the open gold corpus, run 2026-08-26
-(`python -m benchmark --source gold`, gold-v5, 788 gold entities):
+Default engine (thainer-CRF, offline) on the open gold corpus, run
+2026-08-27 (`python -m benchmark --source gold`, gold-v7, 332 documents,
+1031 gold entities):
+
+**19 structured/entity types** (978 gold entities):
 
 | entity | n | recall | precision |
 |---|---|---|---|
 | CREDIT_CARD | 24 | 1.000 | 1.000 |
-| DATE_OF_BIRTH | 45 | 1.000 | 1.000 |
+| DATE_OF_BIRTH | 46 | 1.000 | 1.000 |
 | DRIVER_LICENSE | 24 | 1.000 | 1.000 |
-| EMAIL | 47 | 1.000 | 1.000 |
+| EMAIL | 60 | 1.000 | 1.000 |
 | GPS_COORD | 23 | 1.000 | 1.000 |
 | HOUSE_REG_ID | 23 | 1.000 | 1.000 |
-| JURISTIC_ID | 23 | 1.000 | 1.000 |
+| IP_ADDRESS | 25 | 1.000 | 1.000 |
+| JURISTIC_ID | 25 | 1.000 | 1.000 |
+| LAND_DEED_ID | 22 | 1.000 | 1.000 |
 | LINE_ID | 23 | 1.000 | 1.000 |
-| THAI_ID | 51 | 1.000 | 1.000 |
-| BANK_ACCOUNT | 35 | 1.000 | 0.972 |
-| ADDRESS | 58 | 1.000 | 0.967 |
+| MAC_ADDRESS | 21 | 1.000 | 1.000 |
+| THAI_ID | 58 | 1.000 | 1.000 |
+| BANK_ACCOUNT | 36 | 1.000 | 0.973 |
+| ADDRESS | 71 | 1.000 | 0.973 |
 | PASSPORT | 25 | 1.000 | 0.962 |
-| NAME | 223 | 0.991 | 0.987 |
-| PHONE | 81 | 0.988 | 1.000 |
-| VEHICLE_PLATE | 26 | 0.962 | 1.000 |
-| STUDENT_ID | 57 | 0.860 | 1.000 |
-| **overall** | **788** | **0.985** | **0.878** |
+| NAME | 270 | 0.993 | 0.989 |
+| PHONE | 117 | 0.991 | 1.000 |
+| VEHICLE_PLATE | 27 | 0.963 | 1.000 |
+| STUDENT_ID | 58 | 0.862 | 1.000 |
 
-Overall F2 0.961 (95% CI 0.949–0.972). Precision counts every flagged span
-that is not a gold entity, including spans outside the labeling scheme — the
-recall-first design accepts that trade. STUDENT_ID recall is 0.860 (up from
-0.719 pre-campaign), still the weakest type: free-form student numbers with
-no nearby cue fall back to the generic ID_NUMBER label, an honest miss
-rather than a guess. On the negative (no-PII) slice, 31 of 45 documents come
-through with zero false positives. The remaining 14 documents carry 15
-flags that are deliberate quasi-identifier detections — issue, deadline, and
-effective dates plus one organization name — kept by policy, not overlooked
-defects.
+STUDENT_ID recall is 0.862 (up from 0.719 pre-campaign), still the weakest
+structured type: free-form student numbers with no nearby cue fall back to
+the generic ID_NUMBER label, an honest miss rather than a guess. On the
+negative (no-PII) slice, 31 of 45 documents come through with zero false
+positives. The remaining 14 documents carry 15 flags that are deliberate
+quasi-identifier detections — issue, deadline, and effective dates plus one
+organization name — kept by policy, not overlooked defects.
+
+**ม.26 sensitive-content types** (53 gold entities; person-linked span
+masking, on by default — see `docs/pdpa-coverage.md` for the full honesty
+caveats):
+
+| entity | n | recall | precision |
+|---|---|---|---|
+| RACE_ETHNICITY | 2 | 1.000 | 1.000 |
+| POLITICAL_OPINION | 2 | 1.000 | 1.000 |
+| RELIGION | 3 | 0.667 | 1.000 |
+| SEXUAL_BEHAVIOR | 2 | 1.000 | 1.000 |
+| CRIMINAL_RECORD | 3 | 1.000 | 1.000 |
+| HEALTH | 30 | 0.333 | 0.667 |
+| DISABILITY | 3 | 1.000 | 1.000 |
+| GENETIC | 3 | 1.000 | 1.000 |
+| LABOR_UNION | 2 | 1.000 | 1.000 |
+| BIOMETRIC | 3 | 1.000 | 1.000 |
+
+Every category but HEALTH has fewer than 20 gold instances — treat those
+recall/precision figures as anecdotal, not stable estimates; a single
+document flips one by a large margin. HEALTH is the one category that
+clears the n≥20 reportable floor: recall 0.333, precision 0.667. The gap has
+a known, stated cause rather than being an untuned model failure — the
+keyword scan's cue vocabulary (โรค, การรักษา, ผล(การ)ตรวจ, สุขภาพ,
+ประวัติ(การ)รักษา) is small and literal, so gold HEALTH phrasing outside it
+is a miss by construction.
+
+**OVERALL** (1031 gold entities across all 19 structured/entity types plus
+the 10 ม.26 sensitive categories above): recall 0.968, precision 0.878, F2
+0.948 (95% CI 0.935–0.961). Precision counts every flagged span that is not
+a gold entity, including spans outside the labeling scheme — the
+recall-first design accepts that trade — and this release is the first to
+score the ten newly-added ม.26 sensitive categories, several of which
+(HEALTH chief among them) run well below 1.000 precision by design, which
+pulls the blended number down from the near-1.000 the 19 structured types
+alone would show.
 
 The gold corpus is open and the detectors are tuned against it, so it is an
 upper bound. The held-out **blind corpus** (encrypted in-repo, 185 documents,
@@ -87,9 +140,12 @@ upper bound. The held-out **blind corpus** (encrypted in-repo, 185 documents,
 **recall 0.960, precision 0.713, F2 0.898**, and the opt-in fine-tuned engine
 at recall 0.983, F2 0.916. Those figures are quoted from the hash-chained
 score log (`benchmark/data/blind-scores.jsonl`, reveals 5–6 of 6) — no new
-reveal was spent publishing them. Those blind figures predate the five new
-types added 2026-08-26 (JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD,
-HOUSE_REG_ID); blind was not re-run for this release.
+reveal was spent publishing them. Those blind figures predate everything
+added 2026-08-26 and 2026-08-27 in this campaign — the five business-ID
+types (JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID), the
+three wave-1 types (IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID), and ม.26
+person-linked sensitive-span masking; blind was not re-run for this
+release.
 
 ## Design promises
 

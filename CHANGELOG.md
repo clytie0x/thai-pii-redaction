@@ -41,6 +41,48 @@ when they change shape.
   gold `business_ids` slice. See
   `docs/decisions/2026-08-26-new-datatype-specs.md` for the checksum
   research and sources.
+- Three wave-1 structured PII types, bringing the total to 19: `IP_ADDRESS`
+  (IPv4 dotted quad, cue-boosted 0.9 / catch-all 0.8, version strings
+  suppressed; IPv6 full or `::`-compressed, 0.9, no cue), `MAC_ADDRESS` (six
+  hex pairs, `:` or `-` separator, 0.9, no cue), `LAND_DEED_ID` (1-6 digit
+  deed number, cue inside the pattern, 0.9 — wins the digits from an
+  overlapping `ADDRESS` claim while the ตำบล/อำเภอ/จังหวัด chain behind it
+  still masks as `ADDRESS`). All three score 1.000 recall / 1.000 precision
+  on the new gold `digital_ids` slice. Frozen shapes and sources:
+  `docs/decisions/2026-08-26-wave1-format-specs.md`.
+- Two quasi-identifiers in `analyze()`'s re-identification-risk scan:
+  `nationality` and `body_metrics`.
+- Person-linked ม.26 sensitive-span masking, default on with no facade
+  knob: ten categories (`RACE_ETHNICITY`, `POLITICAL_OPINION`, `RELIGION`,
+  `SEXUAL_BEHAVIOR`, `CRIMINAL_RECORD`, `HEALTH`, `DISABILITY`, `GENETIC`,
+  `LABOR_UNION`, `BIOMETRIC`) become maskable `detect()`/`anonymize()` spans
+  only when their segment is linked to a natural person (name entity,
+  title+name, or a first-person pronoun) — an impersonal mention
+  ("วันสำคัญทางศาสนา") is left untouched. Both `surrogate` and `token`
+  anonymize modes route a sensitive span as a token, never a fabricated
+  surrogate value, since a realistic-looking surrogate would assert a false
+  personal claim. Wired into the leak guard
+  (`SAFE_OUTBOUND_LEAK_TYPES`/`_sensitive_leaks`) and the output
+  validator's char-coverage rule. Design record:
+  `docs/decisions/2026-08-27-section26-span-masking.md`.
+- `docs/pdpa-coverage.md` (`pdpa-profile-v1`): the public PDPA
+  statute-coverage profile (mask-always, quasi-identifier, ม.26, out-of-scope,
+  and not-personal-data levels), generated from and kept consistent with
+  `docs/decisions/2026-08-26-pdpa-data-ontology.md`. `scripts/check_release.py`
+  gains a `check_profile()` gate that fails CI if a `data_type` the profile
+  references drifts from `TOKEN_LABEL` in `amphrang/engine/anonymizer/
+  token_generator.py`, in either direction.
+- `docs/annotation-guidelines.md` sensitive-span addendum (rules S1-S7):
+  person linkage is document-level; a category word naming a document,
+  section, field, purpose, or entitlement is not a value; the value is a
+  condition/finding/belief/membership/conviction or a course of care, never
+  the administration around it; span-boundary rulings; anchor evidence is
+  not annotated; a CRF-swallowed span is annotated anyway and reported as
+  covered-not-leaked; pre-existing documents are adjudicated, not
+  grandfathered.
+- Gold `digital_ids` slice (gold-v6, 24 docs) and `sensitive` slice
+  (gold-v7, 28 docs), bringing the gold corpus to 332 documents / 1031
+  entities.
 
 ### Fixed
 
@@ -65,6 +107,33 @@ when they change shape.
   by adjudication — the remaining predictions are deliberate
   quasi-identifier detections (issue/deadline/effective dates and one
   organization name) that the annotation guidelines forbid carving out.
+- A trailing sentence-final period no longer kills an `IP_ADDRESS` (IPv4 or
+  IPv6) or `MAC_ADDRESS` match ("...IP 192.168.1.44." now still detects):
+  the boundary now blocks a fifth dotted IPv4 group without also blocking a
+  bare sentence-final period. `LAND_DEED_ID` no longer silently drops
+  single-digit deed numbers to the dedupe step's 2-character floor (deed
+  numbering starts at 1).
+- `น.ส.`+digit lines (the หนังสือรับรองการทำประโยชน์ series, e.g. น.ส.3ก,
+  น.ส.4จ) are no longer read as a person title: `_name_hygiene` was
+  splitting the line at the first digit run and minting a spurious `NAME`
+  span from the abbreviation. `NAME` gold precision 0.980 → 0.988.
+- The `nationality` QI's lookbehind narrowed from a blanket "no preceding
+  Thai character" (which had silently stopped matching ordinary phrasing
+  like "มีสัญชาติไทย") to targeted lookbehinds on the compound prefixes
+  (ข้าม/ต่าง/นานา/หลาย) that should actually exclude a QI hit.
+- Three evidence-backed `sensitive_span` fixes from gold-v7 authoring: the
+  12-character specificity window is now clamped at the segment boundary,
+  so a role word one character past a newline can no longer promote a
+  tier-2 anchor across it; when a `GENETIC`/`BIOMETRIC` pattern matches
+  wholly inside a `HEALTH` cue's claimed span, the cue now yields its label
+  instead of masking genetic data as `HEALTH` (`GENETIC` gold recall
+  0.667 → 1.000); a CRF `NAME` false positive over legal boilerplate can no
+  longer anchor a sensitive span in a person-free document (`HEALTH` gold
+  precision 0.588 → 0.667). The last fix carries an accepted, recorded
+  cost: a real bare full name (no title, no pronoun) sitting in a
+  register-vocabulary segment also loses its linked sensitive span, pinned
+  by
+  `test_f4_accepted_cost_a_bare_real_name_in_a_register_segment_no_longer_anchors`.
 
 ### Changed
 
@@ -75,6 +144,20 @@ when they change shape.
   the committed `uv.lock` (`uv sync --extra server --extra mcp`); published
   metadata is unchanged in spirit — same floors, same extras. The build
   backend stays setuptools and `VERSION` still drives the version.
+- Benchmark corpus append rule: appending to `_CORE_TEMPLATES` can shift
+  every downstream synthetic draw for the rest of the corpus whenever the
+  template count crosses a `random.randrange` bit-length boundary, not only
+  when a template is inserted mid-list. Determinism (same seed → same
+  corpus) and `hard_case`-slice stability are the real byte-identity gates
+  for a corpus change, not an "append-only, so untouched" assumption.
+- The leak-guard field-label regression test
+  (`tests/test_leak_guard.py::test_long_document_with_record_name_lines_is_not_leak_blocked`,
+  a corpus-line-count pin) no longer exercised what its docstring claimed —
+  mutation-testing showed it stayed green even with the field-label gate it
+  was meant to pin fully disabled. Replaced with
+  `test_field_label_gate_covers_primary_rescan_and_segment_rescan`, a
+  detector-independent unit test that calls `scan_outbound_leaks` directly
+  with the two field-label hallucinations replayed via monkeypatch.
 
 ### Removed
 
