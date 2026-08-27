@@ -556,8 +556,12 @@ _RE_MAC = re.compile(
 # sit before the value on the SAME line; the gap class excludes newlines. Group 1 is the
 # digits only, so the 0.9 span wins just the deed digits in _deduplicate and leaves the
 # ตำบล/อำเภอ chain behind it for the ADDRESS pass.
+# The น.ส. suffix letters are the กรมที่ดิน form series, not a guess: น.ส.3 / น.ส.3ก / น.ส.3ข
+# are the หนังสือรับรองการทำประโยชน์, and the โฉนดที่ดิน series runs น.ส.4 / น.ส.4ก / น.ส.4ข /
+# น.ส.4ค (กฎกระทรวง ฉบับที่ 5 พ.ศ.2497) / น.ส.4ง (ฉบับที่ 17 พ.ศ.2514) / น.ส.4จ, the current
+# ครุฑแดง form. ก-ง are no longer issued but still circulate on paper, so all five stay.
 _RE_LAND_DEED = re.compile(
-    r"(?:โฉนด(?:ที่ดิน)?\s*เลขที่|เลขที่โฉนด|น\.ส\.\s*[34]\s*(?:ก|ข)?\s*เลขที่)"
+    r"(?:โฉนด(?:ที่ดิน)?\s*เลขที่|เลขที่โฉนด|น\.ส\.\s*(?:3\s*[กข]?|4\s*[กขคงจ]?)\s*เลขที่)"
     r"[ \t:：]{0,20}(?<!\d)(\d{1,6})(?!\d)"
 )
 
@@ -637,9 +641,15 @@ _HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
 _IP_CUE_RE = re.compile(
     r"IP|ไอพี|address|แอดเดรส|server|เซิร์ฟเวอร์|host|โฮสต์|router|เราเตอร์|เชื่อมต่อ|log"
 )
-# Version strings share the dotted-quad shape exactly, so they suppress the 0.8 catch-all
-# only. A cue-gated 0.9 hit is never suppressed.
-_IP_VERSION_CUE_RE = re.compile(r"version|เวอร์ชัน|รุ่น|build", re.IGNORECASE)
+# Dotted quads that are not addresses at all, suppressing the 0.8 catch-all ONLY — a
+# cue-gated 0.9 hit is never suppressed, so "IP 1.2.3.4" survives every word here. Version
+# strings share the shape byte for byte, and so do Thai document-section references:
+# "ตามข้อ 1.2.3.4", "ตามมาตรา 26.1.2.3", "เอกสารหมายเลข 2.5.1.9", "หนังสือที่ ศธ 0.5.12.7".
+# `ข้อ` carries a negative lookahead for `มูล`: ข้อมูล is by far the commonest Thai word
+# starting with it, and the one that sits beside real addresses ("ตรวจสอบข้อมูล 203.154.77.9").
+_IP_SUPPRESS_CUE_RE = re.compile(
+    r"version|เวอร์ชัน|รุ่น|build|ข้อ(?!มูล)|มาตรา|หมายเลข|หนังสือที่", re.IGNORECASE
+)
 
 # A KNOWN document-code prefix glued onto the digits ("PO-2569-004512") marks one org code.
 # Closed list, NOT any letters- prefix: the generic form silenced real accounts written as
@@ -1051,8 +1061,9 @@ def detect_fp(text: str) -> list[Entity]:
             candidates.append(_make_entity("HOUSE_REG_ID", m, text, score=0.9))
 
     # 19. IP_ADDRESS — IPv4 at 0.9 with a network cue, else a 0.8 catch-all. The catch-all
-    # is suppressed for version strings, which share the dotted-quad shape byte for byte
-    # ("v1.2.3.4", "รุ่น 10.15.7.2"); a cued hit is never suppressed. IPv4 collides with no
+    # is suppressed for version strings and Thai document-section references, which share the
+    # dotted-quad shape byte for byte ("v1.2.3.4", "รุ่น 10.15.7.2", "ตามข้อ 1.2.3.4",
+    # "ตามมาตรา 26.1.2.3"); a cued hit is never suppressed. IPv4 collides with no
     # existing digit detector — the dots break every (?<!\d)...(?!\d) run.
     for m in _RE_IP_V4.finditer(text):
         if any(int(octet) > 255 for octet in m.group(1).split(".")):
@@ -1063,7 +1074,7 @@ def detect_fp(text: str) -> list[Entity]:
             continue
         if start > 0 and text[start - 1] in "vV":
             continue
-        if _cue_before(_IP_VERSION_CUE_RE, text, start):
+        if _cue_before(_IP_SUPPRESS_CUE_RE, text, start):
             continue
         candidates.append(_make_entity("IP_ADDRESS", m, text, score=0.8))
 

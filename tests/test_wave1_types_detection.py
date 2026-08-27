@@ -29,6 +29,36 @@ def test_version_string_is_not_an_ip():
     assert not any(t == "IP_ADDRESS" for t, _ in found)
 
 
+def test_thai_document_section_reference_is_not_an_ip():
+    """Thai clause/section numbering shares the dotted-quad shape with IPv4.
+
+    All four suppress the 0.8 catch-all only; none of them carries a network cue.
+    """
+    for text in (
+        "ตามข้อ 1.2.3.4 ของระเบียบนี้",
+        "ตามมาตรา 26.1.2.3",
+        "เอกสารหมายเลข 2.5.1.9",
+        "อ้างถึงหนังสือที่ ศธ 0.5.12.7",
+    ):
+        assert not any(t == "IP_ADDRESS" for t, _ in _types(text)), text
+
+
+def test_document_reference_suppression_does_not_reach_a_bare_address():
+    """The 0.8 catch-all is untouched where no reference word precedes the value.
+
+    `ข้อมูล` is excluded from the `ข้อ` cue on purpose: it is the Thai word that most
+    often sits directly before a real address with no network cue of its own.
+    """
+    assert ("IP_ADDRESS", "203.154.77.9") in _types("พบการเข้าถึงจาก 203.154.77.9 ในบันทึกระบบ")
+    assert ("IP_ADDRESS", "203.154.77.9") in _types("ตรวจสอบข้อมูล 203.154.77.9")
+
+
+def test_cue_gated_ip_is_never_suppressed_by_a_document_reference():
+    """The suppression is the 0.8 step ONLY — a network cue still wins at 0.9."""
+    assert ("IP_ADDRESS", "192.168.1.1") in _types("เชื่อมต่อตามมาตรา 5 ที่ 192.168.1.1")
+    assert _score("เชื่อมต่อตามมาตรา 5 ที่ 192.168.1.1", "IP_ADDRESS") == 0.9
+
+
 def test_octet_over_255_rejected():
     assert not any(t == "IP_ADDRESS" for t, _ in _types("ค่าคือ 300.1.2.3 หน่วยทดสอบ"))
 
@@ -64,6 +94,27 @@ def test_time_range_is_not_a_mac():
 def test_land_deed_with_cue_detected():
     found = _types("โฉนดที่ดินเลขที่ 12345 ตำบลบางรัก อำเภอเมือง")
     assert ("LAND_DEED_ID", "12345") in found
+
+
+def test_the_whole_nor_sor_form_series_cues_a_land_deed():
+    """น.ส.4จ is the current ครุฑแดง โฉนดที่ดิน; ก-ง are earlier forms still on paper.
+
+    น.ส.3 / น.ส.3ก / น.ส.3ข are the หนังสือรับรองการทำประโยชน์ half of the same shape.
+    """
+    for prefix in (
+        "น.ส.3",
+        "น.ส.3ก",
+        "น.ส.3ข",
+        "น.ส.4",
+        "น.ส.4ก",
+        "น.ส.4ข",
+        "น.ส.4ค",
+        "น.ส.4ง",
+        "น.ส.4จ",
+    ):
+        found = _types(f"{prefix} เลขที่ 1234 ตำบลบางรัก")
+        assert ("LAND_DEED_ID", "1234") in found, prefix
+        assert ("ADDRESS", "บางรัก") in found or ("LOCATION", "บางรัก") in found, prefix
 
 
 def test_bare_digits_without_deed_cue_not_land_deed():

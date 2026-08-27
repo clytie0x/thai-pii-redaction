@@ -111,8 +111,10 @@ _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
 # contain digits, so no name text is lost); tail segments keep their wholesale shape rejection
 # instead — see the loop below.
 _NAME_DIGIT_RUN_RE = re.compile(r"[0-9][0-9\s./-]*")
-# น.ส. followed IMMEDIATELY by a digit is the land-document class (น.ส.3ก, น.ส.4จ — the
-# หนังสือรับรองการทำประโยชน์ series), never the person title น.ส. Checked before the digit-run
+# น.ส. followed IMMEDIATELY by a digit is the land-document class, never the person title
+# น.ส. Two different กรมที่ดิน series share the shape: น.ส.3 / น.ส.3ก / น.ส.3ข are the
+# หนังสือรับรองการทำประโยชน์, while the น.ส.4 series (…ก ข ค ง จ) is the โฉนดที่ดิน title deed
+# itself — น.ส.4จ is the current ครุฑแดง โฉนด. Checked before the digit-run
 # split, which otherwise mints two names from one abbreviation (head "น.ส." plus whatever the
 # tail rule accepts after the digits, gold dg18 "ก เดิม"). A letter after the dot is the real
 # title (น.ส.สมศรี) and never reaches this regex.
