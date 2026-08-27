@@ -306,10 +306,29 @@ and a document quoting one carries a real deed number. Sources: กรมที�
 `น.ส.4 จ` explainer at
 <https://www.ddproperty.com/คู่มือซื้อขาย/นส.-4-จ.-คืออะไร-ซื้อขายที่ดินได้ไหม-49768>.
 
-Measured on the corpus this record's numbers come from: **zero** of the 332 gold
-documents contain a `น.ส.3`/`น.ส.4` string at all, so the `LAND_DEED_ID` row stays
-`22 / 1.000 / 1.000` and the widening carries no measured regression — and no gold
-evidence either.
+**Gold evidence, corrected 2026-08-27.** An earlier draft of this amendment claimed
+that zero of the 332 gold documents contain a `น.ส.3`/`น.ส.4` string. That was
+wrong, and it was wrong because the check read a `text` key that `gold.jsonl` does
+not have — the documents live in `annotated`, behind `benchmark.gold.parse_gold`,
+so the scan examined 332 empty strings. Re-measured through the real parser:
+
+| doc | occurrence |
+|---|---|
+| `dg14` | `น.ส.3ก เลขที่ 30` — gold `LAND_DEED_ID` |
+| `dg17` | `น.ส.3ก เลขที่ 50` |
+| `dg18` | `น.ส.3ก เดิม`, `น.ส.3ก เลขที่ 7353`, `น.ส.3ก เลขที่ 68741` — gold `LAND_DEED_ID` |
+
+**5 occurrences across 3 documents, all of them the `น.ส.3ก` form**, and `dg14` /
+`dg18` annotate the digits behind that cue as gold `LAND_DEED_ID`. So the
+`น.ส.3` half of this cue family is gold-evidenced and always has been: the
+`LAND_DEED_ID` row held at `22 / 1.000 / 1.000` before and after this amendment,
+which is a real measurement of it and not a vacuous one.
+
+What has **no** gold evidence is the **`น.ส.4` series specifically** — zero of the
+332 documents contain `น.ส.4` in any form, so the ก/ข/ค/ง/จ widening this amendment
+records is unmeasured against the corpus in either direction. It rests on the
+กรมที่ดิน sources above and on unit tests, and it cannot have moved the
+`LAND_DEED_ID` row because the corpus never exercises it.
 
 ### 3.4 Current behaviour — measured, and one collision Task 2 must handle
 
