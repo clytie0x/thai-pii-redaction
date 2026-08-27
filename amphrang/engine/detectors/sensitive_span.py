@@ -9,9 +9,11 @@ text; a patient record does not.
 Two rules do the work. A hit and its person anchor must share a SEGMENT (newline, a
 period/semicolon plus whitespace, or two or more spaces — a single space is an
 intra-sentence phrase break in Thai and a name sits one space from its predicate). The
-anchor is TWO-TIER: a name span, a first-person pronoun or a title+given-name is never
-vetoed; a bare role word is vetoed when it belongs to an organization name or sits in an
-impersonal institutional register.
+anchor is TWO-TIER: a first-person pronoun or a title+given-name is never vetoed; a bare role
+word is vetoed when it belongs to an organization name or sits in an impersonal institutional
+register; a NAME/SURNAME span anchors like tier 1 except that the impersonal register vetoes
+it too, because that route's evidence is a CRF guess and legal boilerplate is where the CRF
+invents one.
 
 The span is forward-only from the keyword: the anchor sits *before* the keyword in nearly
 every Thai construction ("ผู้ป่วยรายนี้มีประวัติการรักษา…"), so a backward-expanding span
@@ -108,6 +110,16 @@ _IMPERSONAL_REGISTER_RE = re.compile(
     re.UNICODE,
 )
 
+# ผล(?:การ)?ตรวจ is a RESULT CUE: on its own it asserts nothing about a person, and what was
+# tested is named by the keyword that follows it. In "ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน" (gold
+# `sn13`) it matches six characters before GENETIC's ดีเอ็นเอ, wins the region on start order
+# and masks genetic data under HEALTH. When a specific biological category matches wholly
+# inside the span the cue claimed, the cue yields its label to it. The characters never move,
+# so this is label correctness only. The other HEALTH keywords (โรค, การรักษา, สุขภาพ,
+# ประวัติการรักษา) assert a health fact themselves and do not yield.
+_RESULT_CUE_RE = re.compile(r"ผล(?:การ)?ตรวจ", re.UNICODE)
+_SPECIFIC_OVER_RESULT_CUE = ("GENETIC", "BIOMETRIC")
+
 _BOUNDARY_RE = re.compile(r"[\s,;.()\[\]/\\|\"'“”‘’<>{}!?:]", re.UNICODE)
 # Used only in the overrun fallback, never on a well-formed span.
 _STOP_SET = frozenset(
@@ -162,21 +174,32 @@ def _anchored(
     def _outside_hit(start: int, end: int) -> bool:
         return not (hit_start <= start and end <= hit_end)
 
-    for person_start, person_end in person_spans:
-        if person_end <= segment_start or person_start >= segment_end:
-            continue
-        if _outside_hit(person_start, person_end):
-            return True
+    register_vetoed = _IMPERSONAL_REGISTER_RE.search(text, segment_start, segment_end) is not None
+
+    # The NAME/SURNAME overlap is the one tier-1 route whose evidence is a model guess and
+    # not an exact lexical pattern, and Thai legal boilerplate is exactly where the CRF
+    # invents one: 'ยื่นคำร้องตามมาตรา' anchored a CRIMINAL_RECORD span in a sentence with no
+    # person in it at all. So the register veto reaches this route too. The pronoun and
+    # title+given-name routes below stay never-vetoed, which is what keeps a real named
+    # person in a regulatory document a person ("ประกาศ… นายสมชาย ใจดี แจ้งเชื้อชาติ…").
+    if not register_vetoed:
+        for person_start, person_end in person_spans:
+            if person_end <= segment_start or person_start >= segment_end:
+                continue
+            if _outside_hit(person_start, person_end):
+                return True
     for tier1 in (_PRONOUN_RE, _TITLE_NAME_RE):
         for match in tier1.finditer(text, segment_start, segment_end):
             if _outside_hit(match.start(), match.end()):
                 return True
 
-    register_vetoed = _IMPERSONAL_REGISTER_RE.search(text, segment_start, segment_end) is not None
     for match in _ROLE_RE.finditer(text, segment_start, segment_end):
         if not _outside_hit(match.start(), match.end()):
             continue
-        if _SPECIFICITY_RE.search(text, match.end(), match.end() + _SPECIFICITY_WINDOW):
+        # The window is clamped at the segment end, as the span shape of §4.3 is: a marker
+        # one character past a newline is not evidence about this segment's role word.
+        window_end = min(match.end() + _SPECIFICITY_WINDOW, segment_end)
+        if _SPECIFICITY_RE.search(text, match.end(), window_end):
             return True  # a specific individual: the veto no longer applies
         if _ORG_FORMING_RE.search(text, segment_start, match.start()):
             continue  # the role word is part of an organization name
@@ -235,6 +258,20 @@ def _span_end(
     return max(_truncate_at_cap(text, match.end(), start + MAX_SPAN_CHARS), match.end())
 
 
+def _result_cue_category(text: str, data_type: str, match: re.Match[str], end: int) -> str:
+    """The specific category a HEALTH result cue is really reporting, or `data_type`.
+
+    "Same region" means the specific keyword matches wholly inside the characters the cue's
+    span already claimed, so the label moves and the mask does not.
+    """
+    if data_type != "HEALTH" or _RESULT_CUE_RE.fullmatch(match.group(0)) is None:
+        return data_type
+    for specific, pattern in _COMPILED:
+        if specific in _SPECIFIC_OVER_RESULT_CUE and pattern.search(text, match.end(), end):
+            return specific
+    return data_type
+
+
 def detect_sensitive_spans(
     text: str,
     person_spans: list[tuple[int, int]],
@@ -271,7 +308,7 @@ def detect_sensitive_spans(
                 Entity(
                     entity_id=str(uuid.uuid4()),
                     redact_type="TB",
-                    data_type=data_type,
+                    data_type=_result_cue_category(text, data_type, match, end),
                     span=(start, end),
                     score=0.9,
                     original_text=text[start:end],

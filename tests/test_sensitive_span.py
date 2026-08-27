@@ -147,8 +147,14 @@ def test_name_span_swallowed_by_the_hit_is_not_its_own_anchor():
     # The only "person" span lies inside the sensitive hit, so it cannot anchor it.
     text = "สมาคมลูกจ้างในประเทศไทยจัดประชุมประจำปี"
     assert _spans(text, [(5, 12)]) == []
-    # one character wider and it is no longer swallowed, so it anchors
-    assert [e.data_type for e in _spans(text, [(5, 13)])] == ["LABOR_UNION"]
+    # One character wider and it is no longer swallowed — but this fixture also carries the
+    # register word ในประเทศไทย, and since Task 10b F4 that vetoes the NAME-span route too,
+    # so the segment stays impersonal on two independent grounds.
+    assert _spans(text, [(5, 13)]) == []
+    # The swallow rule on its own, in a segment carrying no register vocabulary.
+    plain = "สมาคมลูกจ้างจัดประชุมประจำปี"
+    assert _spans(plain, [(5, 12)]) == []
+    assert [e.data_type for e in _spans(plain, [(5, 13)])] == ["LABOR_UNION"]
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +193,35 @@ def test_register_veto_does_not_apply_to_a_named_person():
     assert [e.data_type for e in _spans(text)] == ["RACE_ETHNICITY"]
 
 
+def test_the_specificity_window_is_clamped_at_the_segment_end():
+    # Task 10b F1, the design record's §8 limit 9 with gold evidence (`sn28`): ดังกล่าว
+    # sits one character past the newline and promoted the tier-2 ผู้ป่วย across it, so a
+    # segment carrying two register words (ประกาศ, แนวทาง) emitted a span about nobody.
+    text = "ประกาศแนวทางการรักษาพยาบาลสำหรับผู้ป่วย\nดังกล่าวให้สถานพยาบาลทุกแห่งถือปฏิบัติ"
+    assert _spans(text) == [], [(e.data_type, e.original_text) for e in _spans(text)]
+    # Control: the same marker inside the segment still promotes the role word.
+    same_segment = "ประกาศแนวทางการรักษาพยาบาลสำหรับผู้ป่วยดังกล่าวให้สถานพยาบาลถือปฏิบัติ"
+    assert [e.data_type for e in _spans(same_segment)] == ["HEALTH"]
+
+
+def test_a_name_span_anchor_is_vetoed_by_the_impersonal_register():
+    # Task 10b F4. `ยื่นคำร้องตามมาตรา` is a real CRF NAME false positive over legal
+    # boilerplate; as a tier-1 anchor it was never vetoed, so it conjured a
+    # CRIMINAL_RECORD span in a document with no person in it at all. The register veto
+    # now reaches the NAME-span route, whose evidence is a model guess.
+    text = "ให้ผู้เสียหายยื่นคำร้องตามมาตรา 193 ในคดีอาญา"
+    name_false_positive = [(13, 31)]
+    assert _spans(text, name_false_positive) == []
+    assert [e.data_type for e in detect_all(text) if e.data_type in SENSITIVE_DATA_TYPE_SET] == []
+
+
+def test_a_lexical_tier1_anchor_still_beats_the_register_veto_beside_a_name_span():
+    # Gold `sn05`'s shape: เผยแพร่ vetoes the NAME span, the ข้าพเจ้า pronoun is not
+    # vetoable, so the span still fires. The two lexical tier-1 routes are unchanged.
+    text = "ข้าพเจ้า นายเอกรัตน์ มั่นคงดี ยอมรับว่าได้เผยแพร่ความคิดเห็นทางการเมือง"
+    assert [e.data_type for e in _spans(text, [(9, 28)])] == ["POLITICAL_OPINION"]
+
+
 # ---------------------------------------------------------------------------
 # §3 category-error veto for HEALTH
 # ---------------------------------------------------------------------------
@@ -202,6 +237,42 @@ def test_health_category_error_veto_does_not_touch_a_real_health_span():
     found = _spans(text)
     assert [e.data_type for e in found] == ["HEALTH"]
     assert found[0].original_text.startswith("สุขภาพ")
+
+
+# ---------------------------------------------------------------------------
+# Task 10b F3 — the result cue yields its label to the specific category
+# ---------------------------------------------------------------------------
+
+
+def test_a_result_cue_yields_its_label_to_genetic():
+    # Gold `sn13`: HEALTH's ผลตรวจ matches six characters before GENETIC's ดีเอ็นเอ, wins
+    # the region on start order, and masks genetic data under the wrong category. The
+    # characters are unchanged; only the label moves.
+    text = "ผู้ต้องหารายนี้ ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน"
+    found = _spans(text)
+    assert [(e.data_type, e.original_text) for e in found] == [
+        ("GENETIC", "ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน")
+    ]
+
+
+def test_a_result_cue_yields_its_label_to_biometric():
+    text = "ผู้ต้องหารายนี้ ผลตรวจลายนิ้วมือตรงกับที่เกิดเหตุ"
+    found = _spans(text)
+    assert [(e.data_type, e.original_text) for e in found] == [
+        ("BIOMETRIC", "ผลตรวจลายนิ้วมือตรงกับที่เกิดเหตุ")
+    ]
+
+
+def test_a_result_cue_with_no_specific_keyword_stays_health():
+    text = "ผู้ป่วยรายนี้ ผลตรวจเลือดอยู่ในเกณฑ์ปกติ"
+    assert [e.data_type for e in _spans(text)] == ["HEALTH"]
+
+
+def test_a_health_keyword_that_is_not_a_result_cue_keeps_its_label():
+    # โรค asserts a health fact on its own, so it does not yield. Only the result cue,
+    # which asserts nothing until the following keyword says what was tested, does.
+    text = "ผู้ป่วยรายนี้มีโรคทางพันธุกรรมในครอบครัว"
+    assert [e.data_type for e in _spans(text)] == ["HEALTH"]
 
 
 # ---------------------------------------------------------------------------
