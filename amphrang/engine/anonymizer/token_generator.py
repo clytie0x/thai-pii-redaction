@@ -36,6 +36,21 @@ TOKEN_LABEL: dict[str, str] = {
     "IP_ADDRESS": "ไอพี",
     "MAC_ADDRESS": "แมคแอดเดรส",
     "LAND_DEED_ID": "โฉนด",
+    # ม.26 (PDPA section 26) sensitive categories. A ม.26 span is masked with a token in
+    # BOTH modes, so these labels are what a reader of surrogate output sees. Eight of the
+    # ten are themselves ม.26 span keywords, so a re-scan of masked text re-flags the token;
+    # that is safe only because the hit is positionally contained in a trusted pseudonym
+    # occurrence (leak_guard). Do not change a label without re-checking that.
+    "HEALTH": "ข้อมูลสุขภาพ",
+    "CRIMINAL_RECORD": "ประวัติคดี",
+    "DISABILITY": "ความพิการ",
+    "GENETIC": "ข้อมูลพันธุกรรม",
+    "BIOMETRIC": "ข้อมูลชีวภาพ",
+    "RELIGION": "ศาสนา",
+    "RACE_ETHNICITY": "เชื้อชาติ",
+    "SEXUAL_BEHAVIOR": "พฤติกรรมทางเพศ",
+    "POLITICAL_OPINION": "ความเห็นการเมือง",
+    "LABOR_UNION": "สหภาพแรงงาน",
 }
 
 TOKEN_NAMESPACE_BITS = 64

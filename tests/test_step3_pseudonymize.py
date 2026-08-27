@@ -601,7 +601,7 @@ def test_token_label_map_matches_v2_contract():
 
     assert TOKEN_LABEL["THAI_ID"] == "บัตรประชาชน"
     assert TOKEN_LABEL["BANK_ACCOUNT"] == "บัญชีธนาคาร"
-    assert len(TOKEN_LABEL) == 27
+    assert len(TOKEN_LABEL) == 37
     assert TOKEN_LABEL["ORGANIZATION"] == "องค์กร"
     assert TOKEN_LABEL["ID_NUMBER"] == "รหัสอ้างอิง"
     # Added with the Thai address/health detectors: a postal code and a

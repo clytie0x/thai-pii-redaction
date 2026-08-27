@@ -22,6 +22,7 @@ from amphrang.engine.anonymizer.token_generator import (
     token_ordinal_from_candidate,
 )
 from amphrang.engine.detectors.fp_detector import detect_fp
+from amphrang.engine.detectors.sensitive_span import SENSITIVE_DATA_TYPE_SET
 from amphrang.engine.leak_guard import (
     OutboundGuardContext,
     pseudonym_ranges,
@@ -387,7 +388,11 @@ def anonymize(
         if existing is not None:
             pseudonym = existing.pseudonym
         else:
-            if mode == "token":
+            # ม.26 spans are masked with a token in BOTH modes: a "realistic" surrogate for
+            # sensitive content fabricates a false health, criminal, religious or sexual
+            # claim about a person, and the downstream model then reasons about it. Masking
+            # removes a fact; surrogating asserts a false one.
+            if mode == "token" or entity.data_type in SENSITIVE_DATA_TYPE_SET:
                 pseudonym = _next_token(entity, text, vault, compact_text)
             else:
                 pseudonym = _generate_unique_pseudonym(

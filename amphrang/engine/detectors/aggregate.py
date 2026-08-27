@@ -11,6 +11,10 @@ import re
 from amphrang.engine.detectors.fn_scanner import scan_fn
 from amphrang.engine.detectors.fp_detector import detect_fp
 from amphrang.engine.detectors.name_context import detect_parallel_record_names
+from amphrang.engine.detectors.sensitive_span import (
+    detect_sensitive_spans,
+    merge_sensitive_spans,
+)
 from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics, detect_tb
 from amphrang.engine.models import Entity
 
@@ -313,4 +317,12 @@ def detect_all(
     kept = _extend_address_chains(text, kept, tb)
     kept = _relabel_numberless_addresses(kept)
     kept = _drop_unanchored_facility_spans(text, kept)
-    return _relabel_student_ids(tb, kept)
+    kept = _relabel_student_ids(tb, kept)
+    # ม.26 spans deliberately do NOT go through dedupe_spans: that keeps the existing
+    # ensemble's output untouched up to the final merge.
+    sensitive = detect_sensitive_spans(
+        text,
+        [e.span for e in kept if e.data_type in ("NAME", "SURNAME")],
+        blocked_spans=[e.span for e in kept if e.redact_type == "FP"],
+    )
+    return merge_sensitive_spans(text, kept, sensitive)

@@ -15,6 +15,7 @@ from typing import Protocol
 
 from amphrang.engine.detectors.fp_detector import _iban_check, detect_fp
 from amphrang.engine.detectors.name_context import detect_name_context
+from amphrang.engine.detectors.sensitive_span import detect_sensitive_spans
 from amphrang.engine.detectors.tb_detector import detect_tb
 from amphrang.engine.models import Entity
 
@@ -40,14 +41,20 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "ADDRESS",
         "ANONYMIZE_FAILED",
         "BANK_ACCOUNT",
+        "BIOMETRIC",
         "CREDIT_CARD",
+        # CRIMINAL / ETHNICITY / UNION are stale short names matching the comment in
+        # models.py rather than any label a detector emits. They stay: removing a member of
+        # a fail-closed allowlist is a separate, separately-verified change.
         "CRIMINAL",
+        "CRIMINAL_RECORD",
         "DATE",
         "DATE_OF_BIRTH",
         "DISABILITY",
         "DRIVER_LICENSE",
         "EMAIL",
         "ETHNICITY",
+        "GENETIC",
         "GPS_COORD",
         "HEALTH",
         "HOUSE_REG_ID",
@@ -55,6 +62,7 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "ID_NUMBER",
         "IP_ADDRESS",
         "JURISTIC_ID",
+        "LABOR_UNION",
         "LAND_DEED_ID",
         "LINE_ID",
         "LOCATION",
@@ -68,7 +76,9 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "PHONE",
         "POLITICAL_OPINION",
         "POSTAL_CODE",
+        "RACE_ETHNICITY",
         "RELIGION",
+        "SEXUAL_BEHAVIOR",
         "STUDENT_ID",
         "SURNAME",
         "THAI_ID",
@@ -394,14 +404,25 @@ def _segment_leaks(segment: str) -> list[Entity]:
     ]
 
 
+def _sensitive_leaks(text: str, found: list[Entity]) -> list[Entity]:
+    """ม.26 spans in already-masked text. `found` is the guard's own
+    detect_fp + detect_tb result for `text`, reused for its person anchors."""
+    return detect_sensitive_spans(
+        text,
+        [e.span for e in found if e.data_type in ("NAME", "SURNAME")],
+        blocked_spans=[e.span for e in found if e.redact_type == "FP"],
+    )
+
+
 def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]:
     """Return real leaks in pseudonymized text (empty list = safe to send)."""
     # Only replacements minted or reused this turn may excuse a hit; caller-seeded mappings are
     # not proof. A fuzzy TB span crossing a trusted replacement is re-scanned per segment.
     trusted = guard_context.trusted_pseudonyms()
     trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
+    found = detect_fp(text) + detect_tb(text)
     real_leaks = []
-    for entity in detect_fp(text) + detect_tb(text):
+    for entity in found:
         if entity.original_text in trusted:
             continue
         if entity.data_type == "NAME" and _is_field_label(entity.original_text):
@@ -441,6 +462,21 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
                 ):
                     continue
         real_leaks.append(entity)
+    # Sensitive findings BYPASS the loop above. Its TB fuzzy-overlap branch forgives a span
+    # whose per-segment remainder rescans come back clean, but `_segment_leaks` runs only
+    # detect_fp + detect_tb and cannot see a ม.26 phrase at all, so a sensitive span
+    # straddling a token boundary would be waved through on a remainder that was never
+    # examined for sensitive content. A sensitive span comes from an exact regex, not a
+    # fuzzy model: a partial overlap with a pseudonym is a real residual, not span fuzziness.
+    # What this buys is not catching what the same detector missed (correlated by
+    # construction) but catching an implementation failure — a sensitive entity detected and
+    # then not masked.
+    for hit in _sensitive_leaks(text, found):
+        if hit.original_text in trusted:
+            continue  # the whole span is a pseudonym we wrote
+        if any(cs <= hit.span[0] and hit.span[1] <= ce for cs, ce in trusted_ranges):
+            continue  # positionally inside one such occurrence
+        real_leaks.append(hit)
     return real_leaks
 
 

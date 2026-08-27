@@ -38,8 +38,9 @@ def _layer1_pii_scan(
     reverse_result: ReverseResult,
     vault: SessionVault,
 ) -> tuple[bool, list[str]]:
-    """Return (pii_clean, flags). Detected PII is EXPECTED only when its span lies wholly inside
-    a range the reverse mapper restored; a matching vault value elsewhere does not count."""
+    """Return (pii_clean, flags). Detected PII is EXPECTED only when EVERY character of its span
+    lies inside some range the reverse mapper restored; a matching vault value elsewhere does not
+    count."""
     flags = []
     text = reverse_result.text
 
@@ -49,7 +50,12 @@ def _layer1_pii_scan(
     for record in vault._table.values():
         known_originals.add(record.original)
 
-    expected_ranges: list[tuple[int, int]] = []
+    # Char coverage, not single-range containment. The ม.26 merge splits one CRF span into an
+    # entity plus a sensitive span, so the restored text re-detects the original wide span
+    # straddling TWO adjacent restored ranges. Each range is still validated individually
+    # against known_originals and a span containing an unrestored character is still
+    # rejected; the old single-range rule is the special case of one range.
+    expected: set[int] = set()
     for item in reverse_result.restored_ranges:
         if (
             isinstance(item, tuple)
@@ -59,7 +65,7 @@ def _layer1_pii_scan(
             and 0 <= item[0] < item[1] <= len(text)
             and text[item[0] : item[1]] in known_originals
         ):
-            expected_ranges.append(item)
+            expected.update(range(item[0], item[1]))
 
     detected = detect_all(text)
     for candidate in scan_obfuscated_structured_entities(text):
@@ -72,12 +78,7 @@ def _layer1_pii_scan(
             continue
         detected.append(candidate)
     unexpected = [
-        entity
-        for entity in detected
-        if not any(
-            expected_start <= entity.span[0] and entity.span[1] <= expected_end
-            for expected_start, expected_end in expected_ranges
-        )
+        entity for entity in detected if not all(index in expected for index in range(*entity.span))
     ]
 
     if unexpected:
