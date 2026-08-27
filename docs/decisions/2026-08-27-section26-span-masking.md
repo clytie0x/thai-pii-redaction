@@ -590,6 +590,40 @@ change a token label without re-checking this.** There is no automated gate on
 the coverage profile is **Task 11's deliverable**, and only from then on will a
 label drift be caught by CI.
 
+**Revision 5 (2026-08-27, final review). The "trusted pseudonym occurrence" above
+was not true in the shipped code, and the whole document failed closed.** Where
+the detected span IS the category word, the vault record reads
+`original='ศาสนา'` / `pseudonym='[ศาสนา_…_2]'`, and
+`SessionVault.trusted_pseudonyms()` dropped every record whose original appeared
+inside its own pseudonym. The token was therefore absent from `trusted` and from
+`trusted_ranges`, neither §6.2 excuse could fire, and §6.2's rescan reported the
+label inside our own mask as a real ม.26 leak. Reproduced deterministically on
+`'เรียน ท่านผู้อำนวยการ\nนายสมชาย ใจดี พนักงานฝ่ายบุคคล นับถือศาสนา อิสลาม จึงขอลาในวันสำคัญ\nโทร 081-234-5678'`
+across 5 salts, both modes, and `sanitize_chat_request`; 7 of the 10 categories
+reproduce it on keyword+boundary shapes.
+
+**Fix, and why it is at the vault and not the guard.** `trusted_pseudonyms()`
+gains one exemption, `_is_sensitive_category_token`: a record is still trusted
+despite containment when its `data_type` is in `SENSITIVE_DATA_TYPE_SET`, its
+pseudonym is a valid token for that type, **and** the contained text is a
+substring of that type's `TOKEN_LABEL` entry. The exclusion itself is untouched
+and still refuses any replacement that carries its own original VALUE. The guard
+side — excusing a hit that sits inside a token-SHAPED region — was rejected
+because such a region is recognisable from the text alone, so a caller could type
+a token-shaped string carrying real PII into their input and buy an excuse for it;
+the vault keeps trust rooted in "this vault minted this string this turn", which
+is the existing SECURITY BOUNDARY contract, and it repairs the general leak loop
+and not only the ม.26 rescan. Nothing in §5.2, §6.2 or the pattern table changes;
+this revision makes the sentence above true rather than restating it.
+
+Measured after the fix: all ten categories anonymize and restore exactly in both
+modes and through the proxy; `pytest -q` 1906 passed / 9 skipped (1888/9 before,
++18 new tests, none removed); gold negative slice `false_positives=15
+clean_docs=31/45` and every per-type row byte-identical, `OVERALL 1031
+0.968/0.878/0.948`, `shared_11 R=0.988 P=0.993 F2=0.989 excluded=164`. The guard
+path has no gold measurement by construction — it runs on masked text, which the
+benchmark never scores.
+
 ### 5.3 Masking is a token in **both** modes
 
 `anonymize()` routes by **`data_type`**, not by mode:

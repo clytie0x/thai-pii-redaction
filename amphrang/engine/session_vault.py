@@ -10,16 +10,43 @@ import uuid
 from typing import NamedTuple
 
 from amphrang.engine.anonymizer.token_generator import (
+    TOKEN_LABEL,
+    is_token_for_data_type,
     is_valid_token_namespace,
     new_token_namespace,
     token_namespace_from_candidate,
 )
+from amphrang.engine.detectors.sensitive_span import SENSITIVE_DATA_TYPE_SET
 from amphrang.engine.models import VaultRecord
 
 # data_type stamped on seed()-ed records; an exported mapping carries no data_type, so
 # get_by_original() treats this sentinel as a wildcard.
 SEEDED_DATA_TYPE = "SEEDED"
 _SEED_COLLISION_ERROR = "seed pseudonym collision"
+
+
+def _is_sensitive_category_token(record: VaultRecord) -> bool:
+    """Whether this record's original is only the ม.26 CATEGORY WORD inside our own token.
+
+    `trusted_pseudonyms()` refuses a replacement that contains its own original, because such
+    a replacement carries the original VALUE outbound. A ม.26 span is masked with the fixed
+    category name from `TOKEN_LABEL` (`ศาสนา`, `ข้อมูลสุขภาพ`, …) in both modes, and the ม.26
+    detector's span very often IS that same cue word, so the record trips that rule while
+    disclosing nothing the published label does not already print. Left untrusted, the leak
+    guard's ม.26 rescan could not excuse the hit inside the mask this vault had just written,
+    and the whole document failed closed
+    (docs/decisions/2026-08-27-section26-span-masking.md §5.2 and §6.2, which both assume the
+    token IS a trusted pseudonym occurrence).
+
+    All three conditions are required, and the third is what keeps the exemption from ever
+    covering a value: the contained text must be a substring of the category label itself, so
+    a token whose namespace/nonce/ordinal happened to contain a real original still fails.
+    """
+    return (
+        record.data_type in SENSITIVE_DATA_TYPE_SET
+        and is_token_for_data_type(record.pseudonym, record.data_type)
+        and record.original in TOKEN_LABEL.get(record.data_type, "")
+    )
 
 
 class _VaultAuditEntry(NamedTuple):
@@ -171,7 +198,8 @@ class SessionVault:
         SECURITY BOUNDARY: the leak guard excuses anything it believes is a pseudonym, so
         seed()-ed values (a caller's claim) must not count, else a caller could declare a real
         national ID to be "their pseudonym". Empty values and replacements containing their own
-        original are never trusted either.
+        original are never trusted either — except a ม.26 category token, where the contained
+        text is the published category label and not a value (`_is_sensitive_category_token`).
         """
         with self._lifecycle_lock:
             return {
@@ -179,7 +207,9 @@ class SessionVault:
                 for record in self._table.values()
                 if record.data_type != SEEDED_DATA_TYPE
                 and record.pseudonym
-                and record.original not in record.pseudonym
+                and (
+                    record.original not in record.pseudonym or _is_sensitive_category_token(record)
+                )
             }
 
     def seed(self, pseudonym: str, original: str) -> VaultRecord:

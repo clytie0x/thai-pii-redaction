@@ -15,6 +15,7 @@ import uuid
 import pytest
 
 import amphrang
+from amphrang.engine.anonymizer.anonymizer import anonymize as _anonymize_into_vault
 from amphrang.engine.anonymizer.token_generator import TOKEN_LABEL
 from amphrang.engine.detectors.aggregate import detect_all
 from amphrang.engine.detectors.sensitive_span import (
@@ -594,15 +595,122 @@ def test_analyze_counts_the_sensitive_span():
 # ---------------------------------------------------------------------------
 
 
-def test_scan_outbound_leaks_is_clean_on_masked_output():
-    masked = amphrang.anonymize(TWO_HEALTH_DOC, mode="token", salt=SALT)
-    context = OutboundGuardContext(frozenset(masked.mapping))
-    assert scan_outbound_leaks(masked.text, context) == []
+def _guarded_mask(text: str, mode: str) -> tuple[str, OutboundGuardContext, SessionVault]:
+    """Mask through a real SessionVault and build the guard context the way the
+    shipping path does (`stateless.py`), i.e. through `vault.trusted_pseudonyms()`.
+
+    Trusting `masked.mapping` instead trusts EVERY replacement unconditionally and
+    hides the vault's own trust filter, which is where the ม.26 self-labelling
+    tokens were being dropped.
+    """
+    entities = detect_all(text)
+    registry = EntityRegistry(
+        entities=entities,
+        fp_count=sum(1 for entity in entities if entity.redact_type == "FP"),
+        tb_count=sum(1 for entity in entities if entity.redact_type == "TB"),
+    )
+    vault = SessionVault()
+    document = _anonymize_into_vault(text, registry, vault, salt=SALT, mode=mode)
+    context = OutboundGuardContext(frozenset(vault.trusted_pseudonyms()))
+    return document.text, context, vault
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_scan_outbound_leaks_is_clean_on_masked_output(mode):
+    masked_text, context, _ = _guarded_mask(TWO_HEALTH_DOC, mode)
+    assert scan_outbound_leaks(masked_text, context) == []
 
 
 def test_scan_outbound_leaks_reports_an_unmasked_sensitive_phrase():
     leaks = scan_outbound_leaks(TWO_HEALTH_DOC, OutboundGuardContext())
     assert any(leak.data_type in SENSITIVE_DATA_TYPE_SET for leak in leaks)
+
+
+# ---------------------------------------------------------------------------
+# C1 — a ม.26 token whose label contains its own original must stay TRUSTED
+# ---------------------------------------------------------------------------
+#
+# The ten TOKEN_LABEL rows of §5.2 are category words, and eight of them are ม.26
+# span keywords themselves. When the detected span IS that keyword, the vault record
+# reads original='ศาสนา' / pseudonym='[ศาสนา_…_2]'. `trusted_pseudonyms()` used to drop
+# every record whose original appeared inside its pseudonym, so the guard's ม.26 rescan
+# found the keyword inside the mask it had just written, called it a real leak, and the
+# whole document failed closed. §5.2 and §6.2 both assume the token IS trusted.
+
+C1_REPRO = (
+    "เรียน ท่านผู้อำนวยการ\nนายสมชาย ใจดี พนักงานฝ่ายบุคคล นับถือศาสนา อิสลาม จึงขอลาในวันสำคัญ\nโทร 081-234-5678"
+)
+C1_RACE = "นายสมชาย ใจดี ระบุเชื้อชาติ กะเหรี่ยง ในแบบฟอร์ม"
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+@pytest.mark.parametrize(
+    ("text", "data_type"),
+    [(C1_REPRO, "RELIGION"), (C1_RACE, "RACE_ETHNICITY"), (TWO_HEALTH_DOC, "HEALTH")],
+)
+def test_self_labelling_sensitive_token_does_not_fail_the_document_closed(text, data_type, mode):
+    masked = amphrang.anonymize(text, mode=mode, salt=SALT)
+    assert masked.entity_type_counts.get(data_type), masked.entity_type_counts
+    assert f"[{TOKEN_LABEL[data_type]}_" in masked.text, masked.text
+    assert amphrang.restore(masked.text, masked.mapping).text == text
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+@pytest.mark.parametrize("text", [C1_REPRO, C1_RACE])
+def test_the_real_vault_trusts_the_self_labelling_token(text, mode):
+    masked_text, context, vault = _guarded_mask(text, mode)
+    self_labelling = [
+        record
+        for record in vault._table.values()
+        if record.data_type in SENSITIVE_DATA_TYPE_SET and record.original in record.pseudonym
+    ]
+    assert self_labelling, "probe no longer produces a label-contains-original record"
+    trusted = context.trusted_pseudonyms()
+    assert all(record.pseudonym in trusted for record in self_labelling)
+    assert scan_outbound_leaks(masked_text, context) == []
+
+
+@pytest.mark.parametrize("text", [C1_REPRO, C1_RACE])
+def test_sanitize_chat_request_survives_the_self_labelling_token(text):
+    from amphrang.proxy.core import sanitize_chat_request
+
+    payload, mapping = sanitize_chat_request(
+        {"messages": [{"role": "user", "content": text}]}, salt=SALT
+    )
+    sanitized = payload["messages"][0]["content"]
+    assert sanitized != text
+    assert amphrang.restore(sanitized, mapping).text == text
+
+
+def test_a_pseudonym_containing_its_own_real_value_is_still_untrusted():
+    """The exclusion the C1 fix narrows must still hold for VALUES.
+
+    Only a ม.26 record whose contained text is a substring of the published category
+    label is exempt. A replacement that carries a real original out with it — the case
+    the boundary exists for — stays untrusted whatever its data_type.
+    """
+    vault = SessionVault()
+    cases = [
+        # a non-sensitive type: unchanged behaviour
+        ("NAME", "สมชาย", "คุณสมชาย"),
+        # a ม.26 type whose contained text is the VALUE, not the category label
+        ("RELIGION", "อิสลาม", "[ศาสนาอิสลาม]"),
+        # a ม.26 type carrying a real national ID inside a token-shaped string
+        ("HEALTH", "1101700230708", "[ข้อมูลสุขภาพ_1101700230708]"),
+    ]
+    for index, (data_type, original, pseudonym) in enumerate(cases):
+        vault.write(
+            VaultRecord(
+                entity_id=f"c1-negative-{index}",
+                original=original,
+                pseudonym=pseudonym,
+                type="TB",
+                data_type=data_type,
+                span=(0, len(original)),
+                timestamp=time.monotonic(),
+            )
+        )
+    assert vault.trusted_pseudonyms() == set()
 
 
 # ---------------------------------------------------------------------------
