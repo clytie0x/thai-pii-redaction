@@ -138,6 +138,22 @@ about the person:
   *is* a value.
 - `md12` and `md13` are a referral and a blank new-patient record. Both are
   entirely administrative and carry no ม.26 value at all.
+- **Care the person asks for is content about them.** `sn18`
+  "ขอรับการตรวจคัดกรองโรคติดต่อ" is annotated: a requested screening tells the
+  reader what this named patient is being screened for, the same way `md01`'s
+  prescribed rest tells the reader what care he was put on. Requested and
+  prescribed care sit on the same side of the line; only the *scheduling* of it
+  (`md05`) sits on the other. Recall-first settles the near call towards the
+  label.
+
+**Consent is two different things and they cut differently.** S2 rules out
+consent *purposes*, and that rule is about consent to **process data**:
+`lf11` ยินยอมให้โรงพยาบาลเก็บและใช้ข้อมูลสุขภาพเพื่อการรักษาพยาบาลเท่านั้น names a
+class of data and asserts nothing about the signer, so it carries no value.
+Consent to **undergo a procedure** is the opposite: `md07`
+ยินยอมให้แพทย์ทำการผ่าตัด asserts that this named person is having an operation,
+so การผ่าตัด is a value there. The test is whether the sentence tells you
+something about the person or only about a data-handling permission.
 
 A lifestyle fact recorded as clinical history is health data
 (`lf02` ประวัติสูบบุหรี่, in a เวชระเบียน). The health of a machine or a system is
@@ -159,10 +175,15 @@ not anyone's data (`dg03` การตรวจสอบสุขภาพระ
   ต้องโทษจำคุก 2 ปี, โรคเบาหวานชนิดที่ 2.
 - A purely temporal or adverbial trailer stays **outside**: มาห้าปีแล้ว,
   ตั้งแต่ปี 2560, ตั้งแต่วัยเด็ก, เมื่อเดือนมิถุนายน 2569, ตามนัดหมายของแพทย์.
-- ประวัติ in front of a condition is **inside** the value — the health-history
-  fact is the fact (มีประวัติโรคหอบหืด annotates ประวัติโรคหอบหืด). ประวัติ standing
-  alone as a form field ahead of its data is a label and stays outside
-  (ประวัติการแพ้ยา, ประวัติการเจ็บป่วย in `lf11` and `lf17`).
+- ประวัติ in front of **any** sensitive attribute is **inside** the value —
+  having a history of the thing is itself the asserted fact. This is not a
+  disease rule: it holds for a condition (`lf11` มีประวัติโรคหอบหืด annotates
+  ประวัติโรคหอบหืด), a lifestyle fact (`lf02` ประวัติสูบบุหรี่), a conviction
+  (`sn09` ประวัติอาชญากรรมคดียาเสพติด) and sexual behaviour alike
+  (`sn18` ให้ประวัติเพศสัมพันธ์โดยไม่ป้องกัน annotates
+  ประวัติเพศสัมพันธ์โดยไม่ป้องกัน). ประวัติ standing alone as a form field ahead
+  of its data is a label and stays outside (ประวัติการแพ้ยา, ประวัติการเจ็บป่วย in
+  `lf11` and `lf17`).
 - Two facts joined by a connective (และ, ร่วมกับ) are two values, not one. That
   holds for procedures as well as conditions: `lf17`
   เพื่อตรวจชิ้นเนื้อและวางแผนการรักษาโดยแพทย์เฉพาะทาง is two.
@@ -325,9 +346,11 @@ codes are allowed (gold `ng23`).
   cue language, cue distance, or cue strength (weak/absent cue documents are
   deliberate probes of the detector's cue dependence).
 - Checksum-bearing values are always valid (mod-11 / Luhn); PII values are
-  never reused across documents, with one recorded exception: the
-  `bank_phone` slice reuses a value across its paired documents by design
-  (the pair varies the cue, not the number; test-exempted).
+  never reused across documents, with two recorded exceptions, both
+  test-exempted: the `bank_phone` slice reuses a value across its paired
+  documents by design (the pair varies the cue, not the number), and the ten
+  ม.26 categories are exempt everywhere (see "Per-category n, and value reuse"
+  above — their values are ordinary Thai phrases, not identifiers).
 - Verbatim rule, operationally: the document's source text is `annotated`
   with the markup tokens removed; a validator must be able to reconstruct
   every span from that stripped text (this is exactly what `parse_gold`

@@ -90,8 +90,11 @@ a count of junk.
 | false positives | 7 |
 
 The covered/uncovered split is required by S6, because the two failures differ
-by whether anything leaked. The two covered misses are the two probe documents
-described below. The 20 uncovered misses are all `HEALTH`, all in pre-v7
+by whether anything leaked. The two covered misses are `sn20`, where a `NAME`
+span swallows the phrase (F2), and `sn13`, where the characters are masked under
+the wrong category (F3). `sn28`, the other probe, carries no gold sensitive span
+at all — its failure is a false positive, not a miss. The 20 uncovered misses
+are all `HEALTH`, all in pre-v7
 documents plus `sn19`, and all instances of the design record's §8 limit 2: a
 diagnosis stated without a cue word (`ภาวะหัวใจล้มเหลวเรื้อรังกำเริบ`,
 `แพ้ยากลุ่มเพนิซิลลิน`, `ก้อนที่เต้านมข้างซ้าย`, `ยาลดความดัน`) or a cue word whose
@@ -134,9 +137,11 @@ adjudication needed them and the draft did not have them:
    ผลคัดกรองพบความเสี่ยงระดับปานกลาง keeps its พบ because ผลคัดกรอง comes first.
    Without this the draft's own `ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน` row contradicts
    its own พบ bullet.
-2. ประวัติ in front of a condition is inside the value (`ประวัติโรคหอบหืด`,
-   `ประวัติสูบบุหรี่`); ประวัติ standing alone as a form field is a label
-   (`ประวัติการแพ้ยา`, `ประวัติการเจ็บป่วย`).
+2. ประวัติ in front of a sensitive attribute is inside the value
+   (`ประวัติโรคหอบหืด`, `ประวัติสูบบุหรี่`, `ประวัติอาชญากรรมคดียาเสพติด`,
+   `ประวัติเพศสัมพันธ์โดยไม่ป้องกัน`); ประวัติ standing alone as a form field is a
+   label (`ประวัติการแพ้ยา`, `ประวัติการเจ็บป่วย`). The rule was first written as a
+   disease rule and generalized in fix round 1 — see there.
 
 ### R2 — section headers and form titles are not values
 
@@ -293,8 +298,11 @@ programme (`sn27`), and the limit-9 probe (`sn28`). Seven of the eight produce
 
 This is the independent check the design record asks for on the register-veto
 vocabulary (§8 limit 5), which until now had only the 30 authored dev
-near-misses behind it. It holds on 7 of 8, and the one failure is a
-segmentation bug, not a vocabulary gap.
+near-misses behind it. It holds on 7 of 8 as shipped, and the one shipped
+failure is a segmentation bug, not a vocabulary gap. **Read as first drafted the
+pass rate was 6 of 8**, because `sn25` also flagged before it was reworded — see
+Authoring-side fallout item 4, which is the honest denominator for anyone
+judging the vocabulary rather than the shipped corpus.
 
 ## Findings
 
@@ -356,11 +364,12 @@ own boundary table. The detector emits
 `TB HEALTH (104, 133) 'ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน'` — the exact characters,
 under the wrong category.
 
-The cause is in §3's pattern table plus §4.4's merge rule 3. `HEALTH`'s
-`ผล(?:การ)?ตรวจ` matches at `ผลตรวจ`, four characters before `GENETIC`'s
-`ดีเอ็นเอ`; the earlier candidate is claimed first and the later one is
-subtracted to nothing. So it costs a false positive on `HEALTH` and a miss on
-`GENETIC`, while the characters are correctly masked.
+The cause is in §3's pattern table plus §4.4's merge rule 3. Inside the value,
+`HEALTH`'s `ผล(?:การ)?ตรวจ` matches `ผลตรวจ` at offset 0-6 and `GENETIC`'s
+`ดีเอ็นเอ` matches at 6-14, so the `HEALTH` candidate starts **six** characters
+earlier; the earlier candidate is claimed first and the later one is subtracted
+to nothing. So it costs a false positive on `HEALTH` and a miss on `GENETIC`,
+while the characters are correctly masked.
 
 This is not a boundary judgement and not an annotation question: the phrase is
 genetic data by every reading, and the addendum's boundary table (inherited from
@@ -434,6 +443,60 @@ selection.
    window and the probe did not fire; and a `ฉุกเฉินวิกฤต` phrasing added a
    spurious `NAME`. The shipped wording fires the probe and carries no `NAME`
    error, so F1 is measured on its own.
+
+## Fix round 1 (review findings addressed here)
+
+The submission was approved with a documentation-fix round. The findings and how
+each was addressed:
+
+1. **The impersonal-section pass rate hid its own rewrite.** "7 of 8" is the
+   shipped number; read as first drafted it was 6 of 8, because `sn25` also
+   flagged before the rewording in fallout item 4. Both numbers are now stated
+   where the claim is made, so a reader who stops early gets the worse one.
+2. **Consent was ruled two ways.** S2/S3 rule out consent purposes, yet `md07`
+   annotates ยินยอมให้แพทย์ทำ`การผ่าตัด`. The two are genuinely different acts and
+   the addendum now says so in one worked pair: consent to **process data**
+   (`lf11`) asserts nothing about the signer and carries no value; consent to
+   **undergo a procedure** (`md07`) asserts the procedure of the person and does.
+3. **`benchmark/gold.py`'s docstring said 24 documents.** 28 shipped. Fixed.
+4. **F3's offset was wrong.** "Four characters before" was an eyeball; measured,
+   `ผลตรวจ` is at 0-6 and `ดีเอ็นเอ` at 6-14, so the gap is **six**. Fixed here
+   and in the task report.
+5. **"The two covered misses are the two probe documents" was wrong.** They are
+   `sn20` (the F2 probe) and `sn13` (the F3 collision). `sn28` carries no gold
+   sensitive span, so it cannot produce a miss of any kind. Fixed.
+6. **The ประวัติ boundary rule was inconsistent between two shipped documents.**
+   `lf02` kept ประวัติ inside (`ประวัติสูบบุหรี่`) while `sn18` left it outside
+   (ประวัติ`เพศสัมพันธ์โดยไม่ป้องกัน`). **Ruling: the rule generalizes to any
+   sensitive attribute, not to diseases only** — ประวัติ + attribute is one value
+   wherever ประวัติ is part of the asserted fact rather than a form heading. S4
+   is amended to say so, and `sn18` is edited to match. This is the only gold
+   line changed in this round:
+
+   | doc | before → after (the changed fragment only) |
+   |---|---|
+   | `sn18` | `ให้ประวัติ[[SEXUAL_BEHAVIOR\|เพศสัมพันธ์โดยไม่ป้องกัน]]` → `ให้[[SEXUAL_BEHAVIOR\|ประวัติเพศสัมพันธ์โดยไม่ป้องกัน]]` |
+
+   **Measured scoring impact: none on any type row.** The gold span widens from
+   `(88, 112)` to `(81, 112)`; the detector still emits
+   `เพศสัมพันธ์โดยไม่ป้องกัน`, which still overlaps, so it stays a
+   `SEXUAL_BEHAVIOR` true positive at 2/2 recall and 1.000 precision. Every
+   per-type row, `OVERALL 1031 0.967/0.876/0.947`, `shared_11` and the negative
+   slice are byte-identical to the pre-fix run. Only two character-level views
+   move, both because gold now claims seven characters the detector does not
+   emit: `OVERALL` exact_recall 0.869 → **0.868** and the `sensitive` slice's
+   coverage 0.981 → **0.977** (`OVERALL` coverage_recall stays 0.966). No
+   document text changed — the markup moved seven
+   characters left inside the same line — so every other span offset in `sn18`
+   is untouched.
+7. **`sn18`'s ขอรับ`การตรวจคัดกรองโรคติดต่อ` needed a defence, not a precedent by
+   accident.** Ruling: keep it. A screening the patient asks for is content
+   about that patient, on the same side of S3's line as `md01`'s prescribed
+   rest; only the *scheduling* of care (`md05`) falls outside. Written into S3
+   as a worked example beside `md01` so it reads as a rule.
+8. **The slice-contract bullet still said value reuse had "one recorded
+   exception."** There are two now — `bank_phone` and the ten ม.26 categories.
+   Fixed.
 
 ## Consequences
 

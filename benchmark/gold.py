@@ -16,7 +16,7 @@ standard campaign, each reaching >=20 gold instances, plus three alias-proof
 documents proving a citizen ID stays THAI_ID in ประกันสังคม/ผู้เสียภาษี context
 per docs/decisions/2026-08-26-wave1-format-specs.md. v7 (2026-08-27) opens a
 SECOND annotated family, the ten มาตรา 26 sensitive categories, with the
-`sensitive` slice (24 documents) and an adjudication pass that annotates the
+`sensitive` slice (28 documents) and an adjudication pass that annotates the
 ม.26 values already present in 17 pre-v7 documents; see
 docs/decisions/2026-08-27-gold-v7-sensitive-authoring.md. Annotation conventions
 live in docs/annotation-guidelines.md. The documents live in `data/gold.jsonl`
