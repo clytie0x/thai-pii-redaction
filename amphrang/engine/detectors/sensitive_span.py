@@ -117,6 +117,9 @@ _IMPERSONAL_REGISTER_RE = re.compile(
 # inside the span the cue claimed, the cue yields its label to it. The characters never move,
 # so this is label correctness only. The other HEALTH keywords (โรค, การรักษา, สุขภาพ,
 # ประวัติการรักษา) assert a health fact themselves and do not yield.
+# "Follows it" is not adjacency: the keyword may sit ANYWHERE wholly inside the cue's shaped
+# span, whose reach is MAX_SPAN_CHARS, so 'ผลตรวจพบความผิดปกติของโครโมโซมคู่ที่21' is GENETIC
+# in full. That is the operative rule.
 _RESULT_CUE_RE = re.compile(r"ผล(?:การ)?ตรวจ", re.UNICODE)
 _SPECIFIC_OVER_RESULT_CUE = ("GENETIC", "BIOMETRIC")
 

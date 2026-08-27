@@ -969,11 +969,11 @@ Each of these is a measurement from this spike, not a suspicion.
    which is an implementation failure, not a recall correlation); recorded for
    Tasks 10 and 12 rather than fixed here.
 9. ~~**The 12-character specificity window of §4.2 is not clamped at the segment
-   end**~~, unlike the span shape of §4.3, which says "clamped at the segment end"
+   end**, unlike the span shape of §4.3, which says "clamped at the segment end"
    where it means it — so a `รายนี้` sitting just past a segment boundary can promote
    a tier-2 role word across that boundary. No dev or gold document exercises it;
    **Task 10 should include a cross-segment promotion probe document** so the
-   reading has real evidence either way.
+   reading has real evidence either way.~~
 
    **CLOSED (2026-08-27, Task 10b F1).** Task 10 wrote the probe as gold `sn28` and
    it fired: `ดังกล่าว` one character past the newline promoted `ผู้ป่วย` across the
@@ -991,11 +991,39 @@ Each of these is a measurement from this spike, not a suspicion.
     tier 1 was never vetoed, so the register veto that the tier-2 `ผู้เสียหาย` would
     have hit was simply bypassed. The `NAME` overlap is the one tier-1 route whose
     evidence is a model guess rather than an exact lexical pattern, so it is the one
-    that is now vetoable; the pronoun and title+given-name routes are unchanged. **The
-    residual is the scope**: a CRF `NAME` false positive in person-free prose that
-    carries *no* register vocabulary still anchors, and the register vocabulary is
-    still the 30-near-miss list of limit 5. This guard narrows the failure, it does
-    not close it. Measured cost on gold-v7: **zero** — the F4 shape was authored around
+    that is now vetoable; the pronoun and title+given-name routes are unchanged.
+
+    **The guard cuts both ways, and the recall half is the more serious one.** It cannot
+    tell a CRF `NAME` false positive from a correct `NAME` span, so a **real** person
+    named in a segment that happens to carry a register word now loses their sensitive
+    span. Measured, on a bare full name that the CRF detects correctly:
+
+    ```
+    'ผู้ป่วย สมชาย ใจดี ได้รับการรักษาตามแนวทางเวชปฏิบัติ'
+      before this guard:  TB NAME (8,18) 'สมชาย ใจดี'   TB HEALTH (25,52) 'การรักษาตามแนวทางเวชปฏิบัติ'
+      after  this guard:  TB NAME (8,18) 'สมชาย ใจดี'   — no sensitive span
+    'ผู้ป่วย สมชาย ใจดี ได้รับการรักษาตามที่แพทย์สั่ง'   (no register word)
+      after  this guard:  TB HEALTH (25,48) 'การรักษาตามที่แพทย์สั่ง'   — unaffected
+    ```
+
+    `แนวทาง` is register vocabulary and it occurs in ordinary clinical and HR prose right
+    beside patient names ("แนวทางเวชปฏิบัติ", "แนวทางการดูแล"), so this is not a contrived
+    shape. A **bare full name is the exposed case**: it has no title, so `_TITLE_NAME_RE`
+    does not rescue it, and a title or a first-person pronoun would. Zero gold documents
+    exercise it — every gold document with a sensitive span in a register segment
+    (`sn05`) also carries a pronoun or a title — which is why this is a recorded limit
+    and not a measured regression. It is pinned as an accepted cost by
+    `test_f4_accepted_cost_a_bare_real_name_in_a_register_segment_no_longer_anchors`;
+    a future change that restores the detection should flip that assertion deliberately.
+    Recall-first would argue this trade the other way, and the case for taking it anyway
+    is that the false positive it removes fabricates a ม.26 claim about a person who is
+    not in the document at all. That is a judgement, not a measurement, and it is the
+    part of this fix most worth revisiting.
+
+    **The false-positive residual is the scope**: a CRF `NAME` false positive in
+    person-free prose that carries *no* register vocabulary still anchors, and the
+    register vocabulary is still the 30-near-miss list of limit 5. This guard narrows the
+    failure, it does not close it. Measured cost on gold-v7: **zero** — the F4 shape was authored around
     in `sn25` before it shipped (gold-v7 fallout item 4), the only two gold sensitive
     spans in register segments (`sn05`) hold a `ข้าพเจ้า` pronoun and a title+name and
     still fire, and ledger row 13 survives. So gold measures this guard's *cost* and
@@ -1008,7 +1036,22 @@ Each of these is a measurement from this spike, not a suspicion.
     by the keyword after it — so when a `GENETIC` or `BIOMETRIC` keyword matches
     wholly inside the characters the cue already claimed, the emitted entity takes
     that category. **The span never moves**, so this is label correctness and the
-    value is masked either way. Deliberately narrow, and the narrowness is the limit:
+    value is masked either way.
+
+    **The prose above and the operative definition differ, and the operative one
+    governs.** "The keyword after it" reads as adjacency; the code requires only that
+    the specific keyword match *anywhere wholly inside the cue's shaped span*, which
+    §4.3 caps at `MAX_SPAN_CHARS` (48). So the whole span takes the specific label
+    however far into it the keyword sits:
+
+    ```
+    'ผู้ป่วยรายนี้ ผลตรวจพบความผิดปกติของโครโมโซมคู่ที่21'
+       -> GENETIC (14, 52) 'ผลตรวจพบความผิดปกติของโครโมโซมคู่ที่21'
+    ```
+
+    That is intended — a result line naming a chromosome finding is genetic data
+    whatever words sit between the cue and the finding — but it is a wider rule than
+    the sentence above suggests, and 48 characters is its real reach. Deliberately narrow, and the narrowness is the limit:
     the other four `HEALTH` keywords (`โรค`, `การรักษา`, `สุขภาพ`, `ประวัติการรักษา`)
     assert a health fact themselves and do not yield, so `โรคทางพันธุกรรม` stays
     `HEALTH`; and no other pair of categories has a precedence rule at all — a

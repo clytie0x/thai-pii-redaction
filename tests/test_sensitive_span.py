@@ -215,6 +215,30 @@ def test_a_name_span_anchor_is_vetoed_by_the_impersonal_register():
     assert [e.data_type for e in detect_all(text) if e.data_type in SENSITIVE_DATA_TYPE_SET] == []
 
 
+def test_f4_accepted_cost_a_bare_real_name_in_a_register_segment_no_longer_anchors():
+    """ACCEPTED COST of the Task 10b F4 guard, pinned so a future fix flips it knowingly.
+
+    สมชาย ใจดี is a REAL patient name that the CRF detects, and แนวทาง is a register word
+    that occurs in ordinary clinical and HR prose right beside patient names. The guard
+    cannot tell this `NAME` span from the `ยื่นคำร้องตามมาตรา` false positive it exists to
+    stop, so this document loses its HEALTH span. It detected `การรักษาตามแนวทางเวชปฏิบัติ`
+    before the guard and detects nothing after — a false negative, recorded as the
+    recall half of the design record's §8 limit 10.
+
+    A bare full name has no title, so `_TITLE_NAME_RE` does not rescue it; a title or a
+    first-person pronoun would. **If a later change restores this detection, that is an
+    improvement — flip this assertion deliberately, do not delete the test.**
+    """
+    text = "ผู้ป่วย สมชาย ใจดี ได้รับการรักษาตามแนวทางเวชปฏิบัติ"
+    assert [e.data_type for e in detect_all(text) if e.data_type in SENSITIVE_DATA_TYPE_SET] == []
+    # Contrast: the same sentence with no register word still detects, so the loss is the
+    # register veto's reach and not the bare-name anchor itself.
+    without_register = "ผู้ป่วย สมชาย ใจดี ได้รับการรักษาตามที่แพทย์สั่ง"
+    assert [
+        e.data_type for e in detect_all(without_register) if e.data_type in SENSITIVE_DATA_TYPE_SET
+    ] == ["HEALTH"]
+
+
 def test_a_lexical_tier1_anchor_still_beats_the_register_veto_beside_a_name_span():
     # Gold `sn05`'s shape: เผยแพร่ vetoes the NAME span, the ข้าพเจ้า pronoun is not
     # vetoable, so the span still fires. The two lexical tier-1 routes are unchanged.
