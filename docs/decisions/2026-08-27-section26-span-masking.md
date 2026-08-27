@@ -44,6 +44,22 @@ this and were re-run by Task 9 and again by its reviewer: dev design unchanged,
 negative slice `false_positives=15 clean_docs=31/45`, every per-type gold row
 byte-identical to the Task-7 reference.
 
+**Revision 4 (2026-08-27, post-Task-10b).** Task 10b fixed three findings that the
+gold-v7 authoring (`2026-08-27-gold-v7-sensitive-authoring.md`) measured. Substantive
+changes, all in §8: limit 9 is **closed**; the limit-2 ledger's row 13 carries its
+Task-10b outcome (it survives, unmoved); and limits 10 and 11 record the two rules the
+fixes added. One statement outside §8 is superseded and is flagged here because a reader
+of that section alone would be misled: **§4.2's "The register veto applies to tier-2
+anchors only" no longer holds.** It now also applies to the `NAME`/`SURNAME`-span tier-1
+route, whose evidence is a CRF guess rather than an exact lexical pattern. The pronoun and
+title+given-name routes are untouched and still never vetoed, which is why §4.2's own
+"นายสมชาย ใจดี … ในประกาศ" example still flags. Measured on gold-v7 after all three fixes:
+`GENETIC 3 1.000/1.000` (was 0.667/1.000), `HEALTH 30 0.333/0.667` (was 0.333/0.588),
+`OVERALL 1031 0.968/0.878/0.948` (was 0.967/0.876/0.947), `shared_11 R=0.988 P=0.993
+F2=0.989 excluded=164` (was 165), negative slice `false_positives=15 clean_docs=31/45`
+unchanged, every other per-type row byte-identical. Across all 332 gold documents the
+three fixes change exactly **two** predictions: `sn13`'s label and `sn28`'s removal.
+
 ---
 
 ## 1. Acceptance measurements
@@ -869,7 +885,7 @@ Each of these is a measurement from this spike, not a suspicion.
    | 10 | `lf15` | `สุขภาพ` | **header** — "ส่วนที่ 3 ข้อมูลสุขภาพ"; the data under it is not masked |
    | 11 | `lf17` | `ประวัติการรักษา` | **label** — inside the covering-letter title |
    | 12 | `lf17` | `โรคเบาหวานชนิดที่` | real — a diagnosis |
-   | 13 | `lf17` | `การรักษาโดย` | **unadjudicated** — see the note below |
+   | 13 | `lf17` | `การรักษาโดย` | **real, and it survives Task 10b** — adjudicated by gold-v7 R3, outcome note below |
 
    **Row 13, added in revision 3 (2026-08-27, post-Task-9).** Task 9's gold run
    emits `HEALTH (468, 479) 'การรักษาโดย'` in `lf17`, a thirteenth span the
@@ -895,7 +911,18 @@ Each of these is a measurement from this spike, not a suspicion.
    data, and separately whether a span anchored only by a NAME false positive
    should count at all.
 
-   Seven real, five labels or clauses, one unadjudicated. In the same documents the detector
+   **Row 13 outcome (2026-08-27, Task 10b).** Both halves were adjudicated by gold-v7's
+   R3 in favour of the label: the referral reason is a value, and gold labels the fact
+   rather than the evidence chain, so the span scores as a `HEALTH` **true positive**.
+   Task 10b's F4 guard then had to be measured against it, because that true positive
+   rests on the same CRF-`NAME`-anchor mechanism the guard restricts. **Measured: it
+   survives, at the same offsets `(468, 479)`.** The guard reaches the `NAME` route only
+   inside a segment carrying register vocabulary, and `lf17`'s segment
+   `'เหตุผลการส่งตัว เพื่อตรวจชิ้นเนื้อและวางแผนการรักษาโดยแพทย์เฉพาะทาง'` carries none. No ม.26
+   true positive anywhere in the corpus was paid for F4; what it costs instead is the
+   residual scope recorded in limit 10.
+
+   Seven real, five labels or clauses, one now adjudicated real. In the same documents the detector
    *misses* "ภาวะซึมเศร้า" (`lf02`, hit 8), "ภาวะภูมิแพ้อากาศ และแพ้อาหารทะเล"
    (`lf15`, hit 10) and "ก้อนที่เต้านมข้างซ้าย" (`lf17`), because no cue word
    precedes them. No header veto is frozen here on purpose: whether a section
@@ -941,12 +968,52 @@ Each of these is a measurement from this spike, not a suspicion.
    weaken the stated value of the pass (catching a detected-but-not-masked span,
    which is an implementation failure, not a recall correlation); recorded for
    Tasks 10 and 12 rather than fixed here.
-9. **The 12-character specificity window of §4.2 is not clamped at the segment
-   end**, unlike the span shape of §4.3, which says "clamped at the segment end"
+9. ~~**The 12-character specificity window of §4.2 is not clamped at the segment
+   end**~~, unlike the span shape of §4.3, which says "clamped at the segment end"
    where it means it — so a `รายนี้` sitting just past a segment boundary can promote
    a tier-2 role word across that boundary. No dev or gold document exercises it;
    **Task 10 should include a cross-segment promotion probe document** so the
    reading has real evidence either way.
+
+   **CLOSED (2026-08-27, Task 10b F1).** Task 10 wrote the probe as gold `sn28` and
+   it fired: `ดังกล่าว` one character past the newline promoted `ผู้ป่วย` across the
+   boundary and emitted `HEALTH (12, 39) 'การรักษาพยาบาลสำหรับผู้ป่วย'` in a
+   ประกาศ about nobody, on a segment carrying two register words. The window is now
+   clamped, `window_end = min(match.end() + _SPECIFICITY_WINDOW, segment_end)`. Cost
+   across the 332 gold documents: that one false positive removed and nothing else —
+   no other document exercises the cross-boundary path, and a marker inside the
+   segment still promotes.
+10. **The register veto now reaches the `NAME`-span anchor, and only inside a
+    register segment** (2026-08-27, Task 10b F4, superseding §4.2's "tier-2 anchors
+    only"). The finding: a CRF `NAME` false positive over
+    `ยื่นคำร้องตามมาตรา` anchored `CRIMINAL_RECORD` on `คดีอาญา` in
+    `'ให้ผู้เสียหายยื่นคำร้องตามมาตรา 193 ในคดีอาญา'`, a sentence with no person in it —
+    tier 1 was never vetoed, so the register veto that the tier-2 `ผู้เสียหาย` would
+    have hit was simply bypassed. The `NAME` overlap is the one tier-1 route whose
+    evidence is a model guess rather than an exact lexical pattern, so it is the one
+    that is now vetoable; the pronoun and title+given-name routes are unchanged. **The
+    residual is the scope**: a CRF `NAME` false positive in person-free prose that
+    carries *no* register vocabulary still anchors, and the register vocabulary is
+    still the 30-near-miss list of limit 5. This guard narrows the failure, it does
+    not close it. Measured cost on gold-v7: **zero** — the F4 shape was authored around
+    in `sn25` before it shipped (gold-v7 fallout item 4), the only two gold sensitive
+    spans in register segments (`sn05`) hold a `ข้าพเจ้า` pronoun and a title+name and
+    still fire, and ledger row 13 survives. So gold measures this guard's *cost* and
+    not its benefit; the probe above is its only direct evidence.
+11. **The result cue `ผล(?:การ)?ตรวจ` yields its label to `GENETIC`/`BIOMETRIC`, and
+    nothing else does** (2026-08-27, Task 10b F3). §3's pattern table plus §4.4's
+    merge rule 3 masked gold `sn13`'s `ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน` under `HEALTH`,
+    because `ผลตรวจ` matches six characters before `ดีเอ็นเอ` and the earlier start
+    claims the region. The cue asserts nothing on its own — what was tested is named
+    by the keyword after it — so when a `GENETIC` or `BIOMETRIC` keyword matches
+    wholly inside the characters the cue already claimed, the emitted entity takes
+    that category. **The span never moves**, so this is label correctness and the
+    value is masked either way. Deliberately narrow, and the narrowness is the limit:
+    the other four `HEALTH` keywords (`โรค`, `การรักษา`, `สุขภาพ`, `ประวัติการรักษา`)
+    assert a health fact themselves and do not yield, so `โรคทางพันธุกรรม` stays
+    `HEALTH`; and no other pair of categories has a precedence rule at all — a
+    `RELIGION`/`RACE_ETHNICITY` or `CRIMINAL_RECORD`/`HEALTH` collision is still
+    settled by start offset. Evidence: one gold document.
 
 ---
 

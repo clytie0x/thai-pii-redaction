@@ -335,6 +335,12 @@ that belongs to whoever owns `sensitive_span.py` next. Clamping it at
 `segment_end` is the obvious candidate and would cost nothing measurable: no
 other document in the 332 exercises the cross-boundary path.
 
+**Fixed in Task 10b (2026-08-27).** The window is clamped at `segment_end`
+(`window_end = min(match.end() + _SPECIFICITY_WINDOW, segment_end)`). The `sn28`
+prediction is gone, and the guess above held exactly: across all 332 documents
+that is the only prediction the clamp removes. `HEALTH` precision 0.588 → 0.625
+from this fix alone, and the design record's §8 limit 9 is closed.
+
 ### F2 — limit 1 is real, and fragile to reproduce
 
 `sn20` reproduces the CRF-swallow shape of §8 limit 1:
@@ -380,6 +386,16 @@ the reason `GENETIC` reads 0.667 rather than 1.000.
 
 `sn13` carries a second GENETIC value, `สารพันธุกรรมจากคราบเลือด`, precisely so
 the category is not measured by the colliding case alone.
+
+**Fixed in Task 10b (2026-08-27).** `ผล(?:การ)?ตรวจ` is a result cue: it asserts
+nothing on its own, and what was tested is named by the keyword after it. When a
+`GENETIC` or `BIOMETRIC` keyword matches wholly inside the characters the cue's span
+already claimed, the emitted entity takes that category. The span does not move, so
+`sn13` now reads `GENETIC (104, 133) 'ผลตรวจดีเอ็นเอตรงกับวัตถุพยาน'` — the same
+characters, the right label. `GENETIC` 0.667 → **1.000** recall, `HEALTH` precision
+0.625 → **0.667**. The rule is deliberately narrow and its narrowness is recorded as
+the design record's §8 limit 11: the other four `HEALTH` keywords assert a health fact
+themselves and do not yield, and no other pair of categories has a precedence rule.
 
 ## Known limits of gold-v7
 
@@ -439,6 +455,17 @@ selection.
    interesting one and is recorded here rather than shipped as a second gold
    false positive:** a CRF `NAME` false positive can create a ม.26 false
    positive in a document with no person in it at all.
+
+   **Taken up and fixed as Task 10b's F4 (2026-08-27).** The reviewer reproduced the
+   suppressed finding on the probe `ให้ผู้เสียหายยื่นคำร้องตามมาตรา 193 ในคดีอาญา`, where the
+   `NAME` false positive `ยื่นคำร้องตามมาตรา` anchors `CRIMINAL_RECORD` on `คดีอาญา`. The
+   register veto now reaches the `NAME`-span tier-1 route; the pronoun and title+name
+   routes are unchanged. Because `sn25` was reworded before it shipped, **gold measures
+   this guard's cost and not its benefit**: the fix changes zero predictions across the
+   332 documents, `sn05`'s two spans keep firing on their `ข้าพเจ้า` pronoun, and ledger
+   row 13's `lf17` true positive survives at the same offsets. See the design record's
+   §8 limit 10 for the residual — a `NAME` false positive in person-free prose that
+   carries no register vocabulary still anchors.
 5. `sn28` — an earlier wording put ดังกล่าว out of reach of the specificity
    window and the probe did not fire; and a `ฉุกเฉินวิกฤต` phrasing added a
    spurious `NAME`. The shipped wording fires the probe and carries no `NAME`
@@ -507,7 +534,14 @@ each was addressed:
 - `shared_11` and the synthetic corpus are unchanged by design; `excluded`
   changes meaning as described above and should be read alongside the sensitive
   rows, not as a junk count.
-- Two detector-side findings (F1, F3) are left open for a future task. Neither
+- ~~Two detector-side findings (F1, F3) are left open for a future task.~~ Neither
   is a regression: F1 is the design record's own limit 9 with evidence attached,
-  and F3 is new.
+  and F3 is new. **Both were fixed by Task 10b (2026-08-27)**, along with the
+  suppressed `sn25` finding of fallout item 4, which became that task's F4. The
+  numbers this record publishes are therefore the **pre-fix** state and stay as
+  measured; after the fixes the table reads `GENETIC 3 1.000/1.000` and
+  `HEALTH 30 0.333/0.667`, with `OVERALL 1031 0.968/0.878/0.948`,
+  `excluded=164`, `slice sensitive recall=0.980 coverage=0.977` and the negative
+  slice unchanged at `false_positives=15 clean_docs=31/45`. The seven-false-positive
+  table above becomes five: `sn13` is a `GENETIC` true positive and `sn28` is gone.
 - The README's accuracy table still quotes gold-v5 and is Task 12's to update.
