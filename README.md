@@ -54,11 +54,15 @@ a guess.
 `docs/pdpa-coverage.md` (`pdpa-profile-v1`) is the public conformance
 profile: every PDPA data category — มาตรา 6 identifiers, ม.26 sensitive
 categories, quasi-identifiers, and what stays explicitly out of scope — with
-how amphrang treats it and live gold numbers per category. It is generated
-from and kept consistent with the canonical registry,
-`docs/decisions/2026-08-26-pdpa-data-ontology.md`; `scripts/check_release.py`
-gates CI on the profile's type references staying in sync with the code's
-own `TOKEN_LABEL` table.
+how amphrang treats it and live gold numbers per category. It is the measured
+conformance artifact: the numbers live there and nowhere else. It is written
+by hand from the canonical registry,
+`docs/decisions/2026-08-26-pdpa-data-ontology.md`, which is the source of
+truth for which categories exist and how each is treated — but only the
+category names are machine-checked. `scripts/check_release.py` gates CI on the
+profile's type references matching the code's own `TOKEN_LABEL` table in both
+directions; it reads no recall or precision figure, so those are refreshed by
+hand from a benchmark run.
 
 ## Measured accuracy
 
