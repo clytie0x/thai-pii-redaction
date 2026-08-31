@@ -4,9 +4,21 @@
 conceal, to camouflage") — Thai PII detection and anonymization for Python:
 mask personal data before it reaches an external AI, restore it locally.
 
+> **Pre-publication:** amphrang has not been published to PyPI. Until the
+> first public release, install it from a local source checkout; the package
+> name and version remain subject to pre-publication review.
+
+Install the surface you need in editable mode:
+
 ```
-pip install amphrang
+python -m pip install -e .             # core SDK and CLI
+python -m pip install -e ".[proxy]"   # sanitizing proxy
+python -m pip install -e ".[server]"  # FastAPI server
+python -m pip install -e ".[mcp]"     # MCP server
 ```
+
+`pip install amphrang` and its extras will become available only after a
+public package release.
 
 ```python
 import amphrang
@@ -132,11 +144,11 @@ is a miss by construction.
 the 10 ม.26 sensitive categories above): recall 0.968, precision 0.878, F2
 0.948 (95% CI 0.935–0.961). Precision counts every flagged span that is not
 a gold entity, including spans outside the labeling scheme — the
-recall-first design accepts that trade — and this release is the first to
-score the ten newly-added ม.26 sensitive categories, several of which
-(HEALTH chief among them) run well below 1.000 precision by design, which
-pulls the blended number down from the near-1.000 the 19 structured types
-alone would show.
+recall-first design accepts that trade — and the current unreleased snapshot
+is the first to score the ten newly-added ม.26 sensitive categories, several
+of which (HEALTH chief among them) run well below 1.000 precision by design,
+which pulls the blended number down from the near-1.000 the 19 structured
+types alone would show.
 
 The gold corpus is open and the detectors are tuned against it, so it is an
 upper bound. The held-out **blind corpus** (encrypted in-repo, 185 documents,
@@ -150,7 +162,27 @@ added 2026-08-26 and 2026-08-27 in this campaign — the five business-ID
 types (JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID), the
 three wave-1 types (IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID), and ม.26
 person-linked sensitive-span masking; blind was not re-run for this
-release.
+unreleased snapshot.
+
+## Performance snapshot
+
+The committed full-profile baseline dated 2026-08-25 ran on
+Windows-11-10.0.26200-SP0 with 24 logical CPUs, CPython 3.13.14, and the
+default thainer engine:
+
+| measure | result |
+|---|---|
+| Cold start (import + first detect) | p50/p95 639.384/743.788 ms (n=3) |
+| S, 200 chars | detect p50/p95 5.252/6.152 ms; anonymize p50/p95 17.326/18.437 ms |
+| M, 2,000 chars | detect p50/p95 61.476/217.346 ms; anonymize p50/p95 417.317/523.74 ms |
+| Mixed detect throughput (20 S + 5 M) | one process 57.248 docs/s; four warmed workers 41.684 docs/s |
+| Peak RSS on the largest class | 296.6 MB (baseline RSS 160.6 MB) |
+
+Four workers were slower than one on this short batch, so parallelism should
+be measured against the intended workload rather than assumed to help. See
+the [full report](docs/benchmarks/2026-08-25-perf-win11-dev-2.md),
+[raw JSON](docs/benchmarks/2026-08-25-perf-win11-dev-2.json), and
+[methodology](docs/benchmarks/README.md).
 
 ## Design promises
 
@@ -177,21 +209,25 @@ for a text file.
 
 ## Sanitizing proxy (zero-code LLM firewall)
 
-`pip install "amphrang[proxy]"` adds `amphrang-proxy` — an OpenAI-compatible
-reverse proxy. Point any existing app's `base_url` at it and its chat traffic
-is masked on the way out and restored on the way back, streaming included;
-the token→original mapping lives only in request-scoped proxy memory.
+The source checkout's `[proxy]` extra adds `amphrang-proxy` — an
+OpenAI-compatible reverse proxy. Point any existing app's `base_url` at it
+and its chat traffic is masked on the way out and restored on the way back,
+streaming included; the token→original mapping lives only in request-scoped
+proxy memory.
 
 ```
 AMPHRANG_PROXY_UPSTREAM=https://api.openai.com \
 AMPHRANG_PROXY_UPSTREAM_KEY=sk-... \
+AMPHRANG_PROXY_MODELS=gpt-5.6,gpt-4.1 \
 amphrang-proxy --port 8400
 ```
 
 For a local model, point it at Ollama instead (no key needed):
 
 ```
-AMPHRANG_PROXY_UPSTREAM=http://127.0.0.1:11434 amphrang-proxy --port 8400
+AMPHRANG_PROXY_UPSTREAM=http://127.0.0.1:11434 \
+AMPHRANG_PROXY_MODELS=llama3.2 \
+amphrang-proxy --port 8400
 ```
 
 ```python
@@ -207,10 +243,19 @@ a request whose mask would still leak is answered 422 and never forwarded,
 and requests the proxy cannot mask end-to-end (tools, tool calls, image
 parts) are rejected rather than passed through.
 
+`AMPHRANG_PROXY_MODELS` is a required comma-separated exact allowlist; the
+request's `model` must match one entry. V1 rebuilds requests from a strict
+schema: messages contain only `role` plus string content or one text part,
+and only bounded numeric/boolean generation controls, `stream_options`
+(`include_usage`), and `response_format` (`text`/`json_object`) pass through.
+Unknown fields, multiple content parts, `name`, `stop`, metadata, and every
+tool/function shape receive 422 before the upstream is contacted.
+
 ## Run the local API server
 
+After installing the source checkout's `[server]` extra, run:
+
 ```
-pip install "amphrang[server]"
 amphrang serve
 ```
 
@@ -229,8 +274,8 @@ docker build -t amphrang . && docker run --rm -p 8000:8000 -e AMPHRANG_API_KEY=c
 
 ## MCP server (for AI agents)
 
-`pip install amphrang[mcp]` adds `amphrang-mcp` — the same guard as a Model
-Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
+The source checkout's `[mcp]` extra adds `amphrang-mcp` — the same guard as a
+Model Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
 `reidentify`, `pdpa_analyze`, `guard_prompt`, `close_session`. Run it over
 stdio for a local agent (text never leaves the machine, no auth needed) or
 `--transport http` for a shared endpoint. `sanitize` returns masked text plus
@@ -244,6 +289,9 @@ The HTTP transport is fail-closed: it refuses to start without
 checked with a constant-time comparison. There is no "unauthenticated for
 now" mode; a shared endpoint with no key would hand the PII guard to
 anything that can reach the port.
+Session handles are HMAC-bound to that authenticated caller, so one caller
+cannot continue, restore, or close another caller's session even if its
+opaque handle is disclosed. Local stdio remains single-caller and unchanged.
 
 ```
 AMPHRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" amphrang-mcp --transport http --port 8300
@@ -259,6 +307,10 @@ AMPHRANG_MCP_KEYS="agent-a:key-a,agent-b:key-b" amphrang-mcp --transport http --
 | `amphrang[ml]` | WangchanBERTa/union NER engines + semantic Section-26 detector |
 
 ## Stability
+
+The local `v0.1.0` tag is an internal preview and was never publicly
+distributed. The contract below starts with the first public release; from
+that point onward it applies to every public 0.x release without exception.
 
 Only the `amphrang` module surface follows semver — `detect`, `detect_batch`,
 `anonymize`, `anonymize_batch`, `restore`, `analyze`, `Session`, `Entity`,

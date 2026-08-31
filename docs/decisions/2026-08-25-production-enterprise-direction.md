@@ -1,21 +1,25 @@
 # Production and enterprise direction: staged open-core, "PDPA firewall for LLM usage"
 
 - **Date:** 2026-08-25
-- **Status:** Proposed (approved in discussion, pending implementation plan)
+- **Status:** Accepted
 - **Deciders:** Teerapat Vatpitak
+- **Supersedes:** ADR 0002 where its product positioning and fixed surface
+  keep-list overlap; ADR 0002's one-package boundary and demand-led rule remain
+  active.
 
 ## Context
 
-amphrang 0.1.0 is a working Thai PII detection/anonymization library with a CLI,
-an optional FastAPI server, an MCP server, PDF redaction, and PDPA document
-tooling. Its differentiators are Thai-specific detection with checksum
-validation, fully offline operation, a fail-closed leak guard, and a disciplined
-benchmark protocol (open gold set + encrypted blind set).
+At decision time, amphrang's local 0.1.0 internal preview was a working Thai
+PII detection/anonymization library with a CLI, an optional FastAPI server, an
+MCP server, PDF redaction, and PDPA document tooling. Its differentiators were
+Thai-specific detection with checksum validation, fully offline operation, a
+fail-closed leak guard, and a disciplined benchmark protocol (open gold set +
+encrypted blind set). The preview was never publicly distributed.
 
-What it lacks for production use: published performance numbers, published
-accuracy numbers, an API stability commitment, and any adoption path that does
-not require writing Python. It is maintained by one person. There are no
-reference deployments.
+At that time it lacked recorded performance numbers, recorded accuracy
+numbers, an API stability commitment, and any adoption path that did not
+require writing Python. It was maintained by one person and had no reference
+deployments.
 
 Market context: Thai organizations (banks, hospitals, government, BPO) want to
 use external LLMs but PDPA blocks sending personal data outside. Microsoft
@@ -45,13 +49,21 @@ Explicitly rejected alternatives:
 - **Hosted SaaS.** Contradicts the core promise ("data never leaves your
   organization") and adds permanent operational burden. Non-goal.
 
+## Implementation status (2026-08-30)
+
+The Phase 1 code, benchmark evidence, and stability policy and the Phase 2
+proxy are implemented in the local pre-publication repository. No package,
+Git tag, or GitHub Release has been publicly distributed, so Phase 1's public
+release exit criterion remains intentionally unmet. Phase 3 remains unbuilt
+and adoption-gated.
+
 ## Target users and usage surfaces
 
 | Surface | User | Status |
 |---|---|---|
-| Sanitizing proxy (`/v1/chat/completions`) | Platform/infra engineer who wants existing apps protected with zero code change | **New — Phase 2** |
-| Python SDK (`amphrang.detect/anonymize/restore/analyze/Session`) | Developer embedding PII handling in an app | Exists; needs a published stability policy |
-| MCP server (`amphrang-mcp`) | Teams running AI agents (Claude Code, agent frameworks) | Exists; needs setup recipes |
+| Sanitizing proxy (`/v1/chat/completions`) | Platform/infra engineer who wants existing apps protected with zero code change | Implemented locally; not publicly released |
+| Python SDK (`amphrang.detect/anonymize/restore/analyze/Session`) | Developer embedding PII handling in an app | Implemented; stability policy takes effect with the first public release |
+| MCP server (`amphrang-mcp`) | Teams running AI agents (Claude Code, agent frameworks) | Implemented; local stdio and authenticated shared HTTP are documented |
 
 ### Scope cut (2026-08-25)
 
@@ -63,8 +75,8 @@ and bundled font, the legacy 8-step `run_pipeline` orchestrator, and the
 `tner` remote NER engine (an external-API detector contradicts the local-only
 promise). `analyze()` stays: it is value-free, feeds the `safety.section26`
 signal on the sanitize path, and serves the LLM-safety story. This shrinks
-`pip install amphrang` to four pure-text dependencies, which also serves the
-Phase 1 performance and packaging goals.
+the core package's runtime dependency set to four pure-text dependencies,
+which also serves the Phase 1 performance and packaging goals.
 
 ## Phase 1 — Prove production readiness (before any new feature)
 
@@ -147,8 +159,11 @@ stream end, upstream error mid-stream).
 
 ### Error semantics
 
-- Upstream errors pass through with upstream status; body is restored if it
-  contains tokens, otherwise forwarded as-is.
+- Upstream errors pass through with upstream status. Plain-text bodies are
+  restored as text; parsed JSON bodies recursively restore string values while
+  preserving object keys and shape. A token used as a JSON object key stays
+  masked because restoring keys can collide or mutate the upstream schema; this
+  is an accepted v1 response limitation, not an outbound plaintext path.
 - Proxy-side failures never emit the mapping or raw PII in errors (reuse
   `safe_errors` conventions).
 

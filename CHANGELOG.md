@@ -7,6 +7,10 @@ covered by the semver contract — changes under `amphrang.engine.*` and
 `amphrang.server.*` appear here when they change observable behaviour, not
 when they change shape.
 
+`v0.1.0` was a local internal preview and was never publicly distributed.
+The public semver and deprecation contract begins with the first public
+release; the historical preview entry remains below as provenance.
+
 ## [Unreleased]
 
 ### Added
@@ -20,10 +24,11 @@ when they change shape.
   calls, and non-text content parts are rejected (v1 scope). Loopback only;
   upstream configured via `AMPHRANG_PROXY_UPSTREAM` /
   `AMPHRANG_PROXY_UPSTREAM_KEY`.
-- API stability policy (README "Stability"): 0.x patch releases never change
-  the public surface, breaking surface changes only in minor releases with a
-  CHANGELOG entry, `DeprecationWarning` at least one minor release before any
-  removal. The surface is pinned in `docs/api-surface.txt` and
+- API stability policy (README "Stability"), effective from the first public
+  release: 0.x patch releases never change the public surface, breaking
+  surface changes only in minor releases with a CHANGELOG entry, and a
+  `DeprecationWarning` precedes removal by at least one minor release. The
+  surface is pinned in `docs/api-surface.txt` and
   `scripts/check_release.py` now fails CI when it and `amphrang.__all__`
   disagree.
 - `amphrang.detect_batch` and `amphrang.anonymize_batch`: many texts in one
@@ -86,6 +91,15 @@ when they change shape.
 
 ### Fixed
 
+- Shared MCP HTTP session handles are now HMAC-bound to the authenticated
+  caller. A foreign or forged handle behaves exactly like an expired/unknown
+  handle for sanitize continuation and reidentify, and cannot close the
+  owner's session; local stdio retains its single-caller raw-handle behavior.
+- The sanitizing proxy no longer passes uninspected request fields through to
+  the upstream. It rebuilds each request from a strict v1 schema, requires an
+  exact `AMPHRANG_PROXY_MODELS` allowlist match, rejects split/unknown content
+  paths and scalar PII smuggling before forwarding, and restores tokens inside
+  structured upstream error string values as the proxy contract requires.
 - Long documents no longer fail closed spuriously. `anonymize` on documents
   past ~20k characters raised `LeakBlockedError` because the outbound
   rescan's segment check re-ran the NER on isolated between-token segments,
@@ -180,12 +194,14 @@ facade: `redact_pdf` and `RedactionResult` are gone from `amphrang`.
   engines (`thainer` default, `wangchanberta`, `union`, `finetuned`) are
   unchanged.
 - Core dependencies dropped with the PDF stack: pypdfium2, reportlab,
-  uharfbuzz, Pillow, pdfplumber. `pip install amphrang` now pulls only
-  pythainlp, python-crfsuite, regex, and httpx.
+  uharfbuzz, Pillow, pdfplumber. Installing the core package from source now
+  pulls only pythainlp, python-crfsuite, regex, and httpx.
 
-## [0.1.0] — 2026-08-23
+## [0.1.0] — 2026-08-25
 
-First release of amphrang, extracted from
+**Internal preview:** this local snapshot is commit
+`cff373ef383330a554808149c6800a6c818788bf`; it was never published to PyPI
+or distributed as a GitHub Release. The preview was extracted from
 [thai-pii-redaction](https://github.com/Teerapat-Vatpitak/thai-pii-redaction)
 (AI Guard 3.0.0). The detection engine, the gold benchmark corpus, and the
 PDPA tooling carried over; the browser-extension, desktop, and native-broker
@@ -252,5 +268,5 @@ and is not repeated here.
 - PyInstaller frozen-executable lookups (`sys._MEIPASS`, `%APPDATA%` log
   dir) left over from the predecessor's desktop build.
 
-[Unreleased]: https://github.com/Teerapat-Vatpitak/amphrang/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Teerapat-Vatpitak/amphrang/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Teerapat-Vatpitak/amphrang/compare/cff373ef383330a554808149c6800a6c818788bf...HEAD
+[0.1.0]: https://github.com/Teerapat-Vatpitak/amphrang/commit/cff373ef383330a554808149c6800a6c818788bf

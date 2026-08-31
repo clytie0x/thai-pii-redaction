@@ -1,6 +1,16 @@
 # 0002 — Product surface: one pip package
 
-Date: 2026-08-21 · Status: accepted
+Date: 2026-08-21 · Status: accepted in part; product-direction scope
+superseded by the 2026-08-25 gateway decision
+
+## Supersession
+
+The one-pip-package distribution boundary and demand-led rule remain active.
+The later [production and enterprise direction](2026-08-25-production-enterprise-direction.md)
+supersedes this record's fixed surface keep-list and product positioning: the
+project now focuses on guarding LLM traffic, with the sanitizing proxy as its
+primary adoption surface. The proxy remains part of the same `amphrang`
+distribution as the SDK, CLI, MCP adapter, and optional server.
 
 ## Decision
 

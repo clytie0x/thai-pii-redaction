@@ -1,5 +1,11 @@
 # Data-Type Expansion + Accuracy Campaign Implementation Plan
 
+> **Historical status:** Completed locally on 2026-08-26. The repository gained
+> five structured PII types and gold-v5; the final run measured all five at
+> 1.000 recall/precision, STUDENT_ID recall at 0.860, and the adjudicated
+> negative slice at 15 false positives / 31 clean documents. The unchecked
+> boxes below preserve the original execution instructions, not current work.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add five new Thai structured PII types (JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID) end-to-end — detect → surrogate → token → leak guard → gold benchmark — and raise accuracy on the two documented weak spots (STUDENT_ID recall 0.719; negative-slice clean rate 31/45).

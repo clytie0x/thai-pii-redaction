@@ -1,5 +1,12 @@
 # PDPA-Standard Campaign Implementation Plan
 
+> **Historical status:** Completed locally on 2026-08-27. The repository gained
+> the three wave-1 structured types, two quasi-identifiers, person-linked ม.26
+> span masking, gold-v7, and the CI-gated `pdpa-profile-v1`. The final campaign
+> run passed 1,888 tests with 9 skipped and preserved the negative slice at 15
+> false positives / 31 clean documents. The unchecked boxes below preserve the
+> original execution instructions, not current work.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Close every text-detectable gap in the PDPA data ontology — three new structured types (IP_ADDRESS, MAC_ADDRESS, LAND_DEED_ID), two new quasi-identifiers (nationality, weight/height), person-linked span masking for ม.26 sensitive content — and publish a CI-gated **PDPA Coverage Profile** that maps every legal category to a treatment and a measured number, so amphrang can honestly claim reference-implementation ("standard") coverage.

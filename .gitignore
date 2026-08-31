@@ -9,3 +9,6 @@ build/
 dist/
 logs/
 tmp/
+
+# Machine-local agent permissions/settings; never publish.
+.claude/settings.local.json

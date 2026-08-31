@@ -21,7 +21,12 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 import amphrang
 from amphrang.engine.safe_errors import discard_exception_graph
-from amphrang.proxy.core import ProxyRequestError, restore_text, sanitize_chat_request
+from amphrang.proxy.core import (
+    ProxyRequestError,
+    restore_text,
+    sanitize_chat_request,
+    validate_allowed_models,
+)
 from amphrang.proxy.stream_restore import StreamRestorer
 
 _HOP_HEADERS = {"host", "content-length", "authorization", "connection", "accept-encoding"}
@@ -40,6 +45,17 @@ def _restore_completion(body: dict, mapping: dict[str, str]) -> dict:
         if isinstance(message, dict) and isinstance(message.get("content"), str):
             message["content"] = restore_text(message["content"], mapping)
     return body
+
+
+def _restore_json_strings(value, mapping: dict[str, str]):
+    """Recursively restore JSON string values while preserving keys and shape."""
+    if isinstance(value, str):
+        return restore_text(value, mapping)
+    if isinstance(value, list):
+        return [_restore_json_strings(item, mapping) for item in value]
+    if isinstance(value, dict):
+        return {key: _restore_json_strings(item, mapping) for key, item in value.items()}
+    return value
 
 
 class _SSEProcessor:
@@ -89,10 +105,12 @@ class _SSEProcessor:
 
 def create_app(
     upstream_base_url: str,
+    allowed_models: frozenset[str],
     upstream_api_key: str | None = None,
     transport: httpx.AsyncBaseTransport | None = None,
     timeout_s: float = 120.0,
 ) -> FastAPI:
+    configured_models = validate_allowed_models(allowed_models)
     app = FastAPI(title="amphrang sanitizing proxy", docs_url=None, redoc_url=None)
 
     def _upstream_headers() -> dict[str, str]:
@@ -115,7 +133,11 @@ def create_app(
             return _error(400, "request body is not a JSON object", "invalid_request_error")
 
         try:
-            sanitized, mapping = sanitize_chat_request(payload, salt=secrets.token_hex(16))
+            sanitized, mapping = sanitize_chat_request(
+                payload,
+                salt=secrets.token_hex(16),
+                allowed_models=configured_models,
+            )
         except ProxyRequestError as error:
             return _error(422, str(error), "invalid_request_error")
         except amphrang.LeakBlockedError as error:
@@ -150,6 +172,8 @@ def create_app(
             )
         if upstream.status_code < 400:
             body = _restore_completion(body, mapping)
+        else:
+            body = _restore_json_strings(body, mapping)
         return JSONResponse(status_code=upstream.status_code, content=body)
 
     async def _forward_stream(sanitized: dict, mapping: dict[str, str]) -> Response:

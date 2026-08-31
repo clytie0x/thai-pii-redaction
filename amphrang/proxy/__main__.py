@@ -6,6 +6,7 @@ configured by environment, never by the request:
 
     AMPHRANG_PROXY_UPSTREAM       e.g. https://api.openai.com (required)
     AMPHRANG_PROXY_UPSTREAM_KEY   bearer key for the upstream (optional)
+    AMPHRANG_PROXY_MODELS         comma-separated exact model allowlist (required)
 """
 
 from __future__ import annotations
@@ -29,6 +30,18 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
+    allowed_models = frozenset(
+        model.strip()
+        for model in os.environ.get("AMPHRANG_PROXY_MODELS", "").split(",")
+        if model.strip()
+    )
+    if not allowed_models:
+        print(
+            "amphrang-proxy: AMPHRANG_PROXY_MODELS is not set or empty; refusing to start",
+            file=sys.stderr,
+        )
+        return 1
+
     try:
         import uvicorn
 
@@ -40,10 +53,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    app = create_app(
-        upstream_base_url=upstream,
-        upstream_api_key=os.environ.get("AMPHRANG_PROXY_UPSTREAM_KEY") or None,
-    )
+    try:
+        app = create_app(
+            upstream_base_url=upstream,
+            allowed_models=allowed_models,
+            upstream_api_key=os.environ.get("AMPHRANG_PROXY_UPSTREAM_KEY") or None,
+        )
+    except ValueError:
+        print(
+            "amphrang-proxy: AMPHRANG_PROXY_MODELS contains an invalid model identifier; "
+            "refusing to start",
+            file=sys.stderr,
+        )
+        return 1
     print(f"amphrang-proxy: 127.0.0.1:{args.port} -> {upstream} (loopback only)")
     uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
     return 0

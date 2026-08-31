@@ -21,8 +21,9 @@ Include, where you can:
 - a minimal input that reproduces it, with real personal data replaced by
   synthetic values
 
-You should hear back within 7 days. Fixes ship as a patch release with a
-CHANGELOG entry; credit is given unless you ask otherwise.
+You should hear back within 7 days. During pre-publication, fixes land on
+`main` with a CHANGELOG entry; after the first public release, fixes ship in
+the supported release line. Credit is given unless you ask otherwise.
 
 ## What counts
 
@@ -52,12 +53,10 @@ Out of scope — open a regular issue instead:
 
 ## Supported versions
 
-| Version | Supported |
-|---|---|
-| 0.1.x | yes |
-
-Only the latest minor release receives security fixes while the project is
-pre-1.0.
+No public version exists yet. `main` is the pre-publication review state and
+is the only line receiving security fixes. Replace this section with a
+versioned support table when the first public release is made; while the
+project remains pre-1.0, only the latest public minor line will be supported.
 
 ## Design notes that bound the threat model
 
