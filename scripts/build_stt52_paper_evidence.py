@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from benchmark.human_review import STT52_GOLD_COMMIT, load_gold_at_commit
+from benchmark.human_review import STT52_GOLD_COMMIT, load_gold_at_commit, rewritten_commit
 from benchmark.paper_evidence import build_system_evidence, prediction_records
 
 
@@ -45,8 +45,11 @@ def main(argv=None) -> int:
     evaluator_commit = _git_text(repo, "rev-parse", "HEAD")
     system_root = args.system_worktree.resolve()
     system_commit = _git_text(system_root, "rev-parse", "HEAD")
-    if system_commit != STT52_GOLD_COMMIT:
+    if system_commit not in {STT52_GOLD_COMMIT, rewritten_commit(repo, STT52_GOLD_COMMIT)}:
         raise SystemExit("system worktree is not at the frozen STT52 commit")
+    # After the 2026-10-19 history rewrite the frozen checkout has a new SHA;
+    # provenance keeps the recorded one (docs/history/commit-map.txt).
+    system_commit = STT52_GOLD_COMMIT
     if _git_text(system_root, "status", "--porcelain", "--untracked-files=no"):
         raise SystemExit("system worktree has tracked changes")
 

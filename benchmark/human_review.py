@@ -53,7 +53,7 @@ def _parse_gold_jsonl(raw: bytes) -> list[Sample]:
     return samples
 
 
-def _rewritten_commit(repo: Path, revision: str) -> str | None:
+def rewritten_commit(repo: Path, revision: str) -> str | None:
     """New SHA for a full pre-rewrite SHA, or None when the map has no entry."""
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         return None
@@ -78,7 +78,7 @@ def load_gold_at_commit(
     keeps reporting the recorded SHA so packets built before the rewrite
     still match.
     """
-    rewritten = _rewritten_commit(repo, revision)
+    rewritten = rewritten_commit(repo, revision)
     try:
         resolved = (
             subprocess.run(

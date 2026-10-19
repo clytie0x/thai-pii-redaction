@@ -11,6 +11,7 @@ from benchmark.human_review import (
     HumanReviewError,
     build_review_packet,
     load_gold_at_commit,
+    rewritten_commit,
     score_review_packet,
 )
 from benchmark.types import GoldSpan, Sample
@@ -242,3 +243,16 @@ def test_frozen_paper_gold_can_be_loaded_from_git():
     assert sum(len(sample.spans) for sample in samples) == 641
     assert provenance["gold_version"] == "gold-v3"
     assert len(provenance["sha256"]) == 64
+
+
+def test_rewritten_commit_reads_only_live_full_sha_entries(tmp_path):
+    old, new, gone, zero = "1" * 40, "2" * 40, "3" * 40, "0" * 40
+    (tmp_path / "docs" / "history").mkdir(parents=True)
+    (tmp_path / "docs" / "history" / "commit-map.txt").write_text(
+        f"old new\n{old} {new}\n{gone} {zero}\n", encoding="ascii"
+    )
+
+    assert rewritten_commit(tmp_path, old) == new
+    assert rewritten_commit(tmp_path, gone) is None
+    assert rewritten_commit(tmp_path, old[:7]) is None
+    assert rewritten_commit(tmp_path, "4" * 40) is None
