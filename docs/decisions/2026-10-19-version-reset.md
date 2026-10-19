@@ -9,9 +9,11 @@
 
 - The product `VERSION` (Desktop, Extension, Office add-in, native broker)
   restarts at `0.1.0`; the `amphrang` SDK is already `0.1.0`.
-- The hosted app stays `3.0.2` for now: that is the version running in
-  production, and seven public pages plus its release contracts state it.
-  Moving it to `0.x` waits for an owner decision tied to a redeploy.
+- The hosted app source also restarts at `0.1.0` (owner decision the same
+  day), and its public pages stop linking to the archived 3.0.0 downloads.
+  This is a source change only: production keeps reporting `3.0.2` until a
+  protected release of this source is deployed, which `apps/hosted/STATE.md`
+  records.
 - The line stays below `1.0.0` until the owner judges the product ready for
   production users. `1.0.0` means a release that can go to production; it is
   not a date or a feature count.
