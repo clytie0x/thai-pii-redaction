@@ -1,0 +1,22 @@
+# Every text file is LF in the working tree on every platform, matching
+# .editorconfig and the pre-commit mixed-line-ending hook; this overrides a
+# machine's core.autocrlf so Windows checkouts stop flipping to CRLF.
+* text=auto eol=lf
+
+# Binary assets: never normalized.
+*.pdf binary
+*.ttf binary
+*.png binary
+
+# The blind-set blob is byte-exact: its lock records a SHA-256 of the file and
+# an HMAC covers its lines, so any line-ending normalization on checkout breaks
+# both. Treat it as binary everywhere.
+benchmark/data/*.enc -text
+
+# The blind audit log and lock are hashed per-entry over JSON content (line
+# endings excluded), but keep them LF so every platform sees identical files.
+benchmark/data/blind-scores.jsonl text eol=lf
+benchmark/data/*.lock.json text eol=lf
+
+# Official form probes are byte-exact PDF artifacts.
+benchmark/data/probe/gov_forms/sanitized/*.pdf binary
