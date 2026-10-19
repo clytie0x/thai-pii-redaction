@@ -1,0 +1,254 @@
+"""Thai name/address pseudonym generator using hardcoded pools (no LLM).
+
+Deterministic for fixed data_type, original, salt, attempt, and relevant
+context cues. The seed uses salt and original, with attempt added for a
+deterministic collision reroll; entity_id is not part of the seed.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import random
+
+MALE_NAMES = [
+    "สมชาย",
+    "วิทยา",
+    "ประเสริฐ",
+    "ชัยวัฒน์",
+    "ธนพล",
+    "วรชัย",
+    "ปิยะ",
+    "สุรชัย",
+    "ณัฐพล",
+    "ภาณุ",
+    "ธีรวุฒิ",
+    "พงศ์พิชญ์",
+    "ชนะชัย",
+    "กิตติ",
+    "รัฐพล",
+    "อนุชา",
+    "ประพันธ์",
+    "สิทธิชัย",
+    "วิโรจน์",
+    "สุรศักดิ์",
+    "ธนา",
+    "ชำนาญ",
+    "บุญชัย",
+    "ไพบูลย์",
+    "สายัณห์",
+    "พิทักษ์",
+    "ศักดิ์ชาย",
+    "ณัฐกิตติ์",
+    "สรายุทธ",
+    "วิษณุ",
+    "ปรีชา",
+    "ยุทธชัย",
+    "ธีรพงศ์",
+    "เกษม",
+    "บุญมา",
+    "สุภัทร",
+    "ไกรสร",
+    "อภิชาต",
+    "วัชรพล",
+    "นพดล",
+]
+FEMALE_NAMES = [
+    "สมหญิง",
+    "วิภา",
+    "นภา",
+    "กานดา",
+    "สุภาพร",
+    "วรรณา",
+    "อรทัย",
+    "มาลี",
+    "ชุติมา",
+    "นิภา",
+    "สุดา",
+    "กัญญา",
+    "ลลิตา",
+    "พัชรา",
+    "อุษา",
+    "นุชนาถ",
+    "สุนิสา",
+    "ศิริพร",
+    "วิมล",
+    "รัตนา",
+    "พรพิมล",
+    "นภัสวรรณ",
+    "ชนิดา",
+    "ทิพย์วรรณ",
+    "ลดาวัลย์",
+    "สิริพร",
+    "มณีรัตน์",
+    "ภัทราวดี",
+    "ปริศนา",
+    "อัญชลี",
+    "สาวิตรี",
+    "นิตยา",
+    "กิตติยา",
+    "สุภาวดี",
+    "พรทิพย์",
+    "รุ่งนภา",
+    "วิลาวัณย์",
+    "ศิริมา",
+    "อมรรัตน์",
+    "พิมพ์ใจ",
+]
+SURNAMES = [
+    "สมบูรณ์",
+    "รักไทย",
+    "ใจดี",
+    "มีสุข",
+    "พงษ์สวัสดิ์",
+    "บุญมาก",
+    "ศรีสุข",
+    "วงษ์ทอง",
+    "เจริญสุข",
+    "ทองคำ",
+    "ศิริพงษ์",
+    "ชัยมงคล",
+    "พิมพ์ทอง",
+    "บุญโต",
+    "สุขสม",
+    "ดวงดี",
+    "สายทอง",
+    "นาคสุวรรณ",
+    "พลอยงาม",
+    "แก้วใส",
+    "เพชรสุข",
+    "มณีรัตน์",
+    "ทรัพย์สมบูรณ์",
+    "ปิ่นทอง",
+    "บุษบา",
+    "ลดาวัลย์",
+    "สุวรรณ",
+    "เงินดี",
+    "ทองดี",
+    "ขาวสะอาด",
+    "เขียวสด",
+    "ฟ้าใส",
+    "แสงทอง",
+    "พูนทรัพย์",
+    "สวัสดี",
+    "รุ่งเรือง",
+    "เจริญ",
+    "มั่นคง",
+    "ดีงาม",
+    "สุขใจ",
+]
+DISTRICTS = [
+    "เขตบางรัก",
+    "เขตสาทร",
+    "เขตพระนคร",
+    "เขตดุสิต",
+    "เขตบางกอกน้อย",
+    "เขตบางกอกใหญ่",
+    "เขตพระโขนง",
+    "เขตลาดกระบัง",
+    "เขตมีนบุรี",
+    "เขตบึงกุ่ม",
+    "อำเภอเมือง",
+    "อำเภอบางพลี",
+    "อำเภอสามพราน",
+]
+ORGANIZATIONS = [
+    "บริษัท เจริญวัฒนาการค้า จำกัด",
+    "บริษัท สินทรัพย์รุ่งเรือง จำกัด",
+    "บริษัท พัฒนกิจไทย จำกัด (มหาชน)",
+    "ห้างหุ้นส่วนจำกัด ทองดีพาณิชย์",
+    "บริษัท เมืองทองอุตสาหกรรม จำกัด",
+    "บริษัท ศรีสยามเทรดดิ้ง จำกัด",
+    "บริษัท ก้าวหน้าเอ็นจิเนียริ่ง จำกัด",
+    "บริษัท ไทยสมบูรณ์กรุ๊ป จำกัด",
+    "บริษัท แสงทองพลาสติก จำกัด",
+    "บริษัท นครหลวงโลจิสติกส์ จำกัด",
+    "บริษัท บ้านสวนอาหาร จำกัด",
+    "บริษัท คลังสินค้าไทย จำกัด",
+    "บริษัท อรุณรุ่งการพิมพ์ จำกัด",
+    "บริษัท วารีเทคโนโลยี จำกัด",
+    "บริษัท ปัญญาซอฟต์แวร์ จำกัด",
+]
+
+
+def _seeded_rng(salt: str, original: str, attempt: int = 0) -> random.Random:
+    # attempt=0 keeps the historical seed so existing pseudonyms stay stable;
+    # attempt>0 re-rolls deterministically when a collision must be resolved.
+    material = f"{salt}:{original}" if attempt == 0 else f"{salt}:{original}:{attempt}"
+    seed = int.from_bytes(
+        hashlib.sha256(material.encode()).digest()[:4],
+        "big",
+    )
+    return random.Random(seed)
+
+
+def generate_tb(
+    data_type: str,
+    context_with_blank: str,
+    *,
+    salt: str,
+    original: str,
+    attempt: int = 0,
+) -> str:
+    """Generate a pseudonym for a text-based PII entity.
+
+    Args:
+        data_type: "NAME" | "SURNAME" | "ADDRESS" | "DATE_OF_BIRTH" | etc.
+        context_with_blank: sentence(s) with the original PII replaced by '___'
+        salt: caller-provided salt; the session service keeps one per session
+            and the pipeline generates one when omitted
+        original: original PII (for seeding; never sent to LLM)
+        attempt: collision re-roll counter; 0 = the stable deterministic value
+
+    Returns:
+        A realistic Thai fake value
+    """
+    rng = _seeded_rng(salt, original, attempt)
+
+    if data_type == "NAME":
+        # Preserve the useful shape of a full Thai name. Returning only a
+        # given name for an original such as "นายสมชาย ใจดี" leaves the next
+        # ordinary Thai phrase looking like a surname to the high-recall name
+        # detector ("ผมชื่อ สุรชัย ขอลาป่วย"). The outbound guard then blocks
+        # our own trusted surrogate. A two-part surrogate both reads more
+        # naturally and gives the detector an unambiguous end boundary.
+        original_parts = original.split()
+        has_surname = len(original_parts) >= 2
+        if "นาย" in context_with_blank or original.startswith("นาย"):
+            given_name = rng.choice(MALE_NAMES)
+        elif "นาง" in context_with_blank or original.startswith(("นาง", "น.ส.")):
+            given_name = rng.choice(FEMALE_NAMES)
+        else:
+            given_name = rng.choice(MALE_NAMES + FEMALE_NAMES)
+        if has_surname:
+            return f"{given_name} {rng.choice(SURNAMES)}"
+        return given_name
+
+    elif data_type == "SURNAME":
+        return rng.choice(SURNAMES)
+
+    elif data_type == "ADDRESS":
+        num = rng.randint(1, 999)
+        district = rng.choice(DISTRICTS)
+        return f"{num} {district}"
+
+    elif data_type == "DATE_OF_BIRTH":
+        day = rng.randint(1, 28)
+        month = rng.randint(1, 12)
+        year = rng.randint(2490, 2540)
+        return f"{day:02d}/{month:02d}/{year}"
+
+    elif data_type == "LOCATION":
+        return rng.choice(DISTRICTS)
+
+    elif data_type == "ORGANIZATION":
+        return rng.choice(ORGANIZATIONS)
+
+    elif data_type == "DATE":
+        # generic date, same shape as DATE_OF_BIRTH but recent-past years
+        day = rng.randint(1, 28)
+        month = rng.randint(1, 12)
+        year = rng.randint(2560, 2568)
+        return f"{day:02d}/{month:02d}/{year}"
+
+    else:
+        return f"[REDACTED_{data_type}]"

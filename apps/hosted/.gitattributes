@@ -1,0 +1,4 @@
+# Bytes are the contract: the sync script normalizes text to LF and records
+# SHA-256 per file; git must never rewrite line endings or --check breaks
+# between Windows dev and the Linux runner.
+* -text
