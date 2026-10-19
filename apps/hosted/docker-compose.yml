@@ -1,0 +1,187 @@
+# AI Guard — AIFT team08 deployment (ports 20070 web / 20071 api).
+# Shape constrained by the organizer's check stage: 127.0.0.1 binds within
+# the team range, resources.limits + healthcheck + logging max-size on every
+# service, no bind mounts (audit goes to stdout -> Docker rotation + Dozzle).
+#
+# Secrets arrive as four explicitly allowlisted protected, environment-scoped
+# GitLab variables; deploy uses a mode-600 temporary env file and removes it.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  web:
+    build:
+      context: ./web
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
+    restart: unless-stopped
+    stop_signal: SIGQUIT
+    stop_grace_period: 210s
+    read_only: true
+    user: "101:101"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+    tmpfs:
+      - /var/cache/nginx:size=32m,uid=101,gid=101,mode=0755
+      - /var/run:size=4m,uid=101,gid=101,mode=0755
+      - /tmp:size=4m,uid=101,gid=101,mode=1777
+    ports:
+      - "127.0.0.1:20070:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/aift-healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+          pids: 128
+
+  api:
+    build:
+      context: ./api
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
+    restart: unless-stopped
+    stop_signal: SIGQUIT
+    stop_grace_period: 210s
+    read_only: true
+    user: "101:101"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+    tmpfs:
+      - /var/cache/nginx:size=64m,uid=101,gid=101,mode=0755
+      - /var/run:size=4m,uid=101,gid=101,mode=0755
+      - /tmp:size=4m,uid=101,gid=101,mode=1777
+      - /etc/nginx/conf.d:size=4m,uid=101,gid=101,mode=0755
+    ports:
+      - "127.0.0.1:20071:8000"
+    environment:
+      # fail-loud: a deploy without the service key must not boot half-open
+      AIGUARD_API_KEY: ${APP_AIGUARD_API_KEY:?APP_AIGUARD_API_KEY is required}
+      # without this filter envsubst blanks every nginx $variable in the template
+      NGINX_ENVSUBST_FILTER: "^AIGUARD_API_KEY$"
+    depends_on:
+      core:
+        condition: service_healthy
+    healthcheck:
+      # probes THROUGH nginx into core — a green api means the whole chain answers
+      test: ["CMD", "/usr/local/bin/aift-healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+          pids: 128
+
+  core:
+    build:
+      context: ./core
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
+    restart: unless-stopped
+    stop_grace_period: 210s
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+    # Public PDF/OCR is disabled.  The text product needs only bounded volatile
+    # Python/health state, discarded on every crash or restart.
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    volumes:
+      - type: volume
+        source: pdf-socket
+        target: /run/aiguard-pdf
+        read_only: true
+    depends_on:
+      pdf-parser:
+        condition: service_healthy
+    # not published — only reachable from api/web on the compose network
+    environment:
+      PYTHONUTF8: "1"
+      AIGUARD_API_KEY: ${APP_AIGUARD_API_KEY:?APP_AIGUARD_API_KEY is required}
+      AIFT_ACCESS_CODE: ${APP_AIFT_ACCESS_CODE:?APP_AIFT_ACCESS_CODE is required}
+      AIFT_COOKIE_SIGNING_KEY: ${APP_AIFT_COOKIE_SIGNING_KEY:?APP_AIFT_COOKIE_SIGNING_KEY is required}
+      AIFT_PRIORITY_INVITES_JSON: ${APP_AIFT_PRIORITY_INVITES_JSON:?APP_AIFT_PRIORITY_INVITES_JSON is required}
+      AIFT_ALLOWED_ORIGINS: "https://team08.aiforthai.in.th"
+      AIFT_SESSION_TTL_SECONDS: "1800"
+      TOKENMIND_BASE_URL: "https://tokenmind.pathumma.in.th/v1"
+      # key absent = /roundtrip answers an explicit 503; never a simulated fallback
+      TOKENMIND_API_KEY: ${APP_TOKENMIND_API_KEY:-}
+      AIGUARD_ALLOWED_HOSTS: "team08.aiforthai.in.th,localhost,127.0.0.1"
+      AIGUARD_PROVIDERS: "tokenmind"
+      AIGUARD_AUDIT_STDOUT: "1"
+      AIGUARD_MAX_TEXT_CHARS: "20000"
+      UVICORN_WORKERS: "1"
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+          pids: 256
+
+  pdf-parser:
+    build:
+      context: ./pdf-parser
+      args:
+        AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
+    restart: unless-stopped
+    stop_grace_period: 210s
+    network_mode: none
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./pdf-parser/seccomp.json
+    logging: *logging
+    tmpfs:
+      - /work:rw,noexec,nosuid,nodev,size=64m,uid=1000,gid=1000,mode=0700
+    volumes:
+      - type: volume
+        source: pdf-socket
+        target: /run/aiguard-pdf
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+          pids: 32
+
+volumes:
+  pdf-socket:

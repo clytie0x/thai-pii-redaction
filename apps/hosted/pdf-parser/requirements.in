@@ -1,0 +1,5 @@
+# Isolated Hosted 3.0 text-layer PDF parser. Keep this graph secretless and
+# independent from the Core detector/provider environment.
+pikepdf==10.10.0
+pdfplumber==0.11.10
+pypdfium2==5.12.1

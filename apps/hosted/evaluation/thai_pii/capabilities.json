@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "inventory_id": "aiguard-aift-hosted-detector-v1",
+  "production_baseline_sha": "72e18bbe723adaf54c847e4b17c2177dfa60dd68",
+  "detector_entrypoint": "pii_redactor.detectors.aggregate.detect_all",
+  "hosted_detect_route": "/api/detect",
+  "entity_types": [
+    "ADDRESS",
+    "BANK_ACCOUNT",
+    "CREDIT_CARD",
+    "DATE",
+    "DATE_OF_BIRTH",
+    "EMAIL",
+    "IBAN",
+    "ID_NUMBER",
+    "LOCATION",
+    "MEDICAL_ID",
+    "NAME",
+    "ORGANIZATION",
+    "PASSPORT",
+    "PHONE",
+    "POSTAL_CODE",
+    "STUDENT_ID",
+    "THAI_ID",
+    "VEHICLE_PLATE"
+  ],
+  "layers": [
+    {
+      "name": "format_preserving",
+      "redact_type": "FP",
+      "implementation": "pii_redactor.detectors.fp_detector.detect_fp",
+      "capabilities": [
+        "checksum-gated Thai national ID",
+        "checksum-gated credit card",
+        "mod-97 IBAN",
+        "email",
+        "Thai mobile, landline, and +66 phone",
+        "cue-disambiguated bank account and student ID",
+        "numeric and Thai-month date with birth-cue upgrade",
+        "vehicle plate",
+        "passport",
+        "address components and cue-gated postal code",
+        "cue-gated medical record number",
+        "generic structured identifier fallback"
+      ]
+    },
+    {
+      "name": "text_based",
+      "redact_type": "TB",
+      "implementation": "pii_redactor.detectors.tb_detector.detect_tb",
+      "default_engine": "thainer",
+      "capabilities": [
+        "Thai person names",
+        "organizations",
+        "locations with address-cue upgrade",
+        "dates with birth-cue upgrade",
+        "bounded deterministic name-context recovery"
+      ]
+    },
+    {
+      "name": "false_negative_scan",
+      "implementation": "pii_redactor.detectors.fn_scanner.scan_fn",
+      "capabilities": [
+        "suspicious 13-digit identifier shape",
+        "email-like fallback",
+        "date-like fallback",
+        "bounded corrupted structured identifier shape"
+      ]
+    }
+  ],
+  "normalization": {
+    "whole_input": "length-preserving Thai-digit-to-ASCII detection shadow; otherwise exact hosted text",
+    "offset_contract": "Python character offsets into the exact submitted text",
+    "pattern_local": [
+      "spaces and hyphens are removed locally for Thai-ID and card checksum validation",
+      "supported phone and identifier patterns accept only their documented separators",
+      "case handling is pattern-specific; email accepts mixed case while IBAN and passport patterns are uppercase"
+    ],
+    "thai_digits_folded_one_to_one_before_detection": true,
+    "zero_width_characters_removed_before_detection": false
+  },
+  "overlap_policy": {
+    "first_tier": "FP",
+    "second_tier": "TB and other non-FP",
+    "within_tier": "earlier start, then longer span",
+    "final_invariant": "sorted, non-overlapping spans",
+    "post_processing": [
+      "strong record-name relabeling cannot displace FP spans or uncover a wider overlap",
+      "adjacent address components may be coalesced into one ADDRESS span",
+      "retained address spans may be boundedly extended from an overlapping TB address",
+      "facility-like locations may be dropped only under bounded notice-register evidence"
+    ]
+  },
+  "public_response": {
+    "fields": [
+      "detected_entity_count",
+      "entity_type_counts",
+      "highlights.start",
+      "highlights.end",
+      "highlights.data_type",
+      "highlights.redact_type"
+    ],
+    "confidence_available": false,
+    "entity_text_available": false,
+    "mapping_available": false
+  },
+  "section26": {
+    "semantics": "keyword-based, first-match-per-category heuristic signal; flag only and not automatic redaction or legal classification",
+    "categories": [
+      "RACE_ETHNICITY",
+      "POLITICAL_OPINION",
+      "RELIGION",
+      "HEALTH",
+      "SEXUAL_BEHAVIOR",
+      "CRIMINAL_RECORD",
+      "DISABILITY",
+      "LABOR_UNION"
+    ],
+    "confidence_available": false
+  },
+  "protection": {
+    "modes": [
+      "token",
+      "surrogate"
+    ],
+    "token": "request-vault pseudonym with a type label and randomized namespace; reversible for the request and not anonymization",
+    "surrogate": "deterministically seeded format-natural or Thai synthetic replacement with collision checks; reversible for the request and not anonymization",
+    "outbound_policy": "sanitized text is rechecked for structured, detector, residual, and replacement-integrity signals before provider use",
+    "mapping_wire_exposure": false,
+    "provider_required_for_evaluation": false
+  },
+  "known_boundaries": [
+    "automated detection can produce false positives and false negatives",
+    "name, organization, and location behavior depends on the bundled local Thai NER plus bounded heuristics",
+    "unsupported formatting such as inserted zero-width characters is not globally normalized away",
+    "Section 26 output is a heuristic keyword signal, not PDPA compliance accuracy",
+    "internal detector scores are implementation priorities and are not public calibrated confidence",
+    "a successful outbound rescan does not prove that an unrecognized identifier cannot exist"
+  ],
+  "source_files": [
+    "core/pii_redactor/detectors/aggregate.py",
+    "core/pii_redactor/detectors/fp_detector.py",
+    "core/pii_redactor/detectors/tb_detector.py",
+    "core/pii_redactor/detectors/fn_scanner.py",
+    "core/pii_redactor/detectors/name_context.py",
+    "core/pii_redactor/stateless.py",
+    "core/pii_redactor/leak_guard.py",
+    "core/pii_redactor/report.py",
+    "core/app/http_v2.py",
+    "core/app/server.py"
+  ]
+}
