@@ -76,7 +76,9 @@ python_functions = ["test_*"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-extend-exclude = [".venv", "desktop/src-tauri/target", "docs", "examples"]
+# apps/ and packages/ are imported subtrees with their own ruff config and
+# history (docs/decisions/2026-10-19-monorepo-import.md); root CI does not lint them yet.
+extend-exclude = [".venv", "desktop/src-tauri/target", "docs", "examples", "apps", "packages"]
 
 [tool.ruff.lint]
 select = [
