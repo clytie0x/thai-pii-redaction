@@ -1,0 +1,32 @@
+meta {
+  name: Reidentify
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/reidentify
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amphrang-Contract-Version: 2
+}
+
+body:json {
+  {
+    "session_id": "{{session_id}}",
+    "text": "{{sanitized_text}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("original phone number is restored", function () {
+    expect(res.getBody().restored_text).to.include("081-234-5678");
+  });
+}

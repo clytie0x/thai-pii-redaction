@@ -1,0 +1,48 @@
+# Decision records
+
+Why the code looks the way it does. Each record is dated by when the decision
+was made and is not continuously maintained; a newer record wins over an older
+one where they overlap.
+
+## amphrang (current)
+
+| Record | What it decides |
+|---|---|
+| [0001 Python owns all logic](0001-python-owns-all-logic.md) | Every piece of product logic lives in Python in this repository; HTML/JS is presentation only. |
+| [0002 Product surface](0002-product-surface.md) | The one-package boundary and demand-led surface rule remain accepted; its original fixed keep-list and positioning are superseded by the later gateway decision. |
+| [0003 MCP tools never return the mapping](0003-mcp-no-plaintext-mapping.md) | `sanitize` returns an opaque session handle; the pseudonym→original mapping never enters a tool result. |
+| [2026-08-25 production and enterprise direction](2026-08-25-production-enterprise-direction.md) | **Accepted:** Phase 1 evidence/stability and the Phase 2 proxy are implemented locally; the enterprise layer remains adoption-gated. Supersedes overlapping ADR 0002 scope. |
+| [2026-08-26 new datatype specs](2026-08-26-new-datatype-specs.md) | Frozen specs for JURISTIC_ID, DRIVER_LICENSE, LINE_ID, GPS_COORD, HOUSE_REG_ID: checksum verdicts, sources, and the corrected THAI_ID/JURISTIC_ID precedence. |
+| [2026-08-26 PDPA data ontology](2026-08-26-pdpa-data-ontology.md) | The canonical registry of every PDPA data category with one treatment level each (mask / QI / ม.26 flag→span / out of scope / not personal data); source of truth for the public coverage profile. |
+| [2026-08-26 wave-1 format specs](2026-08-26-wave1-format-specs.md) | Frozen verdicts for `IP_ADDRESS`/`MAC_ADDRESS`/`LAND_DEED_ID` shapes and the `THAI_ID` alias coverage for ประกันสังคม/ผู้เสียภาษี. |
+| [2026-08-27 gold-v6 digital_ids authoring](2026-08-27-gold-v6-digital-ids-authoring.md) | The `digital_ids` gold slice (24 docs), its traps, and the fix-round-1 findings including the accepted `NAME` precision gap on `dg18`. |
+| [2026-08-27 ม.26 span masking](2026-08-27-section26-span-masking.md) | Frozen design for person-linked ม.26 sensitive-span masking: two-tier linkage rule, forward-only span shape, `redact_type="TB"`, token replacement in both modes, guard and output-validator wiring, default ON with no facade knob. |
+| [2026-08-27 gold-v7 sensitive authoring](2026-08-27-gold-v7-sensitive-authoring.md) | The `sensitive` gold slice (28 docs) and the ม.26 adjudication of 17 pre-v7 documents: why old documents are re-annotated rather than grandfathered, the `lf17` row-13 ruling, and the two detector findings the probe documents produced. |
+
+## Inherited from thai-pii-redaction
+
+These were written in the predecessor repository before the extraction and
+are kept because the engine, benchmark, and PDPA tooling they describe carried
+over unchanged. File paths inside them use the predecessor's layout:
+`pii_redactor/` is now `amphrang/engine/`, `app/` is `amphrang/server/`,
+`ai_guard.py` is `amphrang/cli.py`. Anything about Desktop, Extension, Office,
+native broker, or store distribution is out of scope here (see 0002).
+
+| Record | What it decides |
+|---|---|
+| [2026-07-13 recall benchmark design](2026-07-13-thai-pii-recall-benchmark-design.md) | Recall-first scoring, the synthetic/gold corpus split, and the benchmark as the product's own detection ensemble. |
+| [2026-07-15 NER engine strategy](2026-07-15-ner-engine-strategy-decision.md) | thainer CRF stays the default engine; WangchanBERTa/union are opt-in extras. |
+| [2026-07-19 audit v2 findings](2026-07-19-audit-v2-findings.md) | Findings and dispositions from the second independent audit of the engine and API. |
+| [2026-07-25 gold set and LLM baseline](2026-07-25-gold-set-and-llm-baseline.md) | Hand-authored gold corpus as the evaluation standard; hosted LLMs as a comparison baseline, never a detector. |
+| [2026-07-28 blind set protocol](2026-07-28-blind-set-protocol.md) | Encrypted blind corpus, hash-chained score log, reveal rules. Referenced by `benchmark/blind.py`. |
+| [2026-07-28 gold adjudication](2026-07-28-gold-adjudication.md) | Two-pass adjudication that produced gold-v3. |
+| [2026-07-28 engine comparison](2026-07-28-engine-comparison-after-campaigns.md) | CRF vs WangchanBERTa vs union after the recall campaigns. |
+| [2026-07-28 fine-tuned NER results](2026-07-28-finetuned-ner-results.md) | Results of the fine-tuned engine experiment (`finetuned_engine.py`). |
+| [2026-07-28 ONNX runtime evaluation](2026-07-28-onnx-runtime-evaluation.md) | Why ONNX export was evaluated and not adopted. |
+| [2026-07-28 Tokenmind detector and AIFT port](2026-07-28-tokenmind-detector-and-aift-port.md) | Tokenmind as an LLM provider for the benchmark and the AI for Thai deployment shape. |
+| [2026-07-29 processing receipt (มาตรา 39)](2026-07-29-processing-receipt.md) | A per-run receipt authenticated by re-running the input, not a cumulative RoPA. |
+| [2026-08-01 breach assessment (มาตรา 37(4))](2026-08-01-breach-assessment.md) | Value-free breach assessment over a set of leaked files. |
+| [2026-08-01 DSAR helper (มาตรา 30)](2026-08-01-dsar-helper.md) | DSAR locate over a corpus with a subject file; shared scan helpers in `scan_common.py`. |
+| [2026-08-04 weakness closure campaign](2026-08-04-weakness-closure-campaign.md) | The recall-leak closure work the hard-case tests pin. |
+| [2026-08-05 HTTP contract v2](2026-08-05-http-contract-v2.md) | Strict v2 response projections; mapping-oriented fields leave the wire. |
+| [2026-08-06 session-namespaced token identity](2026-08-06-session-namespaced-token-identity.md) | Token mode's vault-generation tag plus per-token nonce. |

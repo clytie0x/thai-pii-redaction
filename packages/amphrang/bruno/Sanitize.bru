@@ -1,0 +1,41 @@
+meta {
+  name: Sanitize
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/sanitize
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amphrang-Contract-Version: 2
+}
+
+body:json {
+  {
+    "text": "ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678 อีเมล somchai@example.com",
+    "mode": "token"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  // Feed Reidentify: the mapping stays server-side; only the handle travels.
+  // Runtime vars only — nothing is persisted into the environment file.
+  if (res.getStatus() === 200) {
+    bru.setVar("session_id", res.getBody().session_id);
+    bru.setVar("sanitized_text", res.getBody().sanitized_text);
+  }
+}
+
+tests {
+  test("masked text differs from input", function () {
+    expect(res.getBody().sanitized_text).to.not.include("081-234-5678");
+  });
+}

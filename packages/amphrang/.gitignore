@@ -1,0 +1,14 @@
+*.egg-info/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+benchmark/reports/
+build/
+dist/
+logs/
+tmp/
+
+# Machine-local agent permissions/settings; never publish.
+.claude/settings.local.json
