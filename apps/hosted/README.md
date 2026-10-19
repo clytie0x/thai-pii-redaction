@@ -1,13 +1,14 @@
 # AI Guard — local-first Thai PII protection for AI
 
-AI Guard is Desktop-first.  The published Desktop 3.0.0 channel keeps
-detection, masking/pseudonymization, the reversible vault/mapping, restoration,
-and deterministic PDPA report generation on the user's device.  Desktop 3.0.0
-does not expose a provider command.
+AI Guard is Desktop-first.  Desktop 0.1.0 keeps detection,
+masking/pseudonymization, the reversible vault/mapping, restoration, and
+deterministic PDPA report generation on the user's device, and does not expose
+a provider command.  No Desktop or Extension build is published under the
+restarted 0.x version line yet.
 
-The secondary Hosted 3.0.2 Web App candidate is prepared for team08 on the AI
-for Thai platform. Deployed production remains Hosted 3.0.0 until the protected
-release and public acceptance gates pass:
+The secondary Hosted Web App is at source version 0.1.0 for team08 on the AI
+for Thai platform. Deployed production still runs Hosted 3.0.2 (see `STATE.md`) until this
+source is redeployed through the protected release and public acceptance gates:
 
 <https://team08.aiforthai.in.th>
 
@@ -31,32 +32,22 @@ as the primary user journey.
 
 ## Product availability
 
-- **Desktop:** [AI Guard 3.0.0 is published on GitHub Releases](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0), with verified links for
-  [Windows x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe),
-  [Linux Debian x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb),
-  [Linux AppImage x64](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.AppImage), and
-  [macOS Apple silicon](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_aarch64.dmg).
-  OS trust warnings may appear because code signing is deferred; users should
-  compare the pinned hashes against
-  [SHA256SUMS](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS)
-  and verify GitHub provenance before proceeding.  The release is mutable, so
-  a filename or tag alone is not an integrity check.
-- **Web App:** the Hosted 3.0.2 candidate provides Standard access per signed browser session
+- **Desktop:** no installer is available to download yet.  The earlier 3.0.0
+  release is archived and is not distributed from here; see
+  [install from source](https://github.com/clytie0x/thai-pii-redaction/blob/main/docs/install-from-source.md).
+- **Web App:** the Hosted 0.1.0 candidate provides Standard access per signed browser session
   and Priority access per issued invite. Original text reaches the AI for Thai
   edge and team service for detection. Only the exact reviewed, policy-checked
   protected text may be admitted through the bounded queue to the single
   approved Tokenmind/Pathumma `thaillm-8b` provider. There is no account or user
   database and no provider fallback.
-- **Browser Extension:** the Chrome Web Store item is still a draft preparing
-  for review and is not published, so no Store link is claimed.  The
-  [3.0.0 ZIP](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip)
-  is labelled Manual / Developer installation; it requires AI Guard Desktop
-  3.0.0 for Native Messaging, followed by extract + Load unpacked.  In-page
-  Mask starts only after raw text enters the provider-controlled page DOM,
-  where page code may already observe or transmit it; the Side Panel is the
-  stronger raw-entry boundary.  The separately certified ZIP SHA-256 is
-  `feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670`.
-- **Hosted text-layer PDF:** the Hosted 3.0.2 candidate accepts bounded text-layer PDF to
+- **Browser Extension:** no ZIP is available to download yet, and the Chrome
+  Web Store item is still a draft preparing for review and is not published,
+  so no Store link is claimed.  The Extension needs AI Guard Desktop for Native
+  Messaging.  In-page Mask starts only after raw text enters the
+  provider-controlled page DOM, where page code may already observe or transmit
+  it; the Side Panel is the stronger raw-entry boundary.
+- **Hosted text-layer PDF:** the Hosted 0.1.0 candidate accepts bounded text-layer PDF to
   produce Protected Markdown after exact-payload review. The source PDF remains
   unchanged and never reaches Pathumma. PDF redaction/rebuilding, scanned or
   image-only PDF, and OCR remain unsupported; `/redact-pdf` and
@@ -72,7 +63,7 @@ rollback, and operations guide is
 ## Privacy and security boundary
 
 - Desktop source text, findings, vault/mapping, restoration, and deterministic
-  report stay local.  Desktop 3.0.0 has no provider command and contains no
+  report stay local.  Desktop 0.1.0 has no provider command and contains no
   shared NECTEC credential.
 - Hosted source text reaches the AI for Thai edge, reverse proxy, and AI Guard
   server before detection.  Hosted is not on-device-only processing.
@@ -155,7 +146,7 @@ by the official Web App: 20 canonical paths and one exact `/v1` alias for each.
 This is not an arbitrary third-party API, developer-key product, or broad CORS
 surface. Browser requests use `/api/...`; the organizer strips that prefix and
 the API proxy restores it for Core. The HTTP contract remains version 2 for
-Hosted 3.0.2.
+Hosted 0.1.0.
 
 | Method/path | Purpose |
 |---|---|
@@ -226,7 +217,7 @@ Acceptance then verifies the same exact SHA, synthetic auth/business/provider
 flows, route denial, logs, and the real public edge.  This rollback is repository
 hardening, not an official Participant Guide requirement.
 
-The Hosted 3.0.2 release source requires exactly five protected,
+The Hosted 0.1.0 release source requires exactly five protected,
 environment-scoped variables:
 
 - `APP_AIGUARD_API_KEY`
