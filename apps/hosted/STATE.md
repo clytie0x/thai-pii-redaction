@@ -2,6 +2,11 @@
 
 ## Current release boundary
 
+- 2026-10-19: source `core/VERSION` restarted at `0.1.0` and the public pages
+  no longer link to the archived Desktop/Extension 3.0.0 downloads (repository
+  decision `docs/decisions/2026-10-19-version-reset.md` at the repository
+  root). Not deployed: production below still reports `3.0.2` until a protected
+  release of this source passes.
 - Production is Hosted `3.0.2` with exactly 40 public locations at runtime
   revision `1fac6011`. HTTP contract remains 2. Pipeline #36658 passed check
   #144242, deploy #144243, and mandatory acceptance #144244 with no rollback,
