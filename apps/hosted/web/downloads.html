@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <title>ดาวน์โหลดและส่วนขยาย — AI Guard</title>
+  <meta name="description" content="AI Guard Desktop และ Browser Extension 0.1.0 ยังไม่มีไฟล์ให้ดาวน์โหลด">
+  <link rel="canonical" href="https://team08.aiforthai.in.th/downloads">
+  <link rel="icon" href="/assets/ai-guard-favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/product.css">
+</head>
+<body>
+<a class="skip-link" href="#main">ข้ามไปเนื้อหาหลัก</a>
+<header class="site-header"><nav class="nav" aria-label="เมนูหลัก"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span><span>AI <span>Guard</span></span></a><div class="links"><a href="/">หน้าแรก</a><a href="/downloads" aria-current="page">Desktop</a><a href="/app">Hosted Web</a><a href="/privacy">ความเป็นส่วนตัว</a><a href="/help">ช่วยเหลือ</a></div></nav></header>
+<main id="main">
+  <header class="page-hero"><div class="hero-inner"><div><span class="eyebrow">DESKTOP 0.1.0 · ยังไม่มีไฟล์ให้ดาวน์โหลด</span><h1>ข้อมูลอยู่ในเครื่อง<br>เริ่มจาก Desktop</h1><p class="lede">Desktop ตรวจจับ ปกปิด vault/mapping กู้คืน และสร้างรายงาน PDPA บนอุปกรณ์ และไม่มีคำสั่งส่งข้อความไปยัง provider ภายนอก ตอนนี้ยังไม่มีไฟล์ติดตั้งให้ดาวน์โหลด</p></div><aside class="hero-fact"><strong>สถานะตอนนี้</strong><p>เวอร์ชันเริ่มนับใหม่ที่ 0.1.0 และยังไม่ได้ปล่อยไฟล์ติดตั้ง ระหว่างนี้ใช้ Hosted Web หรือรันจาก source</p></aside></div></header>
+  <div class="document-shell"><nav class="contents" aria-label="สารบัญหน้านี้"><strong>เลือกช่องทาง</strong><a href="#desktop">Desktop 0.1.0</a><a href="#extension">Extension 0.1.0</a><a href="#download-boundary">Hosted ต่างอย่างไร</a></nav><article class="article">
+  <div class="local-note"><strong>เหมาะเมื่อข้อมูลต้องอยู่ในเครื่อง:</strong> Desktop ประมวลผลบนอุปกรณ์ทั้งหมด หากต้องการ Safe AI ผ่าน Pathumma ให้ใช้ Hosted Web แยกต่างหาก ซึ่งประมวลผลบนบริการ Team 08</div>
+
+  <section class="card release-card" id="desktop" data-product="desktop" data-status="not-published" aria-labelledby="desktop-title">
+    <span class="status closed">ยังไม่มีไฟล์ให้ดาวน์โหลด</span>
+    <h2 id="desktop-title">AI Guard Desktop 0.1.0</h2>
+    <p>ยังไม่มีไฟล์ติดตั้งของรุ่น 0.x ไฟล์รุ่น 3.0.0 เดิมถูกเก็บเข้า archive แล้ว และไม่ได้แจกจ่ายจากหน้านี้ เมื่อปล่อยรุ่นใหม่ หน้านี้จะลิงก์ไปยังไฟล์ของ release นั้นโดยตรงพร้อมค่า SHA-256</p>
+    <p class="muted trust-note"><strong>สถานะการเซ็น:</strong> เมื่อปล่อยไฟล์แล้ว installer ของ Windows จะยังไม่มี publisher signature และแพ็กเกจ macOS จะยังไม่ได้เซ็นหรือ notarize ระบบจึงอาจแสดงคำเตือนความน่าเชื่อถือ เพราะการเซ็นโค้ดยังเลื่อนไว้</p>
+    <div class="actions"><a class="button secondary" href="https://github.com/clytie0x/thai-pii-redaction/blob/main/docs/install-from-source.md">รันจาก source</a></div>
+  </section>
+
+  <section class="card release-card" id="extension" data-product="browser-extension" data-status="not-published" aria-labelledby="extension-title">
+    <span class="status closed">Store: เตรียมส่งตรวจสอบ · ยังไม่เผยแพร่</span>
+    <h2 id="extension-title">Chrome Extension 0.1.0</h2>
+    <p>ยังไม่มีไฟล์ ZIP ให้ดาวน์โหลด และ Chrome Web Store ยังไม่มีหน้ารายการที่เผยแพร่ ส่วนขยายต้องใช้ Desktop สำหรับ Native Messaging</p>
+    <div class="privacy-warning"><strong>ขอบเขตข้อมูลดิบ:</strong> การใช้ In-page Mask เริ่มหลังข้อความดิบเข้า DOM ของเว็บไซต์ AI แล้ว โค้ดของเว็บไซต์อาจเห็นหรือส่งข้อความนั้นได้ก่อนการปกปิด หากต้องการแยกข้อมูลดิบให้มากขึ้น ให้กรอกใน AI Guard Side Panel แล้วนำเฉพาะข้อความที่ปกปิดและตรวจทานแล้วไปวาง — Side Panel เป็นขอบเขตที่แข็งแรงกว่า อ่าน <a href="https://github.com/clytie0x/thai-pii-redaction/blob/main/SECURITY.md#local-desktop-and-extension">ขอบเขตความปลอดภัยของ Desktop และ Extension</a></div>
+  </section>
+
+  <div class="notice" id="download-boundary">AI Guard Hosted 0.1.0 มี Standard access และ Priority Invite แยกจากช่องทางดาวน์โหลด Desktop หรือ Extension ไม่เปลี่ยนขอบเขตการเข้าถึง การเก็บข้อมูล หรือข้อจำกัดของ Hosted Web</div>
+  <div class="actions">
+    <a class="button" href="https://github.com/clytie0x/thai-pii-redaction">ดูโค้ดบน GitHub</a>
+    <a class="button secondary" href="/app">เปิด Hosted 0.1.0</a>
+    <a class="button secondary" href="/help">ขอความช่วยเหลือ</a>
+  </div>
+  </article></div>
+</main>
+<footer class="page-footer"><div class="footer-inner"><p><strong>AI Guard</strong> · <a href="/privacy">ความเป็นส่วนตัว</a> · <a href="/terms">ข้อกำหนด</a> · <a href="/developers">Contract &amp; evidence</a></p><p class="footer-meta">Desktop 0.1.0 · ยังไม่มีไฟล์ให้ดาวน์โหลด · Hosted 0.1.0 · Extension 0.1.0 · ยังไม่มีไฟล์ให้ดาวน์โหลด</p></div></footer>
+</body>
+</html>

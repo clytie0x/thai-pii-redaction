@@ -1,0 +1,25 @@
+meta {
+  name: Analyze
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/api/analyze
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amphrang-Contract-Version: 2
+}
+
+body:json {
+  {
+    "text": "ผู้ป่วยชื่อ นายสมชาย ใจดี เป็นเบาหวาน โทร 081-234-5678"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
