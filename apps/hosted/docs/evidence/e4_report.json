@@ -1,0 +1,335 @@
+{
+ "bias_note": "clean synthetic TTS audio; optimistic bound, not field conditions",
+ "wall_seconds": 129.8,
+ "summary": {
+  "NAME": {
+   "n": 10,
+   "survived": 5,
+   "detected": 10,
+   "errors": 0
+  },
+  "PHONE": {
+   "n": 8,
+   "survived": 0,
+   "detected": 0,
+   "errors": 0
+  },
+  "THAI_ID": {
+   "n": 3,
+   "survived": 0,
+   "detected": 0,
+   "errors": 0
+  },
+  "ADDRESS": {
+   "n": 3,
+   "survived": 3,
+   "detected": 3,
+   "errors": 0
+  },
+  "MIXED": {
+   "n": 6,
+   "survived": 0,
+   "detected": 0,
+   "errors": 0
+  }
+ },
+ "cases": [
+  {
+   "kind": "NAME",
+   "sentence": "สวัสดีครับ ผมชื่อนายสมชาย ใจดี โทรมาสอบถามเรื่องนัดหมายครับ",
+   "transcript": "สวัสดีครับผมชื่อนายสมชายใจดีโทรมาสอบถามเรื่องนัดหมายครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "ผู้ป่วยชื่อ นางสาวมนัสนันท์ วงศ์สว่าง มีอาการไข้สูงมาสองวันแล้วค่ะ",
+   "transcript": "ผู้ป่วยชื่อนางสาวมนัสสนัน วงสว่างมีอาการไข้สูงมาสองวันแล้วค่ะ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "รบกวนฝากข้อความถึงคุณนายวีรภัทร ตั้งตระกูล ด้วยนะครับ",
+   "transcript": "รบกวนฝากข้อความถึงคุณนายวีรพัฒน์ตั้งตระกูลด้วยนะครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "สวัสดีครับ ผมชื่อนางพรทิพย์ ศรีสุวรรณ โทรมาสอบถามเรื่องนัดหมายครับ",
+   "transcript": "สวัสดีครับผมชื่อนางพระทิพย์ ศรีสุวรรณ โทรมาสอบถามเรื่องนัดหมายครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "ผู้ป่วยชื่อ นายอนุชา แก้วกาญจน์ มีอาการไข้สูงมาสองวันแล้วค่ะ",
+   "transcript": "ผู้ป่วยชื่อนายอนุชา แก้วกัลย์มีอาการไข้สูงมาสองวันแล้วค่ะ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "รบกวนฝากข้อความถึงคุณนางสาวปวีณา บุญมั่น ด้วยนะครับ",
+   "transcript": "รบกวนฝากข้อความถึงคุณนางสาวปวีนาบุญมั่นด้วยนะครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "สวัสดีครับ ผมชื่อนายธนากร พูลสวัสดิ์ โทรมาสอบถามเรื่องนัดหมายครับ",
+   "transcript": "สวัสดีครับผมชื่อนายธนากร พูนสวัสดิ์ โทรมาสอบถามเรื่องนัดหมายครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "ผู้ป่วยชื่อ นางสาวอรทัย คำแหง มีอาการไข้สูงมาสองวันแล้วค่ะ",
+   "transcript": "ผู้ป่วยชื่อนางสาววรไท คำแหง มีอาการไข้สูงมาสองวันแล้วค่ะ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "รบกวนฝากข้อความถึงคุณนายประวิทย์ อินทรกำแหง ด้วยนะครับ",
+   "transcript": "รบกวนฝากข้อความถึงคุณนายประวิทย์อินซ่อกำแหงด้วยนะครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "NAME",
+   "sentence": "สวัสดีครับ ผมชื่อนางสุมาลี ทองอยู่ โทรมาสอบถามเรื่องนัดหมายครับ",
+   "transcript": "สวัสดีครับผมชื่อนางสุมาลี ทองอยู่โทรมาสอบถามเรื่องนัดหมายครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "ติดต่อกลับได้ที่เบอร์ 081-234-5678 นะครับ",
+   "transcript": "ติดต่อกลับได้ที่เบอร์ศูนย์แปดหนึ่ง ปัญหาสองสามสี่ห้าหกเจ็ดแปดนะครับ",
+   "detected_types": [],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "เบอร์โทรศัพท์ของดิฉันคือ 089-876-5432 ค่ะ",
+   "transcript": "เบอร์โทรศัพท์ของดิฉัน คือ ศูนย์แปดเก้าลบแปดเจ็ดหก ลบห้าสี่สาม สอง ค่ะ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "ติดต่อกลับได้ที่เบอร์ 062-345-6789 นะครับ",
+   "transcript": "ติดต่อกลับได้ที่เบอร์ศูนย์หกสอง ลบสามสี่ห้า ลบหกเจ็ดแปดเก้านะครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "เบอร์โทรศัพท์ของดิฉันคือ 092-111-2233 ค่ะ",
+   "transcript": "เบอร์โทรศัพท์ ของ ดิฉันคือ ศูนย์เก้าสอง ลบ หนึ่ง หนึ่ง หนึ่ง ลบสอง สอง สาม สาม ค่ะ",
+   "detected_types": [
+    "LOCATION"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "ติดต่อกลับได้ที่เบอร์ 086-555-4477 นะครับ",
+   "transcript": "ติดต่อกลับได้ที่เบอร์ ศูนย์แปดหกห้าห้าห้าสี่เจ็ดนะครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "เบอร์โทรศัพท์ของดิฉันคือ 094-320-1188 ค่ะ",
+   "transcript": "เบอร์โทรศัพท์ของดิฉัน คือ ศูนย์ เก้าสี่ ส่วนสามสองศูนย์หนึ่งหนึ่งแปดแปดค่ะ",
+   "detected_types": [
+    "LOCATION"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "ติดต่อกลับได้ที่เบอร์ 085-909-2266 นะครับ",
+   "transcript": "ติดต่อกลับได้ที่เบอร์ศูนย์แปดห้าเก้าศูนย์เก้าสองสองหกหกนะครับ",
+   "detected_types": [
+    "LOCATION"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "PHONE",
+   "sentence": "เบอร์โทรศัพท์ของดิฉันคือ 091-747-3355 ค่ะ",
+   "transcript": "เบอร์โทรศัพท์ของดิฉันคือ ศูนย์เก้าหนึ่งลบเจ็ดสี่เจ็ดลบสามสามห้าค่ะ",
+   "detected_types": [],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "THAI_ID",
+   "sentence": "เลขบัตรประชาชนของผมคือ 1-1017-00230-70-8 ครับ",
+   "transcript": "เลขบัตรประชาชนของผมคือหนึ่งศูนย์หนึ่งเจ็ดศูนย์ศูนย์สองสามศูนย์เจ็ดศูนย์แปดครับ",
+   "detected_types": [
+    "LOCATION"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "THAI_ID",
+   "sentence": "เลขบัตรประชาชนของผมคือ 3-4509-00787-51-8 ครับ",
+   "transcript": "เลขบัตรประชาชนของผมคือ สาม สี่ห้าศูนย์เก้าศูนย์ศูนย์เจ็ดแปดเจ็ดห้าหนึ่งแปดครับ",
+   "detected_types": [
+    "LOCATION"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "THAI_ID",
+   "sentence": "เลขบัตรประชาชนของผมคือ 1-8399-00142-33-1 ครับ",
+   "transcript": "เลขบัตรประชาชนของผมคือ หนึ่งแปดสามเก้าเก้าศูนย์ศูนย์หนึ่งสี่สองสามสิบสาม หนึ่งครับ",
+   "detected_types": [
+    "LOCATION"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "ADDRESS",
+   "sentence": "ที่อยู่จัดส่งคือ บ้านเลขที่ 99/12 ถนนกาญจนวณิชย์ ตำบลหาดใหญ่ อำเภอหาดใหญ่ จังหวัดสงขลา ครับ",
+   "transcript": "ที่อยู่จัดส่งคือ บ้านเลขที่ เก้าสิบเก้าส่วนสิบสอง ถนนกาญจนวนิษฐ์ ตำบลหาดใหญ่ อำเภอหาดใหญ่จังหวัดสงขลาครับ",
+   "detected_types": [
+    "ADDRESS"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "ADDRESS",
+   "sentence": "ที่อยู่จัดส่งคือ เลขที่ 45/7 หมู่ 3 ตำบลบางพระ อำเภอศรีราชา จังหวัดชลบุรี ครับ",
+   "transcript": "ที่อยู่จัดส่งคือเลขที่สี่สิบห้า ส่วนเจ็ดหมู่สาม ตำบลบางพระอำเภอศรีราชาจังหวัดชลบุรีครับ",
+   "detected_types": [
+    "ADDRESS"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "ADDRESS",
+   "sentence": "ที่อยู่จัดส่งคือ เลขที่ 128 ถนนนิมมานเหมินท์ ตำบลสุเทพ อำเภอเมือง จังหวัดเชียงใหม่ ครับ",
+   "transcript": "ที่อยู่จัดส่งคือเลขที่หนึ่งร้อยยี่สิบแปด ถนนนิมมารเหมินตำบลสุเทพอำเภอเมืองจังหวัดเชียงใหม่ครับ",
+   "detected_types": [
+    "ADDRESS"
+   ],
+   "value_survived": true,
+   "type_detected": true
+  },
+  {
+   "kind": "MIXED",
+   "sentence": "ผมชื่อนายสมชาย ใจดี เบอร์ติดต่อ 081-234-5678 ครับ",
+   "transcript": "ผมชื่อนายสมชาย ใจดี เบอร์ติดต่อศูนย์แปดหนึ่งลบสองสามสี่ห้าหกเจ็ดแปดครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "MIXED",
+   "sentence": "ผมชื่อนางสาวมนัสนันท์ วงศ์สว่าง เบอร์ติดต่อ 089-876-5432 ครับ",
+   "transcript": "ผมชื่อนางสาวมนัสนันท์วงศ์สว่างเบอร์ติดต่อศูนย์แปดเก้าลบแปดเจ็ดหกห้าสี่สามสองครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "MIXED",
+   "sentence": "ผมชื่อนายวีรภัทร ตั้งตระกูล เบอร์ติดต่อ 062-345-6789 ครับ",
+   "transcript": "ผมชื่อนายวีรพัฒน์ตั้งตระกูล เบอร์ติดต่อศูนย์หกสองลบสามสี่ห้าลบหกเจ็ดแปดเก้าครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "MIXED",
+   "sentence": "ผมชื่อนางพรทิพย์ ศรีสุวรรณ เบอร์ติดต่อ 092-111-2233 ครับ",
+   "transcript": "ผมชื่อนางพรทิพย์ ศรีสุวรรณเบอร์ติดต่อศูนย์เก้าสอง ส่วนหนึ่งหนึ่งหนึ่งสองสองสามสามสามสามสามครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "MIXED",
+   "sentence": "ผมชื่อนายอนุชา แก้วกาญจน์ เบอร์ติดต่อ 086-555-4477 ครับ",
+   "transcript": "ผมชื่อนายอนุชา แก้วกัลย์เบอร์ติดต่อศูนย์แปดหกห้าห้าสี่เจ็ดครับ",
+   "detected_types": [
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  },
+  {
+   "kind": "MIXED",
+   "sentence": "ผมชื่อนางสาวปวีณา บุญมั่น เบอร์ติดต่อ 094-320-1188 ครับ",
+   "transcript": "ผมชื่อนางสาวปวีนา บุญมั่น เบอร์ติดต่อศูนย์เก้าสี่ ส่วนสามศูนย์หนึ่งหนึ่งแปดแปดครับ",
+   "detected_types": [
+    "LOCATION",
+    "NAME"
+   ],
+   "value_survived": false,
+   "type_detected": false
+  }
+ ]
+}

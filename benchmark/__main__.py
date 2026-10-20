@@ -24,6 +24,11 @@ def main(argv=None) -> int:
         help="blind runs only: why this reveal is happening (recorded in the audit log)",
     )
     ap.add_argument(
+        "--blind-version",
+        default=None,
+        help="blind runs only: frozen blind corpus version to score (default: blind-v1)",
+    )
+    ap.add_argument(
         "--verify-blind-log",
         action="store_true",
         help="verify the blind score log hash chain and exit",
@@ -51,6 +56,7 @@ def main(argv=None) -> int:
                 engine=args.engine,
                 key_file=os.environ.get("AIGUARD_BLIND_KEY_FILE"),
                 reason=args.reason,
+                version=args.blind_version or blind.BLIND_VERSION,
             )
         except blind.BlindError as exc:
             print(f"blind: {exc}", file=sys.stderr)

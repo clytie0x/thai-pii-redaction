@@ -12,6 +12,33 @@ log — see `git log` for full detail on any release.
 
 ## [Unreleased]
 
+### Removed
+
+- The Desktop no longer publishes a Linux AppImage or DEB. `tauri.conf.json`
+  builds `nsis`, `app`, and `dmg`; the release matrix is Windows and macOS;
+  `latest.json` carries no `linux-x86_64` entry; and the release asset check no
+  longer requires the Linux files. **3.0.0 stays the last Linux package.** It
+  remains published and keeps working, and because its platform key is gone
+  rather than pointing at a missing asset, an installed 3.0.0 reports itself up
+  to date instead of failing an update. Running from source on Linux is
+  unaffected, and so is the hosted service.
+- Nothing was deleted from the codebase for this. The Linux bundling helpers,
+  the AppImage finalizer, the DEB maintainer scripts, the Rust lifecycle paths,
+  and their tests all stay, so Linux packaging can return without recertifying
+  the lifecycle. The `matrix.os == 'ubuntu-latest'` steps in `release.yml` and
+  `smoke-crossplatform.yml` are inert for the same reason.
+
+## [0.1.0] - 2026-10-19
+
+### Changed
+
+- The version line restarts at `0.1.0` for this repository, whose history was
+  rewritten to remove private documents (see `docs/history/`). Versions stay
+  below `1.0.0` until the product is ready for production use; see
+  `docs/decisions/2026-10-19-version-reset.md`. No build has been published
+  under `0.1.0`. The `v1.0.0`-`v3.0.0` tags and releases are archived and are
+  not carried in this repository; the entries below describe that archived line.
+
 ## [3.0.0] - 2026-08-14
 
 AI Guard 3.0 moves the local Desktop and Chrome Extension onto one authenticated
