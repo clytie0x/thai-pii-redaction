@@ -14,26 +14,6 @@ import urllib.request
 
 HTTPS = "https://team08.aiforthai.in.th"
 HTTP = "http://team08.aiforthai.in.th"
-RELEASE_PAGE = (
-    "https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0"
-)
-RELEASE_ASSET_BASE = (
-    "https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/"
-)
-RELEASE_ASSETS = (
-    "AI.Guard_3.0.0_x64-setup.exe",
-    "AI.Guard_3.0.0_amd64.deb",
-    "AI.Guard_3.0.0_amd64.AppImage",
-    "AI.Guard_3.0.0_aarch64.dmg",
-    "aiguard-extension-3.0.0.zip",
-)
-RELEASE_ASSET_SHA256 = (
-    "1d170bf792923564dcc599b849de9f72a19b89f18e0be82e43849cdad75880ef",
-    "7b5fbdc0cf9019254e89c006870ae244a31fbf5db038ae699e4b0c3a91d6b9e8",
-    "f0178a8b171bea1f28868563f52a05e0ad09008e93bdc6581a160d5bda486a34",
-    "663fff430671ff0210044a1c1b64675b2918597db27ebae16103a9dd5988a356",
-    "feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670",
-)
 HTTP_PROBES = (
     "/?sentinel=must-not-reflect",
     "/api/health?sentinel=must-not-reflect",
@@ -244,11 +224,11 @@ def main() -> int:
 
     pages = {
         "/": "ปกป้องข้อมูลก่อน",
-        "/app": "Hosted 3.0.2 Web App",
+        "/app": "Hosted 0.1.0 Web App",
         "/privacy": "ข้อมูลไปไหน",
         "/terms": "ใช้ได้เมื่อ",
         "/help": "แก้ปัญหา",
-        "/downloads": "Manual / Developer installation",
+        "/downloads": "ยังไม่มีไฟล์ให้ดาวน์โหลด",
         "/developers": "Contract &amp;",
         "/robots.txt": "Disallow: /api/",
         "/sitemap.xml": "https://team08.aiforthai.in.th/privacy",
@@ -264,7 +244,7 @@ def main() -> int:
         assert headers.get("Referrer-Policy") == "no-referrer", path
         assert_no_insecure_network_reference(text, path)
         if path == "/":
-            assert 'href="/downloads#desktop">ดาวน์โหลด Desktop 3.0.0' in text
+            assert 'href="/downloads#desktop">Desktop · ยังไม่มีไฟล์ให้ดาวน์โหลด' in text
             assert 'id="h3StartStandard"' not in text
             assert 'src="/app.js"' not in text
             assert "/app#privacy-scan" in text
@@ -273,25 +253,17 @@ def main() -> int:
             assert 'id="h3StartStandard"' in text
             assert 'id="h3PrioritySubmit"' in text
             assert 'src="/hosted3-app.js" defer' in text
-            assert "Hosted 3.0.2" in text
+            assert "Hosted 0.1.0" in text
             assert "ข้อความและ PDF แบบมี text layer ผ่าน organizer proxy และ AI Guard Core" in text
             assert "Pathumma ได้รับเฉพาะข้อความที่ปกป้องและอนุมัติแล้ว" in text
             assert "ไม่ถูกส่งให้ Pathumma" in text
         if path == "/downloads":
-            for link in (
-                RELEASE_PAGE,
-                *(RELEASE_ASSET_BASE + name for name in RELEASE_ASSETS),
-            ):
-                assert f'href="{link}"' in text, link
+            # No 0.x build is published; the page must not link to any release asset.
+            assert "/releases/download/" not in text
+            assert "/releases/tag/" not in text
+            assert "ยังไม่มีไฟล์ให้ดาวน์โหลด" in text
             assert "เตรียมส่งตรวจสอบ" in text
             assert "ยังไม่เผยแพร่" in text
-            assert "SHA256SUMS" in text
-            assert "gh attestation verify" in text
-            assert 'data-recommended="true"' in text
-            assert "Verify this file · ตรวจ SHA-256 และ provenance" in text
-            assert "เผยแพร่ 14 ส.ค. 2569" in text
-            for digest in RELEASE_ASSET_SHA256:
-                assert digest in text
             assert "ข้อความดิบเข้า DOM ของเว็บไซต์ AI" in text
             assert "Side Panel เป็นขอบเขตที่แข็งแรงกว่า" in text
             assert "chrome.google.com/webstore/detail" not in text
@@ -310,7 +282,7 @@ def main() -> int:
     assert status == 200
     health = json.loads(body)
     assert health.get("status") == "ok"
-    assert health.get("version") == "3.0.2"
+    assert health.get("version") == "0.1.0"
     assert headers.get("Strict-Transport-Security") == "max-age=31536000"
 
     # Credential-free, wrong-method probes prove the organizer edge reaches all
