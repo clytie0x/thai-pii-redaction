@@ -1,5 +1,7 @@
 # Versioning advisory
 
+> Superseded on 2026-10-19 by [the version reset decision](decisions/2026-10-19-version-reset.md). Kept as the record of the earlier advice.
+
 Updated: 2026-08-06
 
 Status: `v2.5.0` is the published product baseline. Current unreleased source

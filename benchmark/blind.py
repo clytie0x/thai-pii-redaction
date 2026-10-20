@@ -435,6 +435,7 @@ def run_blind(
     data_dir: Path = DATA_DIR,
     log_path: Path | None = None,
     bootstrap_iters: int = 1000,
+    version: str = BLIND_VERSION,
 ) -> dict:
     if not key_file:
         raise BlindError(
@@ -447,7 +448,7 @@ def run_blind(
 
     from .runner import predict_samples
 
-    samples, lock = load_blind(key_file, data_dir=data_dir)
+    samples, lock = load_blind(key_file, data_dir=data_dir, version=version)
     diagnostics = NERChunkDiagnostics()
     predictions = predict_samples(samples, engine, diagnostics=diagnostics)
     if diagnostics.skipped:

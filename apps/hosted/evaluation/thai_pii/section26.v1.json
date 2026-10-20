@@ -1,0 +1,359 @@
+{
+  "cases": [
+    {
+      "action": "review_signal",
+      "case_id": "S0001",
+      "expected_categories": [
+        "RACE_ETHNICITY"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_race_ethnicity_1",
+      "text": "ตรวจพบคำสัญญาณ เชื้อชาติ ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0002",
+      "expected_categories": [
+        "RACE_ETHNICITY"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_race_ethnicity_2",
+      "text": "รายการแบบฟอร์ม: เชื้อชาติ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0003",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_race_ethnicity_3",
+      "text": "รายงานกล่าวถึงนโยบายห้ามเลือกปฏิบัติทางเชื้อชาติ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0004",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_race_ethnicity_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับเชื้อชาติ"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0005",
+      "expected_categories": [
+        "POLITICAL_OPINION"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_political_opinion_1",
+      "text": "ตรวจพบคำสัญญาณ ความคิดเห็นทางการเมือง ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0006",
+      "expected_categories": [
+        "POLITICAL_OPINION"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_political_opinion_2",
+      "text": "รายการแบบฟอร์ม: ความคิดเห็นทางการเมือง"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0007",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_political_opinion_3",
+      "text": "คู่มืออธิบายคำว่าความคิดเห็นทางการเมืองโดยทั่วไป"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0008",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_political_opinion_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับความคิดเห็นทางการเมือง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0009",
+      "expected_categories": [
+        "RELIGION"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_religion_1",
+      "text": "ตรวจพบคำสัญญาณ ศาสนา ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0010",
+      "expected_categories": [
+        "RELIGION"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_religion_2",
+      "text": "รายการแบบฟอร์ม: ศาสนา"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0011",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_religion_3",
+      "text": "แบบเรียนมีบทว่าด้วยศาสนาเปรียบเทียบ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0012",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_religion_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับศาสนา"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0013",
+      "expected_categories": [
+        "HEALTH"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_health_1",
+      "text": "ตรวจพบคำสัญญาณ ประวัติการรักษา ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0014",
+      "expected_categories": [
+        "HEALTH"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_health_2",
+      "text": "รายการแบบฟอร์ม: ประวัติการรักษา"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0015",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_health_3",
+      "text": "ประกาศรณรงค์เรื่องสุขภาพของประชาชน"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0016",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_health_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับประวัติการรักษา"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0017",
+      "expected_categories": [
+        "SEXUAL_BEHAVIOR"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_sexual_behavior_1",
+      "text": "ตรวจพบคำสัญญาณ รสนิยมทางเพศ ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0018",
+      "expected_categories": [
+        "SEXUAL_BEHAVIOR"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_sexual_behavior_2",
+      "text": "รายการแบบฟอร์ม: รสนิยมทางเพศ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0019",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_sexual_behavior_3",
+      "text": "นโยบายห้ามเลือกปฏิบัติจากรสนิยมทางเพศ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0020",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_sexual_behavior_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับรสนิยมทางเพศ"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0021",
+      "expected_categories": [
+        "CRIMINAL_RECORD"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_criminal_record_1",
+      "text": "ตรวจพบคำสัญญาณ ประวัติอาชญากรรม ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0022",
+      "expected_categories": [
+        "CRIMINAL_RECORD"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_criminal_record_2",
+      "text": "รายการแบบฟอร์ม: ประวัติอาชญากรรม"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0023",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_criminal_record_3",
+      "text": "ข่าวอธิบายคำว่าประวัติอาชญากรรม"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0024",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_criminal_record_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับประวัติอาชญากรรม"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0025",
+      "expected_categories": [
+        "DISABILITY"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_disability_1",
+      "text": "ตรวจพบคำสัญญาณ ความพิการ ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0026",
+      "expected_categories": [
+        "DISABILITY"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_disability_2",
+      "text": "รายการแบบฟอร์ม: ความพิการ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0027",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_disability_3",
+      "text": "อาคารออกแบบเพื่อการเข้าถึงของคนพิการ"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0028",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_disability_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับความพิการ"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0029",
+      "expected_categories": [
+        "LABOR_UNION"
+      ],
+      "phenomena": [
+        "keyword"
+      ],
+      "provenance": "constructed-template:s26_labor_union_1",
+      "text": "ตรวจพบคำสัญญาณ สหภาพแรงงาน ในข้อความจำลอง"
+    },
+    {
+      "action": "review_signal",
+      "case_id": "S0030",
+      "expected_categories": [
+        "LABOR_UNION"
+      ],
+      "phenomena": [
+        "form-label"
+      ],
+      "provenance": "constructed-template:s26_labor_union_2",
+      "text": "รายการแบบฟอร์ม: สหภาพแรงงาน"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0031",
+      "expected_categories": [],
+      "phenomena": [
+        "contextual-negative"
+      ],
+      "provenance": "constructed-template:s26_labor_union_3",
+      "text": "บทเรียนอธิบายบทบาทของสหภาพแรงงาน"
+    },
+    {
+      "action": "no_signal",
+      "case_id": "S0032",
+      "expected_categories": [],
+      "phenomena": [
+        "negation"
+      ],
+      "provenance": "constructed-template:s26_labor_union_4",
+      "text": "ข้อความนี้ปฏิเสธว่าไม่มีข้อมูลเกี่ยวกับสหภาพแรงงาน"
+    }
+  ],
+  "corpus_id": "aiguard-section26-heuristic-v1",
+  "schema_version": 1,
+  "semantics": "heuristic keyword signal evaluation; not PDPA compliance accuracy"
+}

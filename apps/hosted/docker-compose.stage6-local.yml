@@ -1,0 +1,62 @@
+# Local-only Stage 6 browser/caller probe. Keep its loopback ports distinct
+# from the retained Stage 5 evidence stack and all production ports.
+services:
+  stage6-provider:
+    build:
+      context: ./tests/stub-tokenmind
+    restart: unless-stopped
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=4m,mode=1777
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=1).read()"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
+          pids: 32
+
+  edge:
+    image: nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    ports:
+      - "127.0.0.1:20270:3443"
+    volumes:
+      - type: bind
+        source: ./web/nginx.stage6-edge.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+      - type: bind
+        source: ./output/stage6-local-cert
+        target: /etc/nginx/certs
+        read_only: true
+    depends_on:
+      api:
+        condition: service_healthy
+  web:
+    ports: !override
+      - "127.0.0.1:20272:3000"
+  api:
+    ports: !override
+      - "127.0.0.1:20271:8000"
+  core:
+    environment:
+      AIFT_ALLOWED_ORIGINS: "https://127.0.0.1:20270"
+      TOKENMIND_BASE_URL: "http://stage6-provider:8080/v1"
+      TOKENMIND_ALLOW_HTTP: "1"
+      TOKENMIND_API_KEY: "stage6-local-synthetic-provider-key"
+    depends_on:
+      stage6-provider:
+        condition: service_healthy
+
+# The edge exists only for secure local caller evidence. It maps the approved
+# same-origin /api prefix to the candidate API's exact allowlist; production
+# static web continues to hard-404 /api when the organizer route is absent.
