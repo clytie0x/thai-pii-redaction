@@ -1,0 +1,2421 @@
+{
+  "artifact_privacy": {
+    "contains_corpus_text": false,
+    "contains_credentials": false,
+    "contains_generated_replacements": false,
+    "contains_provider_body": false,
+    "contains_reidentification_pairs": false
+  },
+  "claim_scope": "deterministic synthetic/adversarial evaluation; not a population-representative benchmark",
+  "corpus": {
+    "ambiguous_cases": 12,
+    "base_templates": 87,
+    "cases": 138,
+    "entity_types": [
+      "ADDRESS",
+      "BANK_ACCOUNT",
+      "CREDIT_CARD",
+      "DATE",
+      "DATE_OF_BIRTH",
+      "EMAIL",
+      "IBAN",
+      "ID_NUMBER",
+      "LOCATION",
+      "MEDICAL_ID",
+      "NAME",
+      "ORGANIZATION",
+      "PASSPORT",
+      "PHONE",
+      "POSTAL_CODE",
+      "STUDENT_ID",
+      "THAI_ID",
+      "VEHICLE_PLATE"
+    ],
+    "expected_entities": 120,
+    "id": "aiguard-thai-pii-adversarial-v1",
+    "manifest_sha256": "8c10872f8e5d1a0ae913d439f9e2a10b561cc5866b4a99e48631cb274f300a7a",
+    "negative_cases": 24,
+    "offset_unit": "unicode_code_point_half_open",
+    "positive_cases": 102,
+    "sha256": "050f3310cad8f06f14a682a76ff7ea5da12eb40f707aed4938d0233aa664cfc3",
+    "synthetic_declaration": "Constructed locally from reviewed templates; no user, log, production, provider, or real-person record was used. Shape-valid strings are synthetic-context values and are never contacted or asserted to be unallocated."
+  },
+  "detection": {
+    "ambiguous": {
+      "documents_excluded_from_headline": 12,
+      "documents_with_any_detection": 8
+    },
+    "character_precision": 0.885057,
+    "document_macro_f1": 0.62963,
+    "error_ledger": [
+      {
+        "case_hash": "53e187bc282cdc15",
+        "case_id": "C0005",
+        "category": "overextended_span",
+        "expected_span": [
+          9,
+          33
+        ],
+        "expected_type": "NAME",
+        "observed_span": [
+          9,
+          45
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "e224aba0f7d17740",
+        "case_id": "C0006",
+        "category": "overextended_span",
+        "expected_span": [
+          23,
+          47
+        ],
+        "expected_type": "NAME",
+        "observed_span": [
+          23,
+          59
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "27a7ad03a07996bf",
+        "case_id": "C0007",
+        "category": "missed_entity",
+        "expected_span": [
+          28,
+          44
+        ],
+        "expected_type": "NAME",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "57f57d4caad88dc0",
+        "case_id": "C0023",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          7,
+          10
+        ],
+        "observed_type": "LOCATION"
+      },
+      {
+        "case_hash": "1b883068dea58a0b",
+        "case_id": "C0024",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          21,
+          24
+        ],
+        "observed_type": "LOCATION"
+      },
+      {
+        "case_hash": "bacdc64289f46d26",
+        "case_id": "C0025",
+        "category": "missed_entity",
+        "expected_span": [
+          7,
+          21
+        ],
+        "expected_type": "PHONE",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "5db7a8890b66d683",
+        "case_id": "C0026",
+        "category": "missed_entity",
+        "expected_span": [
+          21,
+          35
+        ],
+        "expected_type": "PHONE",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "f93a0257e14a6727",
+        "case_id": "C0027",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          24,
+          32
+        ],
+        "observed_type": "ID_NUMBER"
+      },
+      {
+        "case_hash": "f93a0257e14a6727",
+        "case_id": "C0027",
+        "category": "missed_entity",
+        "expected_span": [
+          21,
+          32
+        ],
+        "expected_type": "PHONE",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "9d22518d1c898f3a",
+        "case_id": "C0028",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          10,
+          18
+        ],
+        "observed_type": "ID_NUMBER"
+      },
+      {
+        "case_hash": "9d22518d1c898f3a",
+        "case_id": "C0028",
+        "category": "missed_entity",
+        "expected_span": [
+          7,
+          18
+        ],
+        "expected_type": "PHONE",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "7173e0577618517e",
+        "case_id": "C0039",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          0,
+          14
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "61bfc6208c026b2b",
+        "case_id": "C0040",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          14,
+          28
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "1bc02a16b33f0a0b",
+        "case_id": "C0047",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          0,
+          14
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "cf53d03554071310",
+        "case_id": "C0048",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          14,
+          28
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "980ac1820560ebee",
+        "case_id": "C0051",
+        "category": "overextended_span",
+        "expected_span": [
+          26,
+          34
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          23,
+          34
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "61736e95ee65617d",
+        "case_id": "C0052",
+        "category": "overextended_span",
+        "expected_span": [
+          12,
+          20
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          9,
+          20
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "9a4be16781a467a1",
+        "case_id": "C0053",
+        "category": "overextended_span",
+        "expected_span": [
+          10,
+          18
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          7,
+          18
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "1ee12946ebdac445",
+        "case_id": "C0054",
+        "category": "overextended_span",
+        "expected_span": [
+          24,
+          32
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          21,
+          32
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "e82dda61b24c8d6d",
+        "case_id": "C0055",
+        "category": "missed_entity",
+        "expected_span": [
+          19,
+          29
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "e82dda61b24c8d6d",
+        "case_id": "C0055",
+        "category": "overextended_span",
+        "expected_span": [
+          4,
+          13
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          0,
+          29
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "f0b8697127022d2c",
+        "case_id": "C0056",
+        "category": "missed_entity",
+        "expected_span": [
+          33,
+          43
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "f0b8697127022d2c",
+        "case_id": "C0056",
+        "category": "overextended_span",
+        "expected_span": [
+          18,
+          27
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          14,
+          43
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "28dc9606530bf5c8",
+        "case_id": "C0059",
+        "category": "missed_entity",
+        "expected_span": [
+          30,
+          35
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "28dc9606530bf5c8",
+        "case_id": "C0059",
+        "category": "overextended_span",
+        "expected_span": [
+          9,
+          25
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          9,
+          35
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "53c72066ae9fd623",
+        "case_id": "C0060",
+        "category": "missed_entity",
+        "expected_span": [
+          44,
+          49
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "53c72066ae9fd623",
+        "case_id": "C0060",
+        "category": "overextended_span",
+        "expected_span": [
+          23,
+          39
+        ],
+        "expected_type": "ADDRESS",
+        "observed_span": [
+          23,
+          49
+        ],
+        "observed_type": "ADDRESS"
+      },
+      {
+        "case_hash": "5a79724435c93f42",
+        "case_id": "C0061",
+        "category": "wrong_type",
+        "expected_span": [
+          9,
+          27
+        ],
+        "expected_type": "ORGANIZATION",
+        "observed_span": [
+          9,
+          27
+        ],
+        "observed_type": "LOCATION"
+      },
+      {
+        "case_hash": "acf78409d98f7c9f",
+        "case_id": "C0063",
+        "category": "missed_entity",
+        "expected_span": [
+          10,
+          29
+        ],
+        "expected_type": "ORGANIZATION",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "698845d1f43bf284",
+        "case_id": "C0064",
+        "category": "missed_entity",
+        "expected_span": [
+          24,
+          43
+        ],
+        "expected_type": "ORGANIZATION",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "ba419b2f1728e271",
+        "case_id": "C0066",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          23,
+          26
+        ],
+        "observed_type": "LOCATION"
+      },
+      {
+        "case_hash": "ba419b2f1728e271",
+        "case_id": "C0066",
+        "category": "missed_entity",
+        "expected_span": [
+          7,
+          26
+        ],
+        "expected_type": "ORGANIZATION",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "1ccb869f3827923b",
+        "case_id": "C0099",
+        "category": "boundary_mismatch",
+        "expected_span": [
+          9,
+          27
+        ],
+        "expected_type": "NAME",
+        "observed_span": [
+          19,
+          40
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "33955978c8319129",
+        "case_id": "C0100",
+        "category": "boundary_mismatch",
+        "expected_span": [
+          23,
+          41
+        ],
+        "expected_type": "NAME",
+        "observed_span": [
+          33,
+          54
+        ],
+        "observed_type": "NAME"
+      },
+      {
+        "case_hash": "9b1fd0177764118a",
+        "case_id": "C0101",
+        "category": "missed_entity",
+        "expected_span": [
+          23,
+          39
+        ],
+        "expected_type": "NAME",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "fff4b93d212892ca",
+        "case_id": "C0102",
+        "category": "missed_entity",
+        "expected_span": [
+          9,
+          25
+        ],
+        "expected_type": "NAME",
+        "observed_span": null,
+        "observed_type": null
+      },
+      {
+        "case_hash": "7bf8c6e693dc5663",
+        "case_id": "C0105",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          16,
+          27
+        ],
+        "observed_type": "ID_NUMBER"
+      },
+      {
+        "case_hash": "dda56ffce792f293",
+        "case_id": "C0106",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          14,
+          20
+        ],
+        "observed_type": "VEHICLE_PLATE"
+      },
+      {
+        "case_hash": "06b3de5c13269c14",
+        "case_id": "C0110",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          11,
+          21
+        ],
+        "observed_type": "DATE"
+      },
+      {
+        "case_hash": "fe0d4cede0fdd000",
+        "case_id": "C0112",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          17,
+          28
+        ],
+        "observed_type": "ID_NUMBER"
+      },
+      {
+        "case_hash": "bc5a0add2892da7b",
+        "case_id": "C0114",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          21,
+          31
+        ],
+        "observed_type": "DATE"
+      },
+      {
+        "case_hash": "2676817bd282621b",
+        "case_id": "C0120",
+        "category": "false_positive",
+        "expected_span": null,
+        "expected_type": null,
+        "observed_span": [
+          7,
+          25
+        ],
+        "observed_type": "ADDRESS"
+      }
+    ],
+    "error_taxonomy": {
+      "boundary_mismatch": 2,
+      "false_positive": 15,
+      "missed_entity": 14,
+      "overextended_span": 10,
+      "wrong_type": 1
+    },
+    "exact_typed_entity": {
+      "f1": 0.771784,
+      "f2": 0.77371,
+      "fn": 27,
+      "fp": 28,
+      "precision": 0.768595,
+      "recall": 0.775,
+      "tp": 93
+    },
+    "headline_population": {
+      "documents": 126,
+      "expected_entities": 120,
+      "negative_documents": 24,
+      "positive_documents": 102,
+      "predicted_entities": 121
+    },
+    "negative_controls": {
+      "document_false_positive_rate": 0.25,
+      "documents": 24,
+      "documents_with_false_positive": 6,
+      "false_positive_entities": 6,
+      "false_positive_entities_per_1000_chars": 8.275862
+    },
+    "overmasked_characters_per_1000": 42.826552,
+    "per_scenario": {
+      "address": {
+        "documents": 15,
+        "f1": 0.375,
+        "f2": 0.348837,
+        "fn": 12,
+        "fp": 8,
+        "precision": 0.428571,
+        "recall": 0.333333,
+        "tp": 6
+      },
+      "chat": {
+        "documents": 1,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "commerce": {
+        "documents": 3,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "date": {
+        "documents": 6,
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 6
+      },
+      "document": {
+        "documents": 2,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "education": {
+        "documents": 1,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "email": {
+        "documents": 11,
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 10
+      },
+      "financial": {
+        "documents": 6,
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 6
+      },
+      "identifier": {
+        "documents": 8,
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      },
+      "language": {
+        "documents": 3,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "location": {
+        "documents": 2,
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 2
+      },
+      "mixed": {
+        "documents": 8,
+        "f1": 0.842105,
+        "f2": 0.816327,
+        "fn": 4,
+        "fp": 2,
+        "precision": 0.888889,
+        "recall": 0.8,
+        "tp": 16
+      },
+      "organization": {
+        "documents": 8,
+        "f1": 0.571429,
+        "f2": 0.526316,
+        "fn": 4,
+        "fp": 2,
+        "precision": 0.666667,
+        "recall": 0.5,
+        "tp": 4
+      },
+      "person": {
+        "documents": 12,
+        "f1": 0.814815,
+        "f2": 0.797101,
+        "fn": 3,
+        "fp": 2,
+        "precision": 0.846154,
+        "recall": 0.785714,
+        "tp": 11
+      },
+      "phone": {
+        "documents": 16,
+        "f1": 0.75,
+        "f2": 0.75,
+        "fn": 4,
+        "fp": 4,
+        "precision": 0.75,
+        "recall": 0.75,
+        "tp": 12
+      },
+      "reference": {
+        "documents": 4,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "technical": {
+        "documents": 7,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "thai-id": {
+        "documents": 10,
+        "f1": 0.833334,
+        "f2": 0.925926,
+        "fn": 0,
+        "fp": 4,
+        "precision": 0.714286,
+        "recall": 1.0,
+        "tp": 10
+      },
+      "vehicle": {
+        "documents": 2,
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 2
+      },
+      "ราคา": {
+        "documents": 1,
+        "f1": 0.0,
+        "f2": 0.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      }
+    },
+    "per_type": {
+      "ADDRESS": {
+        "f1": 0.275862,
+        "f2": 0.25974,
+        "fn": 12,
+        "fp": 9,
+        "interpretation": "descriptive_only",
+        "precision": 0.307692,
+        "recall": 0.25,
+        "support": 16,
+        "tp": 4
+      },
+      "BANK_ACCOUNT": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "CREDIT_CARD": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "DATE": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "interpretation": "descriptive_only",
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "DATE_OF_BIRTH": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 4,
+        "tp": 4
+      },
+      "EMAIL": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 14,
+        "tp": 14
+      },
+      "IBAN": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "ID_NUMBER": {
+        "f1": 0.5,
+        "f2": 0.714285,
+        "fn": 0,
+        "fp": 4,
+        "interpretation": "descriptive_only",
+        "precision": 0.333333,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "LOCATION": {
+        "f1": 0.5,
+        "f2": 0.714285,
+        "fn": 0,
+        "fp": 4,
+        "interpretation": "descriptive_only",
+        "precision": 0.333333,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "MEDICAL_ID": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 4,
+        "tp": 4
+      },
+      "NAME": {
+        "f1": 0.666667,
+        "f2": 0.675676,
+        "fn": 7,
+        "fp": 8,
+        "interpretation": "descriptive_only",
+        "precision": 0.652174,
+        "recall": 0.681818,
+        "support": 22,
+        "tp": 15
+      },
+      "ORGANIZATION": {
+        "f1": 0.666667,
+        "f2": 0.555556,
+        "fn": 4,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 0.5,
+        "support": 8,
+        "tp": 4
+      },
+      "PASSPORT": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "PHONE": {
+        "f1": 0.888889,
+        "f2": 0.833333,
+        "fn": 4,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 0.8,
+        "support": 20,
+        "tp": 16
+      },
+      "POSTAL_CODE": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "STUDENT_ID": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 4,
+        "tp": 4
+      },
+      "THAI_ID": {
+        "f1": 1.0,
+        "f2": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "interpretation": "descriptive_only",
+        "precision": 1.0,
+        "recall": 1.0,
+        "support": 10,
+        "tp": 10
+      },
+      "VEHICLE_PLATE": {
+        "f1": 0.8,
+        "f2": 0.909091,
+        "fn": 0,
+        "fp": 1,
+        "interpretation": "descriptive_only",
+        "precision": 0.666667,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      }
+    },
+    "protective_character_recall": 0.915676,
+    "span_metrics": {
+      "exact_boundary_rate_among_typed_iou_gte_0_5_matches": 0.920792,
+      "exact_matches": 93,
+      "exact_span_and_type_rate_over_expected": 0.775,
+      "expected_entities": 120,
+      "typed_iou_gte_0_5_matches": 101
+    },
+    "typed_iou_gte_0_5": {
+      "f1": 0.838175,
+      "f2": 0.840267,
+      "fn": 19,
+      "fp": 20,
+      "precision": 0.834711,
+      "recall": 0.841667,
+      "tp": 101
+    }
+  },
+  "determinism": {
+    "all_passes_identical": true,
+    "canonical_prediction_sha256": "21486e458ce6e031748bcb2566c11e54cf08a524d22f89c8ec35a0d985ab06ce",
+    "ner_diagnostics": {
+      "attempted": 414,
+      "skipped": 0,
+      "succeeded": 414
+    },
+    "passes": 3
+  },
+  "evaluation_id": "aiguard-thai-pii-adversarial-baseline-v1",
+  "performance": {
+    "corpus_pass_ms": {
+      "median": 117.711092,
+      "p95": 118.590764
+    },
+    "detect_ms": {
+      "max": 2.638848,
+      "median": 0.787306,
+      "p95": 1.498352
+    },
+    "first_detection_ms_after_import": 804.152967,
+    "mixed_document_detect_ms": {
+      "median": 1.926826,
+      "p95": 1.95448,
+      "samples": 5
+    },
+    "peak_rss_kib": 144072,
+    "restore_ms": {
+      "median": 1.058831,
+      "p95": 1.729246,
+      "samples": 202
+    },
+    "samples": 414,
+    "sanitize_ms": {
+      "median": 2.251911,
+      "p95": 3.724105,
+      "samples": 202
+    },
+    "scope": "local detector/protection only; excludes Tokenmind and is not a hosted SLA",
+    "throughput_characters_per_second": 46271.590548,
+    "throughput_documents_per_second": 1171.432672,
+    "warm_passes": 3
+  },
+  "prediction_inventory": {
+    "C0001": [
+      {
+        "end_cp": 34,
+        "redact_type": "TB",
+        "start_cp": 13,
+        "type": "NAME"
+      }
+    ],
+    "C0002": [
+      {
+        "end_cp": 48,
+        "redact_type": "TB",
+        "start_cp": 27,
+        "type": "NAME"
+      }
+    ],
+    "C0003": [
+      {
+        "end_cp": 52,
+        "redact_type": "TB",
+        "start_cp": 27,
+        "type": "NAME"
+      }
+    ],
+    "C0004": [
+      {
+        "end_cp": 38,
+        "redact_type": "TB",
+        "start_cp": 13,
+        "type": "NAME"
+      }
+    ],
+    "C0005": [
+      {
+        "end_cp": 45,
+        "redact_type": "TB",
+        "start_cp": 9,
+        "type": "NAME"
+      }
+    ],
+    "C0006": [
+      {
+        "end_cp": 59,
+        "redact_type": "TB",
+        "start_cp": 23,
+        "type": "NAME"
+      }
+    ],
+    "C0007": [],
+    "C0008": [
+      {
+        "end_cp": 30,
+        "redact_type": "TB",
+        "start_cp": 14,
+        "type": "NAME"
+      }
+    ],
+    "C0009": [
+      {
+        "end_cp": 30,
+        "redact_type": "TB",
+        "start_cp": 13,
+        "type": "NAME"
+      }
+    ],
+    "C0010": [
+      {
+        "end_cp": 44,
+        "redact_type": "TB",
+        "start_cp": 27,
+        "type": "NAME"
+      }
+    ],
+    "C0011": [
+      {
+        "end_cp": 35,
+        "redact_type": "TB",
+        "start_cp": 14,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 60,
+        "redact_type": "TB",
+        "start_cp": 39,
+        "type": "NAME"
+      }
+    ],
+    "C0012": [
+      {
+        "end_cp": 21,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 46,
+        "redact_type": "TB",
+        "start_cp": 25,
+        "type": "NAME"
+      }
+    ],
+    "C0013": [
+      {
+        "end_cp": 14,
+        "redact_type": "FP",
+        "start_cp": 4,
+        "type": "PHONE"
+      }
+    ],
+    "C0014": [
+      {
+        "end_cp": 28,
+        "redact_type": "FP",
+        "start_cp": 18,
+        "type": "PHONE"
+      }
+    ],
+    "C0015": [
+      {
+        "end_cp": 36,
+        "redact_type": "FP",
+        "start_cp": 26,
+        "type": "PHONE"
+      }
+    ],
+    "C0016": [
+      {
+        "end_cp": 22,
+        "redact_type": "FP",
+        "start_cp": 12,
+        "type": "PHONE"
+      }
+    ],
+    "C0017": [
+      {
+        "end_cp": 31,
+        "redact_type": "FP",
+        "start_cp": 21,
+        "type": "PHONE"
+      }
+    ],
+    "C0018": [
+      {
+        "end_cp": 17,
+        "redact_type": "FP",
+        "start_cp": 7,
+        "type": "PHONE"
+      }
+    ],
+    "C0019": [
+      {
+        "end_cp": 21,
+        "redact_type": "FP",
+        "start_cp": 9,
+        "type": "PHONE"
+      }
+    ],
+    "C0020": [
+      {
+        "end_cp": 35,
+        "redact_type": "FP",
+        "start_cp": 23,
+        "type": "PHONE"
+      }
+    ],
+    "C0021": [
+      {
+        "end_cp": 33,
+        "redact_type": "FP",
+        "start_cp": 21,
+        "type": "PHONE"
+      }
+    ],
+    "C0022": [
+      {
+        "end_cp": 19,
+        "redact_type": "FP",
+        "start_cp": 7,
+        "type": "PHONE"
+      }
+    ],
+    "C0023": [
+      {
+        "end_cp": 10,
+        "redact_type": "TB",
+        "start_cp": 7,
+        "type": "LOCATION"
+      },
+      {
+        "end_cp": 26,
+        "redact_type": "FP",
+        "start_cp": 11,
+        "type": "PHONE"
+      }
+    ],
+    "C0024": [
+      {
+        "end_cp": 24,
+        "redact_type": "TB",
+        "start_cp": 21,
+        "type": "LOCATION"
+      },
+      {
+        "end_cp": 40,
+        "redact_type": "FP",
+        "start_cp": 25,
+        "type": "PHONE"
+      }
+    ],
+    "C0025": [],
+    "C0026": [],
+    "C0027": [
+      {
+        "end_cp": 32,
+        "redact_type": "FP",
+        "start_cp": 24,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0028": [
+      {
+        "end_cp": 18,
+        "redact_type": "FP",
+        "start_cp": 10,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0029": [
+      {
+        "end_cp": 33,
+        "redact_type": "FP",
+        "start_cp": 6,
+        "type": "EMAIL"
+      }
+    ],
+    "C0030": [
+      {
+        "end_cp": 47,
+        "redact_type": "FP",
+        "start_cp": 20,
+        "type": "EMAIL"
+      }
+    ],
+    "C0031": [
+      {
+        "end_cp": 36,
+        "redact_type": "FP",
+        "start_cp": 7,
+        "type": "EMAIL"
+      }
+    ],
+    "C0032": [
+      {
+        "end_cp": 50,
+        "redact_type": "FP",
+        "start_cp": 21,
+        "type": "EMAIL"
+      }
+    ],
+    "C0033": [
+      {
+        "end_cp": 43,
+        "redact_type": "FP",
+        "start_cp": 20,
+        "type": "EMAIL"
+      }
+    ],
+    "C0034": [
+      {
+        "end_cp": 29,
+        "redact_type": "FP",
+        "start_cp": 6,
+        "type": "EMAIL"
+      }
+    ],
+    "C0035": [
+      {
+        "end_cp": 32,
+        "redact_type": "FP",
+        "start_cp": 7,
+        "type": "EMAIL"
+      }
+    ],
+    "C0036": [
+      {
+        "end_cp": 46,
+        "redact_type": "FP",
+        "start_cp": 21,
+        "type": "EMAIL"
+      }
+    ],
+    "C0037": [
+      {
+        "end_cp": 41,
+        "redact_type": "FP",
+        "start_cp": 19,
+        "type": "EMAIL"
+      }
+    ],
+    "C0038": [
+      {
+        "end_cp": 27,
+        "redact_type": "FP",
+        "start_cp": 5,
+        "type": "EMAIL"
+      }
+    ],
+    "C0039": [
+      {
+        "end_cp": 14,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 28,
+        "redact_type": "FP",
+        "start_cp": 15,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0040": [
+      {
+        "end_cp": 28,
+        "redact_type": "TB",
+        "start_cp": 14,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 42,
+        "redact_type": "FP",
+        "start_cp": 29,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0041": [
+      {
+        "end_cp": 43,
+        "redact_type": "FP",
+        "start_cp": 26,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0042": [
+      {
+        "end_cp": 29,
+        "redact_type": "FP",
+        "start_cp": 12,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0043": [
+      {
+        "end_cp": 29,
+        "redact_type": "FP",
+        "start_cp": 12,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0044": [
+      {
+        "end_cp": 43,
+        "redact_type": "FP",
+        "start_cp": 26,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0045": [
+      {
+        "end_cp": 34,
+        "redact_type": "FP",
+        "start_cp": 21,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0046": [
+      {
+        "end_cp": 48,
+        "redact_type": "FP",
+        "start_cp": 35,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0047": [
+      {
+        "end_cp": 14,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 28,
+        "redact_type": "FP",
+        "start_cp": 15,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0048": [
+      {
+        "end_cp": 28,
+        "redact_type": "TB",
+        "start_cp": 14,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 42,
+        "redact_type": "FP",
+        "start_cp": 29,
+        "type": "THAI_ID"
+      }
+    ],
+    "C0049": [
+      {
+        "end_cp": 32,
+        "redact_type": "FP",
+        "start_cp": 25,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0050": [
+      {
+        "end_cp": 18,
+        "redact_type": "FP",
+        "start_cp": 11,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0051": [
+      {
+        "end_cp": 34,
+        "redact_type": "TB",
+        "start_cp": 23,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0052": [
+      {
+        "end_cp": 20,
+        "redact_type": "TB",
+        "start_cp": 9,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0053": [
+      {
+        "end_cp": 18,
+        "redact_type": "TB",
+        "start_cp": 7,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0054": [
+      {
+        "end_cp": 32,
+        "redact_type": "TB",
+        "start_cp": 21,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0055": [
+      {
+        "end_cp": 29,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0056": [
+      {
+        "end_cp": 43,
+        "redact_type": "TB",
+        "start_cp": 14,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0057": [
+      {
+        "end_cp": 75,
+        "redact_type": "TB",
+        "start_cp": 25,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0058": [
+      {
+        "end_cp": 61,
+        "redact_type": "TB",
+        "start_cp": 11,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0059": [
+      {
+        "end_cp": 35,
+        "redact_type": "TB",
+        "start_cp": 9,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0060": [
+      {
+        "end_cp": 49,
+        "redact_type": "TB",
+        "start_cp": 23,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0061": [
+      {
+        "end_cp": 27,
+        "redact_type": "TB",
+        "start_cp": 9,
+        "type": "LOCATION"
+      }
+    ],
+    "C0062": [
+      {
+        "end_cp": 41,
+        "redact_type": "TB",
+        "start_cp": 23,
+        "type": "ORGANIZATION"
+      }
+    ],
+    "C0063": [],
+    "C0064": [],
+    "C0065": [
+      {
+        "end_cp": 40,
+        "redact_type": "TB",
+        "start_cp": 21,
+        "type": "ORGANIZATION"
+      }
+    ],
+    "C0066": [
+      {
+        "end_cp": 26,
+        "redact_type": "TB",
+        "start_cp": 23,
+        "type": "LOCATION"
+      }
+    ],
+    "C0067": [
+      {
+        "end_cp": 30,
+        "redact_type": "TB",
+        "start_cp": 8,
+        "type": "ORGANIZATION"
+      }
+    ],
+    "C0068": [
+      {
+        "end_cp": 44,
+        "redact_type": "TB",
+        "start_cp": 22,
+        "type": "ORGANIZATION"
+      }
+    ],
+    "C0069": [
+      {
+        "end_cp": 40,
+        "redact_type": "FP",
+        "start_cp": 24,
+        "type": "CREDIT_CARD"
+      }
+    ],
+    "C0070": [
+      {
+        "end_cp": 26,
+        "redact_type": "FP",
+        "start_cp": 10,
+        "type": "CREDIT_CARD"
+      }
+    ],
+    "C0071": [
+      {
+        "end_cp": 33,
+        "redact_type": "FP",
+        "start_cp": 11,
+        "type": "IBAN"
+      }
+    ],
+    "C0072": [
+      {
+        "end_cp": 47,
+        "redact_type": "FP",
+        "start_cp": 25,
+        "type": "IBAN"
+      }
+    ],
+    "C0073": [
+      {
+        "end_cp": 39,
+        "redact_type": "FP",
+        "start_cp": 26,
+        "type": "BANK_ACCOUNT"
+      }
+    ],
+    "C0074": [
+      {
+        "end_cp": 25,
+        "redact_type": "FP",
+        "start_cp": 12,
+        "type": "BANK_ACCOUNT"
+      }
+    ],
+    "C0075": [
+      {
+        "end_cp": 18,
+        "redact_type": "FP",
+        "start_cp": 8,
+        "type": "DATE_OF_BIRTH"
+      }
+    ],
+    "C0076": [
+      {
+        "end_cp": 32,
+        "redact_type": "FP",
+        "start_cp": 22,
+        "type": "DATE_OF_BIRTH"
+      }
+    ],
+    "C0077": [
+      {
+        "end_cp": 40,
+        "redact_type": "FP",
+        "start_cp": 25,
+        "type": "DATE_OF_BIRTH"
+      }
+    ],
+    "C0078": [
+      {
+        "end_cp": 26,
+        "redact_type": "FP",
+        "start_cp": 11,
+        "type": "DATE_OF_BIRTH"
+      }
+    ],
+    "C0079": [
+      {
+        "end_cp": 35,
+        "redact_type": "FP",
+        "start_cp": 25,
+        "type": "DATE"
+      }
+    ],
+    "C0080": [
+      {
+        "end_cp": 21,
+        "redact_type": "FP",
+        "start_cp": 11,
+        "type": "DATE"
+      }
+    ],
+    "C0081": [
+      {
+        "end_cp": 17,
+        "redact_type": "FP",
+        "start_cp": 10,
+        "type": "VEHICLE_PLATE"
+      }
+    ],
+    "C0082": [
+      {
+        "end_cp": 31,
+        "redact_type": "FP",
+        "start_cp": 24,
+        "type": "VEHICLE_PLATE"
+      }
+    ],
+    "C0083": [
+      {
+        "end_cp": 38,
+        "redact_type": "FP",
+        "start_cp": 29,
+        "type": "PASSPORT"
+      }
+    ],
+    "C0084": [
+      {
+        "end_cp": 24,
+        "redact_type": "FP",
+        "start_cp": 15,
+        "type": "PASSPORT"
+      }
+    ],
+    "C0085": [
+      {
+        "end_cp": 21,
+        "redact_type": "FP",
+        "start_cp": 13,
+        "type": "STUDENT_ID"
+      }
+    ],
+    "C0086": [
+      {
+        "end_cp": 35,
+        "redact_type": "FP",
+        "start_cp": 27,
+        "type": "STUDENT_ID"
+      }
+    ],
+    "C0087": [
+      {
+        "end_cp": 8,
+        "redact_type": "FP",
+        "start_cp": 4,
+        "type": "MEDICAL_ID"
+      }
+    ],
+    "C0088": [
+      {
+        "end_cp": 22,
+        "redact_type": "FP",
+        "start_cp": 18,
+        "type": "MEDICAL_ID"
+      }
+    ],
+    "C0089": [
+      {
+        "end_cp": 37,
+        "redact_type": "FP",
+        "start_cp": 32,
+        "type": "POSTAL_CODE"
+      }
+    ],
+    "C0090": [
+      {
+        "end_cp": 51,
+        "redact_type": "FP",
+        "start_cp": 46,
+        "type": "POSTAL_CODE"
+      }
+    ],
+    "C0091": [
+      {
+        "end_cp": 35,
+        "redact_type": "FP",
+        "start_cp": 27,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0092": [
+      {
+        "end_cp": 21,
+        "redact_type": "FP",
+        "start_cp": 13,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0093": [
+      {
+        "end_cp": 30,
+        "redact_type": "TB",
+        "start_cp": 21,
+        "type": "LOCATION"
+      }
+    ],
+    "C0094": [
+      {
+        "end_cp": 44,
+        "redact_type": "TB",
+        "start_cp": 35,
+        "type": "LOCATION"
+      }
+    ],
+    "C0095": [
+      {
+        "end_cp": 44,
+        "redact_type": "TB",
+        "start_cp": 23,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 59,
+        "redact_type": "FP",
+        "start_cp": 49,
+        "type": "PHONE"
+      },
+      {
+        "end_cp": 89,
+        "redact_type": "FP",
+        "start_cp": 66,
+        "type": "EMAIL"
+      }
+    ],
+    "C0096": [
+      {
+        "end_cp": 30,
+        "redact_type": "TB",
+        "start_cp": 9,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 45,
+        "redact_type": "FP",
+        "start_cp": 35,
+        "type": "PHONE"
+      },
+      {
+        "end_cp": 75,
+        "redact_type": "FP",
+        "start_cp": 52,
+        "type": "EMAIL"
+      }
+    ],
+    "C0097": [
+      {
+        "end_cp": 33,
+        "redact_type": "TB",
+        "start_cp": 8,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 41,
+        "redact_type": "FP",
+        "start_cp": 37,
+        "type": "MEDICAL_ID"
+      },
+      {
+        "end_cp": 59,
+        "redact_type": "FP",
+        "start_cp": 49,
+        "type": "PHONE"
+      }
+    ],
+    "C0098": [
+      {
+        "end_cp": 47,
+        "redact_type": "TB",
+        "start_cp": 22,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 55,
+        "redact_type": "FP",
+        "start_cp": 51,
+        "type": "MEDICAL_ID"
+      },
+      {
+        "end_cp": 73,
+        "redact_type": "FP",
+        "start_cp": 63,
+        "type": "PHONE"
+      }
+    ],
+    "C0099": [
+      {
+        "end_cp": 40,
+        "redact_type": "TB",
+        "start_cp": 19,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 49,
+        "redact_type": "FP",
+        "start_cp": 41,
+        "type": "STUDENT_ID"
+      }
+    ],
+    "C0100": [
+      {
+        "end_cp": 54,
+        "redact_type": "TB",
+        "start_cp": 33,
+        "type": "NAME"
+      },
+      {
+        "end_cp": 63,
+        "redact_type": "FP",
+        "start_cp": 55,
+        "type": "STUDENT_ID"
+      }
+    ],
+    "C0101": [
+      {
+        "end_cp": 75,
+        "redact_type": "FP",
+        "start_cp": 50,
+        "type": "EMAIL"
+      }
+    ],
+    "C0102": [
+      {
+        "end_cp": 61,
+        "redact_type": "FP",
+        "start_cp": 36,
+        "type": "EMAIL"
+      }
+    ],
+    "C0103": [],
+    "C0104": [],
+    "C0105": [
+      {
+        "end_cp": 27,
+        "redact_type": "FP",
+        "start_cp": 16,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0106": [
+      {
+        "end_cp": 20,
+        "redact_type": "FP",
+        "start_cp": 14,
+        "type": "VEHICLE_PLATE"
+      }
+    ],
+    "C0107": [],
+    "C0108": [],
+    "C0109": [],
+    "C0110": [
+      {
+        "end_cp": 21,
+        "redact_type": "FP",
+        "start_cp": 11,
+        "type": "DATE"
+      }
+    ],
+    "C0111": [],
+    "C0112": [
+      {
+        "end_cp": 28,
+        "redact_type": "FP",
+        "start_cp": 17,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0113": [],
+    "C0114": [
+      {
+        "end_cp": 31,
+        "redact_type": "FP",
+        "start_cp": 21,
+        "type": "DATE"
+      }
+    ],
+    "C0115": [],
+    "C0116": [],
+    "C0117": [],
+    "C0118": [],
+    "C0119": [],
+    "C0120": [
+      {
+        "end_cp": 25,
+        "redact_type": "FP",
+        "start_cp": 7,
+        "type": "ADDRESS"
+      }
+    ],
+    "C0121": [],
+    "C0122": [],
+    "C0123": [],
+    "C0124": [],
+    "C0125": [],
+    "C0126": [],
+    "C0127": [
+      {
+        "end_cp": 6,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "DATE"
+      }
+    ],
+    "C0128": [
+      {
+        "end_cp": 18,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "NAME"
+      }
+    ],
+    "C0129": [
+      {
+        "end_cp": 9,
+        "redact_type": "TB",
+        "start_cp": 0,
+        "type": "LOCATION"
+      }
+    ],
+    "C0130": [],
+    "C0131": [
+      {
+        "end_cp": 15,
+        "redact_type": "FP",
+        "start_cp": 5,
+        "type": "PHONE"
+      }
+    ],
+    "C0132": [
+      {
+        "end_cp": 10,
+        "redact_type": "FP",
+        "start_cp": 0,
+        "type": "DATE"
+      }
+    ],
+    "C0133": [],
+    "C0134": [
+      {
+        "end_cp": 22,
+        "redact_type": "FP",
+        "start_cp": 15,
+        "type": "VEHICLE_PLATE"
+      }
+    ],
+    "C0135": [
+      {
+        "end_cp": 33,
+        "redact_type": "FP",
+        "start_cp": 6,
+        "type": "EMAIL"
+      }
+    ],
+    "C0136": [],
+    "C0137": [
+      {
+        "end_cp": 12,
+        "redact_type": "FP",
+        "start_cp": 4,
+        "type": "ID_NUMBER"
+      }
+    ],
+    "C0138": []
+  },
+  "production_baseline_sha": "72e18bbe723adaf54c847e4b17c2177dfa60dd68",
+  "protection": {
+    "modes": {
+      "surrogate": {
+        "documents_attempted": 102,
+        "documents_sanitized": 100,
+        "exact_restoration_rate": 1.0,
+        "expected_entities": 118,
+        "expected_raw_value_removal_rate": 0.940678,
+        "fail_closed_documents": 2,
+        "fail_closed_rate": 0.019608,
+        "failures": [
+          {
+            "case_hash": "f93a0257e14a6727",
+            "case_id": "C0027",
+            "failure_class": "StatelessLeakError",
+            "leak_types": [
+              "PHONE"
+            ],
+            "policy_categories": [
+              "structured"
+            ],
+            "unsafe_text_returned": false
+          },
+          {
+            "case_hash": "9d22518d1c898f3a",
+            "case_id": "C0028",
+            "failure_class": "StatelessLeakError",
+            "leak_types": [
+              "PHONE"
+            ],
+            "policy_categories": [
+              "structured"
+            ],
+            "unsafe_text_returned": false
+          }
+        ],
+        "outbound_policy_pass_rate": 0.980392,
+        "recognized_entities": 113,
+        "recognized_raw_value_removal_rate": 1.0,
+        "restoration_warning_count": 0,
+        "safe_disposition_rate": 1.0,
+        "sanitization_success_rate": 0.980392,
+        "zero_leftover_rate": 1.0
+      },
+      "token": {
+        "documents_attempted": 102,
+        "documents_sanitized": 102,
+        "exact_restoration_rate": 1.0,
+        "expected_entities": 120,
+        "expected_raw_value_removal_rate": 0.941667,
+        "fail_closed_documents": 0,
+        "fail_closed_rate": 0.0,
+        "failures": [],
+        "outbound_policy_pass_rate": 1.0,
+        "recognized_entities": 115,
+        "recognized_raw_value_removal_rate": 1.0,
+        "restoration_warning_count": 0,
+        "safe_disposition_rate": 1.0,
+        "sanitization_success_rate": 1.0,
+        "zero_leftover_rate": 1.0
+      }
+    },
+    "provider_calls": 0,
+    "reidentification_pair_material_exported": false
+  },
+  "repository_sha": "72e18bbe723adaf54c847e4b17c2177dfa60dd68",
+  "runtime": {
+    "credentials_required": false,
+    "image": "team08-core:latest@sha256:06edf0bbcb51d12500004d6356fb381cabac194d4610e4bbacfd752b7f9d4764",
+    "image_revision": "72e18bbe723adaf54c847e4b17c2177dfa60dd68",
+    "ner_asset_tree_sha256": "bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315",
+    "ner_engine": "pythainlp-thainer-offline",
+    "network_attempts": 0,
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "provider_calls": 0,
+    "python": "3.13.14"
+  },
+  "schema_version": 1,
+  "section26": {
+    "document_exact_set_accuracy": 0.5,
+    "documents": 32,
+    "error_ledger": [
+      {
+        "case_hash": "7b007e0944f7ae9e",
+        "case_id": "S0003",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "RACE_ETHNICITY"
+        ]
+      },
+      {
+        "case_hash": "5998885b1df62bc0",
+        "case_id": "S0004",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "RACE_ETHNICITY"
+        ]
+      },
+      {
+        "case_hash": "7c236bd3124181c5",
+        "case_id": "S0007",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "POLITICAL_OPINION"
+        ]
+      },
+      {
+        "case_hash": "c31ef1077d470523",
+        "case_id": "S0008",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "POLITICAL_OPINION"
+        ]
+      },
+      {
+        "case_hash": "483b218fd5fd32cd",
+        "case_id": "S0011",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "RELIGION"
+        ]
+      },
+      {
+        "case_hash": "3e65d31d294c3720",
+        "case_id": "S0012",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "RELIGION"
+        ]
+      },
+      {
+        "case_hash": "ce45e82ca0e617d8",
+        "case_id": "S0015",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "HEALTH"
+        ]
+      },
+      {
+        "case_hash": "d65c3574224d6795",
+        "case_id": "S0016",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "HEALTH"
+        ]
+      },
+      {
+        "case_hash": "176a5df96d49315a",
+        "case_id": "S0019",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "SEXUAL_BEHAVIOR"
+        ]
+      },
+      {
+        "case_hash": "2cc950fb3dcdea04",
+        "case_id": "S0020",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "SEXUAL_BEHAVIOR"
+        ]
+      },
+      {
+        "case_hash": "c5c0f16ef527fe7b",
+        "case_id": "S0023",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "CRIMINAL_RECORD"
+        ]
+      },
+      {
+        "case_hash": "5c4d3eade2199d56",
+        "case_id": "S0024",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "CRIMINAL_RECORD"
+        ]
+      },
+      {
+        "case_hash": "7397827a20add3ac",
+        "case_id": "S0027",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "DISABILITY"
+        ]
+      },
+      {
+        "case_hash": "63420c83ff1d3cb1",
+        "case_id": "S0028",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "DISABILITY"
+        ]
+      },
+      {
+        "case_hash": "738e0e5d9aefe0d0",
+        "case_id": "S0031",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "LABOR_UNION"
+        ]
+      },
+      {
+        "case_hash": "493d88f3fa854b0c",
+        "case_id": "S0032",
+        "missed_categories": [],
+        "unexpected_categories": [
+          "LABOR_UNION"
+        ]
+      }
+    ],
+    "label": "HEURISTIC SIGNAL EVALUATION — not PDPA compliance accuracy",
+    "micro": {
+      "f1": 0.666667,
+      "f2": 0.833333,
+      "fn": 0,
+      "fp": 16,
+      "precision": 0.5,
+      "recall": 1.0,
+      "tp": 16
+    },
+    "per_category": {
+      "CRIMINAL_RECORD": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "DISABILITY": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "HEALTH": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "LABOR_UNION": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "POLITICAL_OPINION": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "RACE_ETHNICITY": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "RELIGION": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      },
+      "SEXUAL_BEHAVIOR": {
+        "f1": 0.666667,
+        "f2": 0.833333,
+        "fn": 0,
+        "fp": 2,
+        "precision": 0.5,
+        "recall": 1.0,
+        "support": 2,
+        "tp": 2
+      }
+    }
+  },
+  "vendored_upstream_sha": "44ef30b0e8ea2021fc4ceec9d3b12dc9f64c750f"
+}

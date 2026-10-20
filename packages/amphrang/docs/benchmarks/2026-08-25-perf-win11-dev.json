@@ -1,0 +1,114 @@
+{
+  "profile": "full",
+  "environment": {
+    "python": "3.13.14",
+    "implementation": "CPython",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu_count": 24,
+    "amphrang": "0.1.0",
+    "ner_engine": "thainer"
+  },
+  "cold_start": {
+    "n": 3,
+    "p50_ms": 682.908,
+    "p95_ms": 687.949,
+    "min_ms": 660.677,
+    "max_ms": 687.949,
+    "mean_ms": 677.178
+  },
+  "latency": {
+    "S": {
+      "detect": {
+        "n": 30,
+        "p50_ms": 5.35,
+        "p95_ms": 6.877,
+        "min_ms": 4.442,
+        "max_ms": 7.08,
+        "mean_ms": 5.506
+      },
+      "anonymize": {
+        "n": 30,
+        "p50_ms": 18.789,
+        "p95_ms": 22.572,
+        "min_ms": 16.712,
+        "max_ms": 22.882,
+        "mean_ms": 18.808,
+        "leak_blocked": false
+      }
+    },
+    "M": {
+      "detect": {
+        "n": 15,
+        "p50_ms": 80.432,
+        "p95_ms": 250.821,
+        "min_ms": 74.762,
+        "max_ms": 250.821,
+        "mean_ms": 91.208
+      },
+      "anonymize": {
+        "n": 15,
+        "p50_ms": 252.948,
+        "p95_ms": 271.743,
+        "min_ms": 229.311,
+        "max_ms": 271.743,
+        "mean_ms": 253.917,
+        "leak_blocked": false
+      }
+    },
+    "L": {
+      "detect": {
+        "n": 5,
+        "p50_ms": 800.04,
+        "p95_ms": 806.072,
+        "min_ms": 760.481,
+        "max_ms": 806.072,
+        "mean_ms": 794.071
+      },
+      "anonymize": {
+        "n": 5,
+        "p50_ms": 3295.725,
+        "p95_ms": 3465.013,
+        "min_ms": 3265.781,
+        "max_ms": 3465.013,
+        "mean_ms": 3346.355,
+        "leak_blocked": true
+      }
+    },
+    "XL": {
+      "detect": {
+        "n": 2,
+        "p50_ms": 5509.614,
+        "p95_ms": 5825.277,
+        "min_ms": 5509.614,
+        "max_ms": 5825.277,
+        "mean_ms": 5667.446
+      },
+      "anonymize": {
+        "n": 2,
+        "p50_ms": 28314.061,
+        "p95_ms": 28609.412,
+        "min_ms": 28314.061,
+        "max_ms": 28609.412,
+        "mean_ms": 28461.737,
+        "leak_blocked": true
+      }
+    }
+  },
+  "throughput": {
+    "single_process": {
+      "docs": 25,
+      "seconds": 0.496,
+      "docs_per_s": 50.444
+    },
+    "multi_worker": {
+      "workers": 4,
+      "docs": 25,
+      "seconds": 0.245,
+      "docs_per_s": 102.015
+    }
+  },
+  "memory": {
+    "baseline_mb": 162.3,
+    "peak_mb": 292.4
+  }
+}

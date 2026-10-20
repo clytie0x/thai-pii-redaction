@@ -1,0 +1,652 @@
+# AI Guard AIFT — `api` proxy. Three jobs:
+#   1. re-add the /api prefix the platform proxy strips, via an EXACT-match
+#      allowlist (a broad prefix location would re-expose every internal
+#      /api/* route, including the stateful ones this deployment excludes)
+#   2. hold the service key and inject X-AIGuard-Key (rule 12: no key in the
+#      frontend) — envsubst fills it from AIGUARD_API_KEY, and
+#      NGINX_ENVSUBST_FILTER must stay ^AIGUARD_API_KEY$ or every nginx
+#      $variable below is blanked
+#   3. keep PII out of Dozzle: request targets, headers, and bodies are never
+#      part of the access log
+#
+# External surface (after the platform strips /api):
+#   /health /detect /guard /roundtrip /analyze-report
+#   /v1/<same>  — versioned aliases, the documented public contract
+
+# Bounded invite-beta controls.  The global zones remain effective even when
+# the organizer proxy collapses client addresses.  A valid signed session
+# supplies its random nonce as a fairness key.  The signed cookie itself
+# is not retained as a zone key and neither value is written to logs.
+map $http_cookie $aift_caller_key {
+  default $binary_remote_addr;
+  "~(?:^|;[[:space:]]*)__Host-aift_session=v1\.[0-9]{1,12}\.([A-Za-z0-9_-]{22})\.[A-Za-z0-9_-]{43}(?:;|$)" $1;
+  "~(?:^|;[[:space:]]*)__Host-aift_guest=v1\.[0-9]{1,12}\.([A-Za-z0-9_-]{22})\.[A-Za-z0-9_-]{43}(?:;|$)" $1;
+}
+map $http_cookie $aift_standard_caller_key {
+  default "";
+  "~(?:^|;[[:space:]]*)__Host-aift_guest=v1\.[0-9]{1,12}\.([A-Za-z0-9_-]{22})\.[A-Za-z0-9_-]{43}(?:;|$)" $1;
+}
+map $http_cookie $aift_priority_caller_key {
+  default "";
+  "~(?:^|;[[:space:]]*)__Host-aift_session=v1\.[0-9]{1,12}\.([A-Za-z0-9_-]{22})\.[A-Za-z0-9_-]{43}(?:;|$)" $1;
+}
+map $http_cookie $aift_duplicate_session_cookie {
+  default 0;
+  "~(?:^|;[[:space:]]*)__Host-aift_session=[^;]*(?:;[^;]*)*;[[:space:]]*__Host-aift_session=" 1;
+}
+map $http_cookie $aift_duplicate_standard_cookie {
+  default 0;
+  "~(?:^|;[[:space:]]*)__Host-aift_guest=[^;]*(?:;[^;]*)*;[[:space:]]*__Host-aift_guest=" 1;
+}
+map $http_content_length $aift_status_has_body {
+  default 1;
+  "" 0;
+  "0" 0;
+}
+map $http_transfer_encoding $aift_status_has_transfer_encoding {
+  default 1;
+  "" 0;
+}
+map $uri $aift_operation {
+  default denied;
+  /health health;
+  /v1/health health;
+  /auth/login auth_login;
+  /v1/auth/login auth_login;
+  /auth/logout auth_logout;
+  /v1/auth/logout auth_logout;
+  /auth/session auth_session;
+  /v1/auth/session auth_session;
+  /detect detect;
+  /v1/detect detect;
+  /guard guard;
+  /v1/guard guard;
+  /roundtrip roundtrip;
+  /v1/roundtrip roundtrip;
+  /analyze-report analyze_report;
+  /v1/analyze-report analyze_report;
+  /auth/guest auth_guest;
+  /v1/auth/guest auth_guest;
+  /auth/guest/end auth_guest_end;
+  /v1/auth/guest/end auth_guest_end;
+  /guest/preview guest_preview;
+  /v1/guest/preview guest_preview;
+  /guest/execute guest_execute;
+  /v1/guest/execute guest_execute;
+  /protection-preview protection_preview;
+  /v1/protection-preview protection_preview;
+  /protection-execute protection_execute;
+  /v1/protection-execute protection_execute;
+  /document-preview document_preview;
+  /v1/document-preview document_preview;
+  /document-execute document_execute;
+  /v1/document-execute document_execute;
+  /provider-queue/join provider_queue_join;
+  /v1/provider-queue/join provider_queue_join;
+  /provider-queue/status provider_queue_status;
+  /v1/provider-queue/status provider_queue_status;
+  /provider-queue/claim provider_queue_claim;
+  /v1/provider-queue/claim provider_queue_claim;
+  /provider-queue/cancel provider_queue_cancel;
+  /v1/provider-queue/cancel provider_queue_cancel;
+}
+
+limit_req_zone  $server_name zone=public_global:1m rate=30r/s;
+limit_req_zone  $server_name zone=auth_global:1m rate=2r/s;
+limit_req_zone  $server_name zone=work_global:1m rate=20r/s;
+limit_req_zone  $aift_caller_key zone=work_caller:4m rate=30r/m;
+limit_req_zone  $server_name zone=provider_global:1m rate=6r/m;
+limit_req_zone  $aift_caller_key zone=provider_caller:4m rate=2r/m;
+limit_req_zone  $server_name zone=standard_start_global:1m rate=30r/m;
+limit_req_zone  $server_name zone=queue_join_global:1m rate=12r/m;
+limit_req_zone  $server_name zone=queue_status_global:1m rate=60r/m;
+limit_req_zone  $server_name zone=queue_claim_global:1m rate=48r/m;
+limit_req_zone  $server_name zone=queue_cancel_global:1m rate=30r/m;
+limit_req_zone  $server_name zone=queue_execute_global:1m rate=30r/m;
+limit_req_zone  $aift_standard_caller_key zone=standard_work:4m rate=6r/m;
+limit_req_zone  $aift_priority_caller_key zone=priority_work:4m rate=30r/m;
+limit_req_zone  $aift_standard_caller_key zone=standard_document:4m rate=1r/m;
+limit_req_zone  $aift_priority_caller_key zone=priority_document:4m rate=4r/m;
+limit_req_zone  $server_name zone=document_global:1m rate=4r/m;
+limit_req_zone  $aift_standard_caller_key zone=standard_queue_join:4m rate=1r/m;
+limit_req_zone  $aift_priority_caller_key zone=priority_queue_join:4m rate=6r/m;
+limit_req_zone  $aift_caller_key zone=queue_status_caller:4m rate=6r/m;
+limit_req_zone  $aift_caller_key zone=queue_claim_caller:4m rate=3r/m;
+limit_req_zone  $aift_caller_key zone=queue_cancel_caller:4m rate=2r/m;
+limit_req_zone  $aift_caller_key zone=queue_execute_caller:4m rate=4r/m;
+limit_conn_zone $server_name zone=work_global_conn:1m;
+limit_conn_zone $aift_caller_key zone=work_caller_conn:4m;
+limit_conn_zone $server_name zone=provider_global_conn:1m;
+limit_conn_zone $aift_caller_key zone=provider_caller_conn:4m;
+limit_conn_zone $server_name zone=standard_start_global_conn:1m;
+limit_conn_zone $server_name zone=queue_claim_global_conn:1m;
+limit_conn_zone $aift_caller_key zone=queue_claim_caller_conn:4m;
+limit_conn_zone $aift_standard_caller_key zone=standard_document_conn:4m;
+limit_conn_zone $aift_priority_caller_key zone=priority_document_conn:4m;
+limit_conn_zone $server_name zone=document_global_conn:1m;
+limit_req_status 429;
+limit_conn_status 429;
+
+log_format private 'op=$aift_operation status=$status bytes=$body_bytes_sent method=$request_method rt=$request_time';
+
+# Container-local liveness has a private listener. It cannot be consumed by
+# the public rate zone and Compose does not publish this port.
+server {
+  listen 127.0.0.1:8001;
+  server_name localhost;
+  access_log off;
+  error_log /dev/stderr crit;
+  proxy_set_header Host team08.aiforthai.in.th;
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header X-Forwarded-For "";
+  proxy_set_header X-AIGuard-Key "${AIGUARD_API_KEY}";
+  proxy_set_header X-AIGuard-Contract-Version "2";
+  proxy_connect_timeout 2s;
+  proxy_read_timeout 2s;
+  proxy_send_timeout 2s;
+  location /internal-health {
+    proxy_pass http://core:8000/api/health;
+  }
+  location / { return 404; }
+}
+
+server {
+  listen 8000;
+  # Non-empty rate-limit key: with no server_name, $server_name is "" and the
+  # limit zones silently stop counting.
+  server_name team08.aiforthai.in.th;
+
+  # Nginx request warnings (not only access_log) include the complete request
+  # line, including query values. Keep startup/fatal diagnostics, but never
+  # emit request-level notice/warn/error rows into Docker/Dozzle.
+  error_log /dev/stderr crit;
+  access_log /var/log/nginx/access.log private;
+
+  # The edge owns TLS and forwards the original scheme.  Keep the external
+  # /api prefix in the fixed redirect even though the organizer strips it
+  # before this container.  $uri excludes query values.
+  if ($http_x_forwarded_proto = "http") {
+    return 308 https://team08.aiforthai.in.th/api$uri;
+  }
+  if ($host !~ "^(team08\.aiforthai\.in\.th|localhost|127\.0\.0\.1)$") {
+    return 400;
+  }
+  # Core accepts one cookie authority. Reject duplicate authorities before
+  # rate-key selection so an authenticated caller cannot rotate an unsigned
+  # first nonce while placing the valid cookie later in the header.
+  if ($aift_duplicate_session_cookie = 1) {
+    return 400;
+  }
+  if ($aift_duplicate_standard_cookie = 1) {
+    return 400;
+  }
+
+  # The first hosted release accepts JSON/text requests only. Internal PDF
+  # code remains in core but is intentionally unreachable through this proxy.
+  client_max_body_size 128k;
+  client_body_timeout 60s;
+  client_header_timeout 15s;
+
+  # Responses can carry restored PII — never cache anywhere.
+  add_header Cache-Control "no-store" always;
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "DENY" always;
+  add_header Referrer-Policy "no-referrer" always;
+  add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+
+  # Collapse nginx/upstream infrastructure failures to fixed HTTP-v2-shaped
+  # JSON. Never relay an upstream gateway body or a request-derived value.
+  error_page 413 = @error_413;
+  error_page 429 = @error_429;
+  error_page 502 = @error_502;
+  error_page 504 = @error_504;
+
+  proxy_set_header Host              team08.aiforthai.in.th;
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header X-Forwarded-For   "";
+  proxy_set_header X-AIGuard-Key     "${AIGUARD_API_KEY}";
+  # The port keeps its /v1 aliases while the shared core is strict HTTP v2.
+  # The browser never supplies either internal header.
+  proxy_set_header X-AIGuard-Contract-Version "2";
+  proxy_connect_timeout 5s;
+  proxy_read_timeout  120s;
+  proxy_send_timeout   60s;
+  proxy_intercept_errors on;
+  # Never spill request or restored-response content into the container layer.
+  proxy_request_buffering off;
+  proxy_buffering off;
+
+  # ── unversioned (platform CI healthcheck + same-origin web page) ──────
+  location = /health {
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_pass http://core:8000/api/health;
+  }
+  location = /auth/login {
+    client_max_body_size 8k;
+    limit_req zone=auth_global burst=10 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/login;
+  }
+  location = /auth/logout {
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/logout;
+  }
+  location = /auth/session {
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/session;
+  }
+  location = /detect {
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_pass http://core:8000/api/detect;
+  }
+  location = /guard {
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_pass http://core:8000/api/guard;
+  }
+  location = /roundtrip {
+    limit_req zone=provider_global burst=2 nodelay;
+    limit_req zone=provider_caller burst=1 nodelay;
+    limit_conn provider_global_conn 2;
+    limit_conn provider_caller_conn 1;
+    # Shared core owns at most 3x60s calls plus 1s/2s backoff. Leave bounded
+    # processing headroom without widening timeouts on non-provider routes.
+    proxy_read_timeout 200s;
+    proxy_pass http://core:8000/api/roundtrip;
+  }
+  location = /analyze-report {
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_pass http://core:8000/api/analyze-report;
+  }
+
+  # ── Hosted 3 exact additive operations ───────────────────────────────
+  # Edge owns the global transport ceilings. Core owns verified-authority
+  # admission, queue capacity, idle borrowing, and parser/provider work; it
+  # therefore remains the only layer that can emit a Core timing header.
+  location = /auth/guest {
+    client_max_body_size 8k;
+    limit_req zone=standard_start_global burst=10 nodelay;
+    limit_conn standard_start_global_conn 10;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/guest;
+  }
+  location = /auth/guest/end {
+    client_max_body_size 8k;
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/guest/end;
+  }
+  location = /guest/preview {
+    client_max_body_size 96k;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/guest/preview;
+  }
+  location = /guest/execute {
+    client_max_body_size 96k;
+    limit_req zone=queue_execute_global burst=5 nodelay;
+    limit_req zone=queue_execute_caller burst=1 nodelay;
+    proxy_read_timeout 200s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/guest/execute;
+  }
+  location = /protection-preview {
+    client_max_body_size 96k;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/protection-preview;
+  }
+  location = /protection-execute {
+    client_max_body_size 96k;
+    limit_req zone=queue_execute_global burst=5 nodelay;
+    limit_req zone=queue_execute_caller burst=1 nodelay;
+    proxy_read_timeout 200s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/protection-execute;
+  }
+  location = /document-preview {
+    client_max_body_size 5m;
+    limit_req zone=document_global burst=1 nodelay;
+    limit_req zone=standard_document burst=1 nodelay;
+    limit_req zone=priority_document burst=1 nodelay;
+    limit_conn document_global_conn 1;
+    limit_conn standard_document_conn 1;
+    limit_conn priority_document_conn 1;
+    proxy_request_buffering off;
+    proxy_read_timeout 30s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/document-preview;
+  }
+  location = /document-execute {
+    client_max_body_size 96k;
+    limit_req zone=queue_execute_global burst=5 nodelay;
+    limit_req zone=queue_execute_caller burst=1 nodelay;
+    proxy_read_timeout 200s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/document-execute;
+  }
+  location = /provider-queue/join {
+    client_max_body_size 12k;
+    limit_req zone=queue_join_global burst=4 nodelay;
+    # Core owns verified-authority join buckets and the Standard idle-borrow
+    # exception. Nginx owns the global transport ceiling above.
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/join;
+  }
+  location = /provider-queue/status {
+    client_max_body_size 1;
+    if ($aift_status_has_body = 1) { return 413; }
+    if ($aift_status_has_transfer_encoding = 1) { return 413; }
+    limit_req zone=queue_status_global burst=12 nodelay;
+    limit_req zone=queue_status_caller burst=1 nodelay;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/status;
+  }
+  location = /provider-queue/claim {
+    client_max_body_size 12k;
+    limit_req zone=queue_claim_global burst=12 nodelay;
+    limit_req zone=queue_claim_caller burst=1 nodelay;
+    limit_conn queue_claim_global_conn 16;
+    limit_conn queue_claim_caller_conn 1;
+    proxy_read_timeout 30s;
+    proxy_send_timeout 30s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/claim;
+  }
+  location = /provider-queue/cancel {
+    client_max_body_size 12k;
+    limit_req zone=queue_cancel_global burst=5 nodelay;
+    limit_req zone=queue_cancel_caller burst=1 nodelay;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/cancel;
+  }
+
+  # ── /v1 versioned aliases (documented public API) ─────────────────────
+  location = /v1/health {
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_pass http://core:8000/api/health;
+  }
+  location = /v1/auth/login {
+    client_max_body_size 8k;
+    limit_req zone=auth_global burst=10 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/login;
+  }
+  location = /v1/auth/logout {
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/logout;
+  }
+  location = /v1/auth/session {
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/session;
+  }
+  location = /v1/detect {
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_pass http://core:8000/api/detect;
+  }
+  location = /v1/guard {
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_pass http://core:8000/api/guard;
+  }
+  location = /v1/roundtrip {
+    limit_req zone=provider_global burst=2 nodelay;
+    limit_req zone=provider_caller burst=1 nodelay;
+    limit_conn provider_global_conn 2;
+    limit_conn provider_caller_conn 1;
+    proxy_read_timeout 200s;
+    proxy_pass http://core:8000/api/roundtrip;
+  }
+  location = /v1/analyze-report {
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=work_caller burst=5 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_pass http://core:8000/api/analyze-report;
+  }
+
+  # ── Hosted 3 exact /v1 aliases ───────────────────────────────────────
+  location = /v1/auth/guest {
+    client_max_body_size 8k;
+    limit_req zone=standard_start_global burst=10 nodelay;
+    limit_conn standard_start_global_conn 10;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/guest;
+  }
+  location = /v1/auth/guest/end {
+    client_max_body_size 8k;
+    limit_req zone=public_global burst=30 nodelay;
+    proxy_set_header X-AIGuard-Key "";
+    proxy_set_header X-AIGuard-Contract-Version "";
+    proxy_pass http://core:8000/aift/auth/guest/end;
+  }
+  location = /v1/guest/preview {
+    client_max_body_size 96k;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/guest/preview;
+  }
+  location = /v1/guest/execute {
+    client_max_body_size 96k;
+    limit_req zone=queue_execute_global burst=5 nodelay;
+    limit_req zone=queue_execute_caller burst=1 nodelay;
+    proxy_read_timeout 200s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/guest/execute;
+  }
+  location = /v1/protection-preview {
+    client_max_body_size 96k;
+    limit_req zone=work_global burst=20 nodelay;
+    limit_req zone=standard_work burst=2 nodelay;
+    limit_req zone=priority_work burst=5 nodelay;
+    limit_conn work_global_conn 8;
+    limit_conn work_caller_conn 2;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/protection-preview;
+  }
+  location = /v1/protection-execute {
+    client_max_body_size 96k;
+    limit_req zone=queue_execute_global burst=5 nodelay;
+    limit_req zone=queue_execute_caller burst=1 nodelay;
+    proxy_read_timeout 200s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/protection-execute;
+  }
+  location = /v1/document-preview {
+    client_max_body_size 5m;
+    limit_req zone=document_global burst=1 nodelay;
+    limit_req zone=standard_document burst=1 nodelay;
+    limit_req zone=priority_document burst=1 nodelay;
+    limit_conn document_global_conn 1;
+    limit_conn standard_document_conn 1;
+    limit_conn priority_document_conn 1;
+    proxy_request_buffering off;
+    proxy_read_timeout 30s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/document-preview;
+  }
+  location = /v1/document-execute {
+    client_max_body_size 96k;
+    limit_req zone=queue_execute_global burst=5 nodelay;
+    limit_req zone=queue_execute_caller burst=1 nodelay;
+    proxy_read_timeout 200s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_rate_limited;
+    proxy_pass http://core:8000/api/document-execute;
+  }
+  location = /v1/provider-queue/join {
+    client_max_body_size 12k;
+    limit_req zone=queue_join_global burst=4 nodelay;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/join;
+  }
+  location = /v1/provider-queue/status {
+    client_max_body_size 1;
+    if ($aift_status_has_body = 1) { return 413; }
+    if ($aift_status_has_transfer_encoding = 1) { return 413; }
+    limit_req zone=queue_status_global burst=12 nodelay;
+    limit_req zone=queue_status_caller burst=1 nodelay;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/status;
+  }
+  location = /v1/provider-queue/claim {
+    client_max_body_size 12k;
+    limit_req zone=queue_claim_global burst=12 nodelay;
+    limit_req zone=queue_claim_caller burst=1 nodelay;
+    limit_conn queue_claim_global_conn 16;
+    limit_conn queue_claim_caller_conn 1;
+    proxy_read_timeout 30s;
+    proxy_send_timeout 30s;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/claim;
+  }
+  location = /v1/provider-queue/cancel {
+    client_max_body_size 12k;
+    limit_req zone=queue_cancel_global burst=5 nodelay;
+    limit_req zone=queue_cancel_caller burst=1 nodelay;
+    proxy_intercept_errors off;
+    error_page 413 = @error_payload_too_large;
+    error_page 429 = @error_queue_rate_limited;
+    proxy_pass http://core:8000/api/provider-queue/cancel;
+  }
+
+  # Everything else — including /sanitize, /reidentify, /docs, /openapi.json —
+  # does not exist on this deployment.
+  location / {
+    return 404;
+  }
+
+  location @error_413 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 413 '{"error":{"code":"request_too_large","status":413,"category":"request","count":0,"retryable":false}}';
+  }
+  # Only Stage 5 exact locations use these edge-only responses.  They are
+  # deliberately headerless apart from generic Nginx safety/cache headers:
+  # Core was not reached and Nginx must never forge Core timing metadata.
+  location @error_payload_too_large {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 413 '{"error":{"code":"payload_too_large","status":413,"category":"request","count":0,"retryable":false}}';
+  }
+  location @error_rate_limited {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 429 '{"error":{"code":"rate_limited","status":429,"category":"rate_limit","count":0,"retryable":true}}';
+  }
+  location @error_queue_rate_limited {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 429 '{"error":{"code":"queue_rate_limited","status":429,"category":"queue","count":0,"retryable":true}}';
+  }
+  location @error_429 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 429 '{"error":{"code":"rate_limited","status":429,"category":"rate_limit","count":0,"retryable":true}}';
+  }
+  location @error_502 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 502 '{"error":{"code":"upstream_unavailable","status":502,"category":"upstream","count":0,"retryable":true}}';
+  }
+  location @error_504 {
+    internal;
+    default_type application/json;
+    add_header Cache-Control "no-store" always;
+    return 504 '{"error":{"code":"upstream_timeout","status":504,"category":"upstream","count":0,"retryable":true}}';
+  }
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Health
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/health
+  body: none
+  auth: none
+}
+
+headers {
+  X-Amphrang-Contract-Version: 2
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: eq ok
+}

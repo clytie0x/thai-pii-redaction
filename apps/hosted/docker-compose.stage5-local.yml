@@ -1,0 +1,10 @@
+# Local-only Stage 5 caller-path probe.  It never participates in deployment:
+# published production ports remain exclusively owned by the deployed team08
+# stack, so this candidate uses separate loopback ports and synthetic secrets.
+services:
+  web:
+    ports: !override
+      - "127.0.0.1:20170:3000"
+  api:
+    ports: !override
+      - "127.0.0.1:20171:8000"

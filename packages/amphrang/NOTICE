@@ -1,0 +1,34 @@
+Amphrang — Thai PII detection and anonymization
+Copyright 2026 Amphrang contributors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The name "Amphrang" and any associated logos are not covered by the Apache
+License (see Section 6, Trademarks). Forks and derived works may use the
+code under Apache-2.0 but may not present themselves as Amphrang.
+
+This product depends on the following third-party components, each under its
+own permissive license (none is redistributed inside this package; pip
+installs them from their own distributions):
+
+- PyThaiNLP (Apache-2.0) — Thai tokenization and NER library code.
+- python-crfsuite (MIT) — CRF sequence labeling for the thainer NER engine.
+- regex (Apache-2.0 AND CNRI-Python) — Unicode-aware pattern matching.
+- httpx (BSD-3-Clause) — HTTP client for the optional LLM providers.
+
+NER model (downloaded by PyThaiNLP on first use, not bundled in this package):
+
+- Thai NER model `thai-ner-1-4.crfsuite` (Creative Commons Attribution 4.0
+  International, CC BY-4.0) — Copyright Wannaphong Phatthiyaphaibun.
+  Source: https://github.com/wannaphong/thai-ner/
+  License: https://creativecommons.org/licenses/by/4.0/
+  Deployments that redistribute the model file must carry this attribution.
+
+Optional components (installed separately via extras, not part of the core
+distribution):
+
+- fastapi / uvicorn / python-multipart (`amphrang[server]`) — local HTTP server.
+- mcp (`amphrang[mcp]`) — Model Context Protocol server.
+- torch / transformers / sentencepiece / sentence-transformers (`amphrang[ml]`)
+  — optional WangchanBERTa NER engine and semantic Section-26 detector.
+

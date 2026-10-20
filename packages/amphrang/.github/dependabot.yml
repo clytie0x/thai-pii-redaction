@@ -1,0 +1,9 @@
+# Keeps the SHA-pinned actions fresh: dependabot PRs bump the pinned commit
+# and the version comment together. Python deps carry `>=` floors in
+# pyproject.toml and are not managed here; uv.lock is re-pinned by hand (make lock).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

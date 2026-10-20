@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>AI Guard — New Logo Directions</title>
+  <link rel="icon" href="assets/ai-guard-favicon.svg" type="image/svg+xml">
+  <style>
+    :root{--paper:#f3f1eb;--paper-2:#faf9f5;--ink:#151515;--blue:#3266a8;--blue-deep:#173b65;--safe:#267a61;--signal:#e06972;--muted:#555b61;--line:#b9bec2}
+    *{box-sizing:border-box}
+    html{min-width:320px;background:var(--paper);color:var(--ink);font:15px/1.55 system-ui,sans-serif}
+    body{margin:0}
+    header{min-height:72px;padding:18px clamp(20px,4vw,64px);display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--ink);font-size:10px;font-weight:850;letter-spacing:.14em}
+    main{max-width:1500px;margin:auto;padding:clamp(30px,5vw,70px)}
+    .eyebrow{margin:0 0 18px;color:var(--blue);font-size:10px;font-weight:850;letter-spacing:.15em}
+    h1{max-width:12ch;margin:0;font-size:clamp(48px,7vw,100px);line-height:.9;letter-spacing:-.055em}h1 span{color:var(--blue)}
+    .lede{max-width:760px;margin:28px 0 0;color:var(--muted);font-size:17px}
+    .status{margin-top:28px;padding:13px 16px;border:1px solid var(--signal);background:#fae9ec;color:#6f2f3b;font-size:12px;font-weight:750}
+    .palette{margin:30px 0 0;display:flex;gap:12px;flex-wrap:wrap}.swatch{display:flex;align-items:center;gap:7px;font:10px/1 ui-monospace,monospace}.swatch i{width:22px;height:22px;border:1px solid var(--ink);background:var(--swatch)}
+    .current{margin-top:48px;padding:20px;display:flex;align-items:center;gap:18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--muted)}.current img{width:48px;height:48px}.current strong{display:block;color:var(--ink);font-size:11px;letter-spacing:.12em}.current p{margin:3px 0 0;font-size:12px}
+    .directions{margin-top:54px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--ink)}
+    .direction{min-width:0;margin:0;padding:clamp(24px,3vw,42px);display:grid;align-content:start}.direction+.direction{border-left:1px solid var(--ink)}
+    .direction-number{display:flex;justify-content:space-between;gap:20px;color:var(--blue);font:850 10px/1 ui-monospace,monospace;letter-spacing:.12em}.direction-number span:last-child{color:var(--muted)}
+    .hero-mark{width:min(210px,75%);height:auto;margin:38px auto 32px;display:block}
+    .direction h2{margin:0;font-size:clamp(27px,3vw,42px);line-height:1;letter-spacing:-.04em}.direction h2 span{display:block;margin-top:8px;color:var(--blue);font:850 10px/1 system-ui,sans-serif;letter-spacing:.13em}
+    .direction p{margin:19px 0 0;color:var(--muted)}
+    .traits{margin:22px 0 0;padding:16px 0 0;border-top:1px solid var(--line);display:grid;gap:8px;font-size:11px}.traits b{color:var(--ink)}
+    .lockup{margin-top:24px;padding:16px;display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:var(--paper-2);font-size:20px;font-weight:800}.lockup svg{width:42px;height:42px;flex:none}.lockup em{color:var(--blue);font-style:normal}
+    .matrix-title{margin:62px 0 16px;font-size:11px;letter-spacing:.13em}
+    .matrix{border:1px solid var(--ink)}.matrix-row{display:grid;grid-template-columns:170px 1fr 1fr}.matrix-row+.matrix-row{border-top:1px solid var(--ink)}.matrix-label{padding:22px;border-right:1px solid var(--ink);font-size:11px;font-weight:850;letter-spacing:.1em}.field{min-width:0;padding:22px;display:grid;gap:14px;align-content:start}.field+.field{border-left:1px solid var(--ink)}.field.blue{color:var(--paper);background:var(--blue-deep)}.field small{font-size:9px;font-weight:850;letter-spacing:.12em}.field small:not(:first-child){margin-top:9px;padding-top:14px;border-top:1px solid currentColor;opacity:.82}.sizes{display:flex;align-items:flex-end;gap:clamp(10px,1.8vw,24px);flex-wrap:wrap}.size{display:grid;justify-items:center;gap:7px;font:9px/1 ui-monospace,monospace}.size svg{display:block;flex:none}
+    .construction{margin-top:50px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.construction article{padding:20px;border:1px solid var(--line);background:var(--paper-2)}.construction h3{margin:0 0 12px;font-size:11px;letter-spacing:.1em}.construction p{margin:0;color:var(--muted);font:11px/1.7 ui-monospace,monospace}
+    .mark{--logo-shell:var(--ink);--logo-field:var(--blue);--logo-paper:var(--paper);--logo-signal:var(--signal);--logo-safe:var(--safe);--logo-deep:var(--blue-deep)}
+    .mark.inverse{--logo-shell:var(--paper);--logo-field:var(--blue-deep);--logo-paper:var(--paper);--logo-signal:#f1848e;--logo-safe:#7fd0b4;--logo-deep:var(--blue)}
+    .mark.mono{--logo-shell:var(--ink);--logo-field:var(--ink);--logo-paper:var(--paper);--logo-signal:var(--paper);--logo-safe:var(--ink);--logo-deep:var(--ink)}
+    @media(max-width:1000px){.directions{grid-template-columns:1fr}.direction+.direction{border-left:0;border-top:1px solid var(--ink)}.direction{grid-template-columns:minmax(170px,.55fr) 1fr;gap:0 35px}.direction-number,.direction h2,.direction p,.traits,.lockup{grid-column:2}.hero-mark{grid-column:1;grid-row:1/8;align-self:center}.construction{grid-template-columns:1fr}.matrix-row{grid-template-columns:130px 1fr}.field.blue{grid-column:2}.field+.field{border-left:0;border-top:1px solid var(--ink)}}
+    @media(max-width:640px){header{align-items:flex-start;flex-direction:column}main{padding-inline:18px}.direction{display:block}.hero-mark{margin:30px auto}.directions{margin-top:38px}.matrix-row{display:block}.matrix-label{border-right:0;border-bottom:1px solid var(--ink)}.field.blue{border-top:1px solid var(--ink)}.sizes{gap:14px}.current{align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;overflow:hidden">
+    <defs>
+      <symbol id="concept-loop" viewBox="0 0 64 64">
+        <path fill="none" stroke="var(--logo-shell)" stroke-width="12" stroke-linecap="square" stroke-linejoin="round" d="M49 16A23 23 0 1 0 49 48M32 32h17v16"/>
+        <path fill="none" stroke="var(--logo-field)" stroke-width="8" stroke-linecap="square" stroke-linejoin="round" d="M49 16A23 23 0 1 0 49 48M32 32h17v16"/>
+        <rect x="44" y="11" width="10" height="10" rx="1" fill="var(--logo-signal)" stroke="var(--logo-shell)" stroke-width="2"/>
+      </symbol>
+      <symbol id="concept-loop-micro" viewBox="0 0 64 64">
+        <path fill="none" stroke="var(--logo-shell)" stroke-width="16" stroke-linecap="square" stroke-linejoin="round" d="M48 17A22 22 0 1 0 48 47M31 32h17v15"/>
+        <path fill="none" stroke="var(--logo-field)" stroke-width="8" stroke-linecap="square" stroke-linejoin="round" d="M48 17A22 22 0 1 0 48 47M31 32h17v15"/>
+        <rect x="42" y="10" width="13" height="13" rx="1" fill="var(--logo-signal)" stroke="var(--logo-shell)" stroke-width="4"/>
+      </symbol>
+      <symbol id="concept-passage" viewBox="0 0 64 64">
+        <path fill="var(--logo-field)" stroke="var(--logo-shell)" stroke-width="2.5" stroke-linejoin="round" d="M9 58V29C9 13.5 18.2 5 32 5s23 8.5 23 24v29H40V30c0-6.2-3-10-8-10s-8 3.8-8 10v28Z"/>
+        <rect x="4" y="26" width="18" height="5" rx="1" fill="var(--logo-signal)" stroke="var(--logo-shell)" stroke-width="2"/>
+        <rect x="7" y="36" width="15" height="5" rx="1" fill="var(--logo-signal)" stroke="var(--logo-shell)" stroke-width="2"/>
+        <rect x="42" y="31" width="18" height="13" rx="3" fill="var(--logo-safe)" stroke="var(--logo-shell)" stroke-width="2"/>
+      </symbol>
+      <symbol id="concept-passage-micro" viewBox="0 0 64 64">
+        <path fill="var(--logo-field)" stroke="var(--logo-shell)" stroke-width="4" stroke-linejoin="round" d="M8 59V29C8 13 18 4 32 4s24 9 24 25v30H39V30c0-5-2.5-8-7-8s-7 3-7 8v29Z"/>
+        <rect x="3" y="24" width="20" height="8" rx="1" fill="var(--logo-signal)" stroke="var(--logo-shell)" stroke-width="4"/>
+        <rect x="7" y="36" width="16" height="8" rx="1" fill="var(--logo-signal)" stroke="var(--logo-shell)" stroke-width="4"/>
+        <rect x="41" y="30" width="20" height="16" rx="3" fill="var(--logo-safe)" stroke="var(--logo-shell)" stroke-width="4"/>
+      </symbol>
+      <symbol id="concept-veil" viewBox="0 0 64 64">
+        <path fill="var(--logo-field)" stroke="var(--logo-shell)" stroke-width="2.5" stroke-linejoin="round" d="M32 4 57 12v17c0 15-9.8 25.8-25 32C16.8 54.8 7 44 7 29V12Z"/>
+        <path fill="var(--logo-signal)" d="M34 14c9.8 3.8 16 11.5 16 21 0 9-6.4 15.8-17 20-1-6-2-12.5-1.7-19.5C31.6 27.6 32.5 20.4 34 14Z"/>
+        <path fill="var(--logo-paper)" d="M15 20c7.7-1 13.8-3 19-6-1.5 6.4-2.4 13.6-2.7 21.5C31 42.5 32 49 33 55 21.7 50.2 15 41.6 15 30Z"/>
+        <path fill="none" stroke="var(--logo-deep)" stroke-width="2.5" stroke-linecap="round" d="M34 14c-1.5 6.4-2.4 13.6-2.7 21.5C31 42.5 32 49 33 55"/>
+      </symbol>
+      <symbol id="concept-veil-micro" viewBox="0 0 64 64">
+        <path fill="var(--logo-field)" stroke="var(--logo-shell)" stroke-width="4" stroke-linejoin="round" d="M32 4 57 12v17c0 15-9.8 25.8-25 32C16.8 54.8 7 44 7 29V12Z"/>
+        <path fill="var(--logo-signal)" d="M35 15c9 4 14 11 14 20 0 8.8-5.5 15-16 19-1.3-6-1.7-12.2-1.5-18.5C31.8 27.5 33 20.4 35 15Z"/>
+        <path fill="var(--logo-paper)" d="M15 21c8-1 14.5-3 20-6-2 5.4-3.2 12.5-3.5 20.5C31.3 42 32 48 33 54c-11-4.5-18-12.5-18-24Z"/>
+        <path fill="none" stroke="var(--logo-deep)" stroke-width="4" stroke-linecap="round" d="M35 15c-2 5.4-3.2 12.5-3.5 20.5C31.3 42 32 48 33 54"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header><span>AI GUARD / NEW LOGO EXPLORATION</span><span>64-UNIT VECTOR STUDIES · NOT PRODUCTION</span></header>
+  <main>
+    <p class="eyebrow">ROUND 03 · STRUCTURALLY DISTINCT</p>
+    <h1>One brand.<br><span>Three shapes.</span></h1>
+    <p class="lede">Three materially different marks built for the live editorial website: an open monogram, a privacy passage, and a refined heritage shield. Each direction includes a one-color reading and an optically hinted micro construction for 16 and 24 px.</p>
+    <div class="status">EXPLORATION ONLY — the deployed revision-B2 logo remains unchanged until one direction is selected and passes full construction, variant, Docker, Nginx, CSP, browser, and reviewer gates.</div>
+    <div class="palette" aria-label="Production web palette">
+      <span class="swatch" style="--swatch:#f3f1eb"><i></i>PAPER</span><span class="swatch" style="--swatch:#151515"><i></i>INK</span><span class="swatch" style="--swatch:#3266a8"><i></i>PROTECTION BLUE</span><span class="swatch" style="--swatch:#173b65"><i></i>DEEP BLUE</span><span class="swatch" style="--swatch:#267a61"><i></i>SAFE</span><span class="swatch" style="--swatch:#e06972"><i></i>SIGNAL</span>
+    </div>
+    <div class="current"><img src="assets/ai-guard-mark.svg" alt="Current deployed AI Guard mark" width="48" height="48"><div><strong>CURRENT PRODUCTION REFERENCE</strong><p>Technically valid and recognizable, but visually tied to a face/mascot badge. Shown only to judge whether a new direction is meaningfully different.</p></div></div>
+
+    <section class="directions" aria-label="Three new logo directions">
+      <figure class="direction">
+        <div class="direction-number"><span>01 / GUARD LOOP</span><span>MONOGRAM</span></div>
+        <svg class="hero-mark mark" role="img" aria-label="Guard Loop logo concept"><use href="#concept-loop"/></svg>
+        <h2>Guard Loop<span>OPEN G · CONTROLLED ENTRY</span></h2>
+        <p>An open G turns the product name into the protection system. One Signal terminal marks the only unresolved entry point; the rest is a continuous guarded route.</p>
+        <div class="traits"><span><b>Strength:</b> ownable, compact, and not another shield</span><span><b>Risk:</b> needs the AI Guard wordmark during early recognition</span><span><b>Non-color cue:</b> square terminal interrupts the circular route</span></div>
+        <div class="lockup"><svg class="mark" aria-hidden="true"><use href="#concept-loop"/></svg><span>AI <em>Guard</em></span></div>
+      </figure>
+      <figure class="direction">
+        <div class="direction-number"><span>02 / PRIVACY PASSAGE</span><span>TRANSFORMATION</span></div>
+        <svg class="hero-mark mark" role="img" aria-label="Privacy Passage logo concept"><use href="#concept-passage"/></svg>
+        <h2>Privacy Passage<span>RAW SIGNAL → GUARDED OUTPUT</span></h2>
+        <p>An abstract passage proposes two incoming fragments and one resolved output. It tests whether the data boundary itself can become the identity without borrowing a document or security badge.</p>
+        <div class="traits"><span><b>Strength:</b> most abstract transformation experiment</span><span><b>Risk:</b> can read as headphones, a magnet, gate, or connector</span><span><b>Non-color limitation:</b> the output merges into the right leg</span></div>
+        <div class="lockup"><svg class="mark" aria-hidden="true"><use href="#concept-passage"/></svg><span>AI <em>Guard</em></span></div>
+      </figure>
+      <figure class="direction">
+        <div class="direction-number"><span>03 / SIGNAL VEIL</span><span>HERITAGE</span></div>
+        <svg class="hero-mark mark" role="img" aria-label="Signal Veil logo concept"><use href="#concept-veil"/></svg>
+        <h2>Signal Veil<span>HERITAGE · CONTROLLED DISCLOSURE</span></h2>
+        <p>A curved Paper veil crosses a rounded Signal layer inside the shield. The visible seam carries the privacy boundary even in one color, without eyes, horns, or a crown-breaking flame.</p>
+        <div class="traits"><span><b>Strength:</b> strongest continuity with the current brand</span><span><b>Risk:</b> remains closest to the security-shield category</span><span><b>Non-color cue:</b> curved seam separates veil from signal</span></div>
+        <div class="lockup"><svg class="mark" aria-hidden="true"><use href="#concept-veil"/></svg><span>AI <em>Guard</em></span></div>
+      </figure>
+    </section>
+
+    <h2 class="matrix-title">REQUIRED LEGIBILITY MATRIX / EXACT CSS PIXELS</h2>
+    <section class="matrix" aria-label="Logo size comparison">
+      <div class="matrix-row">
+        <div class="matrix-label">01<br>GUARD LOOP</div>
+        <div class="field"><small>MAIN / PAPER</small><div class="sizes" data-symbol="concept-loop" data-micro="concept-loop-micro"></div><small>ONE COLOR / INK</small><div class="sizes mono-sizes" data-symbol="concept-loop" data-micro="concept-loop-micro"></div></div>
+        <div class="field blue"><small>INVERSE / DEEP BLUE</small><div class="sizes inverse-sizes" data-symbol="concept-loop" data-micro="concept-loop-micro"></div></div>
+      </div>
+      <div class="matrix-row">
+        <div class="matrix-label">02<br>PRIVACY PASSAGE</div>
+        <div class="field"><small>MAIN / PAPER</small><div class="sizes" data-symbol="concept-passage" data-micro="concept-passage-micro"></div><small>ONE COLOR / INK</small><div class="sizes mono-sizes" data-symbol="concept-passage" data-micro="concept-passage-micro"></div></div>
+        <div class="field blue"><small>INVERSE / DEEP BLUE</small><div class="sizes inverse-sizes" data-symbol="concept-passage" data-micro="concept-passage-micro"></div></div>
+      </div>
+      <div class="matrix-row">
+        <div class="matrix-label">03<br>SIGNAL VEIL</div>
+        <div class="field"><small>MAIN / PAPER</small><div class="sizes" data-symbol="concept-veil" data-micro="concept-veil-micro"></div><small>ONE COLOR / INK</small><div class="sizes mono-sizes" data-symbol="concept-veil" data-micro="concept-veil-micro"></div></div>
+        <div class="field blue"><small>INVERSE / DEEP BLUE</small><div class="sizes inverse-sizes" data-symbol="concept-veil" data-micro="concept-veil-micro"></div></div>
+      </div>
+    </section>
+
+    <section class="construction" aria-label="Numeric construction notes">
+      <article><h3>01 / GUARD LOOP</h3><p>MASTER 64×64<br>OPEN G ARC r=23<br>NORMAL STROKES 12 / 8<br>MICRO STROKES 16 / 8<br>TERMINAL 10×10 NORMAL<br>TERMINAL 13×13 MICRO</p></article>
+      <article><h3>02 / PRIVACY PASSAGE</h3><p>MASTER 64×64<br>OUTER ARCH x=9…55<br>PASSAGE x=24…40<br>INPUT 18×5 + 15×5<br>OUTPUT 18×13<br>MICRO CRITICAL STROKES ≥4</p></article>
+      <article><h3>03 / SIGNAL VEIL</h3><p>MASTER 64×64<br>AXIS x=32 SHIELD ONLY<br>VEIL x=15…35 / y=14…55<br>SIGNAL x=31…50 / y=14…55<br>SEAM 2.5 NORMAL / 4 MICRO<br>MOTIF STAYS INSIDE CROWN</p></article>
+    </section>
+  </main>
+  <script>
+    const sizes=[16,24,32,42,64,128];
+    document.querySelectorAll('.sizes').forEach(row=>{
+      const inverse=row.classList.contains('inverse-sizes');
+      const mono=row.classList.contains('mono-sizes');
+      row.innerHTML=sizes.map(size=>{
+        const symbol=size<=24&&row.dataset.micro?row.dataset.micro:row.dataset.symbol;
+        return `<span class="size"><svg class="mark${inverse?' inverse':''}${mono?' mono':''}" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><use href="#${symbol}"/></svg>${size}</span>`;
+      }).join('');
+    });
+  </script>
+</body>
+</html>

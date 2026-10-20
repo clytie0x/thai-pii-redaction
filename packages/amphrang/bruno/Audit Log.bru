@@ -1,0 +1,24 @@
+meta {
+  name: Audit Log
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{base_url}}/api/audit-log?limit=10&offset=0
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 10
+  offset: 0
+}
+
+headers {
+  X-Amphrang-Contract-Version: 2
+}
+
+assert {
+  res.status: eq 200
+}

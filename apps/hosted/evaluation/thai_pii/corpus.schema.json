@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aiguard.synthetic-thai-pii-corpus/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "corpus_id", "synthetic_declaration", "offset_unit", "cases"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "corpus_id": {"const": "aiguard-thai-pii-adversarial-v1"},
+    "synthetic_declaration": {"type": "string", "minLength": 20},
+    "offset_unit": {"const": "unicode_code_point_half_open"},
+    "cases": {
+      "type": "array",
+      "minItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "base_id", "text", "expected_spans", "scenario", "action", "phenomena", "provenance"],
+        "properties": {
+          "case_id": {"type": "string", "pattern": "^C[0-9]{4}$"},
+          "base_id": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+          "text": {"type": "string", "minLength": 1, "maxLength": 20000},
+          "expected_spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["start_cp", "end_cp", "type"],
+              "properties": {
+                "start_cp": {"type": "integer", "minimum": 0},
+                "end_cp": {"type": "integer", "minimum": 1},
+                "type": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"}
+              }
+            }
+          },
+          "scenario": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+          "action": {"enum": ["mask_required", "do_not_mask", "ambiguous"]},
+          "phenomena": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
+            "uniqueItems": true
+          },
+          "provenance": {"type": "string", "pattern": "^constructed-template:[a-z0-9_-]+$"}
+        }
+      }
+    }
+  }
+}
