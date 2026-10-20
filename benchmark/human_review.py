@@ -21,6 +21,9 @@ STT52_REVIEW_SAMPLE_ID = "stt52-second-human-v1"
 STT52_REVIEW_PER_SLICE = 4
 STT52_REVIEW_SEED = 5252
 STT52_GUIDELINE_PATH = "docs/research/stt52-human-review-guidelines.md"
+# History was rewritten on 2026-10-19 to drop private documents; commits recorded
+# before then (like STT52_GOLD_COMMIT) are reachable through this old-to-new map.
+COMMIT_MAP_PATH = "docs/history/commit-map.txt"
 
 
 class HumanReviewError(ValueError):
@@ -50,15 +53,36 @@ def _parse_gold_jsonl(raw: bytes) -> list[Sample]:
     return samples
 
 
+def rewritten_commit(repo: Path, revision: str) -> str | None:
+    """New SHA for a full pre-rewrite SHA, or None when the map has no entry."""
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        return None
+    try:
+        lines = (Path(repo) / COMMIT_MAP_PATH).read_text(encoding="ascii").splitlines()
+    except OSError:
+        return None
+    for line in lines[1:]:
+        old, _, new = line.partition(" ")
+        if old == revision and re.fullmatch(r"[0-9a-f]{40}", new) and new.strip("0"):
+            return new
+    return None
+
+
 def load_gold_at_commit(
     repo: Path,
     revision: str = STT52_GOLD_COMMIT,
 ) -> tuple[list[Sample], dict]:
-    """Load the frozen paper corpus without changing the worktree."""
+    """Load the frozen paper corpus without changing the worktree.
+
+    A pre-rewrite SHA is read from its rewritten commit, but the provenance
+    keeps reporting the recorded SHA so packets built before the rewrite
+    still match.
+    """
+    rewritten = rewritten_commit(repo, revision)
     try:
         resolved = (
             subprocess.run(
-                ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
+                ["git", "rev-parse", "--verify", f"{rewritten or revision}^{{commit}}"],
                 cwd=repo,
                 capture_output=True,
                 check=True,
@@ -78,7 +102,7 @@ def load_gold_at_commit(
     samples = _parse_gold_jsonl(raw)
     return samples, {
         "gold_version": STT52_GOLD_VERSION,
-        "commit": resolved,
+        "commit": revision if rewritten else resolved,
         "path": STT52_GOLD_PATH,
         "sha256": hashlib.sha256(raw).hexdigest(),
         "documents": len(samples),
