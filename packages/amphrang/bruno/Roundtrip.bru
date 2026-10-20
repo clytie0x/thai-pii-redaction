@@ -1,0 +1,27 @@
+meta {
+  name: Roundtrip
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/roundtrip
+  body: json
+  auth: none
+}
+
+headers {
+  X-Amphrang-Contract-Version: 2
+}
+
+body:json {
+  {
+    "text": "ผมชื่อ นายสมชาย ใจดี โทร 081-234-5678",
+    "mode": "token",
+    "provider": "fake"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hosted 3.0.2 Web App — AI Guard</title>
+<meta name="description" content="AI Guard Hosted 3.0.2: Standard access, Priority Invite, protected text, and text-layer PDF review.">
+<meta name="robots" content="noindex,nofollow">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="th_TH">
+<meta property="og:title" content="Hosted 3.0.2 Web App — AI Guard">
+<meta property="og:description" content="เริ่ม Standard access หรือ Priority Invite และเห็นขอบเขตข้อมูลก่อนกรอกข้อความ">
+<meta property="og:url" content="https://team08.aiforthai.in.th/app">
+<link rel="icon" href="/assets/ai-guard-favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body class="app-page">
+<a class="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
+
+<header class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="/" aria-label="AI Guard หน้าแรก"><span class="brand-mark" aria-hidden="true"></span>AI <span>Guard</span></a>
+    <nav class="navlinks" aria-label="เมนูผลิตภัณฑ์">
+      <a href="/">หน้าแรก</a>
+      <a href="/downloads#desktop">Desktop</a>
+      <a href="/app" aria-current="page">Hosted Web</a>
+      <a href="/privacy">ความเป็นส่วนตัว</a>
+      <a href="/help">ช่วยเหลือ</a>
+    </nav>
+    <details class="app-mobile-nav"><summary>เมนู</summary><nav aria-label="เมนูผลิตภัณฑ์สำหรับหน้าจอขนาดเล็ก"><a href="/">หน้าแรก</a><a href="/downloads#desktop">Desktop</a><a href="/app" aria-current="page">Hosted Web</a><a href="/privacy">ความเป็นส่วนตัว</a><a href="/help">ช่วยเหลือ</a><a href="/terms">ข้อกำหนด</a><a href="/developers">Contract &amp; evidence</a></nav></details>
+    <span class="nav-proof">THAI PRIVACY · 2026</span>
+  </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+
+<div class="bootstrap-notice" id="appBootstrapNotice" role="status">
+  <strong>Hosted Web ต้องใช้ JavaScript เพื่อเปิดส่วนควบคุมอย่างปลอดภัย</strong>
+  <span>หากข้อความนี้ไม่หาย ให้ใช้ <a href="/downloads#desktop">Desktop</a> หรืออ่าน <a href="/help">วิธีแก้ไข</a> และ <a href="/privacy">ขอบเขตข้อมูล</a></span>
+</div>
+
+<div id="appControls" inert>
+
+<!-- Hosted 3.0.2 workspace. It is intentionally authored inert: only
+     hosted3-app.js removes inert after a successful bootstrap. -->
+<section class="hosted3-workspace" aria-labelledby="hosted3Title">
+  <div class="hosted3-shell">
+    <p class="hosted3-kicker">HOSTED 3.0.2 · REVIEW BEFORE PROVIDER</p>
+    <div class="hosted3-page-title"><h1 id="hosted3Title">ปกป้องข้อความก่อนใช้ AI</h1><p class="hosted3-lede">เริ่ม Standard access ได้ทันที หรือใช้ Priority Invite ที่ออกให้คุณ ทั้งสองทางใช้ขั้นตอนและข้อจำกัดความปลอดภัยเดียวกัน</p></div>
+    <div class="hosted3-entry" id="h3Access">
+      <aside class="hosted3-boundary" aria-label="ขอบเขตข้อมูล Hosted">
+        <strong>ขอบเขตข้อมูลก่อนเริ่ม</strong>
+        <p>ข้อความและ PDF แบบมี text layer ผ่าน organizer proxy และ AI Guard Core เพื่อปกป้องและตรวจทาน</p>
+        <p>Pathumma ได้รับเฉพาะข้อความที่ปกป้องและอนุมัติแล้ว ไม่ได้รับ PDF, ข้อความต้นฉบับ หรือ mapping</p>
+      </aside>
+      <div class="hosted3-actions" id="h3AuthorityActions">
+        <button class="primary" id="h3StartStandard" type="button">Start Standard access</button>
+        <button class="secondary-action" id="h3ShowPriority" type="button">Use Priority Invite</button>
+      </div>
+      <form class="hosted3-priority" id="h3PriorityForm" hidden novalidate>
+        <label for="h3Invite">Priority Invite ที่ออกให้</label>
+        <div><input id="h3Invite" type="password" autocomplete="off" maxlength="128"><button class="secondary-action" id="h3PrioritySubmit" type="submit">Continue</button></div>
+      </form>
+      <p class="hosted3-status" id="h3AuthorityStatus">ตรวจสอบ session โดยไม่เก็บข้อมูลส่วนตัวในเบราว์เซอร์</p>
+    </div>
+
+    <section class="hosted3-chooser" id="h3Chooser" hidden aria-labelledby="h3ChooserTitle"><span id="synthetic-demo" class="legacy-anchor" aria-hidden="true"></span>
+      <div class="hosted3-chooser-head"><div><p class="hosted3-kicker">ONE WORKSPACE</p><h2 id="h3ChooserTitle" tabindex="-1">เลือกงาน</h2></div><span id="h3ClassChip" class="hosted3-chip"></span><button id="h3EndAuthority" class="text-action" type="button">End access</button></div>
+      <div class="hosted3-task-grid" role="list">
+        <div role="listitem"><button class="hosted3-task featured" data-h3-task="pdf" type="button"><span>FEATURED</span><strong>PDF → Protected Markdown</strong><small>ส่งเฉพาะ PDF ที่คุณเลือก แล้วตรวจ protected extraction ก่อนเข้าคิว</small></button></div>
+        <div role="listitem"><button class="hosted3-task" data-h3-task="text" type="button"><span>TEXT</span><strong>Protect text for AI</strong><small>Token หรือ Surrogate แบบ reversible pseudonymization</small></button></div>
+        <div role="listitem"><button class="hosted3-task" data-h3-task="inspect" type="button"><span>INSPECT</span><strong>Inspect &amp; report</strong><small>ตรวจจับ Guard และรายงาน PDPA จากข้อความเดียวกัน</small></button></div>
+      </div>
+    </section>
+
+    <section class="hosted3-task-panel" id="h3PdfTask" hidden aria-labelledby="h3PdfTitle">
+      <div class="hosted3-panel-head"><button class="text-action h3-back" type="button">← งานทั้งหมด</button><h2 id="h3PdfTitle">PDF → Protected Markdown</h2></div>
+      <p class="hosted3-limit">รองรับเฉพาะ PDF ที่เลือกข้อความได้ PDF ต้นฉบับจะไม่เปลี่ยน ไม่มี PDF ที่ rebuild/redact และไม่รองรับ scan, image-only PDF, OCR, layout, ภาพ หรือแผนภาพ</p>
+      <label class="hosted3-file" for="h3Pdf"><span>เลือก PDF</span><input id="h3Pdf" type="file" accept="application/pdf"><small id="h3PdfMeta">ยังไม่เลือกไฟล์ · การเลือกไฟล์จะไม่อัปโหลดเอง</small></label>
+      <p class="hosted3-boundary compact"><strong>ก่อนอัปโหลด:</strong> raw PDF จะผ่าน organizer proxy และ AI Guard Core อาจมี bounded temporary spool และลบหลัง extraction แต่จะไม่ถูกส่งให้ Pathumma</p>
+      <button class="primary" id="h3PdfPreview" type="button">Upload &amp; extract</button>
+    </section>
+
+    <section class="hosted3-task-panel" id="h3TextTask" hidden aria-labelledby="h3TextTitle">
+      <div class="hosted3-panel-head"><button class="text-action h3-back" type="button">← งานทั้งหมด</button><h2 id="h3TextTitle">Protect text for AI</h2></div>
+      <label for="h3Text">ข้อความ <span id="h3TextCount">0 / 20,000</span></label>
+      <textarea id="h3Text" maxlength="20000" spellcheck="false" aria-describedby="h3TextBoundary" placeholder="วางข้อความที่ต้องการปกป้อง"></textarea>
+      <p class="hosted3-boundary compact" id="h3TextBoundary"><strong>ก่อนส่ง:</strong> ข้อความต้นฉบับจะถึง organizer proxy และ AI Guard เพื่อปกป้อง หากข้อมูลต้องอยู่บนอุปกรณ์ ให้ใช้ Desktop</p>
+      <fieldset class="hosted3-modes"><legend>รูปแบบ reversible pseudonymization</legend><label><input type="radio" name="h3Mode" value="token" checked> Token</label><label><input type="radio" name="h3Mode" value="surrogate"> Surrogate</label></fieldset>
+      <button class="primary" id="h3TextPreview" type="button">Preview protected text</button>
+    </section>
+
+    <section class="hosted3-task-panel" id="h3InspectTask" hidden aria-labelledby="h3InspectTitle">
+      <div class="hosted3-panel-head"><button class="text-action h3-back" type="button">← งานทั้งหมด</button><h2 id="h3InspectTitle">Inspect &amp; report</h2></div>
+      <p>ตรวจจับ PII, ดู Guard heuristic, และสร้างรายงาน PDPA จากข้อความเดียวกัน Guard เป็นคำเตือนสำหรับคนตรวจ ไม่ใช่ตัวบล็อกหรือคะแนน privacy ใหม่</p>
+      <label for="h3InspectText">ข้อความ <span id="h3InspectCount">0 / 20,000</span></label><textarea id="h3InspectText" maxlength="20000" spellcheck="false" placeholder="ใช้ข้อมูลสังเคราะห์สำหรับการทดสอบ"></textarea>
+      <div class="hosted3-actions"><button class="secondary-action" id="h3Detect" type="button">Detect</button><button class="secondary-action" id="h3Guard" type="button">Guard</button><button class="primary" id="h3Report" type="button">Analyze report</button><button class="secondary-action" id="h3DownloadReport" type="button" hidden>Download PDPA report</button></div>
+      <div class="hosted3-evidence" id="h3InspectResult"></div>
+      <details class="hosted3-secondary" id="h3InspectEvidence"><summary>Sensitive Data Map and service evidence</summary><p class="hosted3-limit">แผนที่นี้แสดงเฉพาะประเภท จำนวน และตำแหน่งเชิงสัดส่วนจากผล Detect ปัจจุบัน ไม่แสดงค่าข้อมูล ส่วน Section 26 จะแสดงเฉพาะเมื่อ Core คืนธงจาก protected preview/result และไม่ใช่ข้อสรุปทางกฎหมาย</p><div id="h3InspectMap"><p>ยังไม่มีผล Detect สำหรับข้อความปัจจุบัน</p></div><p id="h3ServiceLiveness"><strong>Service liveness:</strong> กำลังตรวจสอบ · ไม่ใช่ provider readiness</p></details>
+      <details class="hosted3-secondary" id="h3SyntheticEvidence"><summary>Five synthetic scenarios and guided evidence</summary><p>These examples never submit until you choose Detect, Guard, or Analyze report.</p><div class="hosted3-actions"><button type="button" class="secondary-action" data-h3-sample="hr">HR</button><button type="button" class="secondary-action" data-h3-sample="healthcare">Healthcare</button><button type="button" class="secondary-action" data-h3-sample="education">Education</button><button type="button" class="secondary-action" data-h3-sample="customer">Customer service</button><button type="button" class="secondary-action" data-h3-sample="government">Government</button></div><p>Detect shows spans/counts; Guard is a non-blocking heuristic; the report is an automated review, not legal certification. Presenter and raw-versus-protected evidence appear only after the relevant result and are never a portable artifact.</p></details>
+    </section>
+
+    <section class="hosted3-preview" id="h3Preview" hidden aria-labelledby="h3PreviewTitle" tabindex="-1">
+      <p class="hosted3-kicker">EXACT REVIEW</p><h2 id="h3PreviewTitle">ตรวจข้อความที่ AI Guard จะส่งต่อ</h2>
+      <div class="hosted3-preview-grid"><div><h3>Protected payload</h3><pre id="h3Protected"></pre></div><div><h3>Outbound gate</h3><p id="h3Gate"></p><p id="h3PreviewMeta"></p></div></div>
+      <p class="hosted3-limit" id="h3PreviewWarning">AI Guard แทนที่เฉพาะ PII ที่ตรวจพบ ข้อมูลที่ไม่พบอาจยังอยู่ ต้องตรวจทานโดยมนุษย์</p>
+      <details class="hosted3-secondary" id="h3PreviewEvidence"><summary>Detected data and review signals</summary><div id="h3PreviewMap"></div><p id="h3PreviewSection26"></p><p id="h3PreviewGuard"></p></details>
+      <button class="primary" id="h3Approve" type="button">Approve and join queue; when admitted, AI Guard will send this exact protected text automatically</button><button class="secondary-action" id="h3DiscardPreview" type="button">Discard preview</button>
+    </section>
+
+    <section class="hosted3-queue" id="h3Queue" hidden aria-labelledby="h3QueueTitle" tabindex="-1"><p class="hosted3-kicker">QUEUE</p><h2 id="h3QueueTitle">รอสิทธิ์ส่ง protected payload</h2><div id="h3QueueFacts"></div><p>หน้านี้ต้องเปิดอยู่และอยู่เบื้องหน้า การสลับแท็บ/แอป, ย่อหน้าต่าง, lock โทรศัพท์ หรือ offline จะพัก eligibility โดยคง fairness age ก่อนถูกเลือก แต่ deadline ยังคงเดิน หาก claim สำหรับ automatic start ถูกออกแล้วแต่ handoff ไม่สำเร็จ ครั้งแรกจะย้ายคำขอไปท้ายคิว และครั้งที่สองจะหมดสิทธิ์โดยไม่มีการส่งให้ provider</p><button class="secondary-action" id="h3CancelQueue" type="button">Cancel queue</button><button class="text-action" id="h3ClearRunning" type="button" hidden>Clear this page</button></section>
+
+    <section class="hosted3-result" id="h3Result" hidden aria-labelledby="h3ResultTitle" tabindex="-1"><p class="hosted3-kicker">RESULT</p><h2 id="h3ResultTitle">Verified result</h2><p class="hosted3-limit" id="h3PresenterPrivateNotice" hidden>Presenter view ซ่อน custom restored result และ raw comparison โดยตั้งใจ กลับสู่หน้าปกติเพื่อตรวจข้อมูลส่วนตัว</p><div id="h3ResultBody"></div><details id="h3TextComparison"><summary>Raw-versus-protected working comparison</summary><p>On-screen review only. This comparison is never copied or exported and is hidden in Presenter view for custom input.</p><pre id="h3RawWorking"></pre><pre id="h3ProviderBound"></pre></details><details id="h3TextEvidence"><summary>Executive, provider, safety, timing, and glossary evidence</summary><section id="h3ExecutiveSummary" aria-labelledby="h3ExecutiveTitle"><h3 id="h3ExecutiveTitle">Executive summary</h3><p id="h3ExecutiveCopy">ยังไม่มีผลที่ผ่าน gate</p></section><dl class="hosted3-fact-grid" id="h3SafetyEvidence"><div><dt>Detected PII</dt><dd id="h3EvidencePii">—</dd></div><div><dt>Section 26 heuristic</dt><dd id="h3EvidenceSection26">—</dd></div><div><dt>Residual signal</dt><dd id="h3EvidenceResidual">—</dd></div><div><dt>Restoration / leftover</dt><dd id="h3EvidenceRestoration">—</dd></div><div><dt>Provider attempts</dt><dd id="h3EvidenceAttempts">—</dd></div><div><dt>Measured duration</dt><dd id="h3EvidenceDuration">—</dd></div></dl><p id="h3EvidenceFacts"></p><p>Token/Surrogate are reversible pseudonymization, not anonymization. Section 26 and Guard are review heuristics, not legal certification or a blocking privacy score. Residual or integrity failure never reveals a restored result.</p></details><details id="h3ProtectedExtraction"><summary>Protected extraction</summary><pre id="h3ResultProtected"></pre></details><details id="h3TechnicalReceipt"><summary>Technical receipt</summary><pre id="h3Receipt"></pre></details><div class="hosted3-actions"><button class="secondary-action" id="h3Present" type="button">Presenter view</button><button class="secondary-action" id="h3CopyArtifact" type="button">Copy protected artifact</button><button class="secondary-action" id="h3DownloadMd" type="button">Download .md</button><button class="secondary-action" id="h3DownloadTxt" type="button">Download .txt</button><button class="secondary-action" id="h3DownloadReceipt" type="button">Download receipt JSON</button></div></section>
+
+    <section class="hosted3-recovery" id="h3Recovery" hidden role="alert" tabindex="-1"><p id="h3RecoveryCopy"></p><button class="primary" id="h3RecoveryAction" type="button">Retry session check</button></section>
+  </div>
+</section>
+
+</div>
+
+</main>
+
+<footer>
+  <div class="container">
+    <strong>AI Guard</strong> · Desktop 3.0.0 Published · Hosted 3.0.2 · Extension 3.0.0 Manual
+    <br><a href="/">หน้าแรก</a> · <a href="/privacy">ความเป็นส่วนตัวและความปลอดภัย</a> · <a href="/terms">ข้อกำหนด</a> · <a href="/help">ช่วยเหลือ/FAQ</a> · <a href="/downloads">Desktop และ Extension</a> · <a href="/developers">Contract &amp; evidence</a>
+  </div>
+</footer>
+
+<div class="visually-hidden" id="appAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script src="/hosted3-app.js" defer></script>
+</body>
+</html>

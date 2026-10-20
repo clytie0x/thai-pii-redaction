@@ -1,0 +1,9 @@
+# LOCAL TEST ONLY — adds the identity provider so the 10-minute soak measures
+# OUR pipeline's concurrency, not the organizer's shared gateway (etiquette:
+# ~2,000 real LLM calls in 10 minutes is not a neighborly load test). The
+# deployment compose never includes this file; a light soak against the real
+# provider runs separately.
+services:
+  core:
+    environment:
+      AIGUARD_PROVIDERS: "tokenmind,fake"

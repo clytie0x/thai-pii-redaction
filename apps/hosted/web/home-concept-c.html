@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Guard — Editorial Shield</title>
+  <meta name="description" content="AI Guard ช่วยตรวจจับและปกป้องข้อมูลส่วนบุคคลภาษาไทยก่อนนำข้อความไปใช้กับ AI">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="assets/ai-guard-favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add('js')</script>
+  <style>
+    :root{
+      --blue:#3266a8;
+      --blue-deep:#173b65;
+      --blue-soft:#c9e5ff;
+      --paper:#f3f1eb;
+      --paper-2:#faf9f5;
+      --ink:#151515;
+      --muted:#555b61;
+      --line:#b9bec2;
+      --safe:#267a61;
+      --signal:#e06972;
+      --focus:#f2a93b;
+      --ease:cubic-bezier(.22,1,.36,1);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-width:320px;
+      color:var(--ink);
+      background:var(--paper);
+      font-family:"Anuphan","Leelawadee UI","Noto Sans Thai",Tahoma,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      overflow-x:hidden;
+    }
+    button,a{font:inherit}
+    a{color:inherit;text-decoration:none}
+    a:focus-visible,button:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px var(--ink)}
+    button{color:inherit}
+    .skip-link{
+      position:fixed;
+      z-index:1000;
+      left:16px;
+      top:-80px;
+      padding:11px 15px;
+      color:#fff;
+      background:var(--ink);
+      font-size:14px;
+      font-weight:700;
+    }
+    .skip-link:focus{top:14px}
+    .page{
+      min-height:100vh;
+      position:relative;
+      background:
+        linear-gradient(90deg,transparent calc(50% - .5px),rgba(21,21,21,.075) 50%,transparent calc(50% + .5px)),
+        var(--paper);
+    }
+
+    .site-header{
+      position:sticky;
+      z-index:50;
+      top:0;
+      height:86px;
+      padding:0 38px;
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      align-items:center;
+      border-bottom:1px solid var(--ink);
+      background:rgba(243,241,235,.94);
+      backdrop-filter:blur(16px);
+    }
+    .brand{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:700}
+    .brand-mark{
+      width:42px;
+      height:42px;
+      display:block;
+      flex:0 0 auto;
+    }
+    .brand-mark img{width:100%;height:100%;display:block}
+    .edition{justify-self:center;font-size:11px;font-weight:700;letter-spacing:.16em}
+    .menu{justify-self:end;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:650}
+    .nav-link{padding:10px 9px}
+    .nav-link:hover{color:var(--blue)}
+    .menu-cta{padding:10px 14px;border:1px solid var(--ink);border-radius:999px;transition:.2s var(--ease)}
+    .menu-cta.primary{color:#fff;border-color:var(--blue);background:var(--blue)}
+    .menu-cta:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(29,57,88,.12)}
+    .menu-cta.primary:hover{background:var(--blue-deep)}
+
+    .hero{
+      min-height:calc(100vh - 86px);
+      display:grid;
+      grid-template-columns:1.02fr .98fr;
+      border-bottom:1px solid var(--ink);
+    }
+    .copy{
+      position:relative;
+      padding:66px 54px 52px 6vw;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      border-right:1px solid var(--ink);
+      overflow:hidden;
+    }
+    .index,.section-tag{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:var(--blue);
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.13em;
+      text-transform:uppercase;
+    }
+    .index:before,.section-tag b{
+      width:38px;
+      height:38px;
+      flex:0 0 auto;
+      display:grid;
+      place-items:center;
+      border:1px solid currentColor;
+      border-radius:50%;
+      font-size:10px;
+      letter-spacing:.05em;
+    }
+    .index:before{content:"01"}
+    h1{
+      position:relative;
+      z-index:2;
+      margin:40px 0 0;
+      font-size:clamp(62px,7.15vw,114px);
+      line-height:1.08;
+      letter-spacing:-.012em;
+      font-weight:700;
+    }
+    h1 span{display:block;padding:.045em .02em}
+    h1 b{display:block;font-weight:inherit}
+    .js h1 b{animation:rise .9s var(--ease) both}
+    h1 span:nth-child(2){margin-left:4.5vw;color:var(--blue)}
+    h1 span:nth-child(2) b{animation-delay:.09s}
+    h1 span:nth-child(3) b{animation-delay:.18s}
+    @keyframes rise{
+      from{opacity:0;transform:translateY(24%);clip-path:inset(100% 0 -18%)}
+      to{opacity:1;transform:none;clip-path:inset(-18% 0 -18%)}
+    }
+    .copy-bottom{margin-top:36px;max-width:650px}
+    .lede{
+      max-width:580px;
+      margin:0;
+      color:#454a4e;
+      font-size:18px;
+      line-height:1.75;
+    }
+    .hero-actions{margin-top:27px;display:flex;gap:11px;flex-wrap:wrap}
+    .button{
+      min-height:52px;
+      padding:0 19px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:11px;
+      border:1px solid var(--ink);
+      background:transparent;
+      font-size:14px;
+      font-weight:700;
+      transition:transform .2s var(--ease),box-shadow .2s var(--ease),background .2s;
+    }
+    .button:after{content:"↗";font-size:16px}
+    .button.primary{color:#fff;border-color:var(--blue);background:var(--blue)}
+    .button:hover{transform:translateY(-3px);box-shadow:0 11px 24px rgba(24,59,100,.14)}
+    .button.primary:hover{background:var(--blue-deep)}
+    .copy-note{margin-top:16px;color:#686e73;font-size:12px;line-height:1.55}
+
+    .visual{
+      position:relative;
+      min-height:720px;
+      padding:42px;
+      overflow:hidden;
+      color:#fff;
+      background:var(--blue);
+      perspective:1400px;
+    }
+    .visual:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px);
+      background-size:70px 70px;
+    }
+    .visual-title{
+      position:relative;
+      z-index:2;
+      display:flex;
+      justify-content:space-between;
+      gap:20px;
+      color:#e3f0ff;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.12em;
+    }
+    .visual-title span:last-child{opacity:.72}
+    .poster{
+      --tilt-x:0deg;
+      --tilt-y:0deg;
+      position:absolute;
+      z-index:3;
+      inset:100px 42px 56px;
+      transform:rotate(1deg) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+      transform-style:preserve-3d;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.52);
+      border-radius:6px;
+      color:var(--ink);
+      background:#edf4fa;
+      box-shadow:22px 28px 0 rgba(14,46,80,.28),0 35px 76px rgba(13,43,75,.34);
+      transition:transform .18s ease-out,box-shadow .25s var(--ease);
+    }
+    .js .poster{animation:posterIn .95s .12s var(--ease) both}
+    .poster:hover{box-shadow:26px 34px 0 rgba(14,46,80,.24),0 44px 90px rgba(13,43,75,.4)}
+    @keyframes posterIn{
+      from{opacity:0;transform:translateY(30px) rotate(3.3deg)}
+      to{opacity:1;transform:rotate(1deg) rotateX(var(--tilt-x)) rotateY(var(--tilt-y))}
+    }
+    .poster-head{
+      height:66px;
+      padding:0 20px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border-bottom:1px solid #b5c4d0;
+      color:#4d5a66;
+      background:rgba(249,252,255,.9);
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.07em;
+    }
+    .status-dot{width:8px;height:8px;border-radius:50%;background:#8e9aa4;box-shadow:0 0 0 5px rgba(142,154,164,.12)}
+    .poster[data-phase="scanning"] .status-dot{background:var(--blue);box-shadow:0 0 0 5px rgba(50,102,168,.13)}
+    .poster[data-phase="review"] .status-dot{background:var(--safe);box-shadow:0 0 0 5px rgba(38,122,97,.13)}
+    .poster-state{margin-left:auto;color:var(--blue);text-align:right}
+    .replay{
+      min-height:34px;
+      padding:0 11px;
+      border:1px solid #9dafbd;
+      border-radius:999px;
+      background:#fff;
+      color:#40505e;
+      font-size:10px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .replay:hover{border-color:var(--blue);color:var(--blue)}
+    .replay[aria-disabled="true"]{opacity:.62;cursor:wait}
+    .mobile-switch{display:none}
+    .poster-body{position:relative;height:calc(100% - 66px);display:grid;grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr)}
+    .panel{position:relative;min-width:0;padding:30px 24px;overflow:hidden}
+    .panel.raw{background:#e5ebef}
+    .panel.protected{background:#f4f8fb}
+    .panel-content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;transition:opacity .45s var(--ease),transform .45s var(--ease)}
+    .panel.protected .panel-content{opacity:1;transform:none}
+    .js .panel.protected .panel-content{opacity:0;transform:translateY(13px)}
+    .js .poster[data-phase="review"] .panel.protected .panel-content{opacity:1;transform:none}
+    .poster.resetting .panel.protected .panel-content{transition:none}
+    .panel.protected:after{
+      content:"ผลลัพธ์จะปรากฏหลังตรวจจับ";
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      padding:28px;
+      color:#71808d;
+      font-size:13px;
+      text-align:center;
+      opacity:0;
+      visibility:hidden;
+      transition:opacity .25s;
+    }
+    .js .panel.protected:after{opacity:1;visibility:visible}
+    .js .poster[data-phase="review"] .panel.protected:after{opacity:0;visibility:hidden;pointer-events:none}
+    .label{color:#46535e;font-size:12px;font-weight:700;letter-spacing:.06em}
+    .synthetic{
+      display:inline-flex;
+      align-self:flex-start;
+      margin-top:9px;
+      padding:5px 8px;
+      border:1px solid #b8c5cf;
+      color:#4d5a65;
+      background:rgba(255,255,255,.45);
+      font-size:11px;
+      font-weight:650;
+    }
+    .sample{margin-top:25px;color:#2f3942;font-size:16px;line-height:2.05}
+    .pii{padding:2px 4px;background:#f1dadd;box-shadow:inset 0 -1px #be6977}
+    .poster .panel.raw .pii{background:transparent;box-shadow:none}
+    .poster[data-phase="review"] .panel.raw .pii{background:#f1dadd;box-shadow:inset 0 -1px #be6977}
+    .mask{padding:2px 6px;border:1px solid #9bbfe0;color:#275d9e;background:#e2effa;font-weight:700}
+    .receipt{margin-top:24px;border-top:1px solid #c6d1da}
+    .receipt span{min-height:31px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #c6d1da;color:#46535e;font-size:11px}
+    .receipt b{font-weight:650}.receipt em{color:#275d9e;font-style:normal;font-weight:700}
+    .poster .panel.raw .receipt{opacity:0;transform:translateY(8px);transition:opacity .3s var(--ease),transform .3s var(--ease)}
+    .poster[data-phase="review"] .panel.raw .receipt{opacity:1;transform:none}
+    .count{
+      margin-top:auto;
+      padding-top:18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      border-top:1px solid #bfccd5;
+      color:#46545e;
+      font-size:12px;
+      font-weight:700;
+    }
+    .count strong{color:var(--blue);font-size:22px;line-height:1;text-align:right}
+    .transform-rail{
+      position:relative;
+      z-index:3;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:17px;
+      border:1px solid #afbfcc;
+      border-width:0 1px;
+      background:
+        linear-gradient(rgba(50,102,168,.07) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(50,102,168,.07) 1px,transparent 1px),
+        #dbe8f3;
+      background-size:17px 17px;
+    }
+    .rail-line{
+      position:absolute;
+      top:50%;
+      left:50%;
+      width:2px;
+      height:174px;
+      transform:translate(-50%,-50%);
+      background:#a7b9c8;
+    }
+    .rail-step{
+      position:relative;
+      z-index:4;
+      width:36px;
+      height:36px;
+      display:grid;
+      place-items:center;
+      border:1px solid #90a8bc;
+      border-radius:50%;
+      color:#506779;
+      background:#edf5fb;
+      font-size:9px;
+      font-weight:800;
+      letter-spacing:.04em;
+    }
+    .poster[data-phase="raw"] .rail-step[data-stage="raw"],
+    .poster[data-phase="review"] .rail-step{color:#fff;border-color:var(--blue);background:var(--blue)}
+    .poster[data-phase="scanning"] .rail-step{animation:railStepOn .25s var(--ease) forwards}
+    .poster[data-phase="scanning"] .rail-step[data-stage="raw"]{animation-delay:.05s}
+    .poster[data-phase="scanning"] .rail-step[data-stage="find"]{animation-delay:.28s}
+    .poster[data-phase="scanning"] .rail-step[data-stage="mask"]{animation-delay:.55s}
+    .poster[data-phase="scanning"] .rail-step[data-stage="view"]{animation-delay:.82s}
+    @keyframes railStepOn{to{color:#fff;border-color:var(--blue);background:var(--blue);transform:scale(1.06)}}
+    .transfer-stream{position:absolute;z-index:9;inset:0;overflow:hidden;pointer-events:none}
+    .transfer-chip{
+      position:absolute;
+      left:38%;
+      top:38%;
+      min-width:48px;
+      padding:4px 7px;
+      opacity:0;
+      border:1px solid #bd6d79;
+      color:#703843;
+      background:#f1dadd;
+      font-size:9px;
+      font-weight:700;
+      text-align:center;
+      transform:translate(-50%,-50%) scale(.85);
+    }
+    .transfer-chip:nth-child(2){top:49%}.transfer-chip:nth-child(3){top:60%}
+    .poster[data-phase="scanning"] .transfer-chip{animation:transferAcross .95s var(--ease) forwards}
+    .poster[data-phase="scanning"] .transfer-chip:nth-child(2){animation-delay:.13s}
+    .poster[data-phase="scanning"] .transfer-chip:nth-child(3){animation-delay:.26s}
+    @keyframes transferAcross{
+      0%{left:38%;opacity:0;transform:translate(-50%,-50%) scale(.85)}
+      16%{opacity:1}
+      52%{left:50%;color:#fff;border-color:var(--blue);background:var(--blue);transform:translate(-50%,-50%) scale(1.04)}
+      84%{opacity:1}
+      100%{left:62%;opacity:0;color:#275d9e;border-color:#9bbfe0;background:#e2effa;transform:translate(-50%,-50%) scale(.9)}
+    }
+    .hero-scan{
+      position:absolute;
+      z-index:8;
+      top:66px;
+      bottom:0;
+      left:-4px;
+      width:3px;
+      opacity:0;
+      pointer-events:none;
+      background:#fff;
+      box-shadow:0 0 18px 5px rgba(114,197,255,.9),0 0 80px 28px rgba(74,145,211,.22);
+    }
+    .poster[data-phase="scanning"] .hero-scan{opacity:1;animation:heroScan 1.25s var(--ease) forwards}
+    .poster[data-phase="scanning"] .pii{animation:piiPulse .7s .25s ease both}
+    .poster[data-phase="review"] .mask{animation:tokenPop .42s var(--ease) both}
+    .poster[data-phase="review"] .mask:nth-of-type(2){animation-delay:.07s}
+    .poster[data-phase="review"] .mask:nth-of-type(3){animation-delay:.14s}
+    @keyframes heroScan{to{left:calc(100% + 4px)}}
+    @keyframes piiPulse{50%{color:#fff;background:#b95769;box-shadow:0 0 0 5px rgba(185,87,105,.12)}}
+    @keyframes tokenPop{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+    .signal-strip{
+      min-height:58px;
+      padding:13px 6vw;
+      display:flex;
+      align-items:center;
+      gap:28px;
+      overflow-x:auto;
+      border-bottom:1px solid var(--ink);
+      background:var(--blue-soft);
+      scrollbar-width:thin;
+    }
+    .signal-strip strong{flex:0 0 auto;font-size:11px;letter-spacing:.1em}
+    .signal-strip span{flex:0 0 auto;display:flex;align-items:center;gap:9px;font-size:12px;font-weight:650}
+    .signal-strip i{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+
+    .reveal{opacity:1;transform:none}
+    .js .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+    .js .reveal.in{opacity:1;transform:none}
+    .js .reveal.in .section-tag b,.js .section-tag.reveal.in b{animation:tagTurn .7s .1s var(--ease) both}
+    @keyframes tagTurn{from{opacity:0;transform:rotate(-75deg) scale(.76)}to{opacity:1;transform:none}}
+
+    .features{padding:94px 6vw 104px;border-bottom:1px solid var(--ink);background:var(--paper-2)}
+    .feature-head{display:grid;grid-template-columns:.72fr 1.28fr;gap:40px;align-items:end;margin-bottom:54px}
+    .feature-head h2{
+      max-width:870px;
+      margin:0;
+      font-size:clamp(48px,6vw,86px);
+      line-height:1.08;
+      letter-spacing:-.018em;
+    }
+    .feature-head h2 span{color:var(--blue)}
+    .feature-layout{display:grid;grid-template-columns:minmax(290px,.72fr) minmax(520px,1.28fr);border:1px solid var(--ink)}
+    .feature-menu{background:var(--paper)}
+    .feature-btn{
+      width:100%;
+      min-height:130px;
+      padding:22px 24px;
+      display:grid;
+      grid-template-columns:42px 1fr auto;
+      gap:15px;
+      align-items:center;
+      border:0;
+      border-bottom:1px solid var(--ink);
+      color:var(--ink);
+      background:transparent;
+      text-align:left;
+      cursor:pointer;
+      transition:background .22s,color .22s;
+    }
+    .feature-btn:last-child{border-bottom:0}
+    .feature-btn:hover,.feature-btn.active{color:#fff;background:var(--blue)}
+    .feature-num{font-size:11px;font-weight:700;letter-spacing:.1em}
+    .feature-copy strong{display:block;font-size:21px;line-height:1.25}
+    .feature-copy span{display:block;margin-top:6px;color:#62696f;font-size:12px;line-height:1.6}
+    .feature-btn:hover .feature-copy span,.feature-btn.active .feature-copy span{color:#e1edf8}
+    .feature-icon{width:36px;height:36px;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font-size:14px}
+    .feature-stage{
+      position:relative;
+      min-height:390px;
+      padding:37px;
+      overflow:hidden;
+      color:#fff;
+      background:var(--blue);
+    }
+    .feature-stage:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px);
+      background-size:54px 54px;
+    }
+    .feature-stage:after{
+      content:"";
+      position:absolute;
+      z-index:8;
+      inset:0;
+      background:var(--blue-soft);
+      transform:scaleX(0);
+      transform-origin:left;
+      pointer-events:none;
+    }
+    .feature-stage.changing:after{animation:workflowWipe .48s var(--ease) both}
+    @keyframes workflowWipe{
+      0%{transform:scaleX(0);transform-origin:left}
+      48%{transform:scaleX(1);transform-origin:left}
+      52%{transform:scaleX(1);transform-origin:right}
+      100%{transform:scaleX(0);transform-origin:right}
+    }
+    .stage-meta{position:relative;z-index:2;display:flex;justify-content:space-between;gap:20px;color:#e2effc;font-size:10px;font-weight:700;letter-spacing:.1em}
+    .mode-card{
+      position:relative;
+      z-index:2;
+      margin-top:28px;
+      padding:25px;
+      border:1px solid rgba(255,255,255,.65);
+      background:#f2f6f9;
+      color:var(--ink);
+      box-shadow:17px 19px 0 rgba(20,55,93,.24);
+      transition:opacity .2s,transform .35s var(--ease);
+    }
+    .mode-card.switching{opacity:0;transform:translateY(12px)}
+    .mode-card-head{display:flex;align-items:center;gap:9px;padding-bottom:17px;border-bottom:1px solid #c7d1da;color:#53616e;font-size:11px;font-weight:700}
+    .mode-card-head i{width:7px;height:7px;border-radius:50%;background:var(--safe)}
+    .mode-card-head b{margin-left:auto;color:var(--blue);font-size:10px;letter-spacing:.06em}
+    .mode-content{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-top:20px}
+    .mode-pane{min-height:158px;padding:18px;border:1px solid #c5d0da;background:#fff}
+    .mode-pane small{color:#687683;font-size:10px;font-weight:700;letter-spacing:.06em}
+    .mode-pane p{margin:13px 0 0;font-size:14px;line-height:1.82}
+    .mode-pane.result{background:#e5eff7}
+    .mode-proof{margin-top:12px;display:flex;gap:7px;flex-wrap:wrap}
+    .mode-proof span{padding:5px 7px;border:1px solid #aec3d6;color:#275d9e;background:#edf4fa;font-size:10px;font-weight:700}
+
+    .boundary{display:grid;grid-template-columns:1fr 1fr;min-height:650px;border-bottom:1px solid var(--ink)}
+    .boundary-copy{position:relative;padding:84px 6vw;overflow:hidden;background:var(--paper)}
+    .boundary-copy h2{
+      margin:47px 0 0;
+      font-size:clamp(52px,6vw,92px);
+      line-height:1.08;
+      letter-spacing:-.018em;
+    }
+    .boundary-copy h2 span{display:block;margin-left:4vw;color:var(--blue)}
+    .boundary-copy p{max-width:560px;margin:31px 0 0;color:#454c51;font-size:16px;line-height:1.8}
+    .boundary-ring{
+      position:absolute;
+      right:-110px;
+      bottom:-150px;
+      width:420px;
+      height:420px;
+      border:1px solid rgba(50,102,168,.22);
+      border-radius:50%;
+      box-shadow:0 0 0 62px rgba(50,102,168,.05),0 0 0 124px rgba(50,102,168,.025);
+    }
+    .boundary-choice{display:grid;grid-template-rows:auto auto;border-left:1px solid var(--ink)}
+    .channel{position:relative;padding:50px 5vw;overflow:hidden}
+    .channel.desktop{color:#fff;background:#151515}
+    .channel.web{background:var(--blue-soft)}
+    .channel-head{display:flex;align-items:center;justify-content:space-between;gap:15px}
+    .channel-num{font-size:11px;font-weight:700;letter-spacing:.1em}
+    .channel-badge{padding:7px 10px;border:1px solid currentColor;border-radius:999px;font-size:10px;font-weight:700}
+    .channel h3{margin:27px 0 0;font-size:clamp(34px,3.6vw,54px);line-height:1.08;letter-spacing:-.018em}
+    .channel p{max-width:590px;margin:15px 0 0;color:#c2c7cb;font-size:13px;line-height:1.75}
+    .channel.web p{color:#3f4b55}
+    .route-map{margin-top:23px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+    .route-map span{min-height:29px;padding:5px 8px;display:inline-flex;align-items:center;border:1px solid currentColor;font-size:10px;font-weight:700;letter-spacing:.04em}
+    .route-map i{opacity:.7;font-size:12px;font-style:normal}
+    .channel-detail{font-size:12px!important;line-height:1.65!important}
+    .channel-detail a{text-decoration:underline;text-underline-offset:3px}
+
+    .scenarios{display:grid;grid-template-columns:.72fr 1.28fr;border-bottom:1px solid var(--ink)}
+    .scenario-intro{padding:82px 6vw;border-right:1px solid var(--ink);color:#fff;background:var(--blue)}
+    .scenario-intro .section-tag{color:#fff}
+    .scenario-intro h2{margin:48px 0 0;font-size:clamp(46px,5vw,72px);line-height:1.08;letter-spacing:-.018em}
+    .scenario-intro p{margin:22px 0 0;color:#e0ecf7;font-size:14px;line-height:1.75}
+    .scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);background:var(--paper)}
+    .scenario{min-height:370px;padding:31px;display:flex;flex-direction:column;border-right:1px solid var(--ink);transition:background .22s}
+    .scenario:last-child{border-right:0}
+    .scenario:hover{background:#e5f2fd}
+    .scenario small{color:#275d9e;font-size:10px;font-weight:700;letter-spacing:.09em}
+    .scenario h3{margin:auto 0 0;font-size:26px;line-height:1.22;letter-spacing:-.018em}
+    .scenario p{margin:12px 0 0;color:#555d62;font-size:12px;line-height:1.7}
+
+    .trust{padding:92px 6vw 104px;color:#fff;background:#151515}
+    .trust-top{display:grid;grid-template-columns:1fr 1fr;gap:70px}
+    .trust h2{margin:48px 0 0;font-size:clamp(50px,5.7vw,86px);line-height:1.08;letter-spacing:-.018em}
+    .trust-copy{padding-top:66px;color:#b9bec3;font-size:15px;line-height:1.85}
+    .trust-copy strong{color:#fff}
+    .trust-grid{margin-top:59px;display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #555}
+    .trust-item{min-height:205px;padding:26px;border-right:1px solid #555}
+    .trust-item:last-child{border-right:0}
+    .trust-item span{color:#9ab8da;font-size:10px;font-weight:700;letter-spacing:.1em}
+    .trust-item strong{display:block;margin-top:49px;font-size:24px;line-height:1.25}
+    .trust-item p{margin:10px 0 0;color:#a6acb1;font-size:12px;line-height:1.65}
+
+    .closing{
+      position:relative;
+      padding:105px 6vw 98px;
+      overflow:hidden;
+      text-align:center;
+      background:
+        linear-gradient(rgba(50,102,168,.07) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(50,102,168,.07) 1px,transparent 1px),
+        var(--paper);
+      background-size:70px 70px;
+    }
+    .closing:before,.closing:after{
+      content:"";
+      position:absolute;
+      width:260px;
+      height:260px;
+      border:1px solid rgba(50,102,168,.25);
+      border-radius:50%;
+      pointer-events:none;
+    }
+    .closing:before{left:-95px;top:-95px;box-shadow:0 0 0 42px rgba(50,102,168,.04)}
+    .closing:after{right:-75px;bottom:-85px;background:var(--blue);box-shadow:0 0 0 34px rgba(50,102,168,.08)}
+    .closing>*{position:relative;z-index:2}
+    .closing .section-tag{justify-content:center}
+    .closing h2{max-width:970px;margin:48px auto 0;font-size:clamp(54px,7vw,104px);line-height:1.08;letter-spacing:-.018em}
+    .closing h2 span{color:var(--blue)}
+    .closing p{max-width:620px;margin:25px auto 0;color:#4a5156;font-size:15px;line-height:1.75}
+    .closing-actions{margin-top:35px;display:flex;justify-content:center;gap:11px;flex-wrap:wrap}
+
+    footer{
+      min-height:100px;
+      padding:28px 6vw;
+      display:flex;
+      align-items:center;
+      gap:24px;
+      border-top:1px solid var(--ink);
+      background:var(--paper);
+      font-size:12px;
+    }
+    .footer-brand{margin-right:auto;font-size:20px;font-weight:700}
+    footer a:hover{color:var(--blue)}
+
+    @media(max-width:1280px){
+      .edition{display:none}
+      .site-header{grid-template-columns:1fr auto}
+    }
+    @media(min-width:1080px) and (max-width:1280px){
+      .copy{padding-left:4.5vw;padding-right:34px}
+      h1{font-size:clamp(70px,7vw,90px)}
+      .visual{padding:30px}
+      .poster{inset:92px 25px 50px}
+      .poster-body{grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr)}
+      .panel{padding:26px 18px}
+      .sample{font-size:14px}
+    }
+    /* Keep the complete hero readable on common laptop viewports (for example
+       1440 x 729 CSS px at 200% display scaling) without shrinking large screens. */
+    @media(min-width:1080px) and (max-height:820px){
+      .site-header{height:72px;padding-inline:32px}
+      .brand{gap:9px;font-size:17px}
+      .brand-mark{width:36px;height:36px}
+      .edition{font-size:9px}
+      .menu{font-size:11px}
+      .nav-link{padding:8px 7px}
+      .menu-cta{padding:9px 12px}
+      .hero{min-height:calc(100vh - 72px)}
+      .copy{padding:30px 42px 28px 5vw}
+      .index,.section-tag{gap:10px;font-size:9px}
+      .index:before,.section-tag b{width:34px;height:34px;font-size:9px}
+      h1{margin-top:22px;font-size:clamp(62px,6.1vw,88px);line-height:1.04}
+      h1 span:nth-child(2){margin-left:3.5vw}
+      .copy-bottom{margin-top:18px}
+      .lede{max-width:540px;font-size:15px;line-height:1.58}
+      .hero-actions{margin-top:15px}
+      .button{min-height:44px;padding-inline:16px;font-size:12px}
+      .button:after{font-size:14px}
+      .copy-note{margin-top:8px;font-size:10px;line-height:1.45}
+      .visual{min-height:calc(100vh - 72px);padding:28px}
+      .visual-title{font-size:9px}
+      .poster{inset:70px 28px 28px}
+      .poster-head{height:54px;padding-inline:16px;font-size:9px}
+      .replay{min-height:30px;font-size:9px}
+      .poster-body{height:calc(100% - 54px);grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr)}
+      .panel{padding:20px 17px}
+      .label{font-size:10px}
+      .synthetic{margin-top:6px;padding:4px 6px;font-size:9px}
+      .sample{margin-top:13px;font-size:13px;line-height:1.72}
+      .receipt{margin-top:13px}
+      .receipt span{min-height:24px;font-size:9px}
+      .count{padding-top:10px;font-size:10px}
+      .count strong{font-size:18px}
+      .transform-rail{gap:9px}
+      .rail-line{height:132px}
+      .rail-step{width:29px;height:29px;font-size:7px}
+      .hero-scan{top:54px}
+    }
+    @media(max-width:1079px){
+      .hero{grid-template-columns:1fr}
+      .copy{min-height:610px;border-right:0;border-bottom:1px solid var(--ink)}
+      .copy-bottom{max-width:720px}
+      .visual{min-height:700px}
+    }
+    @media(max-width:920px){
+      .menu{gap:5px}
+      .nav-link.optional:not(.mobile-keep){display:none}
+      .feature-head{grid-template-columns:1fr;align-items:start}
+      .feature-layout{grid-template-columns:1fr}
+      .feature-btn{min-height:102px}
+      .feature-stage{min-height:420px}
+      .boundary{grid-template-columns:1fr}
+      .boundary-choice{border-left:0;border-top:1px solid var(--ink)}
+      .scenarios{grid-template-columns:1fr}
+      .scenario-intro{border-right:0;border-bottom:1px solid var(--ink)}
+      .trust-top{grid-template-columns:1fr;gap:0}
+      .trust-copy{padding-top:30px}
+    }
+    @media(max-width:680px){
+      .site-header{height:72px;padding:0 15px}
+      .brand{font-size:17px}
+      .brand-mark{width:36px;height:36px}
+      .menu{font-size:12px}
+      .menu-cta{padding:9px 10px}
+      .menu-cta.primary{display:none}
+      .copy{min-height:auto;padding:52px 20px 46px}
+      h1{margin-top:31px;font-size:clamp(52px,17vw,72px);line-height:1.1}
+      h1 span:nth-child(2){margin-left:7vw}
+      .lede{font-size:16px;line-height:1.75}
+      .hero-actions{display:grid;grid-template-columns:1fr}
+      .button{width:100%}
+      .visual{min-height:590px;padding:24px 18px}
+      .visual-title{font-size:9px}
+      .poster{inset:74px 18px 28px;transform:none}
+      .poster:hover{box-shadow:18px 23px 0 rgba(14,46,80,.24),0 34px 66px rgba(13,43,75,.38)}
+      .poster-head{height:68px;padding:0 14px;font-size:9px}
+      .studio-name{display:none}
+      .poster-state{margin-left:0;font-size:9px;white-space:nowrap}
+      .replay{margin-left:auto;padding:0 9px;white-space:nowrap}
+      .mobile-switch{
+        height:44px;
+        padding:5px;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:5px;
+        border-bottom:1px solid #b5c4d0;
+        background:#dce8f2;
+      }
+      .mobile-switch button{
+        border:1px solid transparent;
+        border-radius:3px;
+        background:transparent;
+        font-size:11px;
+        font-weight:700;
+        cursor:pointer;
+      }
+      .mobile-switch button[aria-selected="true"]{border-color:#9fb4c5;background:#fff;color:var(--blue)}
+      .mobile-switch button:disabled{opacity:.45;cursor:not-allowed}
+      .poster-body{position:relative;height:calc(100% - 112px);display:block}
+      .transform-rail{display:none}
+      .panel{
+        position:absolute;
+        inset:0;
+        padding:24px 20px;
+        opacity:0;
+        visibility:hidden;
+        transform:translateX(12px);
+        transition:opacity .25s,transform .25s;
+      }
+      .poster[data-mobile-view="raw"] .panel.raw,
+      .poster[data-phase="review"][data-mobile-view="protected"] .panel.protected{
+        opacity:1;
+        visibility:visible;
+        transform:none;
+      }
+      .panel.protected:after{display:none}
+      .transfer-stream{display:none}
+      .sample{font-size:15px}
+      .signal-strip{padding-inline:20px}
+      .features{padding:72px 20px 79px}
+      .feature-head{margin-bottom:38px}
+      .feature-head h2{font-size:49px}
+      .feature-btn{padding:17px 15px;grid-template-columns:34px 1fr 34px}
+      .feature-copy strong{font-size:18px}
+      .feature-stage{min-height:535px;padding:21px}
+      .stage-meta{font-size:9px}
+      .mode-card{padding:18px}
+      .mode-card-head{align-items:flex-start}
+      .mode-card-head b{max-width:92px;text-align:right}
+      .mode-content{grid-template-columns:1fr}
+      .mode-pane{min-height:135px}
+      .boundary-copy{padding:72px 20px}
+      .boundary-copy h2 span{margin-left:0}
+      .boundary-copy p{font-size:15px}
+      .channel{min-height:330px;padding:43px 22px}
+      .channel-head{align-items:flex-start}
+      .channel-badge{max-width:150px;text-align:center}
+      .channel p{font-size:12px}
+      .scenario-intro{padding:72px 20px}
+      .scenario-grid{grid-template-columns:1fr}
+      .scenario{min-height:215px;padding:28px 22px;border-right:0;border-bottom:1px solid var(--ink)}
+      .scenario:last-child{border-bottom:0}
+      .trust{padding:73px 20px 82px}
+      .trust-grid{grid-template-columns:1fr}
+      .trust-item{min-height:170px;border-right:0;border-bottom:1px solid #555}
+      .trust-item:last-child{border-bottom:0}
+      .trust-item strong{margin-top:32px}
+      .closing{padding:82px 20px 78px}
+      .closing h2{font-size:52px}
+      .closing-actions{display:grid}
+      footer{align-items:flex-start;flex-wrap:wrap}
+      .footer-brand{width:100%;margin-right:0}
+    }
+    @media(prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}
+      *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" id="skipLink" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
+  <div class="page">
+    <header class="site-header" id="top">
+      <a class="brand" href="index.html" aria-label="AI Guard หน้าแรก">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="assets/ai-guard-mark.svg" alt="" width="42" height="42">
+        </span>
+        <span>AI Guard</span>
+      </a>
+      <span class="edition">THAI PRIVACY · 2026</span>
+      <nav class="menu" aria-label="เมนูหลัก">
+        <a class="nav-link optional mobile-keep" href="#product">ผลิตภัณฑ์</a>
+        <a class="nav-link optional" href="#privacy">ขอบเขตข้อมูล</a>
+        <a class="menu-cta" href="index.html#web-access">Web App</a>
+        <a class="menu-cta primary" href="downloads.html#desktop">ดาวน์โหลด Desktop</a>
+      </nav>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="copy">
+          <div class="index">PRIVACY, BUILT IN</div>
+          <h1 id="hero-title">
+            <span><b>ปกป้อง</b></span>
+            <span><b>ข้อมูลก่อน</b></span>
+            <span><b>ใช้กับ AI</b></span>
+          </h1>
+          <div class="copy-bottom">
+            <p class="lede">AI Guard ช่วยตรวจจับและแทนที่ข้อมูลส่วนบุคคลในข้อความภาษาไทย พร้อมให้คุณตรวจทานก่อนนำข้อความไปใช้ต่อ</p>
+            <div class="hero-actions">
+              <a class="button primary" href="downloads.html#desktop">ดาวน์โหลด Desktop</a>
+              <a class="button" href="index.html#web-access">ทดลอง Web App</a>
+            </div>
+            <div class="copy-note">Desktop 3.0.0 ประมวลผลในเครื่อง · Web App เป็นบริการ Hosted Private Beta</div>
+          </div>
+        </div>
+
+        <div class="visual">
+          <div class="visual-title" aria-hidden="true">
+            <span>SYNTHETIC PROTECTION PREVIEW</span>
+            <span>AI GUARD / 3.0</span>
+          </div>
+          <div class="poster" id="heroPoster" data-phase="raw" data-mobile-view="raw">
+            <span class="hero-scan" aria-hidden="true"></span>
+            <div class="poster-head">
+              <i class="status-dot" aria-hidden="true"></i>
+              <span class="studio-name">PROTECTION STUDIO</span>
+              <strong class="poster-state" id="heroPosterState" aria-live="polite">ตัวอย่างข้อมูลสังเคราะห์</strong>
+              <button class="replay" id="heroReplay" type="button" aria-label="เล่นตัวอย่างการปกป้องอีกครั้ง" aria-disabled="false">เล่นอีกครั้ง</button>
+            </div>
+            <div class="mobile-switch" role="tablist" aria-label="สลับตัวอย่างก่อนและหลังปกป้อง">
+              <button id="rawViewButton" type="button" role="tab" aria-selected="true" aria-controls="rawPanel" tabindex="0">ก่อนปกป้อง</button>
+              <button id="protectedViewButton" type="button" role="tab" aria-selected="false" aria-controls="protectedPanel" tabindex="-1" disabled>หลังปกป้อง</button>
+            </div>
+            <div class="poster-body">
+              <article class="panel raw" id="rawPanel" role="tabpanel" aria-labelledby="rawViewButton" aria-hidden="false">
+                <div class="panel-content">
+                  <div class="label">ข้อความก่อนปกป้อง</div>
+                  <span class="synthetic">ข้อมูลตัวอย่างสังเคราะห์</span>
+                  <div class="sample">สรุปข้อมูลของ <span class="pii">คุณสมชาย ใจดี</span><br>เลขบัตร <span class="pii">1-2345-67890-12-3</span><br>โทร <span class="pii">081-234-5678</span></div>
+                  <div class="receipt" id="rawReceipt" aria-label="รายการข้อมูลที่ตรวจพบ" aria-hidden="true"><span><b>ชื่อบุคคล</b><em>พบ 1</em></span><span><b>เลขบัตรประชาชน</b><em>พบ 1</em></span><span><b>เบอร์โทร</b><em>พบ 1</em></span></div>
+                  <div class="count"><span>ตรวจพบทั้งหมด</span><strong id="heroFindingCount">—</strong></div>
+                </div>
+              </article>
+              <div class="transform-rail" aria-label="ลำดับ ตรวจจับ แทนที่ และตรวจทาน">
+                <span class="rail-line" aria-hidden="true"></span>
+                <span class="rail-step" data-stage="raw">RAW</span>
+                <span class="rail-step" data-stage="find">FIND</span>
+                <span class="rail-step" data-stage="mask">MASK</span>
+                <span class="rail-step" data-stage="view">VIEW</span>
+              </div>
+              <article class="panel protected" id="protectedPanel" role="tabpanel" aria-labelledby="protectedViewButton" aria-hidden="false">
+                <div class="panel-content">
+                  <div class="label">ข้อความหลังปกป้อง</div>
+                  <span class="synthetic">พร้อมให้ผู้ใช้ตรวจทาน</span>
+                  <div class="sample">สรุปข้อมูลของ <span class="mask">[ชื่อบุคคล]</span><br>เลขบัตร <span class="mask">[เลขบัตรประชาชน]</span><br>โทร <span class="mask">[เบอร์โทร]</span></div>
+                  <div class="receipt" aria-label="ผลการแทนที่"><span><b>Token ที่สร้าง</b><em>03 / 03</em></span><span><b>ข้อมูลจริงในข้อความ</b><em>ไม่แสดง</em></span><span><b>ขั้นถัดไป</b><em>คนตรวจทาน</em></span></div>
+                  <div class="count"><span>สถานะ</span><strong>REVIEW</strong></div>
+                </div>
+              </article>
+              <div class="transfer-stream" aria-hidden="true"><span class="transfer-chip">ชื่อ</span><span class="transfer-chip">เลขบัตร</span><span class="transfer-chip">โทร</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="signal-strip" aria-label="ตัวอย่างประเภทข้อมูลที่ตรวจจับ">
+        <strong>DETECTION SIGNALS</strong>
+        <span><i aria-hidden="true"></i>ชื่อบุคคล</span>
+        <span><i aria-hidden="true"></i>เลขบัตรประชาชน</span>
+        <span><i aria-hidden="true"></i>เบอร์โทร</span>
+        <span><i aria-hidden="true"></i>อีเมล</span>
+        <span><i aria-hidden="true"></i>ที่อยู่</span>
+        <span><i aria-hidden="true"></i>เลขบัญชี</span>
+      </div>
+
+      <section class="features" id="product" aria-labelledby="feature-title">
+        <div class="feature-head reveal">
+          <div class="section-tag"><b>02</b> THREE WORKFLOWS</div>
+          <h2 id="feature-title">หนึ่งชั้นปกป้อง<br><span>สามวิธีทำงาน</span></h2>
+        </div>
+        <div class="feature-layout reveal">
+          <div class="feature-menu" role="tablist" aria-label="เลือก workflow">
+            <button class="feature-btn active" id="tab-scan" type="button" role="tab" aria-selected="true" aria-controls="featurePanel" tabindex="0" data-mode="scan">
+              <span class="feature-num">01</span>
+              <span class="feature-copy"><strong>Privacy Scan</strong><span>เห็นประเภท จำนวน และตำแหน่งที่ตรวจพบ</span></span>
+              <span class="feature-icon" aria-hidden="true">⌕</span>
+            </button>
+            <button class="feature-btn" id="tab-safe" type="button" role="tab" aria-selected="false" aria-controls="featurePanel" tabindex="-1" data-mode="safe">
+              <span class="feature-num">02</span>
+              <span class="feature-copy"><strong>Safe AI</strong><span>ปกป้องก่อนส่ง และแสดงหลักฐานข้อความที่ส่งจริง</span></span>
+              <span class="feature-icon" aria-hidden="true">✦</span>
+            </button>
+            <button class="feature-btn" id="tab-report" type="button" role="tab" aria-selected="false" aria-controls="featurePanel" tabindex="-1" data-mode="report">
+              <span class="feature-num">03</span>
+              <span class="feature-copy"><strong>PDPA Report</strong><span>สรุปสัญญาณความเสี่ยงเพื่อช่วยตรวจทาน</span></span>
+              <span class="feature-icon" aria-hidden="true">▤</span>
+            </button>
+          </div>
+          <div class="feature-stage" id="featurePanel" role="tabpanel" aria-labelledby="tab-scan">
+            <div class="stage-meta"><span>WORKFLOW PREVIEW</span><span id="stageMode">PRIVACY SCAN</span></div>
+            <div class="mode-card" id="modeCard">
+              <div class="mode-card-head"><i aria-hidden="true"></i><span id="modeTitle" aria-live="polite">ตรวจพบข้อมูลส่วนบุคคล 3 รายการ</span><b id="modeBadge">READY TO REVIEW</b></div>
+              <div class="mode-content">
+                <div class="mode-pane">
+                  <small id="leftLabel">ข้อความตัวอย่างสังเคราะห์</small>
+                  <p id="leftCopy">คุณสมชาย · 1-2345-67890-12-3<br>โทร 081-234-5678</p>
+                </div>
+                <div class="mode-pane result">
+                  <small id="rightLabel">สิ่งที่ตรวจพบ</small>
+                  <p id="rightCopy"><span class="mask">ชื่อบุคคล</span> 1 รายการ<br><span class="mask">เลขบัตรประชาชน</span> 1 รายการ<br><span class="mask">เบอร์โทร</span> 1 รายการ</p>
+                  <div class="mode-proof" id="modeProof"><span>ตำแหน่ง</span><span>ประเภท</span><span>จำนวน 03</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="boundary" id="privacy" aria-labelledby="boundary-title">
+        <div class="boundary-copy reveal">
+          <div class="section-tag"><b>03</b> CHOOSE YOUR BOUNDARY</div>
+          <h2 id="boundary-title">เลือกให้ชัด<br><span>ข้อมูลอยู่ที่ไหน</span></h2>
+          <p>แต่ละช่องทางมีขอบเขตข้อมูลต่างกัน เลือก Desktop เมื่อการประมวลผลในเครื่องคือข้อกำหนดหลัก หรือเลือก Web App เมื่อต้องการใช้บริการ Hosted Private Beta</p>
+          <div class="boundary-ring" aria-hidden="true"></div>
+        </div>
+        <div class="boundary-choice">
+          <article class="channel desktop reveal">
+            <div class="channel-head"><span class="channel-num">A / ON DEVICE</span><span class="channel-badge">เหมาะกับข้อมูลสำคัญ</span></div>
+            <h3>AI Guard Desktop</h3>
+            <p>การตรวจจับ การแทนที่ vault/mapping การกู้คืน และรายงานทำงานบนอุปกรณ์ รุ่น Desktop 3.0.0 ไม่มีคำสั่งเรียกผู้ให้บริการ AI ภายนอก</p>
+            <div class="route-map" aria-label="เส้นทางข้อมูล Desktop"><span>ข้อความ</span><i>→</i><span>อุปกรณ์ของคุณ</span><i>→</i><span>ผลพร้อมตรวจ</span></div>
+          </article>
+          <article class="channel web reveal">
+            <div class="channel-head"><span class="channel-num">B / HOSTED</span><span class="channel-badge">PRIVATE BETA</span></div>
+            <h3>AI Guard Web App</h3>
+            <p>ข้อความต้นฉบับผ่าน AIFT edge/reverse proxy และเซิร์ฟเวอร์ของทีมเพื่อการตรวจจับ ส่วน Safe AI ส่งข้อความที่ปกป้องและผ่าน policy check แล้วไปยังผู้ให้บริการ AI ผ่าน backend</p>
+            <div class="route-map" aria-label="เส้นทางข้อมูล Hosted"><span>ข้อความดิบ</span><i>→</i><span>Team service</span><i>→</i><span>ข้อความปกป้อง</span><i>→</i><span>thaillm-8b</span></div>
+            <p class="channel-detail">Private Beta ใช้ shared invite gate และ Tokenmind/Pathumma <code>thaillm-8b</code> เพียง provider เดียว ไม่มี fallback โดย provider payload ไม่มีข้อความดิบหรือ vault/mapping · <a href="privacy.html">อ่านขอบเขตทั้งหมด</a></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="scenarios" id="uses" aria-labelledby="scenario-title">
+        <div class="scenario-intro reveal">
+          <div class="section-tag"><b>04</b> BUILT FOR CAREFUL WORK</div>
+          <h2 id="scenario-title">งานที่<br>ข้อมูลสำคัญ</h2>
+          <p>ตัวอย่างงานที่ได้ประโยชน์จาก AI แต่ยังต้องเห็น ตรวจทาน และควบคุมข้อมูลระบุตัวบุคคลก่อนส่งต่อ</p>
+        </div>
+        <div class="scenario-grid">
+          <article class="scenario reveal"><small>HUMAN RESOURCES</small><h3>สรุปข้อมูลพนักงาน</h3><p>ตรวจและแทนที่ข้อมูลระบุตัวบุคคลก่อนให้ AI ช่วยจัดหมวดหมู่หรือสรุป</p></article>
+          <article class="scenario reveal"><small>CUSTOMER SERVICE</small><h3>วิเคราะห์เคสลูกค้า</h3><p>ปกป้องชื่อ เบอร์โทร และรายละเอียดติดต่อก่อนนำเนื้อหาไปวิเคราะห์</p></article>
+          <article class="scenario reveal"><small>LEGAL &amp; COMPLIANCE</small><h3>ช่วยตรวจเอกสารภายใน</h3><p>แสดงตำแหน่งข้อมูลสำคัญและสัญญาณเพื่อให้ผู้รับผิดชอบตรวจทานต่อ</p></article>
+        </div>
+      </section>
+
+      <section class="trust" id="limits" aria-labelledby="trust-title">
+        <div class="trust-top reveal">
+          <div>
+            <div class="section-tag"><b>05</b> HONEST BY DESIGN</div>
+            <h2 id="trust-title">บอกทั้งสิ่งที่ทำได้<br>และข้อจำกัด</h2>
+          </div>
+          <div class="trust-copy"><strong>AI Guard ช่วยลดความเสี่ยง ไม่ได้แทนการตัดสินใจของคน</strong><br><br>การตรวจจับอัตโนมัติอาจมีทั้ง false positive และ false negative ส่วนรายงาน PDPA เป็นสัญญาณเพื่อช่วยตรวจทาน ไม่ใช่คำวินิจฉัยทางกฎหมายหรือใบรับรองการปฏิบัติตามกฎหมาย</div>
+        </div>
+        <div class="trust-grid reveal">
+          <article class="trust-item"><span>DESKTOP</span><strong>ประมวลผล<br>บนอุปกรณ์</strong><p>ข้อความ การแทนที่ และ vault อยู่ภายในเครื่อง</p></article>
+          <article class="trust-item"><span>HOSTED WEB</span><strong>เปิดเผย<br>เส้นทางข้อมูล</strong><p>อธิบายขอบเขตบริการโดยไม่อ้างว่า Web App เป็น local-only</p></article>
+          <article class="trust-item"><span>HUMAN REVIEW</span><strong>คนเป็นผู้<br>ตัดสินใจสุดท้าย</strong><p>ตรวจทานผลลัพธ์ก่อนใช้กับงานที่มีความเสี่ยงสูง</p></article>
+        </div>
+      </section>
+
+      <section class="closing" id="download" aria-labelledby="closing-title">
+        <div class="section-tag reveal"><b>06</b> KEEP DATA IN YOUR HANDS</div>
+        <h2 class="reveal" id="closing-title">ใช้ AI ได้<br><span>โดยเห็นข้อมูลที่ส่ง</span></h2>
+        <p class="reveal">เริ่มด้วย Desktop เมื่อการประมวลผลในเครื่องสำคัญที่สุด หรือทดลอง Hosted Web App ด้วยข้อมูลสังเคราะห์ก่อน</p>
+        <div class="closing-actions reveal">
+          <a class="button primary" href="downloads.html#desktop">ดาวน์โหลด AI Guard Desktop</a>
+          <a class="button" href="index.html#web-access">ทดลอง Web App Private Beta</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="footer-brand" href="index.html">AI Guard</a>
+      <a href="privacy.html">ความเป็นส่วนตัว</a>
+      <a href="terms.html">ข้อกำหนด</a>
+      <a href="help.html">ช่วยเหลือ</a>
+      <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction" rel="noopener noreferrer">GitHub</a>
+      <span>© 2026</span>
+    </footer>
+  </div>
+
+  <script>
+    const modeData={
+      scan:{
+        stage:'PRIVACY SCAN',
+        title:'ตรวจพบข้อมูลส่วนบุคคล 3 รายการ',
+        badge:'READY TO REVIEW',
+        leftLabel:'ข้อความตัวอย่างสังเคราะห์',
+        left:'คุณสมชาย · 1-2345-67890-12-3<br>โทร 081-234-5678',
+        rightLabel:'สิ่งที่ตรวจพบ',
+        right:'<span class="mask">ชื่อบุคคล</span> 1 รายการ<br><span class="mask">เลขบัตรประชาชน</span> 1 รายการ<br><span class="mask">เบอร์โทร</span> 1 รายการ',
+        proof:['ตำแหน่ง','ประเภท','จำนวน 03']
+      },
+      safe:{
+        stage:'SAFE AI',
+        title:'แสดงหลักฐานหลัง Safe AI ทำงาน',
+        badge:'PROVIDER BOUNDARY',
+        leftLabel:'ข้อความที่ส่งให้ provider',
+        left:'สรุปข้อมูลของ <span class="mask">[ชื่อบุคคล]</span><br>โทร <span class="mask">[เบอร์โทร]</span>',
+        rightLabel:'หลักฐานการส่งต่อ',
+        right:'ผ่าน outbound policy check<br>ส่งไป thaillm-8b โดยไม่มี fallback',
+        proof:['protected input','provider เดียว','mapping ไม่ถูกส่ง']
+      },
+      report:{
+        stage:'PDPA REPORT',
+        title:'สรุปสัญญาณความเสี่ยงสำหรับตรวจทาน',
+        badge:'HEURISTIC REPORT',
+        leftLabel:'ข้อมูลที่วิเคราะห์',
+        left:'ประเภทข้อมูล <span class="pii">Identity</span><br>ช่องทางใช้งาน <span class="pii">AI</span>',
+        rightLabel:'ผลเชิงสัญญาณ',
+        right:'ระดับทบทวน <span class="mask">สูง</span><br>ข้อเสนอแนะ <span class="mask">ตรวจสอบเพิ่ม</span>',
+        proof:['คะแนน','เหตุผล','ไม่ใช่คำรับรอง']
+      }
+    };
+
+    const featureButtons=Array.from(document.querySelectorAll('.feature-btn'));
+    const featureStage=document.querySelector('#featurePanel');
+    const modeCard=document.querySelector('#modeCard');
+    const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let workflowSwapTimer=0;
+    let workflowEndTimer=0;
+
+    document.querySelector('#skipLink').addEventListener('click',function(event){
+      event.preventDefault();
+      const main=document.querySelector('#main-content');
+      location.hash='main-content';
+      setTimeout(function(){main.focus()},0);
+    });
+
+    function renderMode(button){
+      const data=modeData[button.dataset.mode];
+      featureButtons.forEach(function(item){
+        const selected=item===button;
+        item.classList.toggle('active',selected);
+        item.setAttribute('aria-selected',String(selected));
+        item.tabIndex=selected?0:-1;
+      });
+      featureStage.setAttribute('aria-labelledby',button.id);
+      clearTimeout(workflowSwapTimer);
+      clearTimeout(workflowEndTimer);
+      featureStage.classList.remove('changing');
+      modeCard.classList.remove('switching');
+
+      const update=function(){
+        document.querySelector('#stageMode').textContent=data.stage;
+        document.querySelector('#modeTitle').textContent=data.title;
+        document.querySelector('#modeBadge').textContent=data.badge;
+        document.querySelector('#leftLabel').textContent=data.leftLabel;
+        document.querySelector('#leftCopy').innerHTML=data.left;
+        document.querySelector('#rightLabel').textContent=data.rightLabel;
+        document.querySelector('#rightCopy').innerHTML=data.right;
+        document.querySelector('#modeProof').innerHTML=data.proof.map(function(item){return '<span>'+item+'</span>'}).join('');
+        modeCard.classList.remove('switching');
+      };
+
+      if(reduceMotion){update();return}
+      void featureStage.offsetWidth;
+      featureStage.classList.add('changing');
+      modeCard.classList.add('switching');
+      workflowSwapTimer=setTimeout(update,230);
+      workflowEndTimer=setTimeout(function(){featureStage.classList.remove('changing')},520);
+    }
+    featureButtons.forEach(function(button,index){
+      button.addEventListener('click',function(){renderMode(button)});
+      button.addEventListener('keydown',function(event){
+        let target=index;
+        if(event.key==='ArrowDown' || event.key==='ArrowRight') target=(index+1)%featureButtons.length;
+        else if(event.key==='ArrowUp' || event.key==='ArrowLeft') target=(index-1+featureButtons.length)%featureButtons.length;
+        else if(event.key==='Home') target=0;
+        else if(event.key==='End') target=featureButtons.length-1;
+        else return;
+        event.preventDefault();
+        featureButtons[target].focus();
+        renderMode(featureButtons[target]);
+      });
+    });
+
+    const revealItems=document.querySelectorAll('.reveal');
+    if('IntersectionObserver' in window && !reduceMotion){
+      const observer=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting){
+            entry.target.classList.add('in');
+            observer.unobserve(entry.target);
+          }
+        });
+      },{threshold:.1});
+      revealItems.forEach(function(item){observer.observe(item)});
+    }else{
+      revealItems.forEach(function(item){item.classList.add('in')});
+    }
+
+    const heroPoster=document.querySelector('#heroPoster');
+    const heroPosterState=document.querySelector('#heroPosterState');
+    const replayButton=document.querySelector('#heroReplay');
+    const rawViewButton=document.querySelector('#rawViewButton');
+    const protectedViewButton=document.querySelector('#protectedViewButton');
+    const rawPanel=document.querySelector('#rawPanel');
+    const protectedPanel=document.querySelector('#protectedPanel');
+    const heroFindingCount=document.querySelector('#heroFindingCount');
+    const rawReceipt=document.querySelector('#rawReceipt');
+    const visual=document.querySelector('.visual');
+    const mobileHeroLayout=matchMedia('(max-width: 680px)');
+    let heroTimers=[];
+    let heroRunning=false;
+
+    function syncHeroPanelAccess(){
+      const ready=heroPoster.dataset.phase==='review';
+      const view=heroPoster.dataset.mobileView;
+      if(mobileHeroLayout.matches){
+        rawPanel.setAttribute('aria-hidden',String(view!=='raw'));
+        protectedPanel.setAttribute('aria-hidden',String(view!=='protected' || !ready));
+      }else{
+        rawPanel.setAttribute('aria-hidden','false');
+        protectedPanel.setAttribute('aria-hidden',String(!ready));
+      }
+    }
+    function setMobileView(view){
+      if(view==='protected' && heroPoster.dataset.phase!=='review') return;
+      heroPoster.dataset.mobileView=view;
+      rawViewButton.setAttribute('aria-selected',String(view==='raw'));
+      protectedViewButton.setAttribute('aria-selected',String(view==='protected'));
+      rawViewButton.tabIndex=view==='raw'?0:-1;
+      protectedViewButton.tabIndex=view==='protected'?0:-1;
+      syncHeroPanelAccess();
+    }
+    rawViewButton.addEventListener('click',function(){setMobileView('raw')});
+    protectedViewButton.addEventListener('click',function(){setMobileView('protected')});
+    [rawViewButton,protectedViewButton].forEach(function(button){
+      button.addEventListener('keydown',function(event){
+        if(event.key!=='ArrowLeft' && event.key!=='ArrowRight' && event.key!=='Home' && event.key!=='End') return;
+        event.preventDefault();
+        let target=button===rawViewButton?protectedViewButton:rawViewButton;
+        if(event.key==='Home') target=rawViewButton;
+        if(event.key==='End') target=protectedViewButton;
+        if(!target.disabled){target.focus();setMobileView(target===rawViewButton?'raw':'protected')}
+      });
+    });
+
+    function clearHeroTimers(){
+      heroTimers.forEach(function(timer){clearTimeout(timer)});
+      heroTimers=[];
+    }
+    function resetHeroSequence(){
+      clearHeroTimers();
+      heroPoster.classList.add('resetting');
+      heroPoster.dataset.phase='raw';
+      heroPoster.dataset.mobileView='raw';
+      heroFindingCount.textContent='—';
+      rawReceipt.setAttribute('aria-hidden','true');
+      rawViewButton.setAttribute('aria-selected','true');
+      protectedViewButton.setAttribute('aria-selected','false');
+      rawViewButton.tabIndex=0;
+      protectedViewButton.tabIndex=-1;
+      protectedViewButton.disabled=true;
+      heroPosterState.textContent='ตัวอย่างข้อมูลสังเคราะห์';
+      syncHeroPanelAccess();
+      void heroPoster.offsetWidth;
+      heroPoster.classList.remove('resetting');
+    }
+    function finishHeroSequence(){
+      heroPoster.dataset.phase='review';
+      heroFindingCount.textContent='03';
+      rawReceipt.setAttribute('aria-hidden','false');
+      heroPosterState.textContent='พบ 3 รายการ · พร้อมตรวจทาน';
+      protectedViewButton.disabled=false;
+      syncHeroPanelAccess();
+      heroRunning=false;
+      replayButton.setAttribute('aria-disabled','false');
+    }
+    function runHeroSequence(){
+      if(heroRunning) return;
+      resetHeroSequence();
+      heroRunning=true;
+      replayButton.setAttribute('aria-disabled','true');
+      if(reduceMotion){
+        finishHeroSequence();
+        return;
+      }
+      heroTimers.push(setTimeout(function(){
+        heroPoster.dataset.phase='scanning';
+        heroPosterState.textContent='กำลังตรวจจับ';
+      },650));
+      heroTimers.push(setTimeout(function(){
+        finishHeroSequence();
+      },2050));
+    }
+    replayButton.addEventListener('click',function(){if(!heroRunning) runHeroSequence()});
+    mobileHeroLayout.addEventListener('change',syncHeroPanelAccess);
+    resetHeroSequence();
+    if(reduceMotion){
+      finishHeroSequence();
+    }else if('IntersectionObserver' in window){
+      const heroObserver=new IntersectionObserver(function(entries){
+        if(entries.some(function(entry){return entry.isIntersecting})){
+          heroObserver.disconnect();
+          runHeroSequence();
+        }
+      },{threshold:.28});
+      heroObserver.observe(visual);
+    }else{
+      runHeroSequence();
+    }
+
+    if(!reduceMotion){
+      let pointerFrame=0;
+      let pointerX=0;
+      let pointerY=0;
+      visual.addEventListener('pointermove',function(event){
+        const rect=visual.getBoundingClientRect();
+        pointerX=(event.clientX-rect.left)/rect.width-.5;
+        pointerY=(event.clientY-rect.top)/rect.height-.5;
+        if(pointerFrame) return;
+        pointerFrame=requestAnimationFrame(function(){
+          heroPoster.style.setProperty('--tilt-y',(pointerX*2.2)+'deg');
+          heroPoster.style.setProperty('--tilt-x',(-pointerY*1.6)+'deg');
+          pointerFrame=0;
+        });
+      });
+      visual.addEventListener('pointerleave',function(){
+        if(pointerFrame){cancelAnimationFrame(pointerFrame);pointerFrame=0}
+        pointerX=0;
+        pointerY=0;
+        heroPoster.style.setProperty('--tilt-y','0deg');
+        heroPoster.style.setProperty('--tilt-x','0deg');
+      });
+    }
+  </script>
+</body>
+</html>

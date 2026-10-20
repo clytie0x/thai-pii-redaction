@@ -1,0 +1,4 @@
+# Hosted-only security overlay. Keep this minimal and install with --no-deps
+# after the exact vendored dependency graph so the port can close a published
+# runtime advisory without silently forking the shared detector graph.
+cryptography==50.0.0

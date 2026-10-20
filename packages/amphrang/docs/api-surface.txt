@@ -1,0 +1,16 @@
+# The frozen public surface of the `amphrang` module (its __all__).
+# scripts/check_release.py fails CI when this file and __all__ disagree:
+# changing the surface must be a deliberate two-file diff plus a CHANGELOG
+# entry, per the stability policy in README.md.
+AnonymizeResult
+Entity
+LeakBlockedError
+RestoreResult
+Session
+SessionExpiredError
+analyze
+anonymize
+anonymize_batch
+detect
+detect_batch
+restore

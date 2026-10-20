@@ -1,0 +1,201 @@
+# AI Guard — AIFT team08. Based on the organizer participant-guide template.
+# The guide requires non-main branches to run check only. AI Guard additionally
+# requires an explicitly started UI pipeline on protected main for production
+# jobs. Ordinary pushes stay check-only even when GitLab auto-protects the
+# default branch. The team-08 tag is scheduling hardening, not proof of
+# runner-host or Docker-daemon isolation.
+
+variables:
+  TEAM: "team08"
+  BASE: "20070"
+  BASE_1: "20071"
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH'
+  auto_cancel:
+    on_new_commit: interruptible
+
+stages: [check, deploy, acceptance, ops]
+
+default:
+  image: docker:27.3.1@sha256:6ca9a6811085e2cf769cbac04bc47daf66629102990391caab7cf37426e939da
+  tags:
+    - team-08
+  before_script:
+    - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
+    - apk add --no-cache curl bash git nodejs py3-httpx py3-yaml python3 >/dev/null
+    - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
+
+check:
+  stage: check
+  interruptible: true
+  # The Hosted approval and queue contracts need AES-GCM. Keep this exact package out of
+  # deploy/acceptance/ops jobs; the Core image has its separate hash-locked pin.
+  before_script:
+    - docker compose version >/dev/null 2>&1 || apk add --no-cache docker-cli-compose
+    - apk add --no-cache curl bash git nodejs py3-cryptography=42.0.7-r0 py3-httpx py3-yaml python3 >/dev/null
+    - echo "TEAM=$TEAM fe=$BASE api=$BASE_1"
+  script:
+    - python3 sync/sync_from_upstream.py --check --verify-upstream
+    - python3 tests/auth_contract.py
+    - python3 tests/hosted3_authority_contract.py
+    - python3 tests/hosted3_approval_contract.py
+    - python3 tests/hosted3_document_contract.py
+    - python3 tests/hosted3_document_preview_contract.py
+    - python3 tests/hosted3_document_artifact_contract.py
+    - python3 tests/hosted3_pathumma_boundary_contract.py
+    - python3 tests/hosted3_provider_queue_contract.py
+    - python3 tests/hosted3_queue_http_contract.py
+    - python3 tests/hosted3_execute_contract.py
+    - python3 tests/hosted3_legacy_roundtrip_contract.py
+    - python3 tests/hosted3_stage4c_closeout_contract.py
+    - node tests/frontend_session_contract.mjs
+    - node tests/hosted3_frontend_behavior_contract.mjs
+    - python3 tests/public_surface_contract.py
+    - python3 tests/hosted_core_contract.py
+    - python3 tests/hosted3_contract.py
+    - python3 tests/hosted3_stage5_contract.py
+    - python3 tests/hosted3_version_contract.py
+    - python3 tests/hosted3_rate_limit_contract.py
+    - python3 tests/thai_pii_evaluation_contract.py
+    - python3 tests/build_context_contract.py
+    - python3 tests/secret_hygiene_contract.py
+    - python3 tests/platform_acceptance_contract.py
+    - python3 tests/release_source_contract.py
+    - python3 tests/gitlab_contract.py
+    - python3 tests/nginx_contract.py
+    - python3 tests/compose_contract.py
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH'
+
+deploy:
+  stage: deploy
+  timeout: 20m
+  # A cancelled deploy can leave a partially replaced stack. New commits may
+  # cancel redundant checks, but production mutation must run to completion.
+  interruptible: false
+  resource_group: team08-production
+  environment:
+    name: $TEAM
+    url: https://$TEAM.aiforthai.in.th
+  script:
+    - |
+      set -e
+      [ "${#APP_AIGUARD_API_KEY}" -ge 16 ] \
+        && [ "${#APP_AIFT_ACCESS_CODE}" -ge 16 ] \
+        && [ "${#APP_AIFT_COOKIE_SIGNING_KEY}" -ge 32 ] \
+        && [ -n "${APP_AIFT_PRIORITY_INVITES_JSON:-}" ] \
+        && [ -n "${APP_TOKENMIND_API_KEY:-}" ] \
+        || { echo "required protected application variables are missing or invalid"; exit 1; }
+      [ "$APP_AIGUARD_API_KEY" != "$APP_AIFT_ACCESS_CODE" ] \
+        && [ "$APP_AIGUARD_API_KEY" != "$APP_AIFT_COOKIE_SIGNING_KEY" ] \
+        && [ "$APP_AIGUARD_API_KEY" != "$APP_TOKENMIND_API_KEY" ] \
+        && [ "$APP_AIFT_ACCESS_CODE" != "$APP_AIFT_COOKIE_SIGNING_KEY" ] \
+        && [ "$APP_AIFT_ACCESS_CODE" != "$APP_TOKENMIND_API_KEY" ] \
+        && [ "$APP_AIFT_COOKIE_SIGNING_KEY" != "$APP_TOKENMIND_API_KEY" ] \
+        || { echo "protected application variables must be distinct"; exit 1; }
+    - bash scripts/deploy_production.sh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
+
+# The helper reads credentials only from inherited environment and keeps the
+# access code, signed cookie, and log-scan values out of child-process argv.
+acceptance:
+  stage: acceptance
+  needs: [deploy]
+  interruptible: false
+  resource_group: team08-production
+  environment:
+    name: $TEAM
+    action: verify
+  script:
+    - |
+      set -Ee
+      rollback_on_error() {
+        acceptance_status=$?
+        trap - ERR
+        echo "mandatory acceptance failed; restoring previous exact release"
+        bash scripts/rollback_production.sh
+        exit "$acceptance_status"
+      }
+      # From the first post-deploy gate onward, every error—including a main
+      # advance—must restore the retained exact release before this job exits.
+      trap rollback_on_error ERR
+      if [ -n "${CI_SERVER_HOST:-}" ]; then
+        LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+        [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing outdated acceptance"; false; }
+      fi
+      python3 tests/platform_acceptance.py
+      python3 tests/public_web_acceptance.py
+      trap - ERR
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
+
+.ops: &ops
+  stage: ops
+  when: manual
+  allow_failure: true
+  interruptible: false
+  resource_group: team08-production
+  # Do not declare the team08 environment here. The four application
+  # credentials are scoped to that environment and operational inspection /
+  # restart jobs do not need them.
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_REF_PROTECTED == "true"'
+
+logs:
+  <<: *ops
+  script:
+    - docker logs --tail=400 --timestamps "${TEAM}-web-1"
+    - docker logs --tail=400 --timestamps "${TEAM}-api-1"
+    - docker logs --tail=400 --timestamps "${TEAM}-core-1"
+    - docker logs --tail=400 --timestamps "${TEAM}-pdf-parser-1"
+
+ps:
+  <<: *ops
+  script:
+    - |
+      set -e
+      for service in web api core pdf-parser; do
+        actual=$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${TEAM}-${service}-1")
+        [ "$actual" = "$CI_COMMIT_SHA" ] \
+          || { echo "running image revision mismatch"; exit 1; }
+        echo "$service revision verified: $CI_COMMIT_SHA"
+      done
+    - docker ps --filter "label=com.docker.compose.project=${TEAM}" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+    - ids=$(docker ps -q --filter "label=com.docker.compose.project=${TEAM}"); [ -z "$ids" ] || docker stats --no-stream $ids
+
+restart:
+  <<: *ops
+  script:
+    - |
+      set -e
+      if [ -n "${CI_SERVER_HOST:-}" ]; then
+        LATEST_MAIN=$(git ls-remote origin refs/heads/main | awk '{print $1}')
+        [ -n "$LATEST_MAIN" ] && [ "$LATEST_MAIN" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing an outdated restart"; exit 1; }
+      fi
+      for service in web api core pdf-parser; do
+        actual=$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${TEAM}-${service}-1")
+        [ "$actual" = "$CI_COMMIT_SHA" ] \
+          || { echo "refusing restart of a different revision"; exit 1; }
+      done
+      docker restart "${TEAM}-pdf-parser-1" "${TEAM}-core-1" "${TEAM}-api-1" "${TEAM}-web-1" >/dev/null
+      echo "waiting for restart healthchecks..."
+      for i in $(seq 1 40); do
+        parser_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-pdf-parser-1" 2>/dev/null || echo none)
+        core_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-core-1" 2>/dev/null || echo none)
+        api_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-api-1" 2>/dev/null || echo none)
+        web_st=$(docker inspect -f '{{.State.Health.Status}}' "${TEAM}-web-1" 2>/dev/null || echo none)
+        [ "$parser_st" = "healthy" ] && [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] && break
+        sleep 5
+      done
+      [ "$parser_st" = "healthy" ] && [ "$core_st" = "healthy" ] && [ "$api_st" = "healthy" ] && [ "$web_st" = "healthy" ] \
+        || { echo "restart healthcheck timed out"; exit 1; }
+      docker ps --filter "label=com.docker.compose.project=${TEAM}" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'

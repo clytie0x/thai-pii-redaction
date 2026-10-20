@@ -1,0 +1,4 @@
+# The sdist is the package plus what builds it, not the test suite: the tests
+# depend on benchmark/ and docs/ trees that are not in the sdist either, so
+# shipping them only bloats the archive with something that cannot run.
+prune tests

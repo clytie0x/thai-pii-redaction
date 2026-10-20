@@ -1,0 +1,2574 @@
+{
+  "cases": [
+    {
+      "action": "mask_required",
+      "base_id": "name_male_prefix",
+      "case_id": "C0001",
+      "expected_spans": [
+        {
+          "end_cp": 34,
+          "start_cp": 13,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "space",
+        "thai",
+        "title"
+      ],
+      "provenance": "constructed-template:name_male_prefix",
+      "scenario": "person",
+      "text": "ผู้สมัครชื่อ นายกิตติทดสอบ ใจจำลอง"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_male_prefix",
+      "case_id": "C0002",
+      "expected_spans": [
+        {
+          "end_cp": 48,
+          "start_cp": 27,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "space",
+        "thai",
+        "title"
+      ],
+      "provenance": "constructed-template:name_male_prefix",
+      "scenario": "person",
+      "text": "รายการทดสอบ: “ผู้สมัครชื่อ นายกิตติทดสอบ ใจจำลอง” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_female_prefix",
+      "case_id": "C0003",
+      "expected_spans": [
+        {
+          "end_cp": 52,
+          "start_cp": 27,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "space",
+        "thai",
+        "title"
+      ],
+      "provenance": "constructed-template:name_female_prefix",
+      "scenario": "person",
+      "text": "รายการทดสอบ: “ผู้ติดต่อคือ นางพิมพ์ทดสอบ ข้อมูลสมมติ” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_female_prefix",
+      "case_id": "C0004",
+      "expected_spans": [
+        {
+          "end_cp": 38,
+          "start_cp": 13,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "space",
+        "thai",
+        "title"
+      ],
+      "provenance": "constructed-template:name_female_prefix",
+      "scenario": "person",
+      "text": "ผู้ติดต่อคือ นางพิมพ์ทดสอบ ข้อมูลสมมติ"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_miss_prefix",
+      "case_id": "C0005",
+      "expected_spans": [
+        {
+          "end_cp": 33,
+          "start_cp": 9,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "long-title",
+        "plain",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_miss_prefix",
+      "scenario": "person",
+      "text": "นักเรียน นางสาวดาราทดสอบ แสงจำลอง มารายงานตัว"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_miss_prefix",
+      "case_id": "C0006",
+      "expected_spans": [
+        {
+          "end_cp": 47,
+          "start_cp": 23,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "long-title",
+        "punctuation",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_miss_prefix",
+      "scenario": "person",
+      "text": "รายการทดสอบ: “นักเรียน นางสาวดาราทดสอบ แสงจำลอง มารายงานตัว” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_label_no_prefix",
+      "case_id": "C0007",
+      "expected_spans": [
+        {
+          "end_cp": 44,
+          "start_cp": 28,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "explicit-label",
+        "no-title",
+        "punctuation",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_label_no_prefix",
+      "scenario": "person",
+      "text": "รายการทดสอบ: “ชื่อ-นามสกุล: ชลทดสอบ เมฆสมมติ” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_label_no_prefix",
+      "case_id": "C0008",
+      "expected_spans": [
+        {
+          "end_cp": 30,
+          "start_cp": 14,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "explicit-label",
+        "no-title",
+        "plain",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_label_no_prefix",
+      "scenario": "person",
+      "text": "ชื่อ-นามสกุล: ชลทดสอบ เมฆสมมติ"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_glued",
+      "case_id": "C0009",
+      "expected_spans": [
+        {
+          "end_cp": 30,
+          "start_cp": 13,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "explicit-label",
+        "no-space",
+        "plain",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_glued",
+      "scenario": "person",
+      "text": "ชื่อผู้สมัคร:กิตติทดสอบใจจำลอง"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_glued",
+      "case_id": "C0010",
+      "expected_spans": [
+        {
+          "end_cp": 44,
+          "start_cp": 27,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "explicit-label",
+        "no-space",
+        "punctuation",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_glued",
+      "scenario": "person",
+      "text": "รายการทดสอบ: “ชื่อผู้สมัคร:กิตติทดสอบใจจำลอง” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_repeated",
+      "case_id": "C0011",
+      "expected_spans": [
+        {
+          "end_cp": 35,
+          "start_cp": 14,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 60,
+          "start_cp": 39,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "repeated",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_repeated",
+      "scenario": "person",
+      "text": "รายการทดสอบ: “นายกิตติทดสอบ ใจจำลอง พบ นายกิตติทดสอบ ใจจำลอง” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "name_repeated",
+      "case_id": "C0012",
+      "expected_spans": [
+        {
+          "end_cp": 21,
+          "start_cp": 0,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 46,
+          "start_cp": 25,
+          "type": "NAME"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "repeated",
+        "thai"
+      ],
+      "provenance": "constructed-template:name_repeated",
+      "scenario": "person",
+      "text": "นายกิตติทดสอบ ใจจำลอง พบ นายกิตติทดสอบ ใจจำลอง"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_mobile_08",
+      "case_id": "C0013",
+      "expected_spans": [
+        {
+          "end_cp": 14,
+          "start_cp": 4,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "contiguous",
+        "mobile",
+        "plain"
+      ],
+      "provenance": "constructed-template:phone_mobile_08",
+      "scenario": "phone",
+      "text": "โทร 0800000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_mobile_08",
+      "case_id": "C0014",
+      "expected_spans": [
+        {
+          "end_cp": 28,
+          "start_cp": 18,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "contiguous",
+        "mobile",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:phone_mobile_08",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “โทร 0800000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_mobile_09",
+      "case_id": "C0015",
+      "expected_spans": [
+        {
+          "end_cp": 36,
+          "start_cp": 26,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "contiguous",
+        "mobile",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:phone_mobile_09",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “เบอร์ติดต่อ 0900000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_mobile_09",
+      "case_id": "C0016",
+      "expected_spans": [
+        {
+          "end_cp": 22,
+          "start_cp": 12,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "contiguous",
+        "mobile",
+        "plain"
+      ],
+      "provenance": "constructed-template:phone_mobile_09",
+      "scenario": "phone",
+      "text": "เบอร์ติดต่อ 0900000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_mobile_06",
+      "case_id": "C0017",
+      "expected_spans": [
+        {
+          "end_cp": 31,
+          "start_cp": 21,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "contiguous",
+        "mobile",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:phone_mobile_06",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “มือถือ 0600000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_mobile_06",
+      "case_id": "C0018",
+      "expected_spans": [
+        {
+          "end_cp": 17,
+          "start_cp": 7,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "contiguous",
+        "mobile",
+        "plain"
+      ],
+      "provenance": "constructed-template:phone_mobile_06",
+      "scenario": "phone",
+      "text": "มือถือ 0600000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_hyphen",
+      "case_id": "C0019",
+      "expected_spans": [
+        {
+          "end_cp": 21,
+          "start_cp": 9,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "hyphen",
+        "mobile",
+        "plain"
+      ],
+      "provenance": "constructed-template:phone_hyphen",
+      "scenario": "phone",
+      "text": "โทรศัพท์ 089-000-0000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_hyphen",
+      "case_id": "C0020",
+      "expected_spans": [
+        {
+          "end_cp": 35,
+          "start_cp": 23,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "hyphen",
+        "mobile",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:phone_hyphen",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “โทรศัพท์ 089-000-0000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_space",
+      "case_id": "C0021",
+      "expected_spans": [
+        {
+          "end_cp": 33,
+          "start_cp": 21,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "mobile",
+        "punctuation",
+        "space"
+      ],
+      "provenance": "constructed-template:phone_space",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “ติดต่อ 081 000 0000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_space",
+      "case_id": "C0022",
+      "expected_spans": [
+        {
+          "end_cp": 19,
+          "start_cp": 7,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "mobile",
+        "plain",
+        "space"
+      ],
+      "provenance": "constructed-template:phone_space",
+      "scenario": "phone",
+      "text": "ติดต่อ 081 000 0000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_international",
+      "case_id": "C0023",
+      "expected_spans": [
+        {
+          "end_cp": 26,
+          "start_cp": 11,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "international",
+        "plain",
+        "space"
+      ],
+      "provenance": "constructed-template:phone_international",
+      "scenario": "phone",
+      "text": "หมายเลขไทย +66 81 000 0000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_international",
+      "case_id": "C0024",
+      "expected_spans": [
+        {
+          "end_cp": 40,
+          "start_cp": 25,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "international",
+        "punctuation",
+        "space"
+      ],
+      "provenance": "constructed-template:phone_international",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “หมายเลขไทย +66 81 000 0000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_parenthesized",
+      "case_id": "C0025",
+      "expected_spans": [
+        {
+          "end_cp": 21,
+          "start_cp": 7,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "adversarial",
+        "mobile",
+        "parentheses",
+        "plain"
+      ],
+      "provenance": "constructed-template:phone_parenthesized",
+      "scenario": "phone",
+      "text": "ติดต่อ (089) 000-0000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_parenthesized",
+      "case_id": "C0026",
+      "expected_spans": [
+        {
+          "end_cp": 35,
+          "start_cp": 21,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "adversarial",
+        "mobile",
+        "parentheses",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:phone_parenthesized",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “ติดต่อ (089) 000-0000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_zero_width",
+      "case_id": "C0027",
+      "expected_spans": [
+        {
+          "end_cp": 32,
+          "start_cp": 21,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "adversarial",
+        "mobile",
+        "punctuation",
+        "zero-width"
+      ],
+      "provenance": "constructed-template:phone_zero_width",
+      "scenario": "phone",
+      "text": "รายการทดสอบ: “มือถือ 08​90000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "phone_zero_width",
+      "case_id": "C0028",
+      "expected_spans": [
+        {
+          "end_cp": 18,
+          "start_cp": 7,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "adversarial",
+        "mobile",
+        "plain",
+        "zero-width"
+      ],
+      "provenance": "constructed-template:phone_zero_width",
+      "scenario": "phone",
+      "text": "มือถือ 08​90000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_plain",
+      "case_id": "C0029",
+      "expected_spans": [
+        {
+          "end_cp": 33,
+          "start_cp": 6,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "ascii",
+        "invalid-tld",
+        "plain"
+      ],
+      "provenance": "constructed-template:email_plain",
+      "scenario": "email",
+      "text": "อีเมล person.test@example.invalid"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_plain",
+      "case_id": "C0030",
+      "expected_spans": [
+        {
+          "end_cp": 47,
+          "start_cp": 20,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "ascii",
+        "invalid-tld",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:email_plain",
+      "scenario": "email",
+      "text": "รายการทดสอบ: “อีเมล person.test@example.invalid” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_subdomain",
+      "case_id": "C0031",
+      "expected_spans": [
+        {
+          "end_cp": 36,
+          "start_cp": 7,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "plain",
+        "subdomain"
+      ],
+      "provenance": "constructed-template:email_subdomain",
+      "scenario": "email",
+      "text": "ส่งถึง unit@test.lab.example.invalid"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_subdomain",
+      "case_id": "C0032",
+      "expected_spans": [
+        {
+          "end_cp": 50,
+          "start_cp": 21,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "punctuation",
+        "subdomain"
+      ],
+      "provenance": "constructed-template:email_subdomain",
+      "scenario": "email",
+      "text": "รายการทดสอบ: “ส่งถึง unit@test.lab.example.invalid” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_plus",
+      "case_id": "C0033",
+      "expected_spans": [
+        {
+          "end_cp": 43,
+          "start_cp": 20,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "plus-alias",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:email_plus",
+      "scenario": "email",
+      "text": "รายการทดสอบ: “บัญชี demo+hr@example.invalid” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_plus",
+      "case_id": "C0034",
+      "expected_spans": [
+        {
+          "end_cp": 29,
+          "start_cp": 6,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "plain",
+        "plus-alias"
+      ],
+      "provenance": "constructed-template:email_plus",
+      "scenario": "email",
+      "text": "บัญชี demo+hr@example.invalid"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_mixed_case",
+      "case_id": "C0035",
+      "expected_spans": [
+        {
+          "end_cp": 32,
+          "start_cp": 7,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "mixed-case",
+        "plain"
+      ],
+      "provenance": "constructed-template:email_mixed_case",
+      "scenario": "email",
+      "text": "Email: Demo.User@Example.Invalid"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_mixed_case",
+      "case_id": "C0036",
+      "expected_spans": [
+        {
+          "end_cp": 46,
+          "start_cp": 21,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "mixed-case",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:email_mixed_case",
+      "scenario": "email",
+      "text": "รายการทดสอบ: “Email: Demo.User@Example.Invalid” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_adjacent_thai",
+      "case_id": "C0037",
+      "expected_spans": [
+        {
+          "end_cp": 41,
+          "start_cp": 19,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "punctuation",
+        "thai-adjacency"
+      ],
+      "provenance": "constructed-template:email_adjacent_thai",
+      "scenario": "email",
+      "text": "รายการทดสอบ: “อีเมลjoined@example.invalidสำหรับทดสอบ” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "email_adjacent_thai",
+      "case_id": "C0038",
+      "expected_spans": [
+        {
+          "end_cp": 27,
+          "start_cp": 5,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "invalid-tld",
+        "plain",
+        "thai-adjacency"
+      ],
+      "provenance": "constructed-template:email_adjacent_thai",
+      "scenario": "email",
+      "text": "อีเมลjoined@example.invalidสำหรับทดสอบ"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_checksum",
+      "case_id": "C0039",
+      "expected_spans": [
+        {
+          "end_cp": 28,
+          "start_cp": 15,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-valid-shape",
+        "contiguous",
+        "plain"
+      ],
+      "provenance": "constructed-template:thai_id_checksum",
+      "scenario": "thai-id",
+      "text": "เลขบัตรประชาชน 8000000000006"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_checksum",
+      "case_id": "C0040",
+      "expected_spans": [
+        {
+          "end_cp": 42,
+          "start_cp": 29,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-valid-shape",
+        "contiguous",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:thai_id_checksum",
+      "scenario": "thai-id",
+      "text": "รายการทดสอบ: “เลขบัตรประชาชน 8000000000006” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_spaced",
+      "case_id": "C0041",
+      "expected_spans": [
+        {
+          "end_cp": 43,
+          "start_cp": 26,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-valid-shape",
+        "punctuation",
+        "space"
+      ],
+      "provenance": "constructed-template:thai_id_spaced",
+      "scenario": "thai-id",
+      "text": "รายการทดสอบ: “เลขประจำตัว 8 0000 00000 00 6” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_spaced",
+      "case_id": "C0042",
+      "expected_spans": [
+        {
+          "end_cp": 29,
+          "start_cp": 12,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-valid-shape",
+        "plain",
+        "space"
+      ],
+      "provenance": "constructed-template:thai_id_spaced",
+      "scenario": "thai-id",
+      "text": "เลขประจำตัว 8 0000 00000 00 6"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_hyphen",
+      "case_id": "C0043",
+      "expected_spans": [
+        {
+          "end_cp": 29,
+          "start_cp": 12,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-valid-shape",
+        "hyphen",
+        "plain"
+      ],
+      "provenance": "constructed-template:thai_id_hyphen",
+      "scenario": "thai-id",
+      "text": "บัตรประชาชน 8-0000-00000-00-6"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_hyphen",
+      "case_id": "C0044",
+      "expected_spans": [
+        {
+          "end_cp": 43,
+          "start_cp": 26,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-valid-shape",
+        "hyphen",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:thai_id_hyphen",
+      "scenario": "thai-id",
+      "text": "รายการทดสอบ: “บัตรประชาชน 8-0000-00000-00-6” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_invalid_checksum",
+      "case_id": "C0045",
+      "expected_spans": [
+        {
+          "end_cp": 34,
+          "start_cp": 21,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-invalid-shape",
+        "plain",
+        "recall-first"
+      ],
+      "provenance": "constructed-template:thai_id_invalid_checksum",
+      "scenario": "thai-id",
+      "text": "เลขบัตรที่อ่านไม่ชัด 8000000000005"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_invalid_checksum",
+      "case_id": "C0046",
+      "expected_spans": [
+        {
+          "end_cp": 48,
+          "start_cp": 35,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "checksum-invalid-shape",
+        "punctuation",
+        "recall-first"
+      ],
+      "provenance": "constructed-template:thai_id_invalid_checksum",
+      "scenario": "thai-id",
+      "text": "รายการทดสอบ: “เลขบัตรที่อ่านไม่ชัด 8000000000005” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_thai_digits",
+      "case_id": "C0047",
+      "expected_spans": [
+        {
+          "end_cp": 28,
+          "start_cp": 15,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "length-preserving-normalization",
+        "plain",
+        "thai-digits"
+      ],
+      "provenance": "constructed-template:thai_id_thai_digits",
+      "scenario": "thai-id",
+      "text": "เลขบัตรประชาชน ๘๐๐๐๐๐๐๐๐๐๐๐๖"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "thai_id_thai_digits",
+      "case_id": "C0048",
+      "expected_spans": [
+        {
+          "end_cp": 42,
+          "start_cp": 29,
+          "type": "THAI_ID"
+        }
+      ],
+      "phenomena": [
+        "length-preserving-normalization",
+        "punctuation",
+        "thai-digits"
+      ],
+      "provenance": "constructed-template:thai_id_thai_digits",
+      "scenario": "thai-id",
+      "text": "รายการทดสอบ: “เลขบัตรประชาชน ๘๐๐๐๐๐๐๐๐๐๐๐๖” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_house",
+      "case_id": "C0049",
+      "expected_spans": [
+        {
+          "end_cp": 32,
+          "start_cp": 25,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "house-number",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:address_house",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “บ้านเลขที่ 999/999” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_house",
+      "case_id": "C0050",
+      "expected_spans": [
+        {
+          "end_cp": 18,
+          "start_cp": 11,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "house-number",
+        "plain"
+      ],
+      "provenance": "constructed-template:address_house",
+      "scenario": "address",
+      "text": "บ้านเลขที่ 999/999"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_road",
+      "case_id": "C0051",
+      "expected_spans": [
+        {
+          "end_cp": 34,
+          "start_cp": 26,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "road",
+        "thai"
+      ],
+      "provenance": "constructed-template:address_road",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “อาศัยอยู่ถนนทดสอบ 99” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_road",
+      "case_id": "C0052",
+      "expected_spans": [
+        {
+          "end_cp": 20,
+          "start_cp": 12,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "road",
+        "thai"
+      ],
+      "provenance": "constructed-template:address_road",
+      "scenario": "address",
+      "text": "อาศัยอยู่ถนนทดสอบ 99"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_soi",
+      "case_id": "C0053",
+      "expected_spans": [
+        {
+          "end_cp": 18,
+          "start_cp": 10,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "soi",
+        "thai"
+      ],
+      "provenance": "constructed-template:address_soi",
+      "scenario": "address",
+      "text": "ที่อยู่ซอยจำลอง 88"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_soi",
+      "case_id": "C0054",
+      "expected_spans": [
+        {
+          "end_cp": 32,
+          "start_cp": 24,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "soi",
+        "thai"
+      ],
+      "provenance": "constructed-template:address_soi",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “ที่อยู่ซอยจำลอง 88” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_admin",
+      "case_id": "C0055",
+      "expected_spans": [
+        {
+          "end_cp": 13,
+          "start_cp": 4,
+          "type": "ADDRESS"
+        },
+        {
+          "end_cp": 29,
+          "start_cp": 19,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "admin-area",
+        "multiple",
+        "plain"
+      ],
+      "provenance": "constructed-template:address_admin",
+      "scenario": "address",
+      "text": "ตำบลหนองทดสอบ อำเภอเมืองจำลอง"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_admin",
+      "case_id": "C0056",
+      "expected_spans": [
+        {
+          "end_cp": 27,
+          "start_cp": 18,
+          "type": "ADDRESS"
+        },
+        {
+          "end_cp": 43,
+          "start_cp": 33,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "admin-area",
+        "multiple",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:address_admin",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “ตำบลหนองทดสอบ อำเภอเมืองจำลอง” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_full",
+      "case_id": "C0057",
+      "expected_spans": [
+        {
+          "end_cp": 75,
+          "start_cp": 25,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "coalescing",
+        "full-address",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:address_full",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “บ้านเลขที่ 999/999 ถนนทดสอบ ตำบลจำลอง อำเภอเมือง นครปฐม 73000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_full",
+      "case_id": "C0058",
+      "expected_spans": [
+        {
+          "end_cp": 61,
+          "start_cp": 11,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "coalescing",
+        "full-address",
+        "plain"
+      ],
+      "provenance": "constructed-template:address_full",
+      "scenario": "address",
+      "text": "บ้านเลขที่ 999/999 ถนนทดสอบ ตำบลจำลอง อำเภอเมือง นครปฐม 73000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_multiline",
+      "case_id": "C0059",
+      "expected_spans": [
+        {
+          "end_cp": 25,
+          "start_cp": 9,
+          "type": "ADDRESS"
+        },
+        {
+          "end_cp": 35,
+          "start_cp": 30,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "form",
+        "multiline",
+        "plain"
+      ],
+      "provenance": "constructed-template:address_multiline",
+      "scenario": "address",
+      "text": "ที่อยู่:\n999/999 ถนนทดสอบ\nตำบลจำลอง"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "address_multiline",
+      "case_id": "C0060",
+      "expected_spans": [
+        {
+          "end_cp": 39,
+          "start_cp": 23,
+          "type": "ADDRESS"
+        },
+        {
+          "end_cp": 49,
+          "start_cp": 44,
+          "type": "ADDRESS"
+        }
+      ],
+      "phenomena": [
+        "form",
+        "multiline",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:address_multiline",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “ที่อยู่:\n999/999 ถนนทดสอบ\nตำบลจำลอง” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_hospital",
+      "case_id": "C0061",
+      "expected_spans": [
+        {
+          "end_cp": 27,
+          "start_cp": 9,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "hospital",
+        "plain",
+        "thai"
+      ],
+      "provenance": "constructed-template:org_hospital",
+      "scenario": "organization",
+      "text": "หน่วยงาน โรงพยาบาลทดสอบกลาง"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_hospital",
+      "case_id": "C0062",
+      "expected_spans": [
+        {
+          "end_cp": 41,
+          "start_cp": 23,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "hospital",
+        "punctuation",
+        "thai"
+      ],
+      "provenance": "constructed-template:org_hospital",
+      "scenario": "organization",
+      "text": "รายการทดสอบ: “หน่วยงาน โรงพยาบาลทดสอบกลาง” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_school",
+      "case_id": "C0063",
+      "expected_spans": [
+        {
+          "end_cp": 29,
+          "start_cp": 10,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "school",
+        "thai"
+      ],
+      "provenance": "constructed-template:org_school",
+      "scenario": "organization",
+      "text": "สถานศึกษา โรงเรียนสาธิตข้อมูล"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_school",
+      "case_id": "C0064",
+      "expected_spans": [
+        {
+          "end_cp": 43,
+          "start_cp": 24,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "school",
+        "thai"
+      ],
+      "provenance": "constructed-template:org_school",
+      "scenario": "organization",
+      "text": "รายการทดสอบ: “สถานศึกษา โรงเรียนสาธิตข้อมูล” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_university",
+      "case_id": "C0065",
+      "expected_spans": [
+        {
+          "end_cp": 40,
+          "start_cp": 21,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "thai",
+        "university"
+      ],
+      "provenance": "constructed-template:org_university",
+      "scenario": "organization",
+      "text": "รายการทดสอบ: “สังกัด มหาวิทยาลัยจำลองไทย” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_university",
+      "case_id": "C0066",
+      "expected_spans": [
+        {
+          "end_cp": 26,
+          "start_cp": 7,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "thai",
+        "university"
+      ],
+      "provenance": "constructed-template:org_university",
+      "scenario": "organization",
+      "text": "สังกัด มหาวิทยาลัยจำลองไทย"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_company",
+      "case_id": "C0067",
+      "expected_spans": [
+        {
+          "end_cp": 30,
+          "start_cp": 8,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "company",
+        "plain",
+        "thai"
+      ],
+      "provenance": "constructed-template:org_company",
+      "scenario": "organization",
+      "text": "นายจ้าง บริษัท ทดสอบระบบ จำกัด"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "org_company",
+      "case_id": "C0068",
+      "expected_spans": [
+        {
+          "end_cp": 44,
+          "start_cp": 22,
+          "type": "ORGANIZATION"
+        }
+      ],
+      "phenomena": [
+        "company",
+        "punctuation",
+        "thai"
+      ],
+      "provenance": "constructed-template:org_company",
+      "scenario": "organization",
+      "text": "รายการทดสอบ: “นายจ้าง บริษัท ทดสอบระบบ จำกัด” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "credit_card",
+      "case_id": "C0069",
+      "expected_spans": [
+        {
+          "end_cp": 40,
+          "start_cp": 24,
+          "type": "CREDIT_CARD"
+        }
+      ],
+      "phenomena": [
+        "luhn-valid-test-shape",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:credit_card",
+      "scenario": "financial",
+      "text": "รายการทดสอบ: “บัตรทดสอบ 4000000000000002” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "credit_card",
+      "case_id": "C0070",
+      "expected_spans": [
+        {
+          "end_cp": 26,
+          "start_cp": 10,
+          "type": "CREDIT_CARD"
+        }
+      ],
+      "phenomena": [
+        "luhn-valid-test-shape",
+        "plain"
+      ],
+      "provenance": "constructed-template:credit_card",
+      "scenario": "financial",
+      "text": "บัตรทดสอบ 4000000000000002"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "iban",
+      "case_id": "C0071",
+      "expected_spans": [
+        {
+          "end_cp": 33,
+          "start_cp": 11,
+          "type": "IBAN"
+        }
+      ],
+      "phenomena": [
+        "mod97-valid-test-shape",
+        "plain"
+      ],
+      "provenance": "constructed-template:iban",
+      "scenario": "financial",
+      "text": "บัญชีทดสอบ GB05TEST00000000000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "iban",
+      "case_id": "C0072",
+      "expected_spans": [
+        {
+          "end_cp": 47,
+          "start_cp": 25,
+          "type": "IBAN"
+        }
+      ],
+      "phenomena": [
+        "mod97-valid-test-shape",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:iban",
+      "scenario": "financial",
+      "text": "รายการทดสอบ: “บัญชีทดสอบ GB05TEST00000000000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "bank_account",
+      "case_id": "C0073",
+      "expected_spans": [
+        {
+          "end_cp": 39,
+          "start_cp": 26,
+          "type": "BANK_ACCOUNT"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "bank-cue",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:bank_account",
+      "scenario": "financial",
+      "text": "รายการทดสอบ: “บัญชีธนาคาร 000-0-00000-0” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "bank_account",
+      "case_id": "C0074",
+      "expected_spans": [
+        {
+          "end_cp": 25,
+          "start_cp": 12,
+          "type": "BANK_ACCOUNT"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "bank-cue",
+        "plain"
+      ],
+      "provenance": "constructed-template:bank_account",
+      "scenario": "financial",
+      "text": "บัญชีธนาคาร 000-0-00000-0"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "date_birth_numeric",
+      "case_id": "C0075",
+      "expected_spans": [
+        {
+          "end_cp": 18,
+          "start_cp": 8,
+          "type": "DATE_OF_BIRTH"
+        }
+      ],
+      "phenomena": [
+        "birth-cue",
+        "numeric",
+        "plain"
+      ],
+      "provenance": "constructed-template:date_birth_numeric",
+      "scenario": "date",
+      "text": "วันเกิด 31/12/2540"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "date_birth_numeric",
+      "case_id": "C0076",
+      "expected_spans": [
+        {
+          "end_cp": 32,
+          "start_cp": 22,
+          "type": "DATE_OF_BIRTH"
+        }
+      ],
+      "phenomena": [
+        "birth-cue",
+        "numeric",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:date_birth_numeric",
+      "scenario": "date",
+      "text": "รายการทดสอบ: “วันเกิด 31/12/2540” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "date_birth_thai_month",
+      "case_id": "C0077",
+      "expected_spans": [
+        {
+          "end_cp": 40,
+          "start_cp": 25,
+          "type": "DATE_OF_BIRTH"
+        }
+      ],
+      "phenomena": [
+        "birth-cue",
+        "punctuation",
+        "thai-month"
+      ],
+      "provenance": "constructed-template:date_birth_thai_month",
+      "scenario": "date",
+      "text": "รายการทดสอบ: “เกิดวันที่ 31 ธันวาคม 2540” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "date_birth_thai_month",
+      "case_id": "C0078",
+      "expected_spans": [
+        {
+          "end_cp": 26,
+          "start_cp": 11,
+          "type": "DATE_OF_BIRTH"
+        }
+      ],
+      "phenomena": [
+        "birth-cue",
+        "plain",
+        "thai-month"
+      ],
+      "provenance": "constructed-template:date_birth_thai_month",
+      "scenario": "date",
+      "text": "เกิดวันที่ 31 ธันวาคม 2540"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "date_generic",
+      "case_id": "C0079",
+      "expected_spans": [
+        {
+          "end_cp": 35,
+          "start_cp": 25,
+          "type": "DATE"
+        }
+      ],
+      "phenomena": [
+        "generic-date",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:date_generic",
+      "scenario": "date",
+      "text": "รายการทดสอบ: “วันนัดหมาย 10/08/2569” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "date_generic",
+      "case_id": "C0080",
+      "expected_spans": [
+        {
+          "end_cp": 21,
+          "start_cp": 11,
+          "type": "DATE"
+        }
+      ],
+      "phenomena": [
+        "generic-date",
+        "plain"
+      ],
+      "provenance": "constructed-template:date_generic",
+      "scenario": "date",
+      "text": "วันนัดหมาย 10/08/2569"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "vehicle_plate",
+      "case_id": "C0081",
+      "expected_spans": [
+        {
+          "end_cp": 17,
+          "start_cp": 10,
+          "type": "VEHICLE_PLATE"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "test-shape",
+        "thai-plate"
+      ],
+      "provenance": "constructed-template:vehicle_plate",
+      "scenario": "vehicle",
+      "text": "ทะเบียนรถ ทด 0000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "vehicle_plate",
+      "case_id": "C0082",
+      "expected_spans": [
+        {
+          "end_cp": 31,
+          "start_cp": 24,
+          "type": "VEHICLE_PLATE"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "test-shape",
+        "thai-plate"
+      ],
+      "provenance": "constructed-template:vehicle_plate",
+      "scenario": "vehicle",
+      "text": "รายการทดสอบ: “ทะเบียนรถ ทด 0000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "passport",
+      "case_id": "C0083",
+      "expected_spans": [
+        {
+          "end_cp": 38,
+          "start_cp": 29,
+          "type": "PASSPORT"
+        }
+      ],
+      "phenomena": [
+        "passport-cue",
+        "punctuation",
+        "test-shape"
+      ],
+      "provenance": "constructed-template:passport",
+      "scenario": "identifier",
+      "text": "รายการทดสอบ: “หนังสือเดินทาง ZZ0000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "passport",
+      "case_id": "C0084",
+      "expected_spans": [
+        {
+          "end_cp": 24,
+          "start_cp": 15,
+          "type": "PASSPORT"
+        }
+      ],
+      "phenomena": [
+        "passport-cue",
+        "plain",
+        "test-shape"
+      ],
+      "provenance": "constructed-template:passport",
+      "scenario": "identifier",
+      "text": "หนังสือเดินทาง ZZ0000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "student_id",
+      "case_id": "C0085",
+      "expected_spans": [
+        {
+          "end_cp": 21,
+          "start_cp": 13,
+          "type": "STUDENT_ID"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "plain",
+        "student-cue"
+      ],
+      "provenance": "constructed-template:student_id",
+      "scenario": "identifier",
+      "text": "รหัสนักศึกษา 00000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "student_id",
+      "case_id": "C0086",
+      "expected_spans": [
+        {
+          "end_cp": 35,
+          "start_cp": 27,
+          "type": "STUDENT_ID"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "punctuation",
+        "student-cue"
+      ],
+      "provenance": "constructed-template:student_id",
+      "scenario": "identifier",
+      "text": "รายการทดสอบ: “รหัสนักศึกษา 00000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "medical_id",
+      "case_id": "C0087",
+      "expected_spans": [
+        {
+          "end_cp": 8,
+          "start_cp": 4,
+          "type": "MEDICAL_ID"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "medical-cue",
+        "plain"
+      ],
+      "provenance": "constructed-template:medical_id",
+      "scenario": "identifier",
+      "text": "HN: 0000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "medical_id",
+      "case_id": "C0088",
+      "expected_spans": [
+        {
+          "end_cp": 22,
+          "start_cp": 18,
+          "type": "MEDICAL_ID"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "medical-cue",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:medical_id",
+      "scenario": "identifier",
+      "text": "รายการทดสอบ: “HN: 0000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "postal_code",
+      "case_id": "C0089",
+      "expected_spans": [
+        {
+          "end_cp": 37,
+          "start_cp": 32,
+          "type": "POSTAL_CODE"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "plain",
+        "postal-cue"
+      ],
+      "provenance": "constructed-template:postal_code",
+      "scenario": "address",
+      "text": "ที่อยู่สำหรับทดสอบ รหัสไปรษณีย์ 00000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "postal_code",
+      "case_id": "C0090",
+      "expected_spans": [
+        {
+          "end_cp": 51,
+          "start_cp": 46,
+          "type": "POSTAL_CODE"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "postal-cue",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:postal_code",
+      "scenario": "address",
+      "text": "รายการทดสอบ: “ที่อยู่สำหรับทดสอบ รหัสไปรษณีย์ 00000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "generic_id",
+      "case_id": "C0091",
+      "expected_spans": [
+        {
+          "end_cp": 35,
+          "start_cp": 27,
+          "type": "ID_NUMBER"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "generic-id",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:generic_id",
+      "scenario": "identifier",
+      "text": "รายการทดสอบ: “เลขที่เอกสาร 00000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "generic_id",
+      "case_id": "C0092",
+      "expected_spans": [
+        {
+          "end_cp": 21,
+          "start_cp": 13,
+          "type": "ID_NUMBER"
+        }
+      ],
+      "phenomena": [
+        "all-zero-test-shape",
+        "generic-id",
+        "plain"
+      ],
+      "provenance": "constructed-template:generic_id",
+      "scenario": "identifier",
+      "text": "เลขที่เอกสาร 00000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "location",
+      "case_id": "C0093",
+      "expected_spans": [
+        {
+          "end_cp": 30,
+          "start_cp": 21,
+          "type": "LOCATION"
+        }
+      ],
+      "phenomena": [
+        "plain",
+        "quasi-identifier",
+        "thai-location"
+      ],
+      "provenance": "constructed-template:location",
+      "scenario": "location",
+      "text": "สถานที่จัดกิจกรรมคือ เชียงใหม่"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "location",
+      "case_id": "C0094",
+      "expected_spans": [
+        {
+          "end_cp": 44,
+          "start_cp": 35,
+          "type": "LOCATION"
+        }
+      ],
+      "phenomena": [
+        "punctuation",
+        "quasi-identifier",
+        "thai-location"
+      ],
+      "provenance": "constructed-template:location",
+      "scenario": "location",
+      "text": "รายการทดสอบ: “สถานที่จัดกิจกรรมคือ เชียงใหม่” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_hr",
+      "case_id": "C0095",
+      "expected_spans": [
+        {
+          "end_cp": 44,
+          "start_cp": 23,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 59,
+          "start_cp": 49,
+          "type": "PHONE"
+        },
+        {
+          "end_cp": 89,
+          "start_cp": 66,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "hr",
+        "multiple-types",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:mixed_hr",
+      "scenario": "mixed",
+      "text": "รายการทดสอบ: “ผู้สมัคร นายกิตติทดสอบ ใจจำลอง โทร 0800000000 อีเมล hr.case@example.invalid” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_hr",
+      "case_id": "C0096",
+      "expected_spans": [
+        {
+          "end_cp": 30,
+          "start_cp": 9,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 45,
+          "start_cp": 35,
+          "type": "PHONE"
+        },
+        {
+          "end_cp": 75,
+          "start_cp": 52,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "hr",
+        "multiple-types",
+        "plain"
+      ],
+      "provenance": "constructed-template:mixed_hr",
+      "scenario": "mixed",
+      "text": "ผู้สมัคร นายกิตติทดสอบ ใจจำลอง โทร 0800000000 อีเมล hr.case@example.invalid"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_health",
+      "case_id": "C0097",
+      "expected_spans": [
+        {
+          "end_cp": 33,
+          "start_cp": 8,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 41,
+          "start_cp": 37,
+          "type": "MEDICAL_ID"
+        },
+        {
+          "end_cp": 59,
+          "start_cp": 49,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "healthcare",
+        "multiple-types",
+        "plain"
+      ],
+      "provenance": "constructed-template:mixed_health",
+      "scenario": "mixed",
+      "text": "ผู้ป่วย นางพิมพ์ทดสอบ ข้อมูลสมมติ HN 0000 ติดต่อ 0900000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_health",
+      "case_id": "C0098",
+      "expected_spans": [
+        {
+          "end_cp": 47,
+          "start_cp": 22,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 55,
+          "start_cp": 51,
+          "type": "MEDICAL_ID"
+        },
+        {
+          "end_cp": 73,
+          "start_cp": 63,
+          "type": "PHONE"
+        }
+      ],
+      "phenomena": [
+        "healthcare",
+        "multiple-types",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:mixed_health",
+      "scenario": "mixed",
+      "text": "รายการทดสอบ: “ผู้ป่วย นางพิมพ์ทดสอบ ข้อมูลสมมติ HN 0000 ติดต่อ 0900000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_school",
+      "case_id": "C0099",
+      "expected_spans": [
+        {
+          "end_cp": 27,
+          "start_cp": 9,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 49,
+          "start_cp": 41,
+          "type": "STUDENT_ID"
+        }
+      ],
+      "phenomena": [
+        "multiple-types",
+        "plain",
+        "school"
+      ],
+      "provenance": "constructed-template:mixed_school",
+      "scenario": "mixed",
+      "text": "นักเรียน ดาราทดสอบ แสงจำลอง รหัสนักศึกษา 00000000"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_school",
+      "case_id": "C0100",
+      "expected_spans": [
+        {
+          "end_cp": 41,
+          "start_cp": 23,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 63,
+          "start_cp": 55,
+          "type": "STUDENT_ID"
+        }
+      ],
+      "phenomena": [
+        "multiple-types",
+        "punctuation",
+        "school"
+      ],
+      "provenance": "constructed-template:mixed_school",
+      "scenario": "mixed",
+      "text": "รายการทดสอบ: “นักเรียน ดาราทดสอบ แสงจำลอง รหัสนักศึกษา 00000000” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_json",
+      "case_id": "C0101",
+      "expected_spans": [
+        {
+          "end_cp": 39,
+          "start_cp": 23,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 75,
+          "start_cp": 50,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "json-like",
+        "multiple-types",
+        "punctuation"
+      ],
+      "provenance": "constructed-template:mixed_json",
+      "scenario": "mixed",
+      "text": "รายการทดสอบ: “{\"name\":\"ชลทดสอบ เมฆสมมติ\",\"email\":\"json.case@example.invalid\"}” (จบรายการ)"
+    },
+    {
+      "action": "mask_required",
+      "base_id": "mixed_json",
+      "case_id": "C0102",
+      "expected_spans": [
+        {
+          "end_cp": 25,
+          "start_cp": 9,
+          "type": "NAME"
+        },
+        {
+          "end_cp": 61,
+          "start_cp": 36,
+          "type": "EMAIL"
+        }
+      ],
+      "phenomena": [
+        "json-like",
+        "multiple-types",
+        "plain"
+      ],
+      "provenance": "constructed-template:mixed_json",
+      "scenario": "mixed",
+      "text": "{\"name\":\"ชลทดสอบ เมฆสมมติ\",\"email\":\"json.case@example.invalid\"}"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_money",
+      "case_id": "C0103",
+      "expected_spans": [],
+      "phenomena": [
+        "money"
+      ],
+      "provenance": "constructed-template:neg_money",
+      "scenario": "ราคา",
+      "text": "ยอดรวม 12,500.75 บาท"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_product",
+      "case_id": "C0104",
+      "expected_spans": [],
+      "phenomena": [
+        "product-code"
+      ],
+      "provenance": "constructed-template:neg_product",
+      "scenario": "reference",
+      "text": "รหัสสินค้า SKU-0000000000 รุ่นทดลอง"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_ticket",
+      "case_id": "C0105",
+      "expected_spans": [],
+      "phenomena": [
+        "ticket-number"
+      ],
+      "provenance": "constructed-template:neg_ticket",
+      "scenario": "reference",
+      "text": "หมายเลขตั๋ว TKT-2026-000042"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_course",
+      "case_id": "C0106",
+      "expected_spans": [],
+      "phenomena": [
+        "course-code"
+      ],
+      "provenance": "constructed-template:neg_course",
+      "scenario": "education",
+      "text": "รายวิชา CS101 ตอน 02"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_ipv4_doc",
+      "case_id": "C0107",
+      "expected_spans": [],
+      "phenomena": [
+        "reserved-ip"
+      ],
+      "provenance": "constructed-template:neg_ipv4_doc",
+      "scenario": "technical",
+      "text": "ตัวอย่างเอกสารใช้ IP 192.0.2.44"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_ipv6_doc",
+      "case_id": "C0108",
+      "expected_spans": [],
+      "phenomena": [
+        "reserved-ip"
+      ],
+      "provenance": "constructed-template:neg_ipv6_doc",
+      "scenario": "technical",
+      "text": "ตัวอย่าง IPv6 คือ 2001:db8::42"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_version",
+      "case_id": "C0109",
+      "expected_spans": [],
+      "phenomena": [
+        "version"
+      ],
+      "provenance": "constructed-template:neg_version",
+      "scenario": "technical",
+      "text": "ซอฟต์แวร์เวอร์ชัน 2.5.0 build 72"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_timestamp",
+      "case_id": "C0110",
+      "expected_spans": [],
+      "phenomena": [
+        "timestamp"
+      ],
+      "provenance": "constructed-template:neg_timestamp",
+      "scenario": "technical",
+      "text": "บันทึกเวลา 2026-08-10T09:30:00Z"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_random_digits",
+      "case_id": "C0111",
+      "expected_spans": [],
+      "phenomena": [
+        "short-digit-run"
+      ],
+      "provenance": "constructed-template:neg_random_digits",
+      "scenario": "reference",
+      "text": "ลำดับสุ่ม 1234567 ใช้ทดสอบ"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_invoice",
+      "case_id": "C0112",
+      "expected_spans": [],
+      "phenomena": [
+        "invoice-number"
+      ],
+      "provenance": "constructed-template:neg_invoice",
+      "scenario": "commerce",
+      "text": "ใบแจ้งหนี้เลขที่ 2569-004512"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_purchase_order",
+      "case_id": "C0113",
+      "expected_spans": [],
+      "phenomena": [
+        "purchase-order"
+      ],
+      "provenance": "constructed-template:neg_purchase_order",
+      "scenario": "commerce",
+      "text": "ใบสั่งซื้อ PO-0000000000"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_date_release",
+      "case_id": "C0114",
+      "expected_spans": [],
+      "phenomena": [
+        "non-personal-date"
+      ],
+      "provenance": "constructed-template:neg_date_release",
+      "scenario": "technical",
+      "text": "รุ่นนี้เผยแพร่วันที่ 10/08/2569"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_clock",
+      "case_id": "C0115",
+      "expected_spans": [],
+      "phenomena": [
+        "time"
+      ],
+      "provenance": "constructed-template:neg_clock",
+      "scenario": "technical",
+      "text": "ระบบทำงานเวลา 17.40 น."
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_amount_equation",
+      "case_id": "C0116",
+      "expected_spans": [],
+      "phenomena": [
+        "amount-expression"
+      ],
+      "provenance": "constructed-template:neg_amount_equation",
+      "scenario": "commerce",
+      "text": "รวมเป็นเงิน 600000+120000 = 720000 บาท"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_doc_heading",
+      "case_id": "C0117",
+      "expected_spans": [],
+      "phenomena": [
+        "heading"
+      ],
+      "provenance": "constructed-template:neg_doc_heading",
+      "scenario": "document",
+      "text": "แบบประเมินผลการทำงานประจำปี"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_contract_word",
+      "case_id": "C0118",
+      "expected_spans": [],
+      "phenomena": [
+        "name-like-word"
+      ],
+      "provenance": "constructed-template:neg_contract_word",
+      "scenario": "language",
+      "text": "สัญญาเช่าฉบับนี้เป็นแม่แบบ"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_company_term",
+      "case_id": "C0119",
+      "expected_spans": [],
+      "phenomena": [
+        "generic-organization-term"
+      ],
+      "provenance": "constructed-template:neg_company_term",
+      "scenario": "language",
+      "text": "บริษัทเป็นนิติบุคคลรูปแบบหนึ่ง"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_province_term",
+      "case_id": "C0120",
+      "expected_spans": [],
+      "phenomena": [
+        "generic-location-term"
+      ],
+      "provenance": "constructed-template:neg_province_term",
+      "scenario": "language",
+      "text": "จังหวัดเป็นหน่วยการปกครอง"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_postcode_list",
+      "case_id": "C0121",
+      "expected_spans": [],
+      "phenomena": [
+        "postcode-enumeration"
+      ],
+      "provenance": "constructed-template:neg_postcode_list",
+      "scenario": "address",
+      "text": "พื้นที่บริการ 10110, 10210, 10310"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_malformed_email",
+      "case_id": "C0122",
+      "expected_spans": [],
+      "phenomena": [
+        "near-miss"
+      ],
+      "provenance": "constructed-template:neg_malformed_email",
+      "scenario": "email",
+      "text": "รูปแบบที่ผิด demo@@example และ user@example"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_long_digits",
+      "case_id": "C0123",
+      "expected_spans": [],
+      "phenomena": [
+        "long-digit-run"
+      ],
+      "provenance": "constructed-template:neg_long_digits",
+      "scenario": "reference",
+      "text": "หมายเลขล็อต 12345678901234567"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_markdown",
+      "case_id": "C0124",
+      "expected_spans": [],
+      "phenomena": [
+        "markdown"
+      ],
+      "provenance": "constructed-template:neg_markdown",
+      "scenario": "document",
+      "text": "## หัวข้อ\n- รายการหนึ่ง\n- รายการสอง"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_emoji",
+      "case_id": "C0125",
+      "expected_spans": [],
+      "phenomena": [
+        "emoji"
+      ],
+      "provenance": "constructed-template:neg_emoji",
+      "scenario": "chat",
+      "text": "สถานะการทดสอบ ✅ ผ่านขั้นตอนที่ 3"
+    },
+    {
+      "action": "do_not_mask",
+      "base_id": "neg_url_doc",
+      "case_id": "C0126",
+      "expected_spans": [],
+      "phenomena": [
+        "invalid-domain"
+      ],
+      "provenance": "constructed-template:neg_url_doc",
+      "scenario": "technical",
+      "text": "คู่มือตัวอย่างอยู่ที่ https://example.invalid/docs"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_name_word",
+      "case_id": "C0127",
+      "expected_spans": [],
+      "phenomena": [
+        "name-like-word"
+      ],
+      "provenance": "constructed-template:amb_name_word",
+      "scenario": "person",
+      "text": "วันนี้มีสัญญาเข้าร่วมประชุม"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_bare_name",
+      "case_id": "C0128",
+      "expected_spans": [],
+      "phenomena": [
+        "bare-name"
+      ],
+      "provenance": "constructed-template:amb_bare_name",
+      "scenario": "person",
+      "text": "กิตติทดสอบ ใจจำลอง"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_location",
+      "case_id": "C0129",
+      "expected_spans": [],
+      "phenomena": [
+        "place-not-person-linked"
+      ],
+      "provenance": "constructed-template:amb_location",
+      "scenario": "location",
+      "text": "เชียงใหม่มีอากาศเย็น"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_org",
+      "case_id": "C0130",
+      "expected_spans": [],
+      "phenomena": [
+        "organization-not-person-linked"
+      ],
+      "provenance": "constructed-template:amb_org",
+      "scenario": "organization",
+      "text": "โรงเรียนสาธิตข้อมูลเปิดรับสมัคร"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_ten_digits",
+      "case_id": "C0131",
+      "expected_spans": [],
+      "phenomena": [
+        "phone-bank-id-collision"
+      ],
+      "provenance": "constructed-template:amb_ten_digits",
+      "scenario": "reference",
+      "text": "รหัส 0800000000"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_date",
+      "case_id": "C0132",
+      "expected_spans": [],
+      "phenomena": [
+        "date-without-context"
+      ],
+      "provenance": "constructed-template:amb_date",
+      "scenario": "date",
+      "text": "10/08/2569"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_room",
+      "case_id": "C0133",
+      "expected_spans": [],
+      "phenomena": [
+        "facility"
+      ],
+      "provenance": "constructed-template:amb_room",
+      "scenario": "location",
+      "text": "จองห้องประชุม 1204 จำนวน 20 ที่นั่ง"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_plate_shape",
+      "case_id": "C0134",
+      "expected_spans": [],
+      "phenomena": [
+        "quoted-shape"
+      ],
+      "provenance": "constructed-template:amb_plate_shape",
+      "scenario": "vehicle",
+      "text": "ตัวอย่างรูปแบบ กข 1234"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_quote_email",
+      "case_id": "C0135",
+      "expected_spans": [],
+      "phenomena": [
+        "quoted-synthetic-value"
+      ],
+      "provenance": "constructed-template:amb_quote_email",
+      "scenario": "email",
+      "text": "คำว่า person.test@example.invalid เป็นตัวอย่าง"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_address_policy",
+      "case_id": "C0136",
+      "expected_spans": [],
+      "phenomena": [
+        "address-terms-only"
+      ],
+      "provenance": "constructed-template:amb_address_policy",
+      "scenario": "address",
+      "text": "แบบฟอร์มต้องมีบ้านเลขที่และถนน"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_student_shape",
+      "case_id": "C0137",
+      "expected_spans": [],
+      "phenomena": [
+        "generic-id"
+      ],
+      "provenance": "constructed-template:amb_student_shape",
+      "scenario": "identifier",
+      "text": "เลข 00000000 อาจเป็นรหัสหลายชนิด"
+    },
+    {
+      "action": "ambiguous",
+      "base_id": "amb_medical_word",
+      "case_id": "C0138",
+      "expected_spans": [],
+      "phenomena": [
+        "medical-label-only"
+      ],
+      "provenance": "constructed-template:amb_medical_word",
+      "scenario": "identifier",
+      "text": "หัวข้อ HN ใช้ในระบบโรงพยาบาล"
+    }
+  ],
+  "corpus_id": "aiguard-thai-pii-adversarial-v1",
+  "offset_unit": "unicode_code_point_half_open",
+  "schema_version": 1,
+  "synthetic_declaration": "Constructed locally from reviewed templates; no user, log, production, provider, or real-person record was used. Shape-valid strings are synthetic-context values and are never contacted or asserted to be unallocated."
+}
