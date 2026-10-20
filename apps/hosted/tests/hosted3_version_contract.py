@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-HOSTED_VERSION = "3.0.2"
+HOSTED_VERSION = "0.1.0"
 WEB_SURFACES = (
     "index.html",
     "app.html",
@@ -31,9 +31,10 @@ def main() -> int:
     assert "Hosted candidate" not in joined
     assert "local candidate" not in joined.lower()
     for required in (
-        "Hosted 3.0.2",
-        "Desktop 3.0.0",
-        "Extension 3.0.0 Manual",
+        "Hosted 0.1.0",
+        "Desktop 0.1.0",
+        "Extension 0.1.0",
+        "ยังไม่มีไฟล์ให้ดาวน์โหลด",
         "Standard access",
         "Priority Invite",
         "40 exact same-origin locations",
@@ -43,15 +44,15 @@ def main() -> int:
 
     readme = (ROOT / "README.md").read_text("utf-8")
     assert "exactly **40 routes**" in readme
-    assert "Hosted 3.0.2" in readme
+    assert "Hosted 0.1.0" in readme
     assert "HTTP contract" in readme
-    assert "Desktop 3.0.0" in readme
-    assert "Extension" in readme and "3.0.0" in readme
+    assert "Desktop 0.1.0" in readme
+    assert "Extension" in readme and "no ZIP is available to download yet" in readme
 
     approval = (ROOT / "core/aift_hosted3/approval.py").read_text("utf-8")
     assert "HTTP_CONTRACT_VERSION = 2" in approval
     public_acceptance = (ROOT / "tests/public_web_acceptance.py").read_text("utf-8")
-    assert 'health.get("version") == "3.0.2"' in public_acceptance
+    assert 'health.get("version") == "0.1.0"' in public_acceptance
 
     docs = (ROOT / "docs/production-web-redesign.md").read_text("utf-8")
     state = (ROOT / "STATE.md").read_text("utf-8")
@@ -59,7 +60,7 @@ def main() -> int:
     assert "Production is Hosted `3.0.2` with exactly 40 public locations" in state
 
     print(
-        "hosted3 version contract ok: Hosted 3.0.2 candidate/40, HTTP contract 2, "
+        "hosted3 version contract ok: Hosted 0.1.0 candidate/40, HTTP contract 2, "
         "Desktop/Extension unchanged"
     )
     return 0
