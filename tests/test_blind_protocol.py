@@ -179,6 +179,43 @@ def test_run_blind_is_aggregate_only_and_logs_chain(frozen_blind, capsys):
         blind.verify_log(log_path)
 
 
+def test_run_blind_scores_a_later_version_with_its_own_budget(frozen_blind):
+    data_dir, key_file, draft = frozen_blind
+    log_path = data_dir / "blind-scores.jsonl"
+    blind.run_blind(
+        engine="crf",
+        key_file=key_file,
+        reason="v1 reveal",
+        data_dir=data_dir,
+        log_path=log_path,
+        bootstrap_iters=50,
+    )
+    blind.freeze(
+        draft,
+        key_file,
+        data_dir=data_dir,
+        version="blind-v2",
+        type_minimums=FIXTURE_MINIMUMS,
+        reveal_budget=1,
+    )
+
+    result = blind.run_blind(
+        engine="crf",
+        key_file=key_file,
+        reason="v2 reveal",
+        data_dir=data_dir,
+        log_path=log_path,
+        bootstrap_iters=50,
+        version="blind-v2",
+    )
+    assert result["version"] == "blind-v2"
+    assert result["reveal_index"] == 1
+    assert result["over_budget"] is False
+    assert blind.verify_log(log_path) == 2
+    with pytest.raises(blind.BlindError):
+        blind.load_blind(key_file, data_dir=data_dir, version="blind-v3")
+
+
 def test_run_blind_requires_key_and_reason(frozen_blind):
     data_dir, key_file, _ = frozen_blind
     with pytest.raises(blind.BlindError, match="AIGUARD_BLIND_KEY_FILE"):

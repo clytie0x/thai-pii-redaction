@@ -1,0 +1,129 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amphrang"
+description = "Thai PII detection and anonymization — mask personal data before it reaches an external AI, restore it locally"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.11"
+authors = [{ name = "Teerapat Vatpitak" }]
+keywords = ["pii", "redaction", "thai", "pdpa", "privacy", "ner", "anonymization"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: Thai",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Text Processing :: Linguistic",
+]
+dynamic = ["version"]
+dependencies = [
+  "pythainlp>=5.0.0",
+  "python-crfsuite>=0.9.9",
+  "regex>=2024.0.0",
+  "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+server = [
+  "fastapi>=0.111.0",
+  "uvicorn[standard]>=0.30.0",
+  "python-multipart>=0.0.9",
+]
+mcp = ["mcp>=2.0"]
+proxy = [
+  "fastapi>=0.111.0",
+  "uvicorn[standard]>=0.30.0",
+]
+ml = [
+  "torch>=2.3.0",
+  "transformers>=4.41.0",
+  "sentencepiece>=0.2.0",
+  "sentence-transformers>=2.7.0",
+]
+
+# Dev-only tools (PEP 735); never part of the published metadata.
+# `uv sync` installs them by default; pip users: `pip install --group dev`.
+[dependency-groups]
+dev = [
+  "ruff",
+  "pytest",
+  "pre-commit",
+  "psutil", # peak-RSS sampling in benchmark/perf.py (harness degrades without it)
+]
+
+[project.scripts]
+amphrang = "amphrang.cli:main"
+amphrang-mcp = "amphrang.mcp:main"
+amphrang-proxy = "amphrang.proxy.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/Teerapat-Vatpitak/amphrang"
+Changelog = "https://github.com/Teerapat-Vatpitak/amphrang/blob/main/CHANGELOG.md"
+Security = "https://github.com/Teerapat-Vatpitak/amphrang/blob/main/SECURITY.md"
+Issues = "https://github.com/Teerapat-Vatpitak/amphrang/issues"
+
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
+
+[tool.setuptools]
+# `amphrang`'s top-level module (amphrang/__init__.py, cli.py, mcp.py,
+# serve.py) is the public facade and the only import surface with a semver
+# contract. `amphrang.engine` and `amphrang.server` ship the internal
+# engine and the optional local HTTP server; they carry no cross-release
+# stability promise. Everything lives under the `amphrang` distribution
+# name so nothing installs a generic top-level import name (`app`,
+# `pii_redactor`) that could collide with an unrelated package.
+packages = [
+  "amphrang",
+  "amphrang.engine",
+  "amphrang.engine.detectors",
+  "amphrang.engine.anonymizer",
+  "amphrang.engine.guard",
+  "amphrang.engine.ingest",
+  "amphrang.proxy",
+  "amphrang.server",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".venv", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "RUF"]
+ignore = [
+  "E501",
+  "B008",
+  "RUF001",
+  "RUF002",
+  "RUF003",
+  # deferred, not endorsed — inherited from the source tree; tighten one at a time
+  "B904",
+  "B905",
+  "B007",
+  "RUF005",
+  "RUF007",
+  "RUF013",
+  "RUF059",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "E402", "F401", "F841", "RUF043"]
+"amphrang/server/server.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"

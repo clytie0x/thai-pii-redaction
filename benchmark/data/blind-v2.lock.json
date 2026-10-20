@@ -1,0 +1,36 @@
+{
+  "ciphertext_sha256": "d6fdd3713d7d72e456f19903f11533d3728c79b382048e693d357ab79aa529fe",
+  "created": "2026-10-19T13:00:41+00:00",
+  "documents": 185,
+  "plaintext_sha256": "a4503b4e3596dd56af19aef137ec25d2429ee8c09a9e4c94eb43d411ec6e56a5",
+  "protocol": "docs/decisions/2026-07-28-blind-set-protocol.md",
+  "reveal_budget": 2,
+  "slice_counts": {
+    "address_varied": 12,
+    "bank_phone": 11,
+    "education": 11,
+    "finance": 11,
+    "gov_form": 11,
+    "id_docs": 19,
+    "long_form": 12,
+    "medical": 11,
+    "messy": 12,
+    "name_no_cue": 12,
+    "negative": 52,
+    "student_id_varied": 11
+  },
+  "type_counts": {
+    "ADDRESS": 65,
+    "BANK_ACCOUNT": 39,
+    "CREDIT_CARD": 26,
+    "DATE_OF_BIRTH": 38,
+    "EMAIL": 51,
+    "NAME": 158,
+    "PASSPORT": 27,
+    "PHONE": 62,
+    "STUDENT_ID": 28,
+    "THAI_ID": 39,
+    "VEHICLE_PLATE": 27
+  },
+  "version": "blind-v2"
+}

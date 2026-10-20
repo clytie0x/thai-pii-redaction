@@ -1,0 +1,61 @@
+{
+  "schema_revision": "hosted3-plan-2026-08-16",
+  "implementation_stage": "stage9_complete",
+  "current_hosted_version": "3.0.2",
+  "target_hosted_version": "3.0.2",
+  "existing_canonical_routes": [
+    "/health",
+    "/auth/login",
+    "/auth/logout",
+    "/auth/session",
+    "/detect",
+    "/guard",
+    "/roundtrip",
+    "/analyze-report"
+  ],
+  "additive_canonical_routes": [
+    "/auth/guest",
+    "/auth/guest/end",
+    "/guest/preview",
+    "/guest/execute",
+    "/protection-preview",
+    "/protection-execute",
+    "/document-preview",
+    "/document-execute",
+    "/provider-queue/join",
+    "/provider-queue/status",
+    "/provider-queue/claim",
+    "/provider-queue/cancel"
+  ],
+  "target_exact_route_count": 40,
+  "ticket_ttl_seconds": {
+    "custom_text_v1": 300,
+    "standard_document_v1": 900,
+    "invite_document_v1": 900,
+    "synthetic_document_v1": 600
+  },
+  "minimum_review_seconds": {
+    "custom_text_v1": 120,
+    "standard_document_v1": 300,
+    "invite_document_v1": 300,
+    "synthetic_document_v1": 300
+  },
+  "queue": {
+    "provider_slots": 2,
+    "total_capacity": 12,
+    "standard_capacity": 8,
+    "priority_capacity": 4,
+    "claim_grant_sequence": ["priority", "priority", "priority", "standard"],
+    "claim_ttl_seconds": 15,
+    "queue_wait_cap_seconds": 600,
+    "provider_margin_seconds": 210
+  },
+  "excluded_modalities": [
+    "audio_input",
+    "tts",
+    "images",
+    "vision",
+    "scanned_pdf",
+    "ocr"
+  ]
+}

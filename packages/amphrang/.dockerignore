@@ -1,0 +1,17 @@
+.git
+.venv
+.github
+.pytest_cache
+.ruff_cache
+__pycache__
+*.egg-info
+build
+dist
+logs
+tests
+benchmark
+docs
+research
+examples
+scripts
+!scripts/prewarm_ner.py

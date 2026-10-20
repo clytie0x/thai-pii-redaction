@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+**/.env
+**/.env.*
+artifacts/
+tests/out/
+output/
+.playwright-cli/
+tmp/

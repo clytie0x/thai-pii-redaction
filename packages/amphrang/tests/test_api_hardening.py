@@ -1,0 +1,296 @@
+import json
+import os
+from types import SimpleNamespace
+
+import pytest
+
+try:
+    from fastapi.testclient import TestClient
+
+    import amphrang.server.server as server
+
+    DEPS = True
+except ImportError:
+    DEPS = False
+
+pytestmark = pytest.mark.skipif(not DEPS, reason="fastapi not installed")
+
+EXT_ORIGIN = "chrome-extension://" + "a" * 32
+CONTROL_TOKEN = "api-hardening-control-token"
+AUTH_NOW = 1_800_000_000.0
+
+
+def _client():
+    return TestClient(
+        server.app,
+        base_url="http://localhost",
+        headers={"X-Amphrang-Contract-Version": "2"},
+    )
+
+
+@pytest.fixture(autouse=True)
+def _isolated_session_service(monkeypatch, tmp_path):
+    monkeypatch.setattr(server, "_BOOT_TOKEN", None)
+    monkeypatch.setattr(server, "_authorization_now", lambda: AUTH_NOW)
+    monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
+    monkeypatch.setattr(
+        server,
+        "SERVICE",
+        server.SessionService(
+            cap=server._SESSION_CAP,
+            ttl_s=server._SESSION_TTL_S,
+            now_fn=lambda: server._now(),
+        ),
+    )
+
+
+def _disposal_headers(session_id: str) -> dict[str, str]:
+    return {
+        "X-Amphrang-Token": server._make_session_disposal_authorization(
+            CONTROL_TOKEN,
+            session_id,
+            now=AUTH_NOW,
+        )
+    }
+
+
+def test_cors_allows_extension_origin():
+    resp = _client().get("/api/health", headers={"Origin": EXT_ORIGIN})
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == EXT_ORIGIN
+
+
+def test_cors_allows_tauri_scheme_origin():
+    resp = _client().get("/api/health", headers={"Origin": "tauri://localhost"})
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "tauri://localhost"
+
+
+def test_cors_allows_tauri_http_origin():
+    resp = _client().get("/api/health", headers={"Origin": "http://tauri.localhost"})
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "http://tauri.localhost"
+
+
+@pytest.mark.parametrize(
+    "origin", ["https://chatgpt.com", "https://evil.example", "http://localhost:5173"]
+)
+def test_cors_blocks_web_origin_read(origin):
+    resp = _client().get("/api/health", headers={"Origin": origin})
+    assert resp.headers.get("access-control-allow-origin") != origin
+
+
+@pytest.mark.parametrize("origin", ["https://chatgpt.com", "https://evil.example"])
+def test_cors_blocks_web_origin_preflight(origin):
+    resp = _client().options(
+        "/api/reidentify",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert resp.headers.get("access-control-allow-origin") != origin
+
+
+def test_trusted_host_rejects_foreign_host():
+    resp = _client().get("/api/health", headers={"Host": "evil.example"})
+    assert resp.status_code == 400
+
+
+def test_trusted_host_rejects_rebinding_host():
+    resp = _client().get("/api/health", headers={"Host": "rebind.attacker.test"})
+    assert resp.status_code == 400
+
+
+def test_trusted_host_allows_localhost():
+    resp = _client().get("/api/health", headers={"Host": "localhost"})
+    assert resp.status_code == 200
+
+
+def test_trusted_host_allows_loopback_ip():
+    resp = _client().get("/api/health", headers={"Host": "127.0.0.1"})
+    assert resp.status_code == 200
+
+
+def test_shutdown_grace_path_is_open_when_control_token_is_unset(monkeypatch):
+    monkeypatch.setattr(server, "_BOOT_TOKEN", None)
+    called = {}
+    monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
+    resp = _client().post("/api/shutdown")
+    assert resp.status_code == 200
+    assert called.get("hit") is True
+
+
+def test_shutdown_allowed_with_local_header(monkeypatch):
+    called = {}
+    monkeypatch.setattr(server, "_schedule_exit", lambda: called.setdefault("hit", True))
+    resp = _client().post("/api/shutdown", headers={"X-Amphrang-Local": "1"})
+    assert resp.status_code == 200
+    assert called.get("hit") is True
+
+
+def test_session_expires_after_idle_ttl(monkeypatch):
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(server, "_now", lambda: clock["t"])
+    client = _client()
+    s = client.post("/api/sanitize", json={"text": "โทร 0812345678"}).json()
+    sid = s["session_id"]
+    clock["t"] += server._SESSION_TTL_S + 1
+    resp = client.post("/api/reidentify", json={"session_id": sid, "text": s["sanitized_text"]})
+    assert resp.status_code == 404
+
+
+def test_session_survives_within_ttl(monkeypatch):
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(server, "_now", lambda: clock["t"])
+    client = _client()
+    s = client.post("/api/sanitize", json={"text": "โทร 0812345678"}).json()
+    sid = s["session_id"]
+    clock["t"] += server._SESSION_TTL_S - 5
+    resp = client.post("/api/reidentify", json={"session_id": sid, "text": s["sanitized_text"]})
+    assert resp.status_code == 200
+    assert "0812345678" in resp.json()["restored_text"]
+
+
+def test_session_idle_timer_resets_on_access(monkeypatch):
+    clock = {"t": 0.0}
+    monkeypatch.setattr(server, "_now", lambda: clock["t"])
+    client = _client()
+    s = client.post("/api/sanitize", json={"text": "โทร 0812345678"}).json()
+    sid = s["session_id"]
+    clock["t"] += server._SESSION_TTL_S - 10
+    assert (
+        client.post(
+            "/api/reidentify", json={"session_id": sid, "text": s["sanitized_text"]}
+        ).status_code
+        == 200
+    )
+    clock["t"] += server._SESSION_TTL_S - 10
+    assert (
+        client.post(
+            "/api/reidentify", json={"session_id": sid, "text": s["sanitized_text"]}
+        ).status_code
+        == 200
+    )
+
+
+def test_delete_session_clears_reidentify(monkeypatch):
+    monkeypatch.setattr(server, "_BOOT_TOKEN", CONTROL_TOKEN)
+    client = _client()
+    s = client.post("/api/sanitize", json={"text": "โทร 0812345678"}).json()
+    sid = s["session_id"]
+    deleted = client.delete(
+        f"/api/session/{sid}",
+        headers=_disposal_headers(sid),
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True
+    resp = client.post("/api/reidentify", json={"session_id": sid, "text": s["sanitized_text"]})
+    assert resp.status_code == 404
+
+
+def test_delete_unknown_session_is_unavailable(monkeypatch):
+    monkeypatch.setattr(server, "_BOOT_TOKEN", CONTROL_TOKEN)
+    session_id = "does-not-exist"
+    resp = _client().delete(
+        f"/api/session/{session_id}",
+        headers=_disposal_headers(session_id),
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error"]["code"] == "session_unavailable"
+
+
+def test_reidentify_unknown_session_404():
+    resp = _client().post("/api/reidentify", json={"session_id": "nope", "text": "x"})
+    assert resp.status_code == 404
+
+
+def test_sanitize_rejects_invalid_mode():
+    """An unknown mode string must 400, not silently fall back to token."""
+    resp = _client().post("/api/sanitize", json={"text": "โทร 0812345678", "mode": "bogus"})
+    assert resp.status_code == 400
+
+
+def test_sanitize_accepts_valid_modes():
+    for mode in ("token", "surrogate"):
+        resp = _client().post("/api/sanitize", json={"text": "โทร 0812345678", "mode": mode})
+        assert resp.status_code == 200
+
+
+def test_audit_log_omits_session_id(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
+    rec = {
+        "type": "process",
+        "session_id": "secret-sid-123",
+        "timestamp": 1,
+        "step": "api_sanitize",
+        "entity_count": 1,
+    }
+    (tmp_path / "audit_1_process.jsonl").write_text(json.dumps(rec) + "\n", encoding="utf-8")
+    resp = _client().get("/api/audit-log")
+    assert resp.status_code == 200
+    assert "secret-sid-123" not in resp.text
+    for row in resp.json()["logs"]:
+        assert "session_id" not in row
+
+
+def test_audit_log_read_is_bounded_by_max_files(tmp_path, monkeypatch):
+    monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
+    monkeypatch.setattr(server, "_AUDIT_MAX_FILES", 3)
+    for i in range(10):
+        p = tmp_path / f"audit_{i}_process.jsonl"
+        p.write_text(
+            json.dumps(
+                {
+                    "type": "process",
+                    "timestamp": i,
+                    "step": "api_analyze",
+                    "entity_count": 0,
+                    "validation_result": "pass",
+                    "latency_ms": 0.0,
+                    "flags": [],
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        os.utime(p, (float(i), float(i)))
+    resp = _client().get("/api/audit-log?limit=100")
+    assert resp.status_code == 200
+    assert resp.json()["total_count"] == 3
+    ts = [row["timestamp"] for row in resp.json()["logs"]]
+    assert ts == [9, 8, 7]
+
+
+def test_reidentify_audit_log_never_records_the_pseudonym(tmp_path, monkeypatch):
+    """VAULT-4: the proposal signed to NECTEC states the audit log holds only
+    event type, counts and time. A leftover pseudonym must be counted, not
+    written, and must not reappear through /api/audit-log."""
+    monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
+
+    secret_token = "[ชื่อ_7]"
+    monkeypatch.setattr(
+        server.SERVICE,
+        "restore",
+        lambda session_id, text: SimpleNamespace(
+            restored_text=text,
+            replaced_count=0,
+            leftover_tokens=[secret_token],
+            warnings=[],
+        ),
+    )
+
+    resp = _client().post(
+        "/api/reidentify", json={"session_id": "s1", "text": f"สวัสดี {secret_token}"}
+    )
+    assert resp.status_code == 200
+
+    on_disk = "".join(p.read_text(encoding="utf-8") for p in tmp_path.glob("audit_*_process.jsonl"))
+    assert on_disk, "no audit log was written"
+    assert secret_token not in on_disk, f"pseudonym written to disk: {on_disk}"
+    assert '"s1"' not in on_disk
+    assert "leftover_count:1" in on_disk
+
+    served = _client().get("/api/audit-log").text
+    assert secret_token not in served

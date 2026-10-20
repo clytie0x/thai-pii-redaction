@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Guard — ปกป้องข้อมูลส่วนบุคคลไทยก่อนใช้ AI</title>
+  <meta name="description" content="AI Guard ช่วยตรวจจับ แทนที่ และตรวจทานข้อมูลส่วนบุคคลภาษาไทย เลือก Desktop 3.0.0 สำหรับการประมวลผลบนอุปกรณ์ หรือ Hosted Web 3.0.2">
+  <meta name="robots" content="index,follow">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="th_TH">
+  <meta property="og:title" content="AI Guard — ปกป้องข้อมูลก่อนใช้กับ AI">
+  <meta property="og:description" content="เห็นข้อมูลที่ตรวจพบ เลือกขอบเขต Desktop หรือ Hosted และตรวจทานก่อนส่งต่อ">
+  <meta property="og:url" content="https://team08.aiforthai.in.th/">
+  <link rel="canonical" href="https://team08.aiforthai.in.th/">
+  <link rel="icon" href="/assets/ai-guard-favicon.svg" type="image/svg+xml">
+  <script src="/home.js" defer></script>
+  <link rel="stylesheet" href="/home.css">
+</head>
+<body>
+  <a class="skip-link" id="skipLink" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
+  <div class="page">
+    <header class="site-header" id="top">
+      <a class="brand" href="/" aria-label="AI Guard หน้าแรก" aria-current="page">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>AI Guard</span>
+      </a>
+      <span class="edition">THAI PRIVACY · 2026</span>
+      <nav class="menu" aria-label="เมนูหลัก">
+        <a class="nav-link optional mobile-keep" href="/downloads#desktop">Desktop</a>
+        <a class="nav-link optional" href="/privacy">ความเป็นส่วนตัว</a>
+        <a class="nav-link optional" href="/help">ช่วยเหลือ</a>
+        <a class="menu-cta" href="/app">Hosted Web</a>
+        <a class="menu-cta primary" href="/downloads#desktop">ดาวน์โหลด</a>
+      </nav>
+      <details class="mobile-nav">
+        <summary>เมนู</summary>
+        <nav aria-label="เมนูหลักสำหรับหน้าจอขนาดเล็ก">
+          <a href="/downloads#desktop">Desktop และดาวน์โหลด</a>
+          <a href="/app">Hosted Web</a>
+          <a href="/privacy">ความเป็นส่วนตัว</a>
+          <a href="/help">ช่วยเหลือ</a>
+        </nav>
+      </details>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="copy">
+          <div class="index">PRIVACY, BUILT IN</div>
+          <h1 id="hero-title">
+            <span><b>ปกป้อง</b></span>
+            <span><b>ข้อมูลก่อน</b></span>
+            <span><b>ใช้กับ AI</b></span>
+          </h1>
+          <div class="copy-bottom">
+            <p class="lede">AI Guard ช่วยตรวจจับและแทนที่ข้อมูลส่วนบุคคลในข้อความภาษาไทย พร้อมให้คุณตรวจทานก่อนนำข้อความไปใช้ต่อ</p>
+            <div class="hero-actions">
+              <a class="button primary" href="/downloads#desktop">ดาวน์โหลด Desktop 3.0.0</a>
+              <a class="button" href="/app">Start Standard access</a>
+            </div>
+            <div class="copy-note">Desktop 3.0.0 ประมวลผลในเครื่อง · Hosted 3.0.2 ให้ Standard access และ Priority Invite ใน workspace เดียว</div>
+          </div>
+        </div>
+
+        <div class="visual">
+          <div class="visual-title" aria-hidden="true">
+            <span>SYNTHETIC PROTECTION PREVIEW</span>
+            <span>AI GUARD / REVIEW</span>
+          </div>
+          <div class="poster" id="heroPoster" data-phase="raw" data-mobile-view="raw">
+            <span class="hero-scan" aria-hidden="true"></span>
+            <div class="poster-head">
+              <i class="status-dot" aria-hidden="true"></i>
+              <span class="studio-name">PROTECTION STUDIO</span>
+              <strong class="poster-state" id="heroPosterState" aria-live="polite">ตัวอย่างข้อมูลสังเคราะห์</strong>
+              <button class="replay" id="heroReplay" type="button" aria-label="เล่นตัวอย่างการปกป้องอีกครั้ง" aria-disabled="false">เล่นอีกครั้ง</button>
+            </div>
+            <div class="mobile-switch" role="tablist" aria-label="สลับตัวอย่างก่อนและหลังปกป้อง">
+              <button id="rawViewButton" type="button" role="tab" aria-selected="true" aria-controls="rawPanel" tabindex="0">ก่อนปกป้อง</button>
+              <button id="protectedViewButton" type="button" role="tab" aria-selected="false" aria-controls="protectedPanel" tabindex="-1" disabled>หลังปกป้อง</button>
+            </div>
+            <div class="poster-body">
+              <article class="panel raw" id="rawPanel" role="tabpanel" aria-labelledby="rawViewButton" aria-hidden="false">
+                <div class="panel-content">
+                  <div class="label">ข้อความก่อนปกป้อง</div>
+                  <span class="synthetic">ข้อมูลตัวอย่างสังเคราะห์</span>
+                  <div class="sample">สรุปข้อมูลของ <span class="pii">คุณสมชาย ใจดี</span><br>เลขบัตร <span class="pii">1-2345-67890-12-3</span><br>โทร <span class="pii">081-234-5678</span></div>
+                  <div class="receipt" id="rawReceipt" aria-label="รายการข้อมูลที่ตรวจพบ" aria-hidden="true"><span><b>ชื่อบุคคล</b><em>พบ 1</em></span><span><b>เลขบัตรประชาชน</b><em>พบ 1</em></span><span><b>เบอร์โทร</b><em>พบ 1</em></span></div>
+                  <div class="count"><span>ตรวจพบทั้งหมด</span><strong id="heroFindingCount">—</strong></div>
+                </div>
+              </article>
+              <div class="transform-rail" aria-label="ลำดับ ตรวจจับ แทนที่ และตรวจทาน">
+                <span class="rail-line" aria-hidden="true"></span>
+                <span class="rail-step" data-stage="raw">RAW</span>
+                <span class="rail-step" data-stage="find">FIND</span>
+                <span class="rail-step" data-stage="mask">MASK</span>
+                <span class="rail-step" data-stage="view">VIEW</span>
+              </div>
+              <article class="panel protected" id="protectedPanel" role="tabpanel" aria-labelledby="protectedViewButton" aria-hidden="false">
+                <div class="panel-content">
+                  <div class="label">ข้อความหลังปกป้อง</div>
+                  <span class="synthetic">พร้อมให้ผู้ใช้ตรวจทาน</span>
+                  <div class="sample">สรุปข้อมูลของ <span class="mask">[ชื่อบุคคล]</span><br>เลขบัตร <span class="mask">[เลขบัตรประชาชน]</span><br>โทร <span class="mask">[เบอร์โทร]</span></div>
+                  <div class="receipt" aria-label="ผลการแทนที่"><span><b>Token ที่สร้าง</b><em>03 / 03</em></span><span><b>ข้อมูลจริงในข้อความ</b><em>ไม่แสดง</em></span><span><b>ขั้นถัดไป</b><em>คนตรวจทาน</em></span></div>
+                  <div class="count"><span>สถานะ</span><strong>REVIEW</strong></div>
+                </div>
+              </article>
+              <div class="transfer-stream" aria-hidden="true"><span class="transfer-chip">ชื่อ</span><span class="transfer-chip">เลขบัตร</span><span class="transfer-chip">โทร</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="signal-strip" aria-label="ตัวอย่างประเภทข้อมูลที่ตรวจจับ">
+        <strong>DETECTION SIGNALS</strong>
+        <span><i aria-hidden="true"></i>ชื่อบุคคล</span>
+        <span><i aria-hidden="true"></i>เลขบัตรประชาชน</span>
+        <span><i aria-hidden="true"></i>เบอร์โทร</span>
+        <span><i aria-hidden="true"></i>อีเมล</span>
+        <span><i aria-hidden="true"></i>ที่อยู่</span>
+        <span><i aria-hidden="true"></i>เลขบัญชี</span>
+      </div>
+
+      <section class="features" id="product" aria-labelledby="feature-title">
+        <span class="legacy-anchor" id="privacy-scan" aria-hidden="true"></span>
+        <span class="legacy-anchor" id="safe-ai" aria-hidden="true"></span>
+        <span class="legacy-anchor" id="pdpa-report" aria-hidden="true"></span>
+        <span class="legacy-anchor" id="guided-demo" aria-hidden="true"></span>
+        <span class="legacy-anchor" id="how-it-works" aria-hidden="true"></span>
+        <span class="legacy-anchor" id="providerEvidenceCard" aria-hidden="true"></span>
+        <div class="legacy-handoffs" aria-live="polite">
+          <p class="legacy-handoff guided-handoff"><strong>Guided Demo ย้ายไป Hosted Web แล้ว</strong><a href="/app#guided-demo">เปิดตัวอย่างหลังเริ่ม Standard access หรือ Priority Invite</a></p>
+          <p class="legacy-handoff provider-handoff"><strong>Provider Evidence ย้ายไป Hosted Web แล้ว</strong><a href="/app#providerEvidenceCard">เปิด Protect text for AI; หลักฐานจะแสดงหลังผลที่ผ่าน gate</a></p>
+        </div>
+        <div class="feature-head reveal">
+          <div class="section-tag"><b>02</b> THREE WORKFLOWS</div>
+          <h2 id="feature-title">หนึ่งชั้นปกป้อง<br><span>สามวิธีทำงาน</span></h2>
+        </div>
+        <div class="feature-layout reveal">
+          <div class="feature-menu" role="tablist" aria-label="เลือก workflow">
+            <button class="feature-btn active" id="tab-scan" type="button" role="tab" aria-selected="true" aria-controls="featurePanel" tabindex="0" data-mode="scan">
+              <span class="feature-num">01</span>
+              <span class="feature-copy"><strong>Privacy Scan</strong><span>เห็นประเภท จำนวน และตำแหน่งที่ตรวจพบ</span></span>
+              <span class="feature-icon" aria-hidden="true">⌕</span>
+            </button>
+            <button class="feature-btn" id="tab-safe" type="button" role="tab" aria-selected="false" aria-controls="featurePanel" tabindex="-1" data-mode="safe">
+              <span class="feature-num">02</span>
+              <span class="feature-copy"><strong>Safe AI</strong><span>ปกป้องก่อนส่ง และแสดงหลักฐานข้อความที่ส่งจริง</span></span>
+              <span class="feature-icon" aria-hidden="true">✦</span>
+            </button>
+            <button class="feature-btn" id="tab-report" type="button" role="tab" aria-selected="false" aria-controls="featurePanel" tabindex="-1" data-mode="report">
+              <span class="feature-num">03</span>
+              <span class="feature-copy"><strong>PDPA Report</strong><span>สรุปสัญญาณความเสี่ยงเพื่อช่วยตรวจทาน</span></span>
+              <span class="feature-icon" aria-hidden="true">▤</span>
+            </button>
+          </div>
+          <div class="feature-stage" id="featurePanel" role="tabpanel" aria-labelledby="tab-scan">
+            <div class="stage-meta"><span>WORKFLOW PREVIEW</span><span id="stageMode">PRIVACY SCAN</span></div>
+            <div class="mode-card" id="modeCard">
+              <div class="mode-card-head"><i aria-hidden="true"></i><span id="modeTitle" aria-live="polite">ตรวจพบข้อมูลส่วนบุคคล 3 รายการ</span><b id="modeBadge">READY TO REVIEW</b></div>
+              <div class="mode-content">
+                <div class="mode-pane">
+                  <small id="leftLabel">ข้อความตัวอย่างสังเคราะห์</small>
+                  <p id="leftCopy">คุณสมชาย · 1-2345-67890-12-3<br>โทร 081-234-5678</p>
+                </div>
+                <div class="mode-pane result">
+                  <small id="rightLabel">สิ่งที่ตรวจพบ</small>
+                  <p id="rightCopy"><span class="mask">ชื่อบุคคล</span> 1 รายการ<br><span class="mask">เลขบัตรประชาชน</span> 1 รายการ<br><span class="mask">เบอร์โทร</span> 1 รายการ</p>
+                  <div class="mode-proof" id="modeProof"><span>ตำแหน่ง</span><span>ประเภท</span><span>จำนวน 03</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav class="workflow-handoff reveal" aria-label="เปิดเวิร์กโฟลว์ Hosted Web">
+          <strong>เวิร์กโฟลว์ Hosted 3.0.2: เริ่ม Standard access ได้ทันที หรือใช้ Priority Invite ที่ออกให้</strong>
+          <a href="/app#privacy-scan">เปิด Privacy Scan</a>
+          <a href="/app#safe-ai">เปิด Safe AI</a>
+          <a href="/app#pdpa-report">เปิด PDPA Report</a>
+        </nav>
+      </section>
+
+      <section class="boundary" id="privacy" aria-labelledby="boundary-title">
+        <div class="boundary-copy reveal">
+          <div class="section-tag"><b>03</b> CHOOSE YOUR BOUNDARY</div>
+          <h2 id="boundary-title">เลือกให้ชัด<br><span>ข้อมูลอยู่ที่ไหน</span></h2>
+          <p>แต่ละช่องทางมีขอบเขตข้อมูลต่างกัน เลือก Desktop เมื่อข้อมูลต้องอยู่บนอุปกรณ์ หรือใช้ Hosted เมื่อต้องการเวิร์กโฟลว์ที่เชื่อมต่อบริการ AI</p>
+          <div class="boundary-ring" aria-hidden="true"></div>
+        </div>
+        <div class="boundary-choice">
+          <article class="channel desktop reveal">
+            <div class="channel-head"><span class="channel-num">A / ON DEVICE</span><span class="channel-badge">เหมาะกับข้อมูลสำคัญ</span></div>
+            <h3>AI Guard Desktop</h3>
+            <p>การตรวจจับ การแทนที่ vault/mapping การกู้คืน และรายงานอยู่บนอุปกรณ์ Desktop 3.0.0 ไม่มีคำสั่งเรียก provider ภายนอก</p>
+            <div class="route-map" aria-label="เส้นทางข้อมูล Desktop"><span>ข้อความ</span><i>→</i><span>อุปกรณ์ของคุณ</span><i>→</i><span>ผลพร้อมตรวจ</span></div>
+          </article>
+          <article class="channel web reveal">
+            <div class="channel-head"><span class="channel-num">B / HOSTED</span><span class="channel-badge">PRIVATE BETA</span></div>
+            <h3>AI Guard Web App</h3>
+            <p>ข้อความต้นฉบับถึง AIFT edge และเซิร์ฟเวอร์ของทีม ส่วน Safe AI ส่งเฉพาะข้อความที่ปกป้องและตรวจซ้ำแล้วไปยัง Pathumma</p>
+            <div class="route-map" aria-label="เส้นทางข้อมูล Hosted"><span>ข้อความดิบ</span><i>→</i><span>Team service</span><i>→</i><span>ข้อความปกป้อง</span><i>→</i><span>thaillm-8b</span></div>
+            <p class="channel-detail">Hosted 3.0.2 · Standard access / Priority Invite · provider เดียว ไม่มี fallback · <a href="/privacy">อ่านวงจรข้อมูลทั้งหมด</a></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="scenarios" id="uses" aria-labelledby="scenario-title">
+        <div class="scenario-intro reveal">
+          <div class="section-tag"><b>04</b> BUILT FOR CAREFUL WORK</div>
+          <h2 id="scenario-title">งานที่<br>ข้อมูลสำคัญ</h2>
+          <p>ตัวอย่างงานที่ได้ประโยชน์จาก AI แต่ยังต้องเห็น ตรวจทาน และควบคุมข้อมูลระบุตัวบุคคลก่อนส่งต่อ</p>
+        </div>
+        <div class="scenario-grid">
+          <article class="scenario reveal"><small>HUMAN RESOURCES</small><h3>งานบุคคล</h3><p>ตรวจข้อมูลระบุตัวบุคคลก่อนสรุปหรือจัดหมวดหมู่</p></article>
+          <article class="scenario reveal"><small>HEALTHCARE</small><h3>สุขภาพ</h3><p>ชี้ตำแหน่งข้อมูลสำคัญเพื่อให้ผู้รับผิดชอบตรวจทานต่อ</p></article>
+          <article class="scenario reveal"><small>EDUCATION</small><h3>การศึกษา</h3><p>ปกป้องข้อมูลนักเรียนก่อนใช้เครื่องมือช่วยเขียนหรือสรุป</p></article>
+          <article class="scenario reveal"><small>CUSTOMER SERVICE</small><h3>บริการลูกค้า</h3><p>แทนที่ชื่อและช่องทางติดต่อก่อนวิเคราะห์เคส</p></article>
+          <article class="scenario reveal"><small>GOVERNMENT</small><h3>ภาครัฐ</h3><p>ช่วยเตรียมข้อความสำหรับงานที่ต้องมีคนตรวจทาน</p></article>
+        </div>
+      </section>
+
+      <section class="trust" id="limits" aria-labelledby="trust-title">
+        <div class="trust-top reveal">
+          <div>
+            <div class="section-tag"><b>05</b> HONEST BY DESIGN</div>
+            <h2 id="trust-title">บอกทั้งสิ่งที่ทำได้<br>และข้อจำกัด</h2>
+          </div>
+          <div class="trust-copy"><strong>AI Guard ช่วยลดความเสี่ยง ไม่ได้แทนการตัดสินใจของคน</strong><br><br>การทำ pseudonymization ไม่ใช่ anonymization และผลอัตโนมัติไม่ใช่ใบรับรอง PDPA</div>
+        </div>
+        <div class="trust-grid reveal">
+          <article class="trust-item"><span>DESKTOP 3.0.0</span><strong>เผยแพร่แล้ว</strong><p>Windows, Linux และ macOS Apple silicon</p></article>
+          <article class="trust-item"><span>HOSTED 3.0.2</span><strong>One app, two service classes</strong><p>Start Standard access หรือใช้ Priority Invite ที่ออกให้</p></article>
+          <article class="trust-item"><span>EXTENSION 3.0.0</span><strong>Manual</strong><p>Store ยังไม่เผยแพร่ ต้องใช้ Desktop</p></article>
+          <article class="trust-item"><span>TEXT-LAYER PDF</span><strong>Protected text/Markdown only</strong><p>PDF ต้นฉบับไม่เปลี่ยน ไม่มี rebuilt/redacted PDF · scan/OCR ไม่รองรับ</p></article>
+        </div>
+      </section>
+
+      <section class="closing" id="web-access" aria-labelledby="closing-title">
+        <div class="section-tag reveal"><b>06</b> KEEP DATA IN YOUR HANDS</div>
+        <h2 class="reveal" id="closing-title">ใช้ AI ได้<br><span>โดยเห็นข้อมูลที่ส่ง</span></h2>
+        <p class="reveal">เริ่มด้วย Desktop เมื่อการประมวลผลในเครื่องสำคัญที่สุด หรือทดลอง Hosted Web App ด้วยข้อมูลสังเคราะห์ก่อน</p>
+        <div class="closing-actions reveal">
+          <a class="button primary" href="/downloads#desktop">ดาวน์โหลด AI Guard Desktop</a>
+          <a class="button" href="/app">Start Standard access</a>
+          <a class="button" href="/privacy">อ่านขอบเขตข้อมูล</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="footer-brand" href="/">AI Guard</a>
+      <span>Desktop 3.0.0 · Published</span>
+      <span>Hosted 3.0.2 · Standard / Priority</span>
+      <span>Extension 3.0.0 · Manual</span>
+      <a href="/downloads">ดาวน์โหลด</a>
+      <a href="/privacy">ความเป็นส่วนตัว</a>
+      <a href="/terms">ข้อกำหนด</a>
+      <a href="/help">ช่วยเหลือ</a>
+      <a href="/developers">Contract &amp; evidence</a>
+      <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction" rel="noopener noreferrer">GitHub</a>
+      <span>© 2026</span>
+    </footer>
+  </div>
+
+</body>
+</html>
