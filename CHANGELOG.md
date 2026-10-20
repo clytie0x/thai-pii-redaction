@@ -28,6 +28,17 @@ log — see `git log` for full detail on any release.
   the lifecycle. The `matrix.os == 'ubuntu-latest'` steps in `release.yml` and
   `smoke-crossplatform.yml` are inert for the same reason.
 
+## [0.1.0] - 2026-10-19
+
+### Changed
+
+- The version line restarts at `0.1.0` for this repository, whose history was
+  rewritten to remove private documents (see `docs/history/`). Versions stay
+  below `1.0.0` until the product is ready for production use; see
+  `docs/decisions/2026-10-19-version-reset.md`. No build has been published
+  under `0.1.0`. The `v1.0.0`-`v3.0.0` tags and releases are archived and are
+  not carried in this repository; the entries below describe that archived line.
+
 ## [3.0.0] - 2026-08-14
 
 AI Guard 3.0 moves the local Desktop and Chrome Extension onto one authenticated

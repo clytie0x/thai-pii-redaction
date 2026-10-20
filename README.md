@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/latest"><img src="https://img.shields.io/github/v/release/Teerapat-Vatpitak/thai-pii-redaction?label=release" alt="Latest release" /></a>
-  <a href="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/actions/workflows/ci.yml"><img src="https://github.com/Teerapat-Vatpitak/thai-pii-redaction/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/clytie0x/thai-pii-redaction/releases/latest"><img src="https://img.shields.io/github/v/release/clytie0x/thai-pii-redaction?label=release" alt="Latest release" /></a>
+  <a href="https://github.com/clytie0x/thai-pii-redaction/actions/workflows/ci.yml"><img src="https://github.com/clytie0x/thai-pii-redaction/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/runtime-local%20%7C%20container-4455aa" alt="Local and container runtimes" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License: Apache 2.0" /></a>
 </p>
@@ -46,7 +46,7 @@ described as if they were the same deployment.
 | Context | Privacy boundary |
 |---|---|
 | Local Desktop | The installed webview uses typed commands and authenticated native IPC to a shared broker, which owns the private authenticated HTTP-v2 backend. Mappings, backend endpoint/credentials, provider credentials, and Python session IDs never reach the webview. The installed Desktop/native-broker profile is deliberately credential-free: it fixes detection to local `thainer`, admits only `fake` as internal backend conformance support, and exposes no provider command. Slices 4--6 are integrated and ship in Desktop 3.0.0. |
-| Browser Extension | The MV3 service worker owns one registered Chrome Native Messaging port to the same shared broker. Content scripts and side panels never receive mappings, Python session IDs, backend endpoints/credentials, or native transport access. Installed detection is fixed to local `thainer`; no provider, remote TNER, credential, localhost permission, HTTP client, or fallback is exposed. Slices 5--6, owner-approved production ID `kdjmkknedgmfphpkjhjdhmjadaelgggm`, exact-ID unpacked Chromium, and installed-companion gates pass. The manually installable 3.0.0 ZIP is attached to the GitHub Release; Chrome Web Store publication remains pending. |
+| Browser Extension | The MV3 service worker owns one registered Chrome Native Messaging port to the same shared broker. Content scripts and side panels never receive mappings, Python session IDs, backend endpoints/credentials, or native transport access. Installed detection is fixed to local `thainer`; no provider, remote TNER, credential, localhost permission, HTTP client, or fallback is exposed. Slices 5--6, owner-approved production ID `kdjmkknedgmfphpkjhjdhmjadaelgggm`, exact-ID unpacked Chromium, and installed-companion gates pass. The 3.0.0 ZIP was attached to the archived 3.0.0 release and is not distributed from this repository; Chrome Web Store publication remains pending. |
 | Office Add-in | Office remains outside broker protocol v1 and retains its separately documented strict fixed-port HTTP-v2 development path. Explicit remote TNER outside the installed Desktop/Extension boundary sends raw pre-mask chunks to AI for Thai. Fresh Office host/package acceptance and localhost process identity remain open. |
 | Hosted platform service | The raw request reaches the platform-hosted AI Guard container. The selected sibling port is request-stateless, gates business routes with a signed caller cookie, proxies its public aliases to strict contract 2, and returns minimized projections without mapping DTOs. Main's `app.hosted` session routes remain a generic reference, not the selected deployment. The exact sibling commit passes provider-free local check/deploy; exact live-provider, public-proxy, and platform acceptance remain open. |
 
@@ -92,9 +92,9 @@ future-token preplay computationally impractical; this is probabilistic
 separation, not impossibility.
 The Office fixed-port client still does not authenticate the localhost process.
 The released Extension package admits only the owner-approved exact registered
-origin and browser process context before joining the broker. The downloadable
-3.0.0 ZIP is for manual/developer installation; exact-ID unpacked Chromium is
-not Web Store installation. Published 3.0.0 package evidence applies only to
+origin and browser process context before joining the broker. The archived
+3.0.0 ZIP was for manual/developer installation; exact-ID unpacked Chromium is
+not Web Store installation. Archived 3.0.0 package evidence applies only to
 the exact tagged source and named assets. It does not establish Office-host,
 Web Store, live-provider, or official hosted-deployment acceptance. Review
 high-risk output before submitting it to an external AI.
@@ -153,48 +153,24 @@ privacy-reviewed evidence are reproducibility inputs and remain versioned.
 
 ## Install the local product
 
-Download Desktop 3.0.0 from the
-[published release](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/tag/v3.0.0):
+No build has been published under the current version line yet. The version
+was restarted at `0.1.0` on 2026-10-19 and stays below `1.0.0` until the
+product is ready for production use
+([decision](docs/decisions/2026-10-19-version-reset.md)). The earlier
+`1.x`-`3.0.0` releases are archived and are not distributed from this
+repository.
 
-| Platform | Direct download |
-|---|---|
-| Windows x64 | [`AI.Guard_3.0.0_x64-setup.exe`](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_x64-setup.exe) |
-| macOS Apple silicon | [`AI.Guard_3.0.0_aarch64.dmg`](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_aarch64.dmg) |
-| Linux amd64 | [`AI.Guard_3.0.0_amd64.AppImage`](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.AppImage) or [`AI.Guard_3.0.0_amd64.deb`](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/AI.Guard_3.0.0_amd64.deb) (final Linux build, see below) |
-
-**3.0.0 is the last Desktop release with a Linux package.** Later releases build
-Windows and macOS only. The 3.0.0 AppImage and DEB above stay published and keep
-working, but they will not receive an update: `latest.json` no longer carries a
-`linux-x86_64` entry, so an installed 3.0.0 reports itself as up to date instead
-of failing. Linux users who want newer detection code can run from source, which
-is unaffected, or use the hosted service. Nothing was removed from the codebase,
-so the packaging can come back without redoing its certification.
-
-Each Desktop package bundles the backend, so no Python setup is required.
-Windows packages do not carry an Authenticode publisher signature. macOS
-packages are unsigned and not notarized. Tauri updater signatures authenticate
-updater bytes but do not replace operating-system publisher signing. Verify the
-checksum, GitHub build provenance, download URL, and your organization's policy
-before installing; see [SECURITY.md](SECURITY.md). Do not proceed if a warning
-is unexpected or you cannot establish trust in the download.
+Until a `0.x` release is published, run from source:
+[docs/install-from-source.md](docs/install-from-source.md). Desktop packages,
+once published, bundle the backend and are unsigned; verify each download as
+described under [Verify a release](#verify-a-release) and in
+[SECURITY.md](SECURITY.md).
 
 ### Install the Browser Extension manually
 
-Chrome Web Store publication is pending. For manual/developer installation:
-
-1. Install the matching Desktop 3.0.0 package above so its Native Messaging
-   companion is available.
-2. Download
-   [`aiguard-extension-3.0.0.zip`](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/aiguard-extension-3.0.0.zip)
-   and verify its SHA-256 as described below.
-3. Extract the ZIP to a local directory.
-4. Open `chrome://extensions` in Google Chrome and enable **Developer mode**.
-5. Choose **Load unpacked**, then select the extracted directory that contains
-   `manifest.json`.
-
-This is not Chrome Web Store installation. The Extension fails closed when its
-matching Desktop/native companion is unavailable. The fixed-port developer
-backend does not supply an Extension endpoint. See
+Chrome Web Store publication is pending, and no Extension ZIP is published yet.
+The Extension needs the matching Desktop/native companion and fails closed when
+it is unavailable. For developer installation from source, see
 [extension/README.md](extension/README.md).
 
 To develop or sideload the Windows Office task pane, see
@@ -348,39 +324,18 @@ Running directly from source: [docs/install-from-source.md](docs/install-from-so
 
 ## Verify a release
 
-[`SHA256SUMS`](https://github.com/Teerapat-Vatpitak/thai-pii-redaction/releases/download/v3.0.0/SHA256SUMS)
-lists the original Desktop package, updater-signature, and `latest.json` asset
-set. It does not list itself or the separately attached Extension ZIP. Verify a
-downloaded Desktop file with the matching checksum line and, when available,
-GitHub build provenance. On Windows:
-
-```powershell
-Get-FileHash .\AI.Guard_3.0.0_x64-setup.exe -Algorithm SHA256
-```
-
-On macOS:
+Each published release will attach a `SHA256SUMS` file covering its Desktop
+packages, updater signatures and `latest.json`. Verify a download with the
+matching checksum line (`Get-FileHash <file> -Algorithm SHA256` on Windows,
+`shasum -a 256 <file>` on macOS, `sha256sum -c SHA256SUMS --ignore-missing` on
+Linux) and, when available, GitHub build provenance:
 
 ```bash
-shasum -a 256 AI.Guard_3.0.0_aarch64.dmg
+gh attestation verify <file> -R clytie0x/thai-pii-redaction
 ```
 
-On Linux:
-
-```bash
-sha256sum -c SHA256SUMS --ignore-missing
-```
-
-On any platform with the GitHub CLI:
-
-```bash
-gh attestation verify <file> -R Teerapat-Vatpitak/thai-pii-redaction
-```
-
-The Extension 3.0.0 ZIP has SHA-256
-`feb048775ec3d2a2c57ade08b37000fc4fa035a72ffb77db201e5eb838357670`.
-Verify that exact digest separately. These checks establish origin and
-integrity where stated; they are not a claim of operating-system publisher
-signing or bit-for-bit reproducibility.
+These checks establish origin and integrity where stated; they are not a claim
+of operating-system publisher signing or bit-for-bit reproducibility.
 
 ## Current status and limitations
 
@@ -398,8 +353,8 @@ class named in each record. Current truth is deliberately split as follows:
   `AppRun`. They are not interchangeable. Normal AppImage FUSE is reported only
   when the runner can mount it; extract-and-run never substitutes for FUSE.
 - **Installed real-host tests:** published 2.5.0 Desktop/browser/Office records
-  remain historical pre-broker/HTTP-v2 evidence. Desktop 3.0.0 is the current
-  published package set. Slice 5 has production-keyed unpacked real-Chromium
+  remain historical pre-broker/HTTP-v2 evidence. Desktop 3.0.0 was the last
+  published package set, now archived. Slice 5 has production-keyed unpacked real-Chromium
   and exact CI NSIS installed-companion evidence; that is not Web Store
   installation. Office-host and other evidence classes remain open unless a
   dated exact-candidate record says otherwise.
@@ -414,7 +369,7 @@ fallback. Its installed profile is fixed to local `thainer`; `fake` is the only
 backend provider admitted for internal conformance, and no provider operation is
 exposed to the webview. Unsupported remote/credential-backed configuration
 fails closed, including when a Desktop process finds a warm broker. Slices 4--6
-are integrated in the source tagged and published as v3.0.0. Office remains
+are integrated in the source that was published as v3.0.0 (archived). Office remains
 outside broker v1 on fixed-port HTTP v2, and Chrome Web Store publication
 remains pending.
 Detection accuracy remains the declared normal Track A priority; the
