@@ -41,7 +41,7 @@ is not — so ownership rules below are deliberately broad.
 | EMAIL | Any email address, including organizational role mailboxes (registrar@, billing@) | — |
 | THAI_ID | Any mod-11-valid 13-digit value presented as identifying a person, whatever the surrounding document calls itself (บัตรประชาชน, ใบขับขี่, เลขผู้เสียภาษีบุคคล — a Thai personal taxpayer ID *is* the national ID) | Corporate registration numbers presented as an organization's (avoid 13-digit look-alikes entirely in negative docs) |
 | BANK_ACCOUNT | Any bank-account number — personal, merchant, or company | Bill/invoice reference numbers |
-| CREDIT_CARD | 13-16 digit card numbers (must pass Luhn) | Loyalty-card and gift-card numbers |
+| CREDIT_CARD | 13-19 digit card numbers (must pass Luhn; 17-19 from blind-v3 on) | Loyalty-card and gift-card numbers |
 | DATE_OF_BIRTH | A date tied to birth by cue (เกิด / วันเกิด / ว.ด.ป. เกิด) | Business dates, appointment dates (those are DATE to the detector, and unannotated here) |
 | PASSPORT | Passport numbers (Thai format `[A-Z]{2}\d{7}` or cue-bearing general format) | Visa/work-permit reference numbers without a passport cue |
 | VEHICLE_PLATE | Thai license plates | Lot numbers, equipment/asset codes that merely resemble plates |
@@ -118,6 +118,10 @@ codes are allowed (gold `ng23`).
   (before 450 / 450-550 / after 550) used by the blind set.
 - `messy`: OCR-like noise is the point — Thai digits, stray spaces, broken
   wraps. Values still read verbatim, noise included.
+- `roster` (blind-v3 on): a table of people flattened to text, as local
+  administrations publish them (allowance, disability, relief, payroll,
+  applicant and student lists). Column headers and row numbers are context;
+  every personal value in every cell is annotated, one span per cell value.
 - `student_id_varied`: varies one format/context axis per document relative
   to the plain cue-adjacent form — digit count, separators, spacing/gluing,
   cue language, cue distance, or cue strength (weak/absent cue documents are
