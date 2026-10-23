@@ -64,6 +64,10 @@ SLICE_LAYERS: dict[str, str] = {
     "finance": "natural",
     "education": "natural",
     "long_form": "natural",
+    # Tabular name lists flattened to text (allowance, disability, relief and
+    # payroll rosters). Most identity numbers leaked from Thai government sites
+    # sit in documents like these, not in prose. Used from blind-v3 on.
+    "roster": "natural",
     "negative": "negative",
 }
 
@@ -73,7 +77,10 @@ SLICE_LAYERS: dict[str, str] = {
 # chunking path is measured by nothing at all.
 LONG_FORM_MIN_CHARS = 500
 
-GOLD_SLICES = list(SLICE_LAYERS)
+# Slices that only blind sets carry; the open gold corpus predates them.
+BLIND_ONLY_SLICES = frozenset({"roster"})
+
+GOLD_SLICES = [s for s in SLICE_LAYERS if s not in BLIND_ONLY_SLICES]
 
 _DATA_PATH = Path(__file__).with_name("data") / "gold.jsonl"
 

@@ -11,6 +11,7 @@ by when the decision was made rather than continuously maintained.
 
 | Document | What it decides |
 |---|---|
+| [2026-10-24 blind-v3 protocol](2026-10-24-blind-v3-protocol.md) | Pre-registered held-out set for the recall campaign: adds a roster slice, raises type floors, adds the full-leak metric, and spends one reveal on the final detector and one on the pre-campaign baseline |
 | [2026-10-19 version reset](2026-10-19-version-reset.md) | The product version restarts at `0.1.0` and stays below `1.0.0` until the product can go to production (the hosted source too; production keeps `3.0.2` until redeployed); the `v1.0.0`-`v3.0.0` tags leave this repository and remain in the private archive |
 | [2026-10-19 monorepo import](2026-10-19-monorepo-import.md) | The hosted app and the `amphrang` SDK, whose GitHub repositories no longer exist, are imported into this repository at `apps/hosted/` and `packages/amphrang/` with full history by `git subtree`; nothing is unified yet, and the vendored hosted `pii_redactor` copy that has drifted stays until separate work replaces it |
 | [2026-10-19 blind-v2 protocol](2026-10-19-blind-v2-protocol.md) | Pre-registers the agent-authored `blind-v2` after v1's budget ran out: a different model family writes it outside the repo, no detector disagreement pass, v1's composition, detector frozen at `cb43304d`, and a reveal budget of 2 (CRF primary, fine-tuned only if weights are present) |

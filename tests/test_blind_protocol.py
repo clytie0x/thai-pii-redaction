@@ -246,6 +246,33 @@ def test_validate_draft_rejects_defects_without_leaking_values():
     assert VALID_THAI_ID not in joined
 
 
+def test_validate_draft_accepts_19_digit_cards_and_roster_slice():
+    records = [
+        {
+            "doc_id": "b-roster01",
+            "slice": "roster",
+            "layer": "natural",
+            "annotated": "ลำดับ 1 ชื่อ [[NAME|สมหญิง ตัวอย่าง]] บัตร [[CREDIT_CARD|6212345678901234569]]",
+        }
+    ]
+    assert blind.validate_draft(records, type_minimums={}) == []
+
+
+def test_blind_v3_freeze_applies_its_own_type_floors(tmp_path):
+    draft = tmp_path / "outside" / "blind-v3.draft.jsonl"
+    draft.parent.mkdir()
+    draft.write_text(
+        "\n".join(json.dumps(r, ensure_ascii=False) for r in _fixture_records()) + "\n",
+        encoding="utf-8",
+    )
+    key_file = tmp_path / "outside" / "blind-v3.key"
+    blind.generate_key(key_file)
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    with pytest.raises(blind.BlindError, match="type-below-minimum-PHONE"):
+        blind.freeze(draft, key_file, data_dir=data_dir, version="blind-v3")
+
+
 def test_freeze_rejects_draft_inside_data_dir(tmp_path):
     data_dir = tmp_path / "data"
     (data_dir / "sub").mkdir(parents=True)

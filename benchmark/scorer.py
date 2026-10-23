@@ -29,8 +29,9 @@ def _prf(tp: int, fp: int, fn: int) -> dict:
 
 
 def _score_group(samples, predictions):
-    by_type = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
+    by_type = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0, "full_leak": 0, "partial_leak": 0})
     cov_covered = cov_total = exact_hit = gold_total = 0
+    full_leaks = partial_leaks = 0
     pred_char_total = pred_char_on_gold = 0
     clean_docs = 0
 
@@ -93,6 +94,18 @@ def _score_group(samples, predictions):
                 for k in range(lo, hi):
                     covered[k - g.start] = True
             cov_covered += sum(covered)
+            # Leak view: type-agnostic, and only letters/digits count, so an
+            # uncovered dash or space between masked digit groups is not a leak.
+            value_chars = [
+                covered[k] for k in range(glen) if sample.text[g.start + k].isalnum()
+            ]
+            readable = sum(1 for c in value_chars if not c)
+            if value_chars and readable == len(value_chars):
+                full_leaks += 1
+                by_type[g.entity_type]["full_leak"] += 1
+            elif readable:
+                partial_leaks += 1
+                by_type[g.entity_type]["partial_leak"] += 1
             if any(p[0] == g.start and p[1] == g.end and p[2] == g.entity_type for p in preds):
                 exact_hit += 1
 
@@ -126,6 +139,10 @@ def _score_group(samples, predictions):
     # this measures the quality of what was masked, and nothing was.
     overall["coverage_precision"] = pred_char_on_gold / pred_char_total if pred_char_total else 1.0
     overall["exact_recall"] = exact_hit / gold_total if gold_total else 0.0
+    overall["full_leak_entities"] = full_leaks
+    overall["full_leak_rate"] = full_leaks / gold_total
+    overall["partial_leak_entities"] = partial_leaks
+    overall["partial_leak_rate"] = partial_leaks / gold_total
     return by_type, overall
 
 

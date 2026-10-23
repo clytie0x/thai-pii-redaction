@@ -175,6 +175,24 @@ TYPE_MINIMUMS = {
     "STUDENT_ID": 25,
 }
 
+# blind-v3 raises the per-type floors so the weak structured types reach the
+# DESCRIPTIVE_N threshold instead of being reported as descriptive only.
+TYPE_MINIMUMS_BY_VERSION = {
+    "blind-v3": {
+        "NAME": 120,
+        "ADDRESS": 80,
+        "PHONE": 80,
+        "THAI_ID": 80,
+        "BANK_ACCOUNT": 60,
+        "DATE_OF_BIRTH": 60,
+        "CREDIT_CARD": 50,
+        "STUDENT_ID": 50,
+        "EMAIL": 40,
+        "PASSPORT": 30,
+        "VEHICLE_PLATE": 30,
+    },
+}
+
 _LONG_FORM_ZONES = (450, 550)
 
 
@@ -255,7 +273,7 @@ def validate_draft(records: list[dict], type_minimums: dict | None = None) -> li
             digits = re.sub(r"\D", "", value)
             if etype == "THAI_ID" and not _thai_id_ok(digits):
                 errors.append((doc_id, "thai-id-bad-checksum"))
-            if etype == "CREDIT_CARD" and not (13 <= len(digits) <= 16 and _luhn_ok(digits)):
+            if etype == "CREDIT_CARD" and not (13 <= len(digits) <= 19 and _luhn_ok(digits)):
                 errors.append((doc_id, "credit-card-bad-checksum"))
             key = (etype, value)
             if key in seen_values and seen_values[key] != doc_id:
@@ -283,6 +301,8 @@ def freeze(
         raise BlindError("draft plaintext must live outside the repository data dir")
     raw = draft_path.read_bytes()
     records = [json.loads(line) for line in raw.decode("utf-8").splitlines() if line.strip()]
+    if type_minimums is None:
+        type_minimums = TYPE_MINIMUMS_BY_VERSION.get(version)
     errors = validate_draft(records, type_minimums=type_minimums)
     if errors:
         listing = ", ".join(f"{d}:{k}" for d, k in errors[:40])
