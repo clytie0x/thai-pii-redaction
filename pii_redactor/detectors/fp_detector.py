@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import re
 import uuid
 
@@ -295,7 +296,12 @@ _RE_EMAIL = re.compile(
     r"(?<![a-zA-Z0-9._%+\-])([a-zA-Z0-9][a-zA-Z0-9._%+\-]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"
     r"(?![a-zA-Z0-9\-])"
 )
-_RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\d)")
+# Mobile numbers are 10 digits starting 0[6-9], but Thai paperwork groups them
+# every way: 081-234-5678, 08-1234-5678, (081) 234-5678, 081.234.5678. Any
+# single separator may sit between any two digits, and a closing parenthesis
+# may follow the area digits. The old fixed 3-3-4 grouping left the other
+# shapes fully readable (recall campaign probes, 2026-10-24).
+_RE_PHONE_MOBILE = re.compile(r"(?<![\d.])(\(?0[- .]?[6-9](?:\)?[-\s.]?\d){8})(?!\d)")
 # Thai landlines are 9 digits (not 10). Two written shapes, both 9 digits:
 #   Bangkok    02-XXX-XXXX  (2-digit area, then 3+4)
 #   provincial 0XX-XXX-XXX  (3-digit area, then 3+3)
@@ -314,13 +320,22 @@ _RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\
 # a leading zero has no such excuse: a false entity spanning rows still causes
 # irreversible interval-based PDF masking across both rows.
 _RE_PHONE_LANDLINE = re.compile(
-    r"(?<!\d)(0[- ]?(?:2[-\s]?\d{3}[-\s]?\d{4}|[3-7]\d[-\s]?\d{3}[-\s]?\d{3}))(?!\d)"
+    r"(?<![\d.])(\(?0[- .]?(?:2\)?[-\s.]?\d{3}[-\s.]?\d{4}|[3-7]\d\)?[-\s.]?\d{3}[-\s.]?\d{3}))(?!\d)"
 )
 # +66 form drops the national leading 0, so a Thai number carries 8 (landline)
 # or 9 (mobile) digits after +66 -- e.g. +66 81 234 5678 is 9. The old pattern
 # only matched 8, missing every mobile and leaking it to the STUDENT_ID
 # catch-all. Allow an optional single separator between any two digits.
-_RE_PHONE_INTL = re.compile(r"(?<![a-zA-Z0-9_])(\+66[-\s]?\d(?:[-\s]?\d){7,8})(?!\d)")
+# The international prefix is written +66, 0066 or, with the trunk zero kept
+# in brackets, +66 (0) 81 .... Writers also keep the trunk zero by mistake
+# (+660812345678), so one extra digit is allowed.
+_RE_PHONE_INTL = re.compile(
+    r"(?<![a-zA-Z0-9_+])((?:\+|00)66[-\s.]?(?:\(0\)[-\s.]?)?\d(?:[-\s.]?\d){7,9})(?!\d)"
+)
+# "66" with no plus is how numbers are copied out of chat apps and
+# spreadsheets (66812345678). Eleven digits starting 66 are also Buddhist-era
+# student IDs, so this bare shape needs a phone cue in front.
+_RE_PHONE_BARE66 = re.compile(r"(?<![a-zA-Z0-9_+])(66(?:[689]\d{8}|2\d{7}))(?!\d)")
 _RE_BANK_ACCOUNT_1 = re.compile(r"(?<!\d)(\d{3}[-\s]?\d{1}[-\s]?\d{5}[-\s]?\d{1})(?!\d)")
 _RE_BANK_ACCOUNT_2 = re.compile(r"(?<!\d)(\d{7}[-\s]?\d{3})(?!\d)")
 _RE_DATE = re.compile(
@@ -525,7 +540,16 @@ _RE_MEDICAL_ID = re.compile(
     r"(?<![A-Za-z])(?:HN|เวชระเบียน|ผู้ป่วยเลขที่)\s*[:：]?\s*(\d{4,9})(?!\d)", re.IGNORECASE
 )
 
-_SEP_RE = re.compile(r"[-\s]")
+_SEP_RE = re.compile(r"[-\s.()]")
+# Length-preserving fold applied before scanning: Thai digits to ASCII and the
+# dash look-alikes (hyphen, non-breaking hyphen, figure/en/em dash, minus) to
+# "-". One character maps to one character, so match offsets stay valid.
+_SCAN_FOLD = str.maketrans(
+    {
+        **{chr(0x0E50 + d): str(d) for d in range(10)},
+        **{c: "-" for c in "‐‑‒–—―−"},
+    }
+)
 _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 
 # BANK-vs-PHONE disambiguation cues. A 10-digit number starting 06-09 matches
@@ -739,6 +763,12 @@ def detect_fp(text: str) -> list[Entity]:
     Deduplicated: no overlapping spans (keep highest-score; for same score, keep first).
     Span chokepoint: reject any span where (end - start) < 2 chars.
     """
+    # Every pattern below scans a length-preserving view with Thai digits and
+    # dash look-alikes folded to ASCII, so ๐๘๑-๒๓๔-๕๖๗๘ and 081–234–5678 are
+    # the same number as 081-234-5678. Spans index both strings identically;
+    # original_text is restored from the document at the end.
+    original = text
+    text = text.translate(_SCAN_FOLD)
     candidates: list[Entity] = []
 
     # 1. THAI_ID
@@ -765,6 +795,10 @@ def detect_fp(text: str) -> list[Entity]:
     # 5. PHONE (mobile, landline, international)
     for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE, _RE_PHONE_INTL):
         for m in pattern.finditer(text):
+            candidates.append(_make_entity("PHONE", m, text, score=1.0))
+    for m in _RE_PHONE_BARE66.finditer(text):
+        ctx = text[max(0, m.start(1) - _CUE_WINDOW) : m.start(1)]
+        if _rightmost_cue(_PHONE_CUE_RE, ctx) >= 0:
             candidates.append(_make_entity("PHONE", m, text, score=1.0))
 
     # 6. BANK_ACCOUNT (two patterns). Both shapes match any contiguous
@@ -1073,4 +1107,7 @@ def detect_fp(text: str) -> list[Entity]:
 
     candidates = _disambiguate_bank_student(text, candidates)
     candidates = _disambiguate_bank_phone(text, candidates)
-    return _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))
+    result = _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))
+    if text == original:
+        return result
+    return [dataclasses.replace(e, original_text=original[e.span[0] : e.span[1]]) for e in result]
