@@ -58,6 +58,7 @@ step1-7_*.pdf
 !benchmark/data/gold.jsonl
 !benchmark/data/blind-scores.jsonl
 !research/stt52/evidence/*.jsonl
+!benchmark/data/dev/*.jsonl
 
 # Model and tool caches
 .cache/

@@ -1,0 +1,63 @@
+{"doc_id": "dv-fp-001", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|081-234-5671]]"}
+{"doc_id": "dv-fp-002", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|08-1234-5672]]"}
+{"doc_id": "dv-fp-003", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|0812345673]]"}
+{"doc_id": "dv-fp-004", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|(081) 234-5674]]"}
+{"doc_id": "dv-fp-005", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|+66 81 234 5675]]"}
+{"doc_id": "dv-fp-006", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|+66 (0) 81 234 5676]]"}
+{"doc_id": "dv-fp-007", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|66812345677]]"}
+{"doc_id": "dv-fp-008", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|0066 81 234 5678]]"}
+{"doc_id": "dv-fp-009", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|๐๘๑-๒๓๔-๕๖๗๙]]"}
+{"doc_id": "dv-fp-010", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|081.234.5680]]"}
+{"doc_id": "dv-fp-011", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|081–234–5681]]"}
+{"doc_id": "dv-fp-012", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|02-123-4567]] ต่อ 123"}
+{"doc_id": "dv-fp-013", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|0-2123-4568]]"}
+{"doc_id": "dv-fp-014", "slice": "bank_phone", "layer": "balanced", "annotated": "โทร [[PHONE|074-123456]]"}
+{"doc_id": "dv-fp-015", "slice": "finance", "layer": "natural", "annotated": "บัตรเครดิต [[CREDIT_CARD|4762 5465 5485 4135]]"}
+{"doc_id": "dv-fp-016", "slice": "finance", "layer": "natural", "annotated": "บัตรเครดิต [[CREDIT_CARD|5338801376008713]]"}
+{"doc_id": "dv-fp-017", "slice": "finance", "layer": "natural", "annotated": "บัตรเครดิต [[CREDIT_CARD|3737 046154 01375]]"}
+{"doc_id": "dv-fp-018", "slice": "finance", "layer": "natural", "annotated": "บัตรเครดิต [[CREDIT_CARD|6212080067678586584]]"}
+{"doc_id": "dv-fp-019", "slice": "finance", "layer": "natural", "annotated": "บัตร UnionPay [[CREDIT_CARD|6263-5535-1965-7925]]"}
+{"doc_id": "dv-fp-020", "slice": "finance", "layer": "natural", "annotated": "บัตร JCB [[CREDIT_CARD|3530.4709.6428.6312]]"}
+{"doc_id": "dv-fp-021", "slice": "finance", "layer": "natural", "annotated": "บัตรเครดิต [[CREDIT_CARD|4021105343505]]"}
+{"doc_id": "dv-fp-022", "slice": "student_id_varied", "layer": "balanced", "annotated": "รหัสนักศึกษา [[STUDENT_ID|6710210158]]"}
+{"doc_id": "dv-fp-023", "slice": "student_id_varied", "layer": "balanced", "annotated": "รหัสนิสิต [[STUDENT_ID|6430012321]]"}
+{"doc_id": "dv-fp-024", "slice": "student_id_varied", "layer": "balanced", "annotated": "รหัสนศ. [[STUDENT_ID|620110001]]"}
+{"doc_id": "dv-fp-025", "slice": "student_id_varied", "layer": "balanced", "annotated": "รหัสนักศึกษา [[STUDENT_ID|67-102-1015]]"}
+{"doc_id": "dv-fp-026", "slice": "student_id_varied", "layer": "balanced", "annotated": "รหัสนักศึกษา [[STUDENT_ID|6710 210 157]]"}
+{"doc_id": "dv-fp-027", "slice": "student_id_varied", "layer": "balanced", "annotated": "Student ID [[STUDENT_ID|6610110234]]"}
+{"doc_id": "dv-fp-028", "slice": "student_id_varied", "layer": "balanced", "annotated": "รหัส [[STUDENT_ID|64102010123]] สาขาวิชาการบัญชี"}
+{"doc_id": "dv-fp-029", "slice": "student_id_varied", "layer": "balanced", "annotated": "เลขประจำตัวนักเรียน [[STUDENT_ID|12345]] ชั้น ม.5/2"}
+{"doc_id": "dv-fp-030", "slice": "id_docs", "layer": "balanced", "annotated": "เลขบัตรประชาชน [[THAI_ID|1-9214-03808-15-5]]"}
+{"doc_id": "dv-fp-031", "slice": "id_docs", "layer": "balanced", "annotated": "เลขบัตรประชาชน [[THAI_ID|1 8895 68227 67 0]]"}
+{"doc_id": "dv-fp-032", "slice": "id_docs", "layer": "balanced", "annotated": "เลขบัตรประชาชน [[THAI_ID|๓-๙๔๔๕-๕๔๑๐๖-๐๒-๗]]"}
+{"doc_id": "dv-fp-033", "slice": "id_docs", "layer": "balanced", "annotated": "เลขบัตรประชาชน [[THAI_ID|1–4822–41539–08–7]]"}
+{"doc_id": "dv-fp-034", "slice": "id_docs", "layer": "balanced", "annotated": "เลขประจำตัวประชาชน [[THAI_ID|5.4570.06317.78.6]]"}
+{"doc_id": "dv-fp-035", "slice": "id_docs", "layer": "balanced", "annotated": "เลขประจำตัว [[THAI_ID|6180725300807]] (แรงงานต่างด้าว)"}
+{"doc_id": "dv-fp-036", "slice": "id_docs", "layer": "balanced", "annotated": "เลขประจำตัวผู้เสียภาษี [[THAI_ID|8614822078299]]"}
+{"doc_id": "dv-fp-037", "slice": "id_docs", "layer": "balanced", "annotated": "เลขบัตร [[THAI_ID|2468134230884]] บัตรผู้ไม่มีสถานะทางทะเบียน"}
+{"doc_id": "dv-fp-038", "slice": "id_docs", "layer": "balanced", "annotated": "บัตรประชาชน [[THAI_ID|0 2 7 6 8 9 4 4 2 3 2 8 6]]"}
+{"doc_id": "dv-fp-039", "slice": "bank_phone", "layer": "balanced", "annotated": "เลขที่บัญชี [[BANK_ACCOUNT|123-4-56789-0]]"}
+{"doc_id": "dv-fp-040", "slice": "bank_phone", "layer": "balanced", "annotated": "เลขที่บัญชี [[BANK_ACCOUNT|0123456781]]"}
+{"doc_id": "dv-fp-041", "slice": "bank_phone", "layer": "balanced", "annotated": "ธนาคารออมสิน เลขที่บัญชี [[BANK_ACCOUNT|020123456789]]"}
+{"doc_id": "dv-fp-042", "slice": "bank_phone", "layer": "balanced", "annotated": "ธ.ก.ส. เลขที่บัญชี [[BANK_ACCOUNT|012345678901]]"}
+{"doc_id": "dv-fp-043", "slice": "bank_phone", "layer": "balanced", "annotated": "ทิสโก้ เลขที่บัญชี [[BANK_ACCOUNT|12345678901234]]"}
+{"doc_id": "dv-fp-044", "slice": "bank_phone", "layer": "balanced", "annotated": "ออมสิน บัญชีเงินฝาก [[BANK_ACCOUNT|123456789012345]]"}
+{"doc_id": "dv-fp-045", "slice": "bank_phone", "layer": "balanced", "annotated": "โอนเข้าบัญชี [[BANK_ACCOUNT|020-1-23456-7]] ธนาคารกรุงไทย"}
+{"doc_id": "dv-fp-046", "slice": "medical", "layer": "natural", "annotated": "เกิดวันที่ [[DATE_OF_BIRTH|5 มกราคม พ.ศ. 2540]]"}
+{"doc_id": "dv-fp-047", "slice": "medical", "layer": "natural", "annotated": "วันเกิด [[DATE_OF_BIRTH|6 ม.ค. 40]]"}
+{"doc_id": "dv-fp-048", "slice": "medical", "layer": "natural", "annotated": "วันเกิด [[DATE_OF_BIRTH|๐๗/๐๑/๒๕๔๐]]"}
+{"doc_id": "dv-fp-049", "slice": "medical", "layer": "natural", "annotated": "วันเกิด [[DATE_OF_BIRTH|1997-01-08]]"}
+{"doc_id": "dv-fp-050", "slice": "medical", "layer": "natural", "annotated": "เกิดวันที่ [[DATE_OF_BIRTH|9 เดือน มกราคม พ.ศ. 2540]]"}
+{"doc_id": "dv-fp-051", "slice": "medical", "layer": "natural", "annotated": "วันเกิด [[DATE_OF_BIRTH|10 มกรา 2540]]"}
+{"doc_id": "dv-fp-052", "slice": "medical", "layer": "natural", "annotated": "DOB [[DATE_OF_BIRTH|11 Jan 1997]]"}
+{"doc_id": "dv-fp-053", "slice": "id_docs", "layer": "balanced", "annotated": "หนังสือเดินทางเลขที่ [[PASSPORT|AA1234567]]"}
+{"doc_id": "dv-fp-054", "slice": "id_docs", "layer": "balanced", "annotated": "หนังสือเดินทางเลขที่ [[PASSPORT|A123456]]"}
+{"doc_id": "dv-fp-055", "slice": "id_docs", "layer": "balanced", "annotated": "หนังสือเดินทางเลขที่ [[PASSPORT|AB 1234568]]"}
+{"doc_id": "dv-fp-056", "slice": "id_docs", "layer": "balanced", "annotated": "ทะเบียนรถ [[VEHICLE_PLATE|1กข 1234]] กรุงเทพมหานคร"}
+{"doc_id": "dv-fp-057", "slice": "id_docs", "layer": "balanced", "annotated": "ทะเบียน [[VEHICLE_PLATE|กข-1235]]"}
+{"doc_id": "dv-fp-058", "slice": "id_docs", "layer": "balanced", "annotated": "รถจักรยานยนต์ทะเบียน [[VEHICLE_PLATE|1กค 567]] สงขลา"}
+{"doc_id": "dv-fp-059", "slice": "negative", "layer": "negative", "annotated": "บัตรเครดิต 411111******1111 ยอด 1,250 บาท"}
+{"doc_id": "dv-fp-060", "slice": "negative", "layer": "negative", "annotated": "บัตรเครดิต XXXX-XXXX-XXXX-1111"}
+{"doc_id": "dv-fp-061", "slice": "negative", "layer": "negative", "annotated": "เลขที่บัญชี xxx-x-x1234-x"}
+{"doc_id": "dv-fp-062", "slice": "negative", "layer": "negative", "annotated": "สายด่วน 1669 หรือ 1111"}
+{"doc_id": "dv-fp-063", "slice": "negative", "layer": "negative", "annotated": "เลขที่หนังสือ ศธ 04001/1234 ลงวันที่ 5 ม.ค. 2569"}
