@@ -293,7 +293,9 @@ _RE_IBAN = re.compile(r"\b([A-Z]{2}\d{2}[A-Z0-9]{11,30})\b")
 # whole address ("ส่งมาที่ a@b.com."), while still refusing to end inside a
 # longer alnum/hyphen run.
 _RE_EMAIL = re.compile(
-    r"(?<![a-zA-Z0-9._%+\-])([a-zA-Z0-9][a-zA-Z0-9._%+\-]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"
+    # A line break may sit right before the "@" where a narrow column wrapped
+    # the address ("k.wipada" / "@example.ac.th").
+    r"(?<![a-zA-Z0-9._%+\-])([a-zA-Z0-9][a-zA-Z0-9._%+\-]*(?:[ \t]*\r?\n[ \t]*)?@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"
     r"(?![a-zA-Z0-9\-])"
 )
 # Mobile numbers are 10 digits starting 0[6-9], but Thai paperwork groups them
@@ -303,7 +305,11 @@ _RE_EMAIL = re.compile(
 # shapes fully readable (recall campaign probes, 2026-10-24).
 # One separator between digits: a hyphen or dot, optionally padded by a space
 # on each side ("088 - 809 - 3765"), or one whitespace character.
-_PSEP = r"(?:[ \t]?[-.][ \t]?|[-\s.])"
+# A hyphen that ends a line continues the number on the next one: OCR and
+# PDF copy wrap "064-307-" / "0653". Without the hyphen, a line break never
+# joins digits (two table rows must not fuse).
+_LINE_WRAP = r"-[ \t]*\r?\n[ \t]*"
+_PSEP = rf"(?:{_LINE_WRAP}|[ \t]?[-.][ \t]?|[-\s.])"
 # An extension is part of what must be masked ("02-123-4567 ต่อ 12").
 _PEXT = r"(?:[ \t]*(?:ต่อ|แทรก|ext\.?|x)[ \t]*\d{1,5})?"
 _RE_PHONE_MOBILE = re.compile(
@@ -419,7 +425,9 @@ _STUDENT_LABEL_RE = re.compile(
 # university ones are written 67-102-1015 or 6710 210 157.
 _RE_LABELLED_ID_RUN = re.compile(r"(?<![\d.])(\d(?:(?:[ \t]?-[ \t]?|[ \t])?\d){4,11})(?![\d/])")
 # A passport with a space or hyphen between letters and digits ("AB 1234567").
-_RE_PASSPORT_SPACED = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{1,2}[ -]\d{6,9})(?![A-Za-z0-9_])")
+_RE_PASSPORT_SPACED = re.compile(
+    r"(?<![A-Za-z0-9_])([A-Z]{1,2}(?:[ -]|[ \t]*\r?\n[ \t]*)\d{6,9})(?![A-Za-z0-9_])"
+)
 # Thai-format passport (two letters, seven digits) with that space, uncued.
 _RE_PASSPORT_TH_SPACED = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2} \d{7})(?![A-Za-z0-9_])")
 # Numeric truck/commercial plate "70-4418": plate-cued only.
@@ -494,7 +502,9 @@ _RE_MOO = re.compile(r"(?:หมู่ที่|หมู่|ม\.)\s*(\d{1,3})(
 # with พื้นที่, so the exception costs no recall (same closed-list pattern as
 # เขตบริการ).
 _RE_ADMIN_AREA = re.compile(
-    r"(?:แขวง|ตำบล|ต\.|(?<!นาย)(?<!ปลัด)(?<!รอง)(?<!ท่าน)(?:อำเภอ|เขต(?!บริการ|พื้นที่))|อ\.|จังหวัด|จ\.)\s*([ก-๛]{2,})"
+    # PDF text extraction splits sara am off its consonant ("ต าบล", "อ าเภอ"),
+    # so both labels also accept that shape.
+    r"(?:แขวง|ต(?:ำ| ?า)บล|ต\.|(?<!นาย)(?<!ปลัด)(?<!รอง)(?<!ท่าน)(?:อ(?:ำ| ?า)เภอ|เขต(?!บริการ|พื้นที่))|อ\.|จังหวัด|จ\.)\s*([ก-๛]{2,})"
 )
 # The 77 provinces — a fixed national list, not corpus tuning. A bare province
 # ends most Thai addresses ("อำเภอเมือง ขอนแก่น") and no label-keyed pattern
@@ -624,7 +634,9 @@ _CARD_CUE_RE = re.compile(r"บัตร|เครดิต|เดบิต|card
 # A digit run for step 6b: 10-19 digits, any single separator (hyphen or dot,
 # optionally padded by a space) or up to two spaces between any two digits.
 # Newlines never join digits: a run must not fuse two table rows.
-_RE_DIGIT_RUN = re.compile(r"(?<![\d.])(\d(?:(?:[ \t]?[-.][ \t]?|[ \t]{1,2})?\d){9,18})(?!\d)")
+_RE_DIGIT_RUN = re.compile(
+    rf"(?<![\d.])(\d(?:(?:{_LINE_WRAP}|[ \t]?[-.][ \t]?|[ \t]{{1,2}})?\d){{9,18}})(?!\d)"
+)
 _RUN_CHECKSUM_SCORE = 1.01
 
 

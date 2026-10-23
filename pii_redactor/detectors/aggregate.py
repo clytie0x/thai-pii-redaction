@@ -107,7 +107,7 @@ _STRICT_GAP_RE = re.compile(r"[ , ]{0,3}")
 # left the moo number readable because its gap could not bridge.
 _BRIDGE_CHARSET_RE = re.compile(r"[ .,ก-๎๐-๙0-9]{1,25}")
 _ADDRESS_GLUE_RE = re.compile(
-    r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่ที่|หมู่|ซอย|ถนน|ต\.|อ\.|จ\.|ม\."
+    r"ต(?:ำ| ?า)บล|อ(?:ำ| ?า)เภอ|จังหวัด|แขวง|เขต|หมู่ที่|หมู่|ซอย|ถนน|ต\.|อ\.|จ\.|ม\."
     r"|อาคาร|หมู่บ้าน|ตึก|ชั้น|ห้อง|คอนโด|ตรอก|แยก|นิคม"
 )
 _BRIDGE_VETO_RE = re.compile(
