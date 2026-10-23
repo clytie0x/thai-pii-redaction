@@ -639,6 +639,10 @@ _TABLE_HEADER_TYPES = (
     (re.compile(r"เกิด|birth", re.I), "DATE_OF_BIRTH"),
 )
 _SPACE_COLUMN_RE = re.compile(r" {2,}")
+# Agency names glued directly in front of an administrative label (step 11).
+_AGENCY_BEFORE_LABEL_RE = re.compile(
+    r"(?:องค์การบริหารส่วน|เทศบาล(?:นคร|เมือง)?|ศาล|ที่ว่าการ|สาธารณสุข|สำนักงาน|ปลัด|นายก|กำนัน)$"
+)
 # A whole cell that is one identifier: 4-15 digits, single hyphens or spaces.
 _CELL_ID_RE = re.compile(r"\d(?:[ -]?\d){3,14}")
 
@@ -1277,6 +1281,11 @@ def detect_fp(text: str) -> list[Entity]:
             and _THAI_CHAR_RE.match(text[m.start() - 1])
             and "\n" in text[m.start() : m.start(1)]
         ):
+            continue
+        # The label inside an agency name ("องค์การบริหารส่วนตำบลบางสัก",
+        # "เทศบาลตำบลควนขนุน", "ศาลแขวงพระนครใต้", "สาธารณสุขอำเภอ") names the
+        # agency, not where a person lives; government letters are full of them.
+        if _AGENCY_BEFORE_LABEL_RE.search(text[max(0, m.start() - 20) : m.start()]):
             continue
         _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
         admin_value_spans.append((m.start(1), m.end(1)))

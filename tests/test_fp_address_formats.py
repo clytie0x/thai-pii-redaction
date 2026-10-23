@@ -35,6 +35,26 @@ def test_every_digit_of_a_rural_address_is_masked(value):
     assert _uncovered_digits(text, value) == ""
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "ประกาศองค์การบริหารส่วนตำบลบางสัก เรื่อง การประชุมสภา",
+        "ประกาศเทศบาลตำบลควนขนุน เรื่อง ประกวดราคา",
+        "คดีหมายเลขดำที่ อ 1842/2568 ศาลแขวงพระนครใต้ นัดสืบพยาน",
+        "หนังสือจากสาธารณสุขอำเภอเมือง เรื่อง มาตรการป้องกัน",
+    ],
+)
+def test_agency_names_are_not_addresses(text):
+    from pii_redactor.detectors.fp_detector import detect_fp
+
+    assert not any(e.data_type == "ADDRESS" for e in detect_fp(text))
+
+
+def test_a_person_address_after_an_agency_is_still_masked():
+    text = "เทศบาลตำบลควนลัง แจ้ง นางสมใจ ใจดี บ้านเลขที่ 12 ม.3 ต.ควนลัง อ.หาดใหญ่ จ.สงขลา 90110"
+    assert _uncovered_digits(text, "12 ม.3 ต.ควนลัง อ.หาดใหญ่ จ.สงขลา 90110") == ""
+
+
 def test_a_quantity_before_moo_words_needs_a_moo_number():
     ents = detect_all("แบ่งเป็น 30 หมู่บ้านในเขตอำเภอ")
     assert not any(e.data_type == "ADDRESS" and "30" in e.original_text for e in ents)
