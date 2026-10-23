@@ -342,7 +342,10 @@ _RE_DATE = re.compile(
     # day-first (dd/mm/yyyy or dd/mm/yy) OR ISO year-first (yyyy-mm-dd).
     # The year-first alternative must come after so the day-first form still
     # wins for short years; the digit-boundary lookarounds keep both anchored.
-    r"(?<!\d)(\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|\d{4}[/\-]\d{1,2}[/\-]\d{1,2})(?!\d)"
+    # A dotted day-first form (02.02.2505) is common in Thai forms; it takes a
+    # 4-digit year only, so prices and version numbers never qualify.
+    r"(?<![\d.])(\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|\d{4}[/\-]\d{1,2}[/\-]\d{1,2}"
+    r"|\d{1,2}\.\d{1,2}\.\d{4})(?!\d)"
 )
 # Thai-month dates ("16 สิงหาคม 2508") had no FP pattern, so the CRF was the
 # only path and it drops the year token in digit-dense context — three gold
@@ -357,8 +360,21 @@ _RE_DATE = re.compile(
 _THAI_MONTHS = (
     "มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม"
 )
+# Thai paperwork also writes the month abbreviated (ม.ค. ก.พ. มี.ค.), clipped
+# (มกรา กุมภา) or in English, puts "เดือน" between day and month, glues the
+# tokens together, and uses two-digit Buddhist years ("5 ก.พ. 56"). Each of
+# those shapes left birth dates readable (recall campaign, 2026-10-24). The
+# day + month + year requirement stays; abbreviations must carry their dot.
+_THAI_MONTHS_CLIPPED = "มกรา|กุมภา|มีนา|เมษา|พฤษภา|มิถุนา|กรกฎา|สิงหา|กันยา|ตุลา|พฤศจิกา|ธันวา"
+_THAI_MONTHS_ABBR = r"ม\.ค\.?|ก\.พ\.?|มี\.ค\.?|เม\.ย\.?|พ\.ค\.?|มิ\.ย\.?|ก\.ค\.?|ส\.ค\.?|ก\.ย\.?|ต\.ค\.?|พ\.ย\.?|ธ\.ค\.?"
+_EN_MONTHS = (
+    r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?"
+    r"|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?(?![A-Za-z])"
+)
 _RE_DATE_THAI_MONTH = re.compile(
-    rf"(?<!\d)(\d{{1,2}} (?:{_THAI_MONTHS}) (?:พ\.?ศ\.? ?)?\d{{4}})(?!\d)"
+    rf"(?<![\d.])(\d{{1,2}} ?(?:เดือน ?)?(?:{_THAI_MONTHS}|{_THAI_MONTHS_CLIPPED}|{_THAI_MONTHS_ABBR}"
+    rf"|(?i:{_EN_MONTHS}))"
+    rf",? ?(?:(?:พ\.?ศ\.?|ค\.?ศ\.?|B\.?E\.?) ?)?(?:\d{{4}}|\d{{2}}))(?!\d)"
 )
 # The trailing (?!\d) is load-bearing (DET-2): without it, this pattern bit the
 # first 1-4 digits of a LONGER number after a Thai-consonant abbreviation
@@ -901,7 +917,7 @@ def detect_fp(text: str) -> list[Entity]:
     # 7. DATE (generic) / DATE_OF_BIRTH (only with a birth cue nearby)
     for m in _RE_DATE.finditer(text):
         raw = m.group(1)
-        parts = re.split(r"[/\-]", raw)
+        parts = re.split(r"[/\-.]", raw)
         if len(parts) == 3:
             try:
                 # ISO year-first (yyyy-mm-dd) vs day-first (dd-mm-yyyy): a
@@ -920,7 +936,7 @@ def detect_fp(text: str) -> list[Entity]:
 
     # 7b. Thai-month dates, same เกิด-cue routing as the numeric shapes.
     for m in _RE_DATE_THAI_MONTH.finditer(text):
-        day = int(m.group(1).split(" ", 1)[0])
+        day = int(re.match(r"\d+", m.group(1)).group())
         if not 1 <= day <= 31:
             continue
         dtype = "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
