@@ -212,6 +212,19 @@ _ROLE_CUES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # no-ops — a stated recall cost on the แก่ form.
     ("ออกให้", ("__require_space__",)),
     ("ชื่อบัญชี", ("ผู้ใช้",)),
+    # Untitled parties on complaint, hire-purchase, transfer, coordinator and
+    # waybill lines ("ผู้ร้อง กาญจนา มั่นคงดี โทร ...", "พนักงานขับรถ สมบัติ
+    # คงทองสุขสวัสดิ์", dev 2026-10-24). Space required: the glued forms are
+    # longer role compounds (ผู้รับผิดชอบ, ผู้ร้องเรียน, ผู้รับเงิน) or prose.
+    ("ผู้ร้อง", ("__require_space__",)),
+    ("ผู้เช่าซื้อ", ("__require_space__",)),
+    ("ผู้รับ", ("__require_space__",)),
+    ("ผู้ประสานงาน", ("__require_space__",)),
+    ("พนักงานขับรถ", ("__require_space__",)),
+    # The examined patient on a medical certificate ("นพ.สมภพ รัตนวิจิตร
+    # ได้ตรวจ ชนิดา แสงอรุณรัตน์ เกิด ..."); the usual glued ได้ตรวจร่างกาย
+    # stays a no-op, and so does prose going on after the verb.
+    ("ได้ตรวจ", ("__require_space__", "แล้ว", "พบ", "ร่างกาย")),
 )
 # Tokens that may sit between a role cue and the name ("ผู้ป่วยชื่อวิภาวดี",
 # "ผู้ค้ำประกันเงินกู้คือ สราวุธ").
@@ -300,7 +313,15 @@ _NAME_BEFORE_PASSPORT_RE = re.compile(
 _LATIN_CUE_RE = re.compile(
     r"(?:(?:Name|ชื่อ)[ \t]*[:：=][ \t]*|(?:Name|ชื่อ)[ \t]+|contact person[ \t:：]*"
     r"|Mr\.?[ \t]+|Ms\.?[ \t]+|Mrs\.?[ \t]+|ผู้ยื่น[ \t]+|ผู้แจ้ง[ \t]+"
-    r"|ที่นั่งสอบ[ \t]*[A-Za-z]?\d+[ \t]+)"
+    r"|ที่นั่งสอบ[ \t]*[A-Za-z]?\d+[ \t]+"
+    # Statement, discharge and boarding records ("Card holder: Somchai
+    # Kaewmanee", "Patient: Chanon Prasertsuk", "passenger Kritsada
+    # Pongpaiboon,") and Thai applicant/payee cues before a romanized name.
+    # The capitalized labels need their colon -- "Patient Information Form"
+    # and "Passenger Name List" are headings -- and Borrower is left out:
+    # its only measured follower is "Student No.", not a person.
+    r"|Card[ \t]?holder[ \t]*[:：][ \t]*|Patient[ \t]*[:：][ \t]*|passenger[ \t]+"
+    r"|Passenger[ \t]*[:：][ \t]*|ผู้สมัคร[ \t]+|ผู้รับ[ \t]+)"
 )
 _LATIN_NAME_RE = re.compile(r"[A-Z][a-z]{1,20}(?:[ \t](?:[A-Z]\.|[A-Z][a-z]{1,20})){1,3}")
 _LATIN_TRAILING_PASSPORT_RE = re.compile(
@@ -581,6 +602,29 @@ def _token_spans(text: str) -> list[tuple[str, int, int]]:
     return spans
 
 
+# Surnames newmm splits onto a stop word glued to their last piece
+# ("พรหมมา" -> พรหม|มา, "สาและ" -> สา|และ, "ทองอยู่" -> ทอง|อยู่): the
+# collector stopped at the stop word and left that piece readable (dev
+# 2026-10-24, two partial leaks). The piece is kept only when it ENDS the
+# surname group, and และ/กับ only when no Thai word follows -- "ใจดีและ สมศรี"
+# is a conjunction introducing the next person, which
+# `detect_conjunction_names` must still see after the name.
+_GLUED_SURNAME_TAILS = {"มา", "อยู่", "เรียน", "และ", "กับ"}
+_CONJUNCTION_TAILS = {"และ", "กับ"}
+
+
+def _glued_surname_tail(spans: list[tuple[str, int, int]], j: int) -> bool:
+    if spans[j][0] not in _GLUED_SURNAME_TAILS:
+        return False
+    nxt = spans[j + 1][0] if j + 1 < len(spans) else ""
+    if nxt and nxt.strip() and _THAI_WORD.match(nxt[0]):
+        return False
+    if spans[j][0] in _CONJUNCTION_TAILS:
+        after = next((t for t, _s, _e in spans[j + 1 :] if t.strip()), "")
+        return not (after and _THAI_WORD.match(after[0]))
+    return True
+
+
 def _collect_two_groups(
     spans: list[tuple[str, int, int]], start_idx: int
 ) -> tuple[int, int] | None:
@@ -611,6 +655,8 @@ def _collect_two_groups(
             j += 1
             continue
         if not _is_name_token(tok) or te - ts > 25:
+            if groups == 1 and not first_token_of_name and _glued_surname_tail(spans, j):
+                collected.append((ts, te))
             break
         if first_token_of_name and tok in _LEAD_STOP:
             # a verb opening EITHER group means this is prose, not a name
@@ -656,6 +702,9 @@ def _role_cue_names(text: str, spans: list[tuple[str, int, int]]) -> list[Entity
             after = text[cue_end : cue_end + 12]
             if "__require_space__" in vetoes:
                 if not after[:1].isspace():
+                    continue
+                # Any other entries veto the word after that space.
+                if any(after.lstrip().startswith(v) for v in vetoes):
                     continue
             elif any(after.startswith(v) for v in vetoes):
                 continue
@@ -787,6 +836,267 @@ def _passport_roster_names(text: str) -> list[Entity]:
     return ents
 
 
+# --- ranks, professional titles and line cues (dev set, 2026-10-24) ---------
+# Police/military ranks and medical/academic titles precede a name glued or
+# spaced ("จ.ส.ต.วัฒนา ปานงาม", "พลทหารนิคม แก้วทอง", "ร.ต.อ. ธีรวัฒน์ ...",
+# "ผศ.ดร.สุภาพร ..."), and newmm splits the dotted forms unpredictably
+# (จ.|ส.ต.|วัฒนา), so the token pass never saw them as titles. They are
+# matched on characters, the text after them is tokenized on its own, and
+# two real name groups are required -- a rank alone in prose vouches for
+# nothing. The written-out child titles are here for the glued case newmm
+# mangles (เด็กชายธนกฤต -> เด็กชา|ยธ|นก|ฤต). Bare นาย/นาง stay out: as
+# characters they open นายก, นางพยาบาล. Sources: th.wikipedia ยศตำรวจไทย and
+# the armed-forces rank tables in research_notes identity_formats.md §7.
+_RANK_TITLES = (
+    # police, commissioned then NCO
+    "พล.ต.อ.",
+    "พล.ต.ท.",
+    "พล.ต.ต.",
+    "พ.ต.อ.",
+    "พ.ต.ท.",
+    "พ.ต.ต.",
+    "ร.ต.อ.",
+    "ร.ต.ท.",
+    "ร.ต.ต.",
+    "ด.ต.",
+    "จ.ส.ต.",
+    "ส.ต.อ.",
+    "ส.ต.ท.",
+    "ส.ต.ต.",
+    # army / navy / air force, abbreviated
+    "พล.อ.",
+    "พล.ท.",
+    "พล.ต.",
+    "พ.อ.",
+    "พ.ท.",
+    "พ.ต.",
+    "ร.อ.",
+    "ร.ท.",
+    "ร.ต.",
+    "จ.ส.อ.",
+    "จ.ส.ท.",
+    "ส.อ.",
+    "ส.ท.",
+    "ส.ต.",
+    "จ.อ.",
+    "จ.ท.",
+    "จ.ต.",
+    "พลฯ",
+    # written out
+    "พลทหาร",
+    "สิบตรี",
+    "สิบโท",
+    "สิบเอก",
+    "จ่าสิบตรี",
+    "จ่าสิบโท",
+    "จ่าสิบเอก",
+    "ร้อยตรี",
+    "ร้อยโท",
+    "ร้อยเอก",
+    "พันตรี",
+    "พันโท",
+    "พันเอก",
+    "ดาบตำรวจ",
+    # medical and academic
+    "นพ.",
+    "พญ.",
+    "ทพ.",
+    "ทพญ.",
+    "ภก.",
+    "ภญ.",
+    "ศ.",
+    "ผศ.",
+    "รศ.",
+    "ดร.",
+    # children and dotted civil titles
+    "เด็กชาย",
+    "เด็กหญิง",
+    "ด.ช.",
+    "ด.ญ.",
+    "น.ส.",
+)
+_RANK_ALTERNATION = "|".join(re.escape(t) for t in sorted(_RANK_TITLES, key=len, reverse=True))
+# Up to three chained titles ("ผศ.ดร.", "รศ. นพ."). The lookbehind keeps a
+# title from starting mid-word or mid-abbreviation (กทพ., พ.ศ.).
+_RANK_TITLE_RE = re.compile(rf"(?<![ก-๛A-Za-z.])(?:(?:{_RANK_ALTERNATION})[ \t]*){{1,3}}")
+_RANK_TITLE_TAIL_RE = re.compile(rf"(?<![ก-๛A-Za-z.])(?:{_RANK_ALTERNATION})[ \t]*$")
+_RANK_TAIL_LOOKBACK = 12
+_CUE_WINDOW = 160
+
+
+def rank_title_ends_at(text: str, pos: int) -> bool:
+    """True when a rank or title abbreviation ends right at ``pos``.
+
+    "จ.ส.ต.วัฒนา" also reads as ต.วัฒนา (tambon Watthana) to an address
+    pattern; `aggregate.detect_all` uses this to let the name win there.
+    """
+    return _RANK_TITLE_TAIL_RE.search(text, max(0, pos - _RANK_TAIL_LOOKBACK), pos) is not None
+
+
+def _window_name(text: str, pos: int) -> tuple[str, tuple[int, int]] | None:
+    """Two real name groups starting at ``pos`` on the same line, plus the
+    lead token so callers can veto by it. The window is tokenized on its
+    own so a cue glued to the name cannot misalign token boundaries."""
+    window = text[pos : pos + _CUE_WINDOW]
+    spans = [(t, s + pos, e + pos) for t, s, e in _token_spans(window)]
+    lead = next((t for t, _s, _e in spans if t.strip()), "")
+    if not lead or lead in _ORG_LEAD_TOKENS:
+        return None
+    got = _collect_two_groups(spans, 0)
+    if got is None or not re.search(r"[ \t]", text[got[0] : got[1]]):
+        return None
+    return lead, got
+
+
+def _rank_title_names(text: str) -> list[Entity]:
+    ents = []
+    for m in _RANK_TITLE_RE.finditer(text):
+        found = _window_name(text, m.end())
+        if found:
+            # The title stays in the span (the token pass's idiom) so this
+            # entity outranks a CRF span that started on the title and
+            # clipped the surname.
+            ents.append(_make_name(text, m.start(), found[1][1], 0.9))
+    return ents
+
+
+# Line-opening cues of a letter salutation ("เรียน ศุภชัย พรหมมา") and of a
+# transfer slip's destination line ("ไปยัง พิสิษฐ์ คงเจริญ พร้อมเพย์ ...").
+# Line start only: mid-line ไปยัง is a direction ("ส่งไปยัง สำนักงานเขต") and
+# เรียน is a verb inside นักเรียน/การเรียน. The salutation also addresses
+# offices and groups, so their lead words veto.
+_LINE_OPENING_CUE_RE = re.compile(r"(?m)^[ \t]*(?:เรียน|ไปยัง)[ \t]+")
+_ADDRESSEE_OFFICE_PREFIXES = (
+    "ผู้",
+    "ท่าน",
+    "คณะ",
+    "ประธาน",
+    "กรรมการ",
+    "เจ้าหน้าที่",
+    "หัวหน้า",
+    "ลูกค้า",
+    "สมาชิก",
+    "นายก",
+    "นายอำเภอ",
+    "อธิการ",
+    "คณบดี",
+    "ปลัด",
+    "ศูนย์",
+    "ฝ่าย",
+    "แผนก",
+    "สำนัก",
+)
+# An account holder named after the number on a PromptPay/bank line
+# ("พร้อมเพย์ 083-032-2861 ชื่อ คณิน มั่นคงดี", "บ/ช ธ.ก.ส. 0595... ชื่อ
+# รัตนาภรณ์ หาญกล้า"). The line must carry a bank cue, so "ห้อง 301 ชื่อ
+# ห้องประชุม" stays quiet.
+_ACCOUNT_HOLDER_LABEL_RE = re.compile(r"(?<=\d)[ \t]+ชื่อ[ \t:：]+")
+_ACCOUNT_LINE_CUE_RE = re.compile(r"พร้อมเพย์|PromptPay|บัญชี|บ/ช|ธนาคาร|ธ\.")
+# Accident reports letter the parties ("คู่กรณีฝ่าย ข. นภัสสร ตั้งตระกูลดี").
+_PARTY_LETTER_CUE_RE = re.compile(r"คู่กรณีฝ่าย[ \t]*[ก-ฮ]\.[ \t]*")
+# Classified ads glue the contact to its cue and its phone label
+# ("ติดต่อสิทธิชัย ศักดิ์สิทธิ์เบอร์ 06 6293 21 18"). The phone label right
+# after the name is the evidence; ติดต่อสอบถาม/ติดต่อฝ่าย... are vetoed by
+# their lead word because a desk number can follow them too.
+_CONTACT_AD_CUE_RE = re.compile(r"(?<![ก-๛])ติดต่อ(?:คุณ)?[ \t]*")
+_PHONE_LABEL_AFTER_RE = re.compile(r"[ \t]*(?:เบอร์|โทร)")
+_CONTACT_DESK_PREFIXES = (
+    "สอบถาม",
+    "กลับ",
+    "ฝ่าย",
+    "แผนก",
+    "เจ้าหน้าที่",
+    "ศูนย์",
+    "สำนัก",
+    "ที่",
+    "ได้",
+    "ประสาน",
+    "ผู้",
+)
+
+
+def _line_cue_names(text: str) -> list[Entity]:
+    ents = []
+    for m in _LINE_OPENING_CUE_RE.finditer(text):
+        found = _window_name(text, m.end())
+        if found and not found[0].startswith(_ADDRESSEE_OFFICE_PREFIXES):
+            ents.append(_make_name(text, *found[1], 0.88))
+    for m in _ACCOUNT_HOLDER_LABEL_RE.finditer(text):
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        if not _ACCOUNT_LINE_CUE_RE.search(text, line_start, m.start()):
+            continue
+        found = _window_name(text, m.end())
+        if found and found[0] not in _NON_PERSON_LEADS:
+            ents.append(_make_name(text, *found[1], 0.88))
+    for m in _PARTY_LETTER_CUE_RE.finditer(text):
+        found = _window_name(text, m.end())
+        if found and not found[0].startswith(_ROLE_NOMINALIZER):
+            ents.append(_make_name(text, *found[1], 0.88))
+    for m in _CONTACT_AD_CUE_RE.finditer(text):
+        found = _window_name(text, m.end())
+        if (
+            found
+            and found[0] not in _LEAD_STOP
+            and not found[0].startswith(_CONTACT_DESK_PREFIXES)
+            and _PHONE_LABEL_AFTER_RE.match(text, found[1][1])
+        ):
+            ents.append(_make_name(text, *found[1], 0.88))
+    return ents
+
+
+# Rosters that give the title its own column ("| เด็กชาย | ภูมิ | สินมณี |",
+# "| ด.ญ. | อชิรญา | สุขทอง |"): the title cell vouches for the cell after
+# it, and for the one after that only when the header names a surname
+# column (สกุล) -- otherwise that cell is a province or a school.
+_TABLE_CELL_RE = re.compile(r"[^|\t]+")
+_NAME_CELL_RE = re.compile(r"[ก-๛]{2,25}(?:[ \t][ก-๛]{2,25})?")
+
+
+def _is_name_cell(cell: str) -> bool:
+    if not _NAME_CELL_RE.fullmatch(cell):
+        return False
+    tokens = [t for t in word_tokenize(cell, keep_whitespace=False) if t.strip()]
+    return (
+        bool(tokens)
+        and all(_is_name_token(t) for t in tokens)
+        and tokens[0] not in _LEAD_STOP
+        and tokens[0] not in _ORG_LEAD_TOKENS
+        and not is_non_person_segment(cell)
+    )
+
+
+def _title_cell_names(text: str) -> list[Entity]:
+    ents = []
+    offset = 0
+    for raw_line in text.splitlines(keepends=True):
+        line = raw_line.rstrip("\r\n")
+        if "|" in line or "\t" in line:
+            cells = []
+            for c in _TABLE_CELL_RE.finditer(line):
+                value = c.group(0).strip()
+                if value:
+                    lo = offset + c.start() + c.group(0).index(value)
+                    cells.append((value, lo, lo + len(value)))
+            header = text[max(0, offset - _ROSTER_HEADER_WINDOW) : offset]
+            for i, (value, _lo, _hi) in enumerate(cells[:-1]):
+                if not (value in _TITLES or _RANK_TITLE_RE.fullmatch(value)):
+                    continue
+                first = cells[i + 1]
+                if not _is_name_cell(first[0]):
+                    continue
+                ents.append(_make_name(text, first[1], first[2], 0.88))
+                if (
+                    " " not in first[0]
+                    and i + 2 < len(cells)
+                    and " " not in cells[i + 2][0]
+                    and "สกุล" in header
+                    and _is_name_cell(cells[i + 2][0])
+                ):
+                    ents.append(_make_name(text, cells[i + 2][1], cells[i + 2][2], 0.88))
+        offset += len(raw_line)
+    return ents
+
+
 def _latin_names(text: str) -> list[Entity]:
     ents = []
     seen: set[tuple[int, int]] = set()
@@ -832,6 +1142,9 @@ def detect_name_context_passes(text: str) -> list[tuple[str, Entity]]:
     tagged.extend(("extended", e) for e in _roster_names(text, spans))
     tagged.extend(("extended", e) for e in _passport_roster_names(text))
     tagged.extend(("extended", e) for e in _latin_names(text))
+    tagged.extend(("extended", e) for e in _rank_title_names(text))
+    tagged.extend(("extended", e) for e in _line_cue_names(text))
+    tagged.extend(("extended", e) for e in _title_cell_names(text))
     tagged.extend(("strong", e) for e in _token_pass_names(text, spans))
     return tagged
 

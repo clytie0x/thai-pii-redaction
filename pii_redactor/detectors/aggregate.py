@@ -11,7 +11,7 @@ import re
 
 from pii_redactor.detectors.fn_scanner import scan_fn
 from pii_redactor.detectors.fp_detector import detect_fp
-from pii_redactor.detectors.name_context import detect_parallel_record_names
+from pii_redactor.detectors.name_context import detect_parallel_record_names, rank_title_ends_at
 from pii_redactor.detectors.tb_detector import NERChunkDiagnostics, detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
@@ -296,6 +296,30 @@ def _drop_unanchored_facility_spans(text: str, entities: list[Entity]) -> list[E
     return [e for i, e in enumerate(entities) if i not in drop]
 
 
+def _drop_rank_tail_addresses(text: str, fp: list[Entity], tb: list[Entity]) -> list[Entity]:
+    """Drop an FP ADDRESS that is really the name after a dotted rank.
+
+    "จ.ส.ต.วัฒนา ปานงาม" / "ส.ต.อ.ประเสริฐ ..." end in ต./อ., which the FP
+    address patterns read as tambon/amphoe and capture the given name as the
+    place (police roster, dev 2026-10-24). FP-first dedupe then evicts the
+    TB NAME and the surname ships readable. Only a capture that starts right
+    after a rank title AND sits inside a TB NAME is dropped, so a real
+    "ม.8 ต.วัฒนา" keeps its address.
+    """
+    names = [t for t in tb if t.data_type == "NAME"]
+    if not names:
+        return fp
+    return [
+        e
+        for e in fp
+        if not (
+            e.data_type == "ADDRESS"
+            and rank_title_ends_at(text, e.span[0])
+            and any(n.span[0] <= e.span[0] and e.span[1] <= n.span[1] for n in names)
+        )
+    ]
+
+
 def _relabel_student_ids(tb: list[Entity], kept: list[Entity]) -> list[Entity]:
     """Give a TB STUDENT_ID span its honest label past the FP-first dedupe.
 
@@ -336,6 +360,7 @@ def detect_all(
         tb = detect_tb(text)
     else:
         tb = detect_tb(text, diagnostics=ner_diagnostics)
+    fp = _drop_rank_tail_addresses(text, fp, tb)
     fn = scan_fn(text, fp + tb)
     record_names = detect_parallel_record_names(text, fp + tb + fn)
     deduped = dedupe_spans(fp + tb + fn + record_names)
