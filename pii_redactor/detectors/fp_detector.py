@@ -557,6 +557,42 @@ _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 # is the only signal. `บัญชี` already covers เลขบัญชี / เลขที่บัญชี as a
 # substring, so the alternation stays minimal.
 _BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
+_THAI_ID_CUE_RE = re.compile(
+    r"บัตรประชาชน|ประจำตัวประชาชน|บัตรประจำตัว|เลขประจำตัว|เลขบัตร|ปชช|citizen|ID\s*card",
+    re.IGNORECASE,
+)
+_CARD_CUE_RE = re.compile(r"บัตร|เครดิต|เดบิต|card|visa|master|ชำระ", re.IGNORECASE)
+
+# A digit run for step 6b: 10-19 digits, any single separator (hyphen or dot,
+# optionally padded by a space) or up to two spaces between any two digits.
+# Newlines never join digits: a run must not fuse two table rows.
+_RE_DIGIT_RUN = re.compile(r"(?<![\d.])(\d(?:(?:[ \t]?[-.][ \t]?|[ \t]{1,2})?\d){9,18})(?!\d)")
+_RUN_CHECKSUM_SCORE = 1.01
+
+
+def _card_network_ok(raw: str, ctx: str) -> bool:
+    """Issuer prefix and length of a real card network.
+
+    Mastercard's 2221-2720 series shares its first digits with Buddhist-era
+    years (2569 ...), the usual lead of Thai document numbers, so that series
+    also needs a card cue in front.
+    """
+    n = len(raw)
+    if raw[0] == "4":
+        return n in (13, 16, 19)
+    if raw[:2] in ("51", "52", "53", "54", "55"):
+        return n == 16
+    if 2221 <= int(raw[:4]) <= 2720:
+        return n == 16 and _rightmost_cue(_CARD_CUE_RE, ctx) >= 0
+    if raw[:2] in ("34", "37"):
+        return n == 15
+    if 3528 <= int(raw[:4]) <= 3589 or raw[:2] == "62" or raw[:4] == "6011" or raw[:2] == "65":
+        return 16 <= n <= 19
+    if raw[:2] in ("36", "38"):
+        return n == 14
+    return False
+
+
 _PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|มือถือ|ติดต่อ")
 
 # Honest-label cues (Horizon-2 #10). "เกิด" as substring covers วันเกิด /
@@ -834,6 +870,33 @@ def detect_fp(text: str) -> list[Entity]:
                 candidates.append(_make_entity("ID_NUMBER", m, text, score=0.8))
             else:
                 candidates.append(_make_entity("BANK_ACCOUNT", m, text, score=1.0))
+
+    # 6b. Long digit runs grouped any way at all. The fixed-shape patterns
+    # above miss card numbers of 13-19 digits, Amex 4-6-5 grouping, dotted or
+    # doubly spaced groups, 11-15 digit bank accounts and national IDs spaced
+    # digit by digit; each left the whole number readable. A run is classified
+    # by what it can prove: a valid national-ID or card checksum (scored just
+    # above 1.0 so a shorter fixed-shape fragment cannot evict it and leave
+    # the remainder readable), else an ID or bank cue in front.
+    for m in _RE_DIGIT_RUN.finditer(text):
+        raw = re.sub(r"\D", "", m.group(1))
+        n = len(raw)
+        start = m.start(1)
+        ctx = text[max(0, start - _CUE_WINDOW) : start]
+        if n == 13 and is_valid_thai_id(raw):
+            candidates.append(_make_entity("THAI_ID", m, text, score=_RUN_CHECKSUM_SCORE))
+        elif _card_network_ok(raw, ctx) and _luhn_check(raw):
+            candidates.append(_make_entity("CREDIT_CARD", m, text, score=_RUN_CHECKSUM_SCORE))
+        elif n == 13 and _rightmost_cue(_THAI_ID_CUE_RE, ctx) >= 0:
+            # Recall-first: a cued 13-digit number with a mistyped check digit
+            # still identifies the person.
+            candidates.append(_make_entity("THAI_ID", m, text, score=0.9))
+        elif (
+            10 <= n <= 15
+            and _rightmost_cue(_BANK_CUE_RE, ctx) >= 0
+            and not (n == 10 and raw[0] == "0" and raw[1] in "6789")
+        ):
+            candidates.append(_make_entity("BANK_ACCOUNT", m, text, score=1.0))
 
     # 7. DATE (generic) / DATE_OF_BIRTH (only with a birth cue nearby)
     for m in _RE_DATE.finditer(text):
