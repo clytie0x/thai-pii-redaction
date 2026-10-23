@@ -85,6 +85,32 @@ def test_irregularly_grouped_national_ids_are_masked(value):
     assert _covered(text, value, "THAI_ID")
 
 
+def test_table_columns_split_by_double_spaces_are_classified_separately():
+    dotted = _group(ID_5, 1, 4, 5, 2, 1, sep=".")
+    text = f"สมจิต เพชรงาม  24 กุมภา 2485  {dotted}  222/54 ถนนเพชรเกษม"
+    assert _covered(text, dotted, "THAI_ID")
+    text = f"นาง ก ข  ต.ท่าข้าม  {_group(ID_0, 1, 4, 5, 2, 1)}  2569  3.5"
+    assert _covered(text, _group(ID_0, 1, 4, 5, 2, 1), "THAI_ID")
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("โอนให้ ธ.ออมสิน | 25986056263335 | ยอด 500", "25986056263335"),
+        ("A/C No. 059-02-704553-1 (GSB) please transfer", "059-02-704553-1"),
+        ("Account number 10120499276380 Kiatnakin Phatra", "10120499276380"),
+        ("บ/ช ธ.ก.ส. 059552598307 ชื่อผู้รับ", "059552598307"),
+    ],
+)
+def test_bank_abbreviations_and_english_cues_count(text, value):
+    assert _covered(text, value, "BANK_ACCOUNT")
+
+
+def test_bank_dash_layout_is_an_account_without_a_cue():
+    text = "จ.สุราษฎร์ธานี  022-4-0998198-8  3.5"
+    assert _covered(text, "022-4-0998198-8", "BANK_ACCOUNT")
+
+
 def test_cued_id_with_a_mistyped_check_digit_is_still_masked():
     bad = ID_5[:-1] + str((int(ID_5[-1]) + 1) % 10)
     text = f"เลขบัตรประชาชน {bad} ตามสำเนาที่แนบ"

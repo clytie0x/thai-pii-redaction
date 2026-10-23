@@ -301,7 +301,14 @@ _RE_EMAIL = re.compile(
 # single separator may sit between any two digits, and a closing parenthesis
 # may follow the area digits. The old fixed 3-3-4 grouping left the other
 # shapes fully readable (recall campaign probes, 2026-10-24).
-_RE_PHONE_MOBILE = re.compile(r"(?<![\d.])(\(?0[- .]?[6-9](?:\)?[-\s.]?\d){8})(?!\d)")
+# One separator between digits: a hyphen or dot, optionally padded by a space
+# on each side ("088 - 809 - 3765"), or one whitespace character.
+_PSEP = r"(?:[ \t]?[-.][ \t]?|[-\s.])"
+# An extension is part of what must be masked ("02-123-4567 ต่อ 12").
+_PEXT = r"(?:[ \t]*(?:ต่อ|แทรก|ext\.?|x)[ \t]*\d{1,5})?"
+_RE_PHONE_MOBILE = re.compile(
+    rf"(?<![\d.])(\(?0[- .]?[6-9](?:\)?{_PSEP}?\d){{8}}{_PEXT})(?!\d)", re.IGNORECASE
+)
 # Thai landlines are 9 digits (not 10). Two written shapes, both 9 digits:
 #   Bangkok    02-XXX-XXXX  (2-digit area, then 3+4)
 #   provincial 0XX-XXX-XXX  (3-digit area, then 3+3)
@@ -320,7 +327,9 @@ _RE_PHONE_MOBILE = re.compile(r"(?<![\d.])(\(?0[- .]?[6-9](?:\)?[-\s.]?\d){8})(?
 # a leading zero has no such excuse: a false entity spanning rows still causes
 # irreversible interval-based PDF masking across both rows.
 _RE_PHONE_LANDLINE = re.compile(
-    r"(?<![\d.])(\(?0[- .]?(?:2\)?[-\s.]?\d{3}[-\s.]?\d{4}|[3-7]\d\)?[-\s.]?\d{3}[-\s.]?\d{3}))(?!\d)"
+    rf"(?<![\d.])(\(?0[- .]?(?:2\)?{_PSEP}?\d{{3}}{_PSEP}?\d{{4}}"
+    rf"|[3-7]\d\)?{_PSEP}?\d{{3}}{_PSEP}?\d{{3}}){_PEXT})(?!\d)",
+    re.IGNORECASE,
 )
 # +66 form drops the national leading 0, so a Thai number carries 8 (landline)
 # or 9 (mobile) digits after +66 -- e.g. +66 81 234 5678 is 9. The old pattern
@@ -330,7 +339,8 @@ _RE_PHONE_LANDLINE = re.compile(
 # in brackets, +66 (0) 81 .... Writers also keep the trunk zero by mistake
 # (+660812345678), so one extra digit is allowed.
 _RE_PHONE_INTL = re.compile(
-    r"(?<![a-zA-Z0-9_+])((?:\+|00)66[-\s.]?(?:\(0\)[-\s.]?)?\d(?:[-\s.]?\d){7,9})(?!\d)"
+    rf"(?<![a-zA-Z0-9_+])(\(?(?:\+|00)66\)?{_PSEP}?(?:\(0\){_PSEP}?)?\d(?:{_PSEP}?\d){{7,9}}{_PEXT})(?!\d)",
+    re.IGNORECASE,
 )
 # "66" with no plus is how numbers are copied out of chat apps and
 # spreadsheets (66812345678). Eleven digits starting 66 are also Buddhist-era
@@ -599,6 +609,51 @@ _CARD_CUE_RE = re.compile(r"บัตร|เครดิต|เดบิต|card
 # Newlines never join digits: a run must not fuse two table rows.
 _RE_DIGIT_RUN = re.compile(r"(?<![\d.])(\d(?:(?:[ \t]?[-.][ \t]?|[ \t]{1,2})?\d){9,18})(?!\d)")
 _RUN_CHECKSUM_SCORE = 1.01
+
+
+# Bank cues for digit runs: the full words plus the abbreviations forms and
+# tables use (ธ.กรุงเทพ, ธ.ก.ส., บ/ช, A/C). "ธ." before "ค." is December.
+_BANK_RUN_CUE_RE = re.compile(
+    r"บัญชี|ธนาคาร|บ/ช|ธ\.(?!ค\.)(?=[ก-ฮ])|a/c|acc(?:oun)?t|bank", re.IGNORECASE
+)
+# Thai bank-statement layout: branch, type digit(s), running number, check
+# digit(s) — "022-4-0998198-8". National IDs are 1-4-5-2-1 and never match.
+_BANK_LAYOUT_RE = re.compile(r"\d{3}-\d{1,2}-\d{5,9}-\d{1,2}")
+
+
+def _span_entity(data_type: str, start: int, end: int, text: str, score: float) -> Entity:
+    return Entity(
+        entity_id=str(uuid.uuid4()),
+        redact_type="FP",
+        data_type=data_type,
+        span=(start, end),
+        score=score,
+        original_text=text[start:end],
+    )
+
+
+def _classify_run(text: str, start: int, end: int) -> tuple[str, float] | None:
+    """What a digit run proves: a checksum, a cue in front, or a bank layout."""
+    value = text[start:end]
+    raw = re.sub(r"\D", "", value)
+    n = len(raw)
+    if n < 10:
+        return None
+    ctx = text[max(0, start - _CUE_WINDOW) : start]
+    if n == 13 and is_valid_thai_id(raw):
+        return "THAI_ID", _RUN_CHECKSUM_SCORE
+    if _card_network_ok(raw, ctx) and _luhn_check(raw):
+        return "CREDIT_CARD", _RUN_CHECKSUM_SCORE
+    if n == 13 and _rightmost_cue(_THAI_ID_CUE_RE, ctx) >= 0:
+        # Recall-first: a cued 13-digit number with a mistyped check digit
+        # still identifies the person.
+        return "THAI_ID", 0.9
+    if n <= 15 and not (n == 10 and raw[0] == "0" and raw[1] in "6789"):
+        if _rightmost_cue(_BANK_RUN_CUE_RE, ctx) >= 0:
+            return "BANK_ACCOUNT", 1.0
+        if _BANK_LAYOUT_RE.fullmatch(re.sub(r"[ \t]", "", value)):
+            return "BANK_ACCOUNT", 0.95
+    return None
 
 
 def _card_network_ok(raw: str, ctx: str) -> bool:
@@ -909,25 +964,31 @@ def detect_fp(text: str) -> list[Entity]:
     # by what it can prove: a valid national-ID or card checksum (scored just
     # above 1.0 so a shorter fixed-shape fragment cannot evict it and leave
     # the remainder readable), else an ID or bank cue in front.
+    # Table columns are often separated by two spaces, which the run pattern
+    # also accepts inside a number; a run that proves nothing as a whole is
+    # split at those gaps and every contiguous window of pieces is tried,
+    # longest first.
     for m in _RE_DIGIT_RUN.finditer(text):
-        raw = re.sub(r"\D", "", m.group(1))
-        n = len(raw)
-        start = m.start(1)
-        ctx = text[max(0, start - _CUE_WINDOW) : start]
-        if n == 13 and is_valid_thai_id(raw):
-            candidates.append(_make_entity("THAI_ID", m, text, score=_RUN_CHECKSUM_SCORE))
-        elif _card_network_ok(raw, ctx) and _luhn_check(raw):
-            candidates.append(_make_entity("CREDIT_CARD", m, text, score=_RUN_CHECKSUM_SCORE))
-        elif n == 13 and _rightmost_cue(_THAI_ID_CUE_RE, ctx) >= 0:
-            # Recall-first: a cued 13-digit number with a mistyped check digit
-            # still identifies the person.
-            candidates.append(_make_entity("THAI_ID", m, text, score=0.9))
-        elif (
-            10 <= n <= 15
-            and _rightmost_cue(_BANK_CUE_RE, ctx) >= 0
-            and not (n == 10 and raw[0] == "0" and raw[1] in "6789")
-        ):
-            candidates.append(_make_entity("BANK_ACCOUNT", m, text, score=1.0))
+        start, end = m.start(1), m.end(1)
+        found = _classify_run(text, start, end)
+        if found is not None:
+            candidates.append(_span_entity(found[0], start, end, text, found[1]))
+            continue
+        pieces = [
+            (start + p.start(), start + p.end()) for p in re.finditer(r"\S+(?: \S+)*", m.group(1))
+        ]
+        if len(pieces) < 2:
+            continue
+        taken: list[tuple[int, int]] = []
+        windows = [(i, j) for i in range(len(pieces)) for j in range(i, len(pieces))]
+        for i, j in sorted(windows, key=lambda w: w[0] - w[1]):
+            s, t = pieces[i][0], pieces[j][1]
+            if any(s < b and a < t for a, b in taken):
+                continue
+            found = _classify_run(text, s, t)
+            if found is not None:
+                taken.append((s, t))
+                candidates.append(_span_entity(found[0], s, t, text, found[1]))
 
     # 7. DATE (generic) / DATE_OF_BIRTH (only with a birth cue nearby)
     for m in _RE_DATE.finditer(text):

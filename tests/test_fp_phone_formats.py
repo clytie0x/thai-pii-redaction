@@ -36,6 +36,21 @@ def test_documented_phone_shapes_are_fully_masked(value):
     assert _phone_covers(text, value)
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "088 - 809 - 3765",
+        "(+66) 90-392-0616",
+        "02-835-5322 ext. 105",
+        "038-421145 ต่อ 17",
+        "๐๒-๔๓๑-๕๑๑๔ ต่อ ๑๒",
+    ],
+)
+def test_spaced_dashes_bracketed_prefix_and_extensions_are_masked(value):
+    text = f"สอบถามเพิ่มเติม {value} ในเวลาราชการ"
+    assert _phone_covers(text, value)
+
+
 def test_bare_66_prefix_needs_a_phone_cue():
     assert _phone_covers("เบอร์มือถือ 66812345678 ค่ะ", "66812345678")
     text = "รหัสนักศึกษา 66101102345 สาขาบัญชี"
