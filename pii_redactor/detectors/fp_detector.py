@@ -454,6 +454,12 @@ _RE_HOUSE_BEFORE_STREET = re.compile(
 _RE_HOUSE_BEFORE_BUILDING = re.compile(
     r"(?<!\d)(\d{1,4}\s*/\s*\d{1,4})\s+(?=(?:คอนโด|อาคาร|หมู่บ้าน|ตึก|นิคม|หมู่))"
 )
+# Rural addresses lead with the house number and no label: "261 หมู่ 8
+# ตำบล...", "189/38 ม.6 ต.ทุ่งหมอ". Without this the house number stayed
+# readable at the head of every such address in local-administration rosters.
+_RE_HOUSE_BEFORE_MOO = re.compile(
+    r"(?<![\d/])(\d{1,4}(?:\s*/\s*\d{1,4})?)\s+(?=(?:หมู่|ม\.)\s*(?:ที่\s*)?\d)"
+)
 _RE_YEAR_PREFIX = re.compile(r"(?:ปี(?:งบประมาณ|ภาษี)?|พ\.?\s*ศ\.?)\s*$")
 # Captures the soi/road NAME plus its number ("ลาดพร้าว 71"): the name alone
 # identifies a neighbourhood and the number narrows it to one lane, so masking
@@ -693,7 +699,11 @@ _BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date 
 # Address cue for the postal code. The window is wider than _CUE_WINDOW because
 # a postal code sits at the END of the address line, so the nearest cue is a
 # whole district/province name away ("แขวงวังทองหลาง กรุงเทพมหานคร 10310").
-_POSTAL_CUE_RE = re.compile(r"รหัสไปรษณีย์|จังหวัด|แขวง|ตำบล|อำเภอ|เขต(?!บริการ)|กรุงเทพ|ที่อยู่")
+# The abbreviated labels (จ. อ. ต.) end most addresses in forms and rosters
+# ("อ.ไชยา จ.สุราษฎร์ธานี 84110"); only a Thai letter may follow the dot.
+_POSTAL_CUE_RE = re.compile(
+    r"รหัสไปรษณีย์|จังหวัด|แขวง|ตำบล|อำเภอ|เขต(?!บริการ)|กรุงเทพ|ที่อยู่|(?<![ก-๛])[จอต]\.(?=[ก-ฮ])"
+)
 _POSTAL_CUE_WINDOW = 45
 # Two or more OTHER bare five-digit groups this close mean an enumeration —
 # but only when nothing except enumeration glue (whitespace, comma, slash,
@@ -1179,7 +1189,7 @@ def detect_fp(text: str) -> list[Entity]:
         # ("ใบเสร็จเลขที่ 7", "ผู้เช่าที่อยู่ 5 ปีแล้ว").
         if m.end(1) - m.start(1) < 2 and m.group(0).startswith("บ้านเลขที่"):
             single_digit_addr.append(ent)
-    for pattern in (_RE_HOUSE_BEFORE_STREET, _RE_HOUSE_BEFORE_BUILDING):
+    for pattern in (_RE_HOUSE_BEFORE_STREET, _RE_HOUSE_BEFORE_BUILDING, _RE_HOUSE_BEFORE_MOO):
         for m in pattern.finditer(text):
             raw = re.sub(r"\s", "", m.group(1))
             prefix = text[max(0, m.start() - 20) : m.start()]

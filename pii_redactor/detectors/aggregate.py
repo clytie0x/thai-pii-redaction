@@ -103,7 +103,9 @@ _STRICT_GAP_RE = re.compile(r"[ , ]{0,3}")
 # rule — glue word required, no digit run > 3, no newline, no
 # ownership/introducer veto — still stands, so the two-party split cases the
 # 18 was chosen against remain unmergeable (re-measured on gold + negative).
-_BRIDGE_CHARSET_RE = re.compile(r"[ .,ก-๎0-9]{1,25}")
+# Thai digits (๐-๙) sit outside ก-๎ and must be listed: "๔๘ ม.๕ ต.ตลาดไชยา"
+# left the moo number readable because its gap could not bridge.
+_BRIDGE_CHARSET_RE = re.compile(r"[ .,ก-๎๐-๙0-9]{1,25}")
 _ADDRESS_GLUE_RE = re.compile(
     r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่ที่|หมู่|ซอย|ถนน|ต\.|อ\.|จ\.|ม\."
     r"|อาคาร|หมู่บ้าน|ตึก|ชั้น|ห้อง|คอนโด|ตรอก|แยก|นิคม"
