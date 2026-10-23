@@ -484,6 +484,7 @@ _RE_YEAR_PREFIX = re.compile(r"(?:ปี(?:งบประมาณ|ภาษี
 # identifies a neighbourhood and the number narrows it to one lane, so masking
 # only the digits would leave the person locatable.
 _RE_SOI_ROAD = re.compile(r"(?:ซอย|ซ\.|ถนน|ถ\.)\s*([ก-๛A-Za-z0-9]+(?:\s*\d{1,4})?)(?!\d)")
+_ROAD_WORKS_RE = re.compile(r"คอนกรีต|ลาดยาง|ลูกรัง|คสล|แอสฟัลต์|หินคลุก|สายบ้าน|เพิ่มขึ้น")
 # Industrial-estate NAME after its designator, same value-only idiom as
 # _RE_SOI_ROAD — the estate name pins a workplace to one gate. The lookahead
 # keeps การนิคมอุตสาหกรรมแห่งประเทศไทย (the state agency) out.
@@ -504,7 +505,7 @@ _RE_MOO = re.compile(r"(?:หมู่ที่|หมู่|ม\.)\s*(\d{1,3})(
 _RE_ADMIN_AREA = re.compile(
     # PDF text extraction splits sara am off its consonant ("ต าบล", "อ าเภอ"),
     # so both labels also accept that shape.
-    r"(?:แขวง|ต(?:ำ| ?า)บล|ต\.|(?<!นาย)(?<!ปลัด)(?<!รอง)(?<!ท่าน)(?:อ(?:ำ| ?า)เภอ|เขต(?!บริการ|พื้นที่))|อ\.|จังหวัด|จ\.)\s*([ก-๛]{2,})"
+    r"(?:แขวง|ต(?:ำ| ?า)บล|ต\.|(?<!นาย)(?<!ปลัด)(?<!รอง)(?<!ท่าน)(?:อ(?:ำ| ?า)เภอ|เขต(?!บริการ|พื้นที่|ที่ดิน|อำนาจ|ความ|การ))|อ\.|จังหวัด|จ\.)\s*([ก-๛]{2,})"
 )
 # The 77 provinces — a fixed national list, not corpus tuning. A bare province
 # ends most Thai addresses ("อำเภอเมือง ขอนแก่น") and no label-keyed pattern
@@ -624,7 +625,9 @@ _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 # both the mobile PHONE and the BANK_ACCOUNT patterns, so the surrounding text
 # is the only signal. `บัญชี` already covers เลขบัญชี / เลขที่บัญชี as a
 # substring, so the alternation stays minimal.
-_BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
+# "รหัสบัญชี" is a budget chart-of-accounts code and "บัญชีรายชื่อ" a name
+# list, not a bank account (dev negatives 2026-10-24).
+_BANK_CUE_RE = re.compile(r"(?<!รหัส)บัญชี(?!รายชื่อ|รายการ)|ธนาคาร")
 _THAI_ID_CUE_RE = re.compile(
     r"บัตรประชาชน|ประจำตัวประชาชน|บัตรประจำตัว|เลขประจำตัว|เลขบัตร|ปชช|citizen|ID\s*card",
     re.IGNORECASE,
@@ -643,7 +646,8 @@ _RUN_CHECKSUM_SCORE = 1.01
 # Bank cues for digit runs: the full words plus the abbreviations forms and
 # tables use (ธ.กรุงเทพ, ธ.ก.ส., บ/ช, A/C). "ธ." before "ค." is December.
 _BANK_RUN_CUE_RE = re.compile(
-    r"บัญชี|ธนาคาร|บ/ช|ธ\.(?!ค\.)(?=[ก-ฮ])|a/c|acc(?:oun)?t|bank", re.IGNORECASE
+    r"(?<!รหัส)บัญชี(?!รายชื่อ|รายการ)|ธนาคาร|บ/ช|ธ\.(?!ค\.)(?=[ก-ฮ])|a/c|acc(?:oun)?t|bank",
+    re.IGNORECASE,
 )
 # Thai bank-statement layout: branch, type digit(s), running number, check
 # digit(s) — "022-4-0998198-8". National IDs are 1-4-5-2-1 and never match.
@@ -897,7 +901,10 @@ _PLATE_CUE_BLOCKED_CONTINUATIONS = ("บ้าน", "สมรส", "ราษ�
 # false positive, same closed-list philosophy as _GLUED_CODE_PREFIX_RE.
 # Unlike _PLATE_STOPWORDS these ARE relaxed by a cue, because a 3-letter
 # motorcycle series can legally spell them ("ทะเบียน ยอด 1234").
-_PLATE_UNCUED_LEAD_STOPWORDS = frozenset({"ยอด", "ออก", "รวม"})
+# "รอบ 6 เดือน" joins the prose word-leads (dev negatives 2026-10-24). Two-
+# letter words stay out of this list: every consonant pair is a legal plate
+# series (1กก 1234), so "ลด 30%" is rejected by its percent sign instead.
+_PLATE_UNCUED_LEAD_STOPWORDS = frozenset({"ยอด", "ออก", "รวม", "รอบ"})
 # A plate is below the checksum-backed types (1.0) and above the generic
 # numeric catch-alls (0.8). The re-attached new-format variant sits a hair
 # above a plain plate so it wins `_deduplicate` against the candidate whose
@@ -1148,6 +1155,9 @@ def detect_fp(text: str) -> list[Entity]:
             nxt = text[m.end(1) : m.end(1) + 2]
             if len(nxt) == 2 and nxt[0] in ".," and nxt[1].isdigit():
                 continue
+            # A percentage is never a plate ("ลด 30%").
+            if nxt[:1] == "%":
+                continue
         end = m.end(1)
         score = _PLATE_SCORE
         if plate_cued and start > 0 and _THAI_CHAR_RE.match(text[start - 1]):
@@ -1288,6 +1298,10 @@ def detect_fp(text: str) -> list[Entity]:
             _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
     for pattern in (_RE_SOI_ROAD, _RE_ESTATE):
         for m in pattern.finditer(text):
+            # Procurement notices describe road works, not where anyone
+            # lives: "ถนนคอนกรีตเสริมเหล็ก", "ถนนลาดยาง", "ถนนสายบ้านโคกสูง".
+            if pattern is _RE_SOI_ROAD and _ROAD_WORKS_RE.match(m.group(1)):
+                continue
             _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
     for m in _RE_MOO.finditer(text):
         ent = _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
