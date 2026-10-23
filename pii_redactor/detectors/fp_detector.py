@@ -638,6 +638,7 @@ _TABLE_HEADER_TYPES = (
     (re.compile(r"บัญชี|account", re.I), "BANK_ACCOUNT"),
     (re.compile(r"เกิด|birth", re.I), "DATE_OF_BIRTH"),
 )
+_SPACE_COLUMN_RE = re.compile(r" {2,}")
 # A whole cell that is one identifier: 4-15 digits, single hyphens or spaces.
 _CELL_ID_RE = re.compile(r"\d(?:[ -]?\d){3,14}")
 
@@ -654,15 +655,25 @@ def _typed_table_cells(text: str):
     for line in text.split("\n"):
         line_start = pos
         pos += len(line) + 1
-        sep = "|" if line.count("|") >= 2 else "\t" if line.count("\t") >= 2 else None
-        if sep is None:
+        if line.count("|") >= 2:
+            sep = "|"
+        elif line.count("\t") >= 2:
+            sep = "\t"
+        elif len(_SPACE_COLUMN_RE.findall(line.strip())) >= 2:
+            sep = "  "  # columns aligned with runs of spaces (copied from PDF)
+        else:
             header = None
             continue
-        cells, offset = [], line_start
-        for raw in line.split(sep):
-            lead = len(raw) - len(raw.lstrip())
-            cells.append((offset + lead, offset + len(raw.rstrip()), raw.strip()))
-            offset += len(raw) + 1
+        cells = []
+        if sep == "  ":
+            for cm in re.finditer(r"\S+(?: \S+)*", line):
+                cells.append((line_start + cm.start(), line_start + cm.end(), cm.group()))
+        else:
+            offset = line_start
+            for raw in line.split(sep):
+                lead = len(raw) - len(raw.lstrip())
+                cells.append((offset + lead, offset + len(raw.rstrip()), raw.strip()))
+                offset += len(raw) + 1
         if not re.search(r"\d{4}", line):
             types = [
                 next((t for rx, t in _TABLE_HEADER_TYPES if rx.search(c[2])), None) for c in cells

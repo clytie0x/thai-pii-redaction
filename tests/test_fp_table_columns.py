@@ -41,6 +41,16 @@ def test_id_column_masks_a_mistyped_national_id():
     assert "THAI_ID" in _types_over(PIPE_TABLE, "1-2345-67890-12-4")
 
 
+def test_space_aligned_tables_copied_from_pdf_are_read_too():
+    text = (
+        "ลำดับ  เลขประจำตัวนักเรียน  ชื่อ-สกุล  วันเดือนปีเกิด\n"
+        "1  62678  เด็กหญิงอรุณี ใจดี  13/02/2555\n"
+        "2  62841  เด็กชายภูมิ สินมณี  5 ก.พ. 2556\n"
+    )
+    assert "STUDENT_ID" in _types_over(text, "62678")
+    assert "DATE_OF_BIRTH" in _types_over(text, "5 ก.พ. 2556")
+
+
 def test_columns_without_a_known_header_stay_untouched():
     text = "ลำดับ | รายการ | จำนวน\n1 | 62678 | 5\n"
     assert not any(e.data_type == "STUDENT_ID" for e in detect_fp(text))
