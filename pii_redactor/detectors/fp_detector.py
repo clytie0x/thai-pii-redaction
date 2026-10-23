@@ -386,7 +386,9 @@ _RE_DATE_THAI_MONTH = re.compile(
 # (see step 8) — putting a digit-led alternative in the pattern itself loses
 # to an earlier overlapping bogus match that eats the digit ("ทะเบียน 2กท":
 # the rejected "น 2" consumes the 2 before the real plate can start on it).
-_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}\s*\d{1,4})(?!\d)")
+# A hyphen between the letters and the number ("กข-4471") is as common as a
+# space on forms and in tables.
+_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}(?:\s*-\s*|\s*)\d{1,4})(?!\d)")
 # Passport is alphanumeric, so it needs the same Thai-adjacency handling as the
 # numeric PII above: \b does NOT fire between a Thai letter and "A" (both are
 # word characters in Unicode regex), so a passport glued to Thai text (e.g.
@@ -398,7 +400,20 @@ _RE_PASSPORT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{1,2}\d{6,9})(?![A-Za-z0-9_])
 _RE_STUDENT_ID = re.compile(r"(?<!\d)(\d{8,12})(?!\d)")
 # Dashed student-id shape, label-gated at the call site (see step 10b).
 _RE_STUDENT_ID_DASHED = re.compile(r"(?<!\d)(\d{2}-\d{2}-\d{4})(?!\d)")
-_STUDENT_LABEL_RE = re.compile(r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)")
+_STUDENT_LABEL_RE = re.compile(
+    r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)|รหัสนศ\.?|student\s*(?:id|no\.?|number|code)",
+    re.IGNORECASE,
+)
+# The value after an explicit student label (step 10c): 5-12 digits, any one
+# separator or space between digits. School pupil numbers are 5-7 digits and
+# university ones are written 67-102-1015 or 6710 210 157.
+_RE_LABELLED_ID_RUN = re.compile(r"(?<![\d.])(\d(?:(?:[ \t]?-[ \t]?|[ \t])?\d){4,11})(?![\d/])")
+# A passport with a space or hyphen between letters and digits ("AB 1234567").
+_RE_PASSPORT_SPACED = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{1,2}[ -]\d{6,9})(?![A-Za-z0-9_])")
+# Thai-format passport (two letters, seven digits) with that space, uncued.
+_RE_PASSPORT_TH_SPACED = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2} \d{7})(?![A-Za-z0-9_])")
+# Numeric truck/commercial plate "70-4418": plate-cued only.
+_RE_PLATE_NUMERIC = re.compile(r"(?<![\d-])(\d{2}-\d{4})(?![\d-])")
 
 # Thai address components. The NER side only ever recognises place NAMES it has
 # seen (province, district), which is the LEAST identifying part of an address
@@ -1011,6 +1026,11 @@ def detect_fp(text: str) -> list[Entity]:
             )
         )
 
+    # 8b. Numeric commercial plates ("ทะเบียน 70-4418"), plate cue required.
+    for m in _RE_PLATE_NUMERIC.finditer(text):
+        if _plate_cue_before(text, m.start(1)):
+            candidates.append(_make_entity("VEHICLE_PLATE", m, text, score=_PLATE_SCORE))
+
     # 9. PASSPORT — Thai format always; the general catch-all only with a cue,
     # otherwise it is a generic reference number (still masked as ID_NUMBER).
     for m in _RE_PASSPORT_TH.finditer(text):
@@ -1020,6 +1040,11 @@ def detect_fp(text: str) -> list[Entity]:
             candidates.append(_make_entity("PASSPORT", m, text, score=1.0))
         elif not _glued_code_prefix(text, m.start(1)):
             candidates.append(_make_entity("ID_NUMBER", m, text, score=0.8))
+    for m in _RE_PASSPORT_SPACED.finditer(text):
+        if _cue_before(_PASSPORT_CUE_RE, text, m.start(1)):
+            candidates.append(_make_entity("PASSPORT", m, text, score=1.0))
+    for m in _RE_PASSPORT_TH_SPACED.finditer(text):
+        candidates.append(_make_entity("PASSPORT", m, text, score=0.9))
 
     # 10. STUDENT_ID when the tiered evidence fires (person cue nearest-wins,
     # person cue after the digits, or id-introducer + education context);
@@ -1047,6 +1072,16 @@ def detect_fp(text: str) -> list[Entity]:
             label = lm
         if label is not None and re.fullmatch(r"[\s:]*", lead[label.end() :]):
             candidates.append(_make_entity("STUDENT_ID", m, text, score=0.9))
+
+    # 10c. Any digit grouping right after an explicit student label. The value
+    # may only be separated from the label by spaces, a colon, a hash or a dot.
+    # A run shaped like a date (dd-mm-yyyy) stays with the date rules.
+    for lm in _STUDENT_LABEL_RE.finditer(text):
+        gap = re.match(r"[\s:：#.]{0,3}", text[lm.end() :])
+        vm = _RE_LABELLED_ID_RUN.match(text, lm.end() + gap.end())
+        if vm is None or _RE_DATE.fullmatch(vm.group(1)):
+            continue
+        candidates.append(_make_entity("STUDENT_ID", vm, text, score=0.95))
 
     # 11. ADDRESS components (house number, soi/road, estate, moo). Scored
     # above the generic numeric catch-alls (0.8) so an address value keeps its
