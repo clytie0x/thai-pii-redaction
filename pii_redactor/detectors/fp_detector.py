@@ -627,6 +627,55 @@ _BANK_RUN_CUE_RE = re.compile(
 _BANK_LAYOUT_RE = re.compile(r"\d{3}-\d{1,2}-\d{5,9}-\d{1,2}")
 
 
+# Header cells that type a roster column (step 14). Student labels are tested
+# before the national-ID one because both contain "ประจำตัว".
+_TABLE_HEADER_TYPES = (
+    (
+        re.compile(r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)|student\s*(?:id|no)", re.I),
+        "STUDENT_ID",
+    ),
+    (re.compile(r"ประจำตัวประชาชน|บัตรประชาชน|ปชช|citizen", re.I), "THAI_ID"),
+    (re.compile(r"บัญชี|account", re.I), "BANK_ACCOUNT"),
+    (re.compile(r"เกิด|birth", re.I), "DATE_OF_BIRTH"),
+)
+# A whole cell that is one identifier: 4-15 digits, single hyphens or spaces.
+_CELL_ID_RE = re.compile(r"\d(?:[ -]?\d){3,14}")
+
+
+def _typed_table_cells(text: str):
+    """Yield (start, end, column type) for cells under a typed header column.
+
+    A table is consecutive lines split by "|" or tabs into the same number of
+    cells. The header is a line with no 4-digit run and at least one cell
+    naming a known column; a blank or differently shaped line ends the table.
+    """
+    header: tuple[str, int, list[str | None]] | None = None
+    pos = 0
+    for line in text.split("\n"):
+        line_start = pos
+        pos += len(line) + 1
+        sep = "|" if line.count("|") >= 2 else "\t" if line.count("\t") >= 2 else None
+        if sep is None:
+            header = None
+            continue
+        cells, offset = [], line_start
+        for raw in line.split(sep):
+            lead = len(raw) - len(raw.lstrip())
+            cells.append((offset + lead, offset + len(raw.rstrip()), raw.strip()))
+            offset += len(raw) + 1
+        if not re.search(r"\d{4}", line):
+            types = [
+                next((t for rx, t in _TABLE_HEADER_TYPES if rx.search(c[2])), None) for c in cells
+            ]
+            header = (sep, len(cells), types) if any(types) else None
+            continue
+        if header is None or header[0] != sep or header[1] != len(cells):
+            continue
+        for (s, t, _), ctype in zip(cells, header[2]):
+            if ctype is not None and t > s:
+                yield s, t, ctype
+
+
 def _span_entity(data_type: str, start: int, end: int, text: str, score: float) -> Entity:
     return Entity(
         entity_id=str(uuid.uuid4()),
@@ -1289,6 +1338,31 @@ def detect_fp(text: str) -> list[Entity]:
     # 13. MEDICAL_ID (HN) — cue-gated, so the label is earned rather than assumed.
     for m in _RE_MEDICAL_ID.finditer(text):
         candidates.append(_make_entity("MEDICAL_ID", m, text, score=0.9))
+
+    # 14. Roster tables: a header cell names the column once, so the cells
+    # below it carry no cue of their own. Typed numeric cells become
+    # candidates; dates in a birth-date column become DATE_OF_BIRTH.
+    dob_cells: list[tuple[int, int]] = []
+    for s, t, ctype in _typed_table_cells(text):
+        cell = text[s:t]
+        if ctype == "DATE_OF_BIRTH":
+            dob_cells.append((s, t))
+        elif ctype == "STUDENT_ID" and _CELL_ID_RE.fullmatch(cell):
+            candidates.append(_span_entity("STUDENT_ID", s, t, text, 0.95))
+        elif ctype in ("BANK_ACCOUNT", "THAI_ID") and _CELL_ID_RE.fullmatch(cell):
+            n = len(re.sub(r"\D", "", cell))
+            if ctype == "BANK_ACCOUNT" and 10 <= n <= 15:
+                candidates.append(_span_entity("BANK_ACCOUNT", s, t, text, 1.0))
+            elif ctype == "THAI_ID" and n == 13:
+                candidates.append(_span_entity("THAI_ID", s, t, text, 0.9))
+    if dob_cells:
+        candidates = [
+            dataclasses.replace(e, data_type="DATE_OF_BIRTH")
+            if e.data_type == "DATE"
+            and any(s <= e.span[0] and e.span[1] <= t for s, t in dob_cells)
+            else e
+            for e in candidates
+        ]
 
     candidates = _disambiguate_bank_student(text, candidates)
     candidates = _disambiguate_bank_phone(text, candidates)
