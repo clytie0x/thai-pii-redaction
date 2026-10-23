@@ -43,7 +43,7 @@ changes and v2's aggregates are known to the development context.
 - Neither context reports document text or values back to the development
   context; replies are counts and error kinds only.
 
-### Composition (245 documents)
+### Composition (247 documents)
 
 | slice | docs | layer |
 |---|---|---|
@@ -51,7 +51,7 @@ changes and v2's aggregates are known to the development context.
 | gov_form | 20 | natural |
 | finance | 14 | natural |
 | medical | 12 | natural |
-| education | 12 | natural |
+| education | 14 | natural |
 | long_form | 12 | natural |
 | messy | 18 | balanced |
 | id_docs | 15 | balanced |
