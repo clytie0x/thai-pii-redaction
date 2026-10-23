@@ -460,6 +460,17 @@ _RE_HOUSE_BEFORE_BUILDING = re.compile(
 _RE_HOUSE_BEFORE_MOO = re.compile(
     r"(?<![\d/])(\d{1,4}(?:\s*/\s*\d{1,4})?)\s+(?=(?:หมู่|ม\.)\s*(?:ที่\s*)?\d)"
 )
+# Thai addresses written in English ("45/6 Moo 3, Tambon Chang Phueak, Mueang
+# Chiang Mai District, Chiang Mai 50300", "Unit 3402, 34th Floor, ... Bangkok
+# 10330") had no rule at all. A house or unit number, a romanized address
+# word, and a postcode on the same line make one ADDRESS.
+_RE_EN_ADDRESS = re.compile(
+    r"(?<![\w/])((?:(?:Unit|Room|Flat|No\.?)[ \t]*)?\d{1,5}(?:/\d{1,4})?,?[ \t][^\n]{5,150}?(?<!\d)\d{5})(?!\d)"
+)
+_EN_ADDRESS_WORD_RE = re.compile(
+    r"\b(?:Moo|Soi|Road|Rd|Tambon|Amphoe|District|Sub-?district|Khet|Khwaeng|Floor"
+    r"|Tower|Building|Village|Mueang|Bangkok|Province)\b"
+)
 _RE_YEAR_PREFIX = re.compile(r"(?:ปี(?:งบประมาณ|ภาษี)?|พ\.?\s*ศ\.?)\s*$")
 # Captures the soi/road NAME plus its number ("ลาดพร้าว 71"): the name alone
 # identifies a neighbourhood and the number narrows it to one lane, so masking
@@ -1259,6 +1270,9 @@ def detect_fp(text: str) -> list[Entity]:
             prefix = text[max(0, m.start() - 20) : m.start()]
             if raw.isdigit() and 2400 <= int(raw) <= 2699 and _RE_YEAR_PREFIX.search(prefix):
                 continue
+            _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
+    for m in _RE_EN_ADDRESS.finditer(text):
+        if _EN_ADDRESS_WORD_RE.search(m.group(1)):
             _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
     for pattern in (_RE_SOI_ROAD, _RE_ESTATE):
         for m in pattern.finditer(text):

@@ -225,6 +225,15 @@ _ROLE_CUES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # ได้ตรวจ ชนิดา แสงอรุณรัตน์ เกิด ..."); the usual glued ได้ตรวจร่างกาย
     # stays a no-op, and so does prose going on after the verb.
     ("ได้ตรวจ", ("__require_space__", "แล้ว", "พบ", "ร่างกาย")),
+    # Lease, lab, referral and arrest paperwork (dev 2026-10-24, second
+    # file): "ผู้ให้เช่า มาลินี สมบัติทอง", "ผู้รายงานผล เกศินี ...",
+    # "ขอส่งตัว ศิริพร ...", "ได้ตรวจร่างกาย ยุทธนา ...", "ผู้ต้องหา สุรเชษฐ์ ...".
+    ("ผู้ให้เช่า", ("__require_space__",)),
+    ("ผู้เช่า", ("__require_space__",)),
+    ("ผู้รายงานผล", ("__require_space__",)),
+    ("ผู้ต้องหา", ("__require_space__",)),
+    ("ขอส่งตัว", ("__require_space__",)),
+    ("ได้ตรวจร่างกาย", ("__require_space__", "แล้ว", "พบ")),
 )
 # Tokens that may sit between a role cue and the name ("ผู้ป่วยชื่อวิภาวดี",
 # "ผู้ค้ำประกันเงินกู้คือ สราวุธ").
@@ -321,8 +330,16 @@ _LATIN_CUE_RE = re.compile(
     # and "Passenger Name List" are headings -- and Borrower is left out:
     # its only measured follower is "Student No.", not a person.
     r"|Card[ \t]?holder[ \t]*[:：][ \t]*|Patient[ \t]*[:：][ \t]*|passenger[ \t]+"
-    r"|Passenger[ \t]*[:：][ \t]*|ผู้สมัคร[ \t]+|ผู้รับ[ \t]+)"
+    r"|Passenger[ \t]*[:：][ \t]*|ผู้สมัคร[ \t]+|ผู้รับ[ \t]+"
+    # English forms and notes (dev 2026-10-24, second file): honorifics and
+    # labelled fields, each label with its colon so headings stay out.
+    r"|Dr\.?[ \t]+|Prof\.?[ \t]+|Miss[ \t]+"
+    r"|(?i:full[ \t]name|applicant|customer|tenant|landlord|employee|driver|witness|insured"
+    r"|beneficiary|emergency[ \t]contact|attendees?|physician|doctor)[ \t]*[:：][ \t]*"
+    r"|Customer[ \t]+|Delivery[ \t]note[ \t]for[ \t]+|ผู้เช่า(?:ห้อง[ \t]*\d+)?[ \t]+)"
 )
+# A further name in the same list: "(Finance), Sasithorn Panyadee (Legal)".
+_LATIN_LIST_GLUE_RE = re.compile(r"[ \t]*(?:\([^()\n]{1,30}\))?[ \t]*(?:,|and|และ)[ \t]+")
 _LATIN_NAME_RE = re.compile(r"[A-Z][a-z]{1,20}(?:[ \t](?:[A-Z]\.|[A-Z][a-z]{1,20})){1,3}")
 _LATIN_TRAILING_PASSPORT_RE = re.compile(
     r"([A-Z][a-z]{1,20}(?:[ \t](?:[A-Z]\.|[A-Z][a-z]{1,20})){1,2})[ \t]+(?=passport|[A-Z]{2}\d{7})"
@@ -993,7 +1010,11 @@ _ADDRESSEE_OFFICE_PREFIXES = (
 _ACCOUNT_HOLDER_LABEL_RE = re.compile(r"(?<=\d)[ \t]+ชื่อ[ \t:：]+")
 _ACCOUNT_LINE_CUE_RE = re.compile(r"พร้อมเพย์|PromptPay|บัญชี|บ/ช|ธนาคาร|ธ\.")
 # Accident reports letter the parties ("คู่กรณีฝ่าย ข. นภัสสร ตั้งตระกูลดี").
-_PARTY_LETTER_CUE_RE = re.compile(r"คู่กรณีฝ่าย[ \t]*[ก-ฮ]\.[ \t]*")
+# Parties and witnesses in police and court records: "คู่กรณีฝ่าย ข.",
+# "คู่กรณีฝ่ายที่ 2", "พยานปากที่ 3" (dev 2026-10-24, second file).
+_PARTY_LETTER_CUE_RE = re.compile(
+    r"(?:คู่กรณีฝ่าย[ \t]*(?:[ก-ฮ]\.|ที่[ \t]*\d{1,2})|พยานปากที่[ \t]*\d{1,2})[ \t]*"
+)
 # Classified ads glue the contact to its cue and its phone label
 # ("ติดต่อสิทธิชัย ศักดิ์สิทธิ์เบอร์ 06 6293 21 18"). The phone label right
 # after the name is the evidence; ติดต่อสอบถาม/ติดต่อฝ่าย... are vetoed by
@@ -1112,8 +1133,10 @@ def _latin_names(text: str) -> list[Entity]:
 
     for cue in _LATIN_CUE_RE.finditer(text):
         m = _LATIN_NAME_RE.match(text, cue.end())
-        if m:
+        while m:
             _accept(m.start(), m.group(0))
+            glue = _LATIN_LIST_GLUE_RE.match(text, m.end())
+            m = _LATIN_NAME_RE.match(text, glue.end()) if glue else None
     for m in _LATIN_TRAILING_PASSPORT_RE.finditer(text):
         _accept(m.start(1), m.group(1))
     return ents

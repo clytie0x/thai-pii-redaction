@@ -55,6 +55,26 @@ def test_a_person_address_after_an_agency_is_still_masked():
     assert _uncovered_digits(text, "12 ม.3 ต.ควนลัง อ.หาดใหญ่ จ.สงขลา 90110") == ""
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        "45/6 Moo 3, Tambon Chang Phueak, Mueang Chiang Mai District, Chiang Mai 50300",
+        "Unit 3402, 34th Floor, Noble Ploenchit Tower, 98 Ploenchit Road, Lumphini, Pathumwan, Bangkok 10330",
+        "19/5 Sukhumvit Soi 24, Khlong Tan, Khlong Toei, Bangkok 10110",
+    ],
+)
+def test_thai_addresses_written_in_english_are_masked(value):
+    text = f"Please ship to {value} before Friday."
+    assert _uncovered_digits(text, value) == ""
+
+
+def test_an_english_sentence_with_a_number_is_not_an_address():
+    from pii_redactor.detectors.fp_detector import detect_fp
+
+    text = "We shipped 120 boxes by road and received 50000 baht."
+    assert not any(e.data_type == "ADDRESS" for e in detect_fp(text))
+
+
 def test_a_quantity_before_moo_words_needs_a_moo_number():
     ents = detect_all("แบ่งเป็น 30 หมู่บ้านในเขตอำเภอ")
     assert not any(e.data_type == "ADDRESS" and "30" in e.original_text for e in ents)
