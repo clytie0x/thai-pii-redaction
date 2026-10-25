@@ -17,9 +17,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from benchmark.gold import parse_gold  # noqa: E402
-from benchmark.runner import predict_samples  # noqa: E402
-from benchmark.scorer import score  # noqa: E402
+from benchmark.gold import parse_gold
+from benchmark.runner import predict_samples
+from benchmark.scorer import score
 
 DEV_DIR = Path(__file__).resolve().parents[1] / "benchmark" / "data" / "dev"
 

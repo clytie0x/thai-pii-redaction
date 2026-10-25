@@ -96,9 +96,7 @@ def _score_group(samples, predictions):
             cov_covered += sum(covered)
             # Leak view: type-agnostic, and only letters/digits count, so an
             # uncovered dash or space between masked digit groups is not a leak.
-            value_chars = [
-                covered[k] for k in range(glen) if sample.text[g.start + k].isalnum()
-            ]
+            value_chars = [covered[k] for k in range(glen) if sample.text[g.start + k].isalnum()]
             readable = sum(1 for c in value_chars if not c)
             if value_chars and readable == len(value_chars):
                 full_leaks += 1
