@@ -174,6 +174,20 @@ def test_rank_wins_over_tambon_reading_of_its_last_letter():
     assert _masked_as_name(text, "ประเสริฐ สมบูรณ์นิล", ents)
 
 
+@pytest.mark.parametrize(
+    ("text", "name"),
+    [
+        ("ผู้ป่วย จ.ส.ต.ประเสริฐ ภูมิพัฒน์ ว/ด/ป เกิด 12/08/2544 HN 70-224519", "ประเสริฐ ภูมิพัฒน์"),
+        ("พนักงานสอบสวน ด.ต.สมหมาย ธรรมรงค์ รับแจ้ง", "สมหมาย ธรรมรงค์"),
+    ],
+)
+def test_a_lone_rank_name_is_not_read_as_a_tambon_or_amphoe(text, name):
+    # With no address around it the rank's last letter becomes a standalone
+    # area (LOCATION); that reading must still yield to the name.
+    ents = detect_all(text)
+    assert _masked_as_name(text, name, ents)
+
+
 def test_real_tambon_after_moo_is_still_an_address():
     text = "ที่อยู่ 205 ม.8 ต.วัฒนา อ.สะเดา จ.สงขลา"
     ents = detect_all(text)

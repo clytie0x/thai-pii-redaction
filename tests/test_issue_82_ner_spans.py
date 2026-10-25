@@ -183,11 +183,12 @@ def test_name_like_location_text_does_not_split_name_and_real_location_survives(
     # the bare value: `aggregate._extend_address_chains` grows the retained
     # FP fragment ("เชียงใหม่") to the CRF's own ADDRESS span
     # ("จังหวัดเชียงใหม่") by design — over-masking the label is fine, losing
-    # the value is not.
+    # the value is not. A province standing alone is labelled LOCATION
+    # (annotation guidelines: not a locatable address); either label masks it.
     location_start = text.index(expected_location)
     location_end = location_start + len(expected_location)
     assert any(
-        entity.data_type == "ADDRESS"
+        entity.data_type in ("ADDRESS", "LOCATION")
         and entity.span[0] <= location_start
         and location_end <= entity.span[1]
         for entity in entities

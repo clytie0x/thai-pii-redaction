@@ -41,6 +41,46 @@ def test_cued_birth_dates_of_every_documented_shape_are_masked(value):
 
 
 @pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("Patient: Chanon P.  Birth date: 03/11/1994", "03/11/1994"),
+        ("Born 5 Jan 1997 in Khon Kaen", "5 Jan 1997"),
+        ("Birthdate 14 March 1991, nationality Thai", "14 March 1991"),
+    ],
+)
+def test_english_birth_labels_are_birth_cues(text, value):
+    assert _covered(text, value, "DATE_OF_BIRTH")
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("D.O.B.12/03/1987 Nationality: Thai", "12/03/1987"),
+        ("ว.ด.ป.เกิด.12/03/2530 อายุ 39 ปี", "12/03/2530"),
+    ],
+)
+def test_birth_date_glued_after_an_abbreviation_dot_is_masked(text, value):
+    assert _covered(text, value, "DATE_OF_BIRTH")
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("ผู้โดยสาร น.ส.มะลิวัลย์ DOB March 12, 1996 หนังสือเดินทาง", "March 12, 1996"),
+        ("Date of birth: Jan 5 1997\nNationality: Thai", "Jan 5 1997"),
+    ],
+)
+def test_month_first_english_birth_dates_are_masked(text, value):
+    assert _covered(text, value, "DATE_OF_BIRTH")
+
+
+def test_month_first_date_without_a_birth_cue_is_a_plain_date():
+    ents = detect_fp("Meeting on March 12, 2026 at the district office")
+    assert any(e.data_type == "DATE" for e in ents)
+    assert not any(e.data_type == "DATE_OF_BIRTH" for e in ents)
+
+
+@pytest.mark.parametrize(
     "text",
     [
         "ประจำเดือนกันยายน 2568 ทุกหน่วยงาน",

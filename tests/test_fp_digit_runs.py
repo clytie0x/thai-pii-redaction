@@ -19,6 +19,7 @@ MASTERCARD = "5178657975432313"
 JCB = "3530948757491181"
 ID_5 = "5625276018958"
 ID_0 = "0559797114711"
+DUAL_13 = "4374847771834"
 
 
 def _covered(text: str, value: str, etype: str) -> bool:
@@ -106,6 +107,14 @@ def test_bank_abbreviations_and_english_cues_count(text, value):
     assert _covered(text, value, "BANK_ACCOUNT")
 
 
+def test_an_english_bank_cue_beats_student_evidence():
+    text = (
+        "Student number 66-208-147-39\nRefund account: Government Savings Bank A/C 020145783962.\n"
+        "Student correspondence: Phitsanulok"
+    )
+    assert _covered(text, "020145783962", "BANK_ACCOUNT")
+
+
 def test_bank_dash_layout_is_an_account_without_a_cue():
     text = "จ.สุราษฎร์ธานี  022-4-0998198-8  3.5"
     assert _covered(text, "022-4-0998198-8", "BANK_ACCOUNT")
@@ -115,6 +124,40 @@ def test_cued_id_with_a_mistyped_check_digit_is_still_masked():
     bad = ID_5[:-1] + str((int(ID_5[-1]) + 1) % 10)
     text = f"เลขบัตรประชาชน {bad} ตามสำเนาที่แนบ"
     assert _covered(text, bad, "THAI_ID")
+
+
+def test_card_after_an_abbreviation_dot_is_masked_whole():
+    # The dot closes "no.", it does not start a decimal number; the run used
+    # to start mid-number and leave the last group readable.
+    value = _group(AMEX, 4, 6, 5)
+    text = f"AMEX no.{value} ยอดค้าง 12,345 บาท"
+    assert _covered(text, value, "CREDIT_CARD")
+
+
+def test_cued_account_glued_after_an_abbreviation_dot_is_masked():
+    text = "โอนเข้า บ/ช.020123456789 ธ.ออมสิน"
+    assert _covered(text, "020123456789", "BANK_ACCOUNT")
+
+
+def test_card_cue_wins_a_13_digit_number_valid_as_card_and_id():
+    # DUAL_13 passes both Luhn and the national-ID check digit.
+    text = f"ชำระผ่านบัตรเครดิต {DUAL_13} เรียบร้อยแล้ว"
+    assert _covered(text, DUAL_13, "CREDIT_CARD")
+    text = f"เลขบัตรประชาชน {DUAL_13} ผู้ยื่นคำร้อง"
+    assert _covered(text, DUAL_13, "THAI_ID")
+
+
+def test_bank_dash_layout_led_by_06_to_09_is_an_account_not_a_phone():
+    text = "ค่าจ้าง 12,500 065-3-76137-1"
+    assert _covered(text, "065-3-76137-1", "BANK_ACCOUNT")
+
+
+def test_phone_and_account_one_space_apart_do_not_fuse_into_an_id():
+    # "0812345678 065" happens to pass the national-ID check digit.
+    text = "นายสมชาย ใจดี 0812345678 065-3-76137-1"
+    assert _covered(text, "0812345678", "PHONE")
+    assert _covered(text, "065-3-76137-1", "BANK_ACCOUNT")
+    assert not any(e.data_type == "THAI_ID" for e in detect_fp(text))
 
 
 @pytest.mark.parametrize(

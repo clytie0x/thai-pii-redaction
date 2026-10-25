@@ -304,7 +304,8 @@ def _drop_rank_tail_addresses(text: str, fp: list[Entity], tb: list[Entity]) -> 
     place (police roster, dev 2026-10-24). FP-first dedupe then evicts the
     TB NAME and the surname ships readable. Only a capture that starts right
     after a rank title AND sits inside a TB NAME is dropped, so a real
-    "ม.8 ต.วัฒนา" keeps its address.
+    "ม.8 ต.วัฒนา" keeps its address. With no address around it the same
+    capture comes out as a standalone-area LOCATION and yields the same way.
     """
     names = [t for t in tb if t.data_type == "NAME"]
     if not names:
@@ -313,7 +314,7 @@ def _drop_rank_tail_addresses(text: str, fp: list[Entity], tb: list[Entity]) -> 
         e
         for e in fp
         if not (
-            e.data_type == "ADDRESS"
+            e.data_type in ("ADDRESS", "LOCATION")
             and rank_title_ends_at(text, e.span[0])
             and any(n.span[0] <= e.span[0] and e.span[1] <= n.span[1] for n in names)
         )

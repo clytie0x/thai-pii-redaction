@@ -63,7 +63,9 @@ def test_glued_province_label_does_not_capture_across_newline():
 
 
 def test_glued_province_label_same_line_still_captures():
-    assert "ADDRESS" in _fp_types_at("ย้ายไปทำงานต่างจังหวัด ขอนแก่น", "ขอนแก่น")
+    # Still masked. A province standing alone is not a locatable address
+    # (annotation guidelines), so it carries LOCATION, not ADDRESS.
+    assert "LOCATION" in _fp_types_at("ย้ายไปทำงานต่างจังหวัด ขอนแก่น", "ขอนแก่น")
 
 
 def test_form_label_on_its_own_line_still_captures():

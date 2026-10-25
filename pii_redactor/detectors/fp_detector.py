@@ -199,7 +199,9 @@ def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Enti
         if "STUDENT_ID" not in types or "BANK_ACCOUNT" not in types:
             continue
         ctx = text[max(0, span[0] - _CUE_WINDOW) : span[0]]
-        bank = _rightmost_cue(_BANK_CUE_RE, ctx)
+        # The run cues add ธ./บ/ช and English A/C, account, bank: a student's
+        # refund account on an English form is still an account.
+        bank = _rightmost_cue(_BANK_RUN_CUE_RE, ctx)
         bank_dist = len(ctx) - bank if bank >= 0 else None
         student_dist = _student_evidence(text, span[0], span[1])
         if bank_dist is not None and (student_dist is None or bank_dist <= student_dist):
@@ -309,11 +311,17 @@ _RE_EMAIL = re.compile(
 # PDF copy wrap "064-307-" / "0653". Without the hyphen, a line break never
 # joins digits (two table rows must not fuse).
 _LINE_WRAP = r"-[ \t]*\r?\n[ \t]*"
-_PSEP = rf"(?:{_LINE_WRAP}|[ \t]?[-.][ \t]?|[-\s.])"
+# The single separator is a space, never a line break or a tab: a bare
+# break or a tab would let a phone run into the next row's or cell's number.
+_PSEP = rf"(?:{_LINE_WRAP}|[ \u00a0]?[-.][ \u00a0]?|[- \u00a0.])"
 # An extension is part of what must be masked ("02-123-4567 ต่อ 12").
 _PEXT = r"(?:[ \t]*(?:ต่อ|แทรก|ext\.?|x)[ \t]*\d{1,5})?"
+_RE_PHONE_EXT_TAIL = re.compile(r"[ \t]*(?:ต่อ|แทรก|ext\.?|x)[ \t]*\d{1,5}$", re.IGNORECASE)
+# "(?<!\d)(?<!\d\.)" here and below: a dot after a digit is a decimal point,
+# but a dot after a letter ends an abbreviation the value is glued to
+# ("โทร.0812345678", "Tel.081-...", "D.O.B.12/03/1987").
 _RE_PHONE_MOBILE = re.compile(
-    rf"(?<![\d.])(\(?0[- .]?[6-9](?:\)?{_PSEP}?\d){{8}}{_PEXT})(?!\d)", re.IGNORECASE
+    rf"(?<!\d)(?<!\d\.)(\(?0[- .]?[6-9](?:\)?{_PSEP}?\d){{8}}{_PEXT})(?!\d)", re.IGNORECASE
 )
 # Thai landlines are 9 digits (not 10). Two written shapes, both 9 digits:
 #   Bangkok    02-XXX-XXXX  (2-digit area, then 3+4)
@@ -333,7 +341,7 @@ _RE_PHONE_MOBILE = re.compile(
 # a leading zero has no such excuse: a false entity spanning rows still causes
 # irreversible interval-based PDF masking across both rows.
 _RE_PHONE_LANDLINE = re.compile(
-    rf"(?<![\d.])(\(?0[- .]?(?:2\)?{_PSEP}?\d{{3}}{_PSEP}?\d{{4}}"
+    rf"(?<!\d)(?<!\d\.)(\(?0[- .]?(?:2\)?{_PSEP}?\d{{3}}{_PSEP}?\d{{4}}"
     rf"|[3-7]\d\)?{_PSEP}?\d{{3}}{_PSEP}?\d{{3}}){_PEXT})(?!\d)",
     re.IGNORECASE,
 )
@@ -360,7 +368,7 @@ _RE_DATE = re.compile(
     # wins for short years; the digit-boundary lookarounds keep both anchored.
     # A dotted day-first form (02.02.2505) is common in Thai forms; it takes a
     # 4-digit year only, so prices and version numbers never qualify.
-    r"(?<![\d.])(\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|\d{4}[/\-]\d{1,2}[/\-]\d{1,2}"
+    r"(?<!\d)(?<!\d\.)(\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|\d{4}[/\-]\d{1,2}[/\-]\d{1,2}"
     r"|\d{1,2}\.\d{1,2}\.\d{4})(?!\d)"
 )
 # Thai-month dates ("16 สิงหาคม 2508") had no FP pattern, so the CRF was the
@@ -387,8 +395,13 @@ _EN_MONTHS = (
     r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?"
     r"|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?(?![A-Za-z])"
 )
+# English writes the month first as well ("March 12, 1996", "Jan 5 1997").
+_RE_DATE_EN_MONTH_FIRST = re.compile(
+    # The lookahead fails fast on the many positions no month can start at.
+    rf"(?=[JFMASONDjfmasond])(?<![A-Za-z])((?i:{_EN_MONTHS}) ?(\d{{1,2}}),? ?\d{{4}})(?!\d)"
+)
 _RE_DATE_THAI_MONTH = re.compile(
-    rf"(?<![\d.])(\d{{1,2}} ?(?:เดือน ?)?(?:{_THAI_MONTHS}|{_THAI_MONTHS_CLIPPED}|{_THAI_MONTHS_ABBR}"
+    rf"(?<!\d)(?<!\d\.)(\d{{1,2}} ?(?:เดือน ?)?(?:{_THAI_MONTHS}|{_THAI_MONTHS_CLIPPED}|{_THAI_MONTHS_ABBR}"
     rf"|(?i:{_EN_MONTHS}))"
     rf",? ?(?:(?:พ\.?ศ\.?|ค\.?ศ\.?|B\.?E\.?) ?)?(?:\d{{4}}|\d{{2}}))(?!\d)"
 )
@@ -417,13 +430,15 @@ _RE_STUDENT_ID = re.compile(r"(?<!\d)(\d{8,12})(?!\d)")
 # Dashed student-id shape, label-gated at the call site (see step 10b).
 _RE_STUDENT_ID_DASHED = re.compile(r"(?<!\d)(\d{2}-\d{2}-\d{4})(?!\d)")
 _STUDENT_LABEL_RE = re.compile(
-    r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)|รหัสนศ\.?|student\s*(?:id|no\.?|number|code)",
+    r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)|รหัส ?นศ\.?|student\s*(?:id|no\.?|number|code)",
     re.IGNORECASE,
 )
 # The value after an explicit student label (step 10c): 5-12 digits, any one
 # separator or space between digits. School pupil numbers are 5-7 digits and
 # university ones are written 67-102-1015 or 6710 210 157.
-_RE_LABELLED_ID_RUN = re.compile(r"(?<![\d.])(\d(?:(?:[ \t]?-[ \t]?|[ \t])?\d){4,11})(?![\d/])")
+_RE_LABELLED_ID_RUN = re.compile(
+    r"(?<!\d)(?<!\d\.)(\d(?:(?:[ \u00a0]?-[ \u00a0]?|[ \u00a0])?\d){4,11})(?![\d/])"
+)
 # A passport with a space or hyphen between letters and digits ("AB 1234567").
 _RE_PASSPORT_SPACED = re.compile(
     r"(?<![A-Za-z0-9_])([A-Z]{1,2}(?:[ -]|[ \t]*\r?\n[ \t]*)\d{6,9})(?![A-Za-z0-9_])"
@@ -616,7 +631,7 @@ _SEP_RE = re.compile(r"[-\s.()]")
 _SCAN_FOLD = str.maketrans(
     {
         **{chr(0x0E50 + d): str(d) for d in range(10)},
-        **{c: "-" for c in "‐‑‒–—―−"},
+        **dict.fromkeys("‐‑‒–—―−", "-"),
     }
 )
 _THAI_CHAR_RE = re.compile(r"[฀-๿]")
@@ -636,11 +651,12 @@ _CARD_CUE_RE = re.compile(r"บัตร|เครดิต|เดบิต|card
 
 # A digit run for step 6b: 10-19 digits, any single separator (hyphen or dot,
 # optionally padded by a space) or up to two spaces between any two digits.
-# Newlines never join digits: a run must not fuse two table rows.
+# Newlines and tabs never join digits: a run must not fuse two rows or cells.
 _RE_DIGIT_RUN = re.compile(
-    rf"(?<![\d.])(\d(?:(?:{_LINE_WRAP}|[ \t]?[-.][ \t]?|[ \t]{{1,2}})?\d){{9,18}})(?!\d)"
+    rf"(?<!\d)(?<!\d\.)(\d(?:(?:{_LINE_WRAP}|[ \u00a0]?[-.][ \u00a0]?|[ \u00a0]{{1,2}})?\d){{9,18}})(?!\d)"
 )
 _RUN_CHECKSUM_SCORE = 1.01
+_RUN_FRAGMENT_TYPES = frozenset({"PHONE", "BANK_ACCOUNT", "ID_NUMBER", "STUDENT_ID"})
 
 
 # Bank cues for digit runs: the full words plus the abbreviations forms and
@@ -658,62 +674,140 @@ _BANK_LAYOUT_RE = re.compile(r"\d{3}-\d{1,2}-\d{5,9}-\d{1,2}")
 # before the national-ID one because both contain "ประจำตัว".
 _TABLE_HEADER_TYPES = (
     (
-        re.compile(r"(?:รหัส|เลขประจำตัว)(?:นักศึกษา|นิสิต|นักเรียน)|student\s*(?:id|no)", re.I),
+        re.compile(
+            r"(?:รหัส|เลขประจำตัว) ?(?:นักศึกษา|นิสิต|นักเรียน|นศ\.?)|student\s*(?:id|no|code|number)"
+            r"|enrol+ment\s*(?:id|no|code|number)",
+            re.I,
+        ),
         "STUDENT_ID",
+    ),
+    # A person-name column, read by name_context; tested before the account
+    # rule so "ชื่อบัญชี" (account holder) stays a name column.
+    (
+        re.compile(
+            r"ชื่อ ?[-–]? ?(?:นาม)?สกุล|ชื่อและ(?:นาม)?สกุล|^ชื่อ(?:ผู้|นัก|บัญชี)|^ชื่อ$"
+            r"|^(?:full\s*)?name$|^student(?:\s*name)?$|^ผู้สมัคร$|^ผู้เข้าสอบ$",
+            re.I,
+        ),
+        "NAME",
     ),
     (re.compile(r"ประจำตัวประชาชน|บัตรประชาชน|ปชช|citizen", re.I), "THAI_ID"),
     (re.compile(r"บัญชี|account", re.I), "BANK_ACCOUNT"),
     (re.compile(r"เกิด|birth", re.I), "DATE_OF_BIRTH"),
+    (re.compile(r"โทร|เบอร์|มือถือ|phone|mobile|\btel\b", re.I), "PHONE"),
+    (re.compile(r"หนังสือเดินทาง|passport", re.I), "PASSPORT"),
+    (
+        re.compile(r"ทะเบียน(?:รถ)?(?!บ้าน|ราษฎร|สมรส|การค้า|พาณิชย์|นิติ)|plate", re.I),
+        "VEHICLE_PLATE",
+    ),
 )
+# Schools shorten the student-code header to a bare เลขประจำตัว / รหัส / ID
+# column. It names a student code only in a school document, and only on
+# rows that name a person by title: a course list's รหัส column does not.
+_BARE_ID_HEADER_RE = re.compile(r"เลขประจำตัว|รหัส(?:ผู้สมัคร|ประจำตัว)?|ID", re.I)
+_SCHOOL_CONTEXT_RE = re.compile(
+    r"นักเรียน|นักศึกษา|นิสิต|โรงเรียน|วิทยาลัย|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง"
+    r"|ปีการศึกษา|ภาคเรียน|หลักสูตร|สาขาวิชา"
+    r"|\b(?:students?|school|college|university|faculty)\b",
+    re.I,
+)
+_ROW_TITLE_RE = re.compile(
+    r"นางสาว|นาง|นาย|น\.ส\.|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง|\bMrs?\.|\bMs\.|\bMiss\b"
+)
+_WEAK_STUDENT = "STUDENT_ID?"
 _SPACE_COLUMN_RE = re.compile(r" {2,}")
+# How far another address part may sit from an area label (step 11).
+_ADMIN_NEIGHBOUR_WINDOW = 40
+_RE_POSTCODE_LIKE = re.compile(r"(?<!\d)[1-9]\d{4}(?!\d)")
 # Agency names glued directly in front of an administrative label (step 11).
 _AGENCY_BEFORE_LABEL_RE = re.compile(
     r"(?:องค์การบริหารส่วน|เทศบาล(?:นคร|เมือง)?|ศาล|ที่ว่าการ|สาธารณสุข|สำนักงาน|ปลัด|นายก|กำนัน)$"
 )
 # A whole cell that is one identifier: 4-15 digits, single hyphens or spaces.
 _CELL_ID_RE = re.compile(r"\d(?:[ -]?\d){3,14}")
+# Phone, passport and plate cells under their typed columns (step 14).
+_CELL_PHONE_RE = re.compile(r"\+?\(?\d[\d \-().]{7,16}")
+_CELL_PASSPORT_RE = re.compile(r"[A-Z]{1,2} ?\d{6,9}")
+_CELL_PLATE_RE = re.compile(r"\d?[ก-ฮ]{1,3}[ -]?[1-9]\d{0,3}(?!\d)")
+_ROW_NUMBER_RE = re.compile(r"\d{1,4}\.?")
+
+
+def _table_header_type(cell: str) -> str | None:
+    for rx, ctype in _TABLE_HEADER_TYPES:
+        if rx.search(cell):
+            return ctype
+    return None
+
+
+def _table_cells(line: str, line_start: int, sep: str) -> list[tuple[int, int, str]]:
+    cells = []
+    if sep == "  ":
+        for cm in re.finditer(r"\S+(?: \S+)*", line):
+            cells.append((line_start + cm.start(), line_start + cm.end(), cm.group()))
+    else:
+        offset = line_start
+        for raw in line.split(sep):
+            lead = len(raw) - len(raw.lstrip())
+            cells.append((offset + lead, offset + len(raw.rstrip()), raw.strip()))
+            offset += len(raw) + 1
+    return cells
 
 
 def _typed_table_cells(text: str):
     """Yield (start, end, column type) for cells under a typed header column.
 
-    A table is consecutive lines split by "|" or tabs into the same number of
-    cells. The header is a line with no 4-digit run and at least one cell
-    naming a known column; a blank or differently shaped line ends the table.
+    A table is a header line (no 4-digit run, at least one cell naming a known
+    column) followed by rows split by "|", tabs or runs of spaces. A row may
+    use a different separator than its header when the cell count matches.
+    A row with fewer cells was wrapped by the PDF copy: a line that starts
+    with a row number holds the left-hand columns, its continuation line the
+    right-hand ones. A line with no separator ends the table.
     """
-    header: tuple[str, int, list[str | None]] | None = None
+    school: bool | None = None  # looked up once, only for a bare-code header
+    header: tuple[int, list[str | None]] | None = None
     pos = 0
     for line in text.split("\n"):
         line_start = pos
         pos += len(line) + 1
-        if line.count("|") >= 2:
+        # Inside a table one separator is enough: a wrapped row's tail.
+        least = 1 if header else 2
+        if line.count("|") >= least:
             sep = "|"
-        elif line.count("\t") >= 2:
+        elif line.count("\t") >= least:
             sep = "\t"
-        elif len(_SPACE_COLUMN_RE.findall(line.strip())) >= 2:
+        elif len(_SPACE_COLUMN_RE.findall(line.strip())) >= least:
             sep = "  "  # columns aligned with runs of spaces (copied from PDF)
         else:
             header = None
             continue
-        cells = []
-        if sep == "  ":
-            for cm in re.finditer(r"\S+(?: \S+)*", line):
-                cells.append((line_start + cm.start(), line_start + cm.end(), cm.group()))
-        else:
-            offset = line_start
-            for raw in line.split(sep):
-                lead = len(raw) - len(raw.lstrip())
-                cells.append((offset + lead, offset + len(raw.rstrip()), raw.strip()))
-                offset += len(raw) + 1
+        cells = _table_cells(line, line_start, sep)
         if not re.search(r"\d{4}", line):
-            types = [
-                next((t for rx, t in _TABLE_HEADER_TYPES if rx.search(c[2])), None) for c in cells
-            ]
-            header = (sep, len(cells), types) if any(types) else None
+            types = []
+            for c in cells:
+                ctype = _table_header_type(c[2])
+                if ctype is None and _BARE_ID_HEADER_RE.fullmatch(c[2]):
+                    if school is None:
+                        school = bool(_SCHOOL_CONTEXT_RE.search(text))
+                    ctype = _WEAK_STUDENT if school else None
+                types.append(ctype)
+            if any(types):
+                header = (len(cells), types)
+                continue
+        if header is None:
             continue
-        if header is None or header[0] != sep or header[1] != len(cells):
+        count, types = header
+        if len(cells) == count:
+            row_types = types
+        elif len(cells) < count and _ROW_NUMBER_RE.fullmatch(cells[0][2]):
+            row_types = types[: len(cells)]
+        elif len(cells) < count:
+            row_types = types[count - len(cells) :]
+        else:
             continue
-        for (s, t, _), ctype in zip(cells, header[2]):
+        titled = bool(_ROW_TITLE_RE.search(line))
+        for (s, t, _), ctype in zip(cells, row_types):
+            if ctype == _WEAK_STUDENT:
+                ctype = "STUDENT_ID" if titled else None
             if ctype is not None and t > s:
                 yield s, t, ctype
 
@@ -738,6 +832,14 @@ def _classify_run(text: str, start: int, end: int) -> tuple[str, float] | None:
         return None
     ctx = text[max(0, start - _CUE_WINDOW) : start]
     if n == 13 and is_valid_thai_id(raw):
+        # A 13-digit Visa can pass the ID check digit too; then a card cue
+        # nearer than any ID cue decides.
+        if (
+            _card_network_ok(raw, ctx)
+            and _luhn_check(raw)
+            and _rightmost_cue(_CARD_CUE_RE, ctx) > _rightmost_cue(_THAI_ID_CUE_RE, ctx)
+        ):
+            return "CREDIT_CARD", _RUN_CHECKSUM_SCORE
         return "THAI_ID", _RUN_CHECKSUM_SCORE
     if _card_network_ok(raw, ctx) and _luhn_check(raw):
         return "CREDIT_CARD", _RUN_CHECKSUM_SCORE
@@ -786,7 +888,9 @@ _PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|
 # register on Thai visa/passport paperwork. Student/passport cues gate the
 # wide catch-alls so a business PO/invoice number stops masquerading as a
 # passport or student id -- it is still masked, as the generic ID_NUMBER.
-_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
+_BIRTH_CUE_RE = re.compile(
+    r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|birth ?date|\bborn\b|\bd\.?o\.?b\b", re.IGNORECASE
+)
 # Address cue for the postal code. The window is wider than _CUE_WINDOW because
 # a postal code sits at the END of the address line, so the nearest cue is a
 # whole district/province name away ("แขวงวังทองหลาง กรุงเทพมหานคร 10310").
@@ -905,6 +1009,10 @@ _PLATE_CUE_BLOCKED_CONTINUATIONS = ("บ้าน", "สมรส", "ราษ�
 # letter words stay out of this list: every consonant pair is a legal plate
 # series (1กก 1234), so "ลด 30%" is rejected by its percent sign instead.
 _PLATE_UNCUED_LEAD_STOPWORDS = frozenset({"ยอด", "ออก", "รวม", "รอบ"})
+_PLATE_UNIT_AFTER_RE = re.compile(
+    r"[ \t]*(?:นาที|ชั่วโมง|ชม\.|วินาที|วัน(?!ที่)|สัปดาห์|เดือน|ปี|บาท|กิโล|กม\.|เมตร|ซม\.|มม\."
+    r"|กรัม|ลิตร|องศา|คน|ราย|ครั้ง|หน่วย|ชิ้น|เครื่อง|ฉบับ|แผ่น|ตัน|ไร่)"
+)
 # A plate is below the checksum-backed types (1.0) and above the generic
 # numeric catch-alls (0.8). The re-attached new-format variant sits a hair
 # above a plain plate so it wins `_deduplicate` against the candidate whose
@@ -1000,6 +1108,13 @@ def detect_fp(text: str) -> list[Entity]:
     # 1. THAI_ID
     for m in _RE_THAI_ID.finditer(text):
         raw = _SEP_RE.sub("", m.group(1))
+        # Real IDs are written with all four separators or none. A partial set
+        # usually means two numbers one space apart ("0812345678 065-3-...")
+        # that pass the check digit by chance; irregular real IDs are still
+        # caught by the digit-run pass (6b).
+        seps = _SEP_RE.findall(m.group(1))
+        if seps and (len(seps) != 4 or len(set(seps)) != 1):
+            continue
         if len(raw) == 13 and is_valid_thai_id(raw):
             candidates.append(_make_entity("THAI_ID", m, text, score=1.0))
 
@@ -1021,6 +1136,12 @@ def detect_fp(text: str) -> list[Entity]:
     # 5. PHONE (mobile, landline, international)
     for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE, _RE_PHONE_INTL):
         for m in pattern.finditer(text):
+            # A lone last digit after a longer group is a check digit (ISBN-10
+            # "0-736-19582-3", bank "065-3-76137-1"); phones never end that
+            # way. Digits written one per box ("0 8 1 2 ...") still count.
+            groups = re.findall(r"\d+", _RE_PHONE_EXT_TAIL.sub("", m.group(1)))
+            if len(groups) >= 2 and len(groups[-1]) == 1 and len(groups[-2]) >= 3:
+                continue
             candidates.append(_make_entity("PHONE", m, text, score=1.0))
     for m in _RE_PHONE_BARE66.finditer(text):
         ctx = text[max(0, m.start(1) - _CUE_WINDOW) : m.start(1)]
@@ -1072,11 +1193,13 @@ def detect_fp(text: str) -> list[Entity]:
     # also accepts inside a number; a run that proves nothing as a whole is
     # split at those gaps and every contiguous window of pieces is tried,
     # longest first.
+    run_spans: list[tuple[int, int]] = []
     for m in _RE_DIGIT_RUN.finditer(text):
         start, end = m.start(1), m.end(1)
         found = _classify_run(text, start, end)
         if found is not None:
             candidates.append(_span_entity(found[0], start, end, text, found[1]))
+            run_spans.append((start, end))
             continue
         pieces = [
             (start + p.start(), start + p.end()) for p in re.finditer(r"\S+(?: \S+)*", m.group(1))
@@ -1092,7 +1215,18 @@ def detect_fp(text: str) -> list[Entity]:
             found = _classify_run(text, s, t)
             if found is not None:
                 taken.append((s, t))
+                run_spans.append((s, t))
                 candidates.append(_span_entity(found[0], s, t, text, found[1]))
+    # A fixed-shape match strictly inside a classified run is a fragment of
+    # that longer number ("086-2-457891" of the account 086-2-457891-34);
+    # keeping it would leave the rest of the number readable.
+    if run_spans:
+        candidates = [
+            e
+            for e in candidates
+            if e.data_type not in _RUN_FRAGMENT_TYPES
+            or not any(s <= e.span[0] and e.span[1] <= t and (s, t) != e.span for s, t in run_spans)
+        ]
 
     # 7. DATE (generic) / DATE_OF_BIRTH (only with a birth cue nearby)
     for m in _RE_DATE.finditer(text):
@@ -1118,6 +1252,11 @@ def detect_fp(text: str) -> list[Entity]:
     for m in _RE_DATE_THAI_MONTH.finditer(text):
         day = int(re.match(r"\d+", m.group(1)).group())
         if not 1 <= day <= 31:
+            continue
+        dtype = "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
+        candidates.append(_make_entity(dtype, m, text, score=1.0))
+    for m in _RE_DATE_EN_MONTH_FIRST.finditer(text):
+        if not 1 <= int(m.group(2)) <= 31:
             continue
         dtype = "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
         candidates.append(_make_entity(dtype, m, text, score=1.0))
@@ -1157,6 +1296,15 @@ def detect_fp(text: str) -> list[Entity]:
                 continue
             # A percentage is never a plate ("ลด 30%").
             if nxt[:1] == "%":
+                continue
+            # Plate numbers carry no leading zero, a form code follows "แบบ"
+            # ("แบบ บก-07", "ตามแบบ รท-27"), and a unit after the number makes
+            # it a quantity ("รอ 15 นาที").
+            if re.search(r"(?<!\d)0\d*$", m.group(1)):
+                continue
+            if text[max(0, start - 6) : start].rstrip().endswith("แบบ"):
+                continue
+            if _PLATE_UNIT_AFTER_RE.match(text, m.end(1)):
                 continue
         end = m.end(1)
         score = _PLATE_SCORE
@@ -1310,6 +1458,7 @@ def detect_fp(text: str) -> list[Entity]:
         if m.end(1) - m.start(1) < 2 and m.group(0).startswith("หมู่"):
             single_digit_addr.append(ent)
     admin_value_spans: list[tuple[int, int]] = []
+    admin_matches: list[re.Match] = []
     for m in _RE_ADMIN_AREA.finditer(text):
         # A label glued to a preceding Thai word is compound prose
         # ("ต่างจังหวัด", "ในเขต...") and may not capture across a newline —
@@ -1326,6 +1475,30 @@ def detect_fp(text: str) -> list[Entity]:
         # "เทศบาลตำบลควนขนุน", "ศาลแขวงพระนครใต้", "สาธารณสุขอำเภอ") names the
         # agency, not where a person lives; government letters are full of them.
         if _AGENCY_BEFORE_LABEL_RE.search(text[max(0, m.start() - 20) : m.start()]):
+            continue
+        admin_matches.append(m)
+    # A province or district standing alone is a quasi-identifier, not a
+    # locatable address (annotation guidelines): "...ทั่วไปจังหวัดลำปาง" in an
+    # agency name, "ห้องสมุดชุมชน จังหวัดมหาสารคาม" in a title. It stays masked
+    # under its honest LOCATION label. An area is an ADDRESS part only next to
+    # another one: a second area, a bare province, a postcode, a house or moo
+    # number, a soi or road.
+    other_parts = [e.span for e in addr_candidates]
+    for m in admin_matches:
+        lo, hi = m.start() - _ADMIN_NEIGHBOUR_WINDOW, m.end(1) + _ADMIN_NEIGHBOUR_WINDOW
+        own = (m.start(1), m.end(1))
+        # Bare provinces and postcodes are looked up in the window only: a
+        # whole-text 77-way scan per call was a measurable restore cost.
+        w0 = max(0, lo)
+        window = text[w0 : max(w0, hi)]
+        near = [(w0 + p.start(1), w0 + p.end(1)) for p in _RE_PROVINCE.finditer(window)]
+        near += [(w0 + p.start(), w0 + p.end()) for p in _RE_POSTCODE_LIKE.finditer(window)]
+        chained = any(
+            a < hi and lo < b and not (own[0] <= a and b <= own[1])
+            for a, b in (*other_parts, *near)
+        ) or any(o is not m and o.start() < hi and lo < o.end(1) for o in admin_matches)
+        if not chained:
+            candidates.append(_make_entity("LOCATION", m, text, score=0.85))
             continue
         _addr_candidate(_make_entity("ADDRESS", m, text, score=0.85))
         admin_value_spans.append((m.start(1), m.end(1)))
@@ -1415,6 +1588,16 @@ def detect_fp(text: str) -> list[Entity]:
                 candidates.append(_span_entity("BANK_ACCOUNT", s, t, text, 1.0))
             elif ctype == "THAI_ID" and n == 13:
                 candidates.append(_span_entity("THAI_ID", s, t, text, 0.9))
+        elif ctype == "PHONE" and _CELL_PHONE_RE.fullmatch(cell):
+            digits = re.sub(r"\D", "", cell)
+            if (digits[:1] == "0" and len(digits) in (9, 10)) or (
+                digits[:2] == "66" and len(digits) in (10, 11)
+            ):
+                candidates.append(_span_entity("PHONE", s, t, text, 0.95))
+        elif ctype == "PASSPORT" and _CELL_PASSPORT_RE.fullmatch(cell):
+            candidates.append(_span_entity("PASSPORT", s, t, text, 1.0))
+        elif ctype == "VEHICLE_PLATE" and (pm := _CELL_PLATE_RE.match(cell)):
+            candidates.append(_span_entity("VEHICLE_PLATE", s, s + pm.end(), text, _PLATE_SCORE))
     if dob_cells:
         candidates = [
             dataclasses.replace(e, data_type="DATE_OF_BIRTH")

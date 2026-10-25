@@ -25,6 +25,7 @@ from pythainlp.tokenize import word_tokenize
 # this module admitted as a glued name would be rejected one layer later
 # anyway. Safe at module scope: tb_detector imports name_context only inside
 # function bodies, so this direction closes no cycle (verified both ways).
+from pii_redactor.detectors.fp_detector import _typed_table_cells
 from pii_redactor.detectors.tb_detector import _NAME_DOC_COMPOUND_RE
 from pii_redactor.models import Entity
 
@@ -218,6 +219,24 @@ _ROLE_CUES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # longer role compounds (ผู้รับผิดชอบ, ผู้ร้องเรียน, ผู้รับเงิน) or prose.
     ("ผู้ร้อง", ("__require_space__",)),
     ("ผู้เช่าซื้อ", ("__require_space__",)),
+    # Signature-block roles on forms, clinic and police records and minutes
+    # (Codex dev set 2026-10-25): "พยาน อธิป ...", "ผู้ซักประวัติ วิศรุต ...",
+    # "เจ้าหน้าที่รับเรื่อง เมธินี ...". The พยาน vetoes are its prose senses.
+    ("เจ้าหน้าที่รับเรื่อง", ("__require_space__",)),
+    ("เจ้าหน้าที่ตรวจเอกสาร", ("__require_space__",)),
+    ("ผู้บันทึกการประชุม", ("__require_space__",)),
+    ("ผู้ซักประวัติ", ("__require_space__",)),
+    ("ผู้รับเรื่อง", ("__require_space__",)),
+    ("ผู้ลงบันทึก", ("__require_space__",)),
+    ("ผู้รับแจ้ง", ("__require_space__",)),
+    (
+        "พยาน",
+        (
+            "__require_space__",
+            *("หลักฐาน", "บุคคล", "เอกสาร", "วัตถุ", "ทั้ง", "ฝ่าย", "ปาก", "ที่", "ได้"),
+            *("ใน", "จะ", "ไม่", "ให้", "ว่า", "คน", "ของ"),
+        ),
+    ),
     ("ผู้รับ", ("__require_space__",)),
     ("ผู้ประสานงาน", ("__require_space__",)),
     ("พนักงานขับรถ", ("__require_space__",)),
@@ -336,7 +355,13 @@ _LATIN_CUE_RE = re.compile(
     r"|Dr\.?[ \t]+|Prof\.?[ \t]+|Miss[ \t]+"
     r"|(?i:full[ \t]name|applicant|customer|tenant|landlord|employee|driver|witness|insured"
     r"|beneficiary|emergency[ \t]contact|attendees?|physician|doctor)[ \t]*[:：][ \t]*"
-    r"|Customer[ \t]+|Delivery[ \t]note[ \t]for[ \t]+|ผู้เช่า(?:ห้อง[ \t]*\d+)?[ \t]+)"
+    r"|Customer[ \t]+|Delivery[ \t]note[ \t]for[ \t]+|ผู้เช่า(?:ห้อง[ \t]*\d+)?[ \t]+"
+    # Postal, registry and certificate lines (Codex dev set 2026-10-25):
+    # "Sender: ...", "Registrar: ...", "Certified by ...", "signed by holder: ...".
+    r"|(?i:sender|recipient|registrar|guardian|holder|officer|student[ \t]name)[ \t]*[:：][ \t]*"
+    r"|(?i:certified|signed|approved|prepared|verified|checked|endorsed)[ \t]+by[ \t]+"
+    # A Thai person label before a romanized name ("ชื่อผู้ได้รับอนุญาต Omar ...").
+    r"|ชื่อ(?:ผู้|บิดา|มารดา|คู่สมรส|เจ้าของ|นัก)[ก-๛]{0,20}[ \t]+)"
 )
 # A further name in the same list: "(Finance), Sasithorn Panyadee (Legal)".
 _LATIN_LIST_GLUE_RE = re.compile(r"[ \t]*(?:\([^()\n]{1,30}\))?[ \t]*(?:,|and|และ)[ \t]+")
@@ -1118,6 +1143,33 @@ def _title_cell_names(text: str) -> list[Entity]:
     return ents
 
 
+_CELL_TITLE_RE = re.compile(
+    r"(?:นางสาว|นาง|นาย|น\.ส\.|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง|Mrs\.?|Mr\.?|Ms\.?|Miss)[ \t]*"
+)
+
+
+def _name_column_names(text: str) -> list[Entity]:
+    """Untitled names in a roster's name column ("ชื่อ-สกุล", "Name", "Student").
+
+    The column header is the cue; the cell must still read as a person: two
+    Thai name groups, or a romanized name without an organisation word.
+    """
+    ents = []
+    for s, t, ctype in _typed_table_cells(text):
+        if ctype != "NAME":
+            continue
+        lead = _CELL_TITLE_RE.match(text, s, t)
+        start = lead.end() if lead else s
+        value = text[start:t]
+        if _LATIN_NAME_RE.fullmatch(value):
+            if any(p.rstrip(".").lower() in _LATIN_ORG_STOP for p in value.split()):
+                continue
+        elif not (" " in value and _is_name_cell(value)):
+            continue
+        ents.append(_make_name(text, start, t, 0.88))
+    return ents
+
+
 def _latin_names(text: str) -> list[Entity]:
     ents = []
     seen: set[tuple[int, int]] = set()
@@ -1168,6 +1220,7 @@ def detect_name_context_passes(text: str) -> list[tuple[str, Entity]]:
     tagged.extend(("extended", e) for e in _rank_title_names(text))
     tagged.extend(("extended", e) for e in _line_cue_names(text))
     tagged.extend(("extended", e) for e in _title_cell_names(text))
+    tagged.extend(("extended", e) for e in _name_column_names(text))
     tagged.extend(("strong", e) for e in _token_pass_names(text, spans))
     return tagged
 

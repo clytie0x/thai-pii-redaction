@@ -28,6 +28,8 @@ def _covered(text: str, value: str, etype: str) -> bool:
         ("Borrower Student No. 66 0102 1190 has 2 overdue items", "66 0102 1190"),
         ("Student ID: 66 0204 2117\nEmail: a@b.co", "66 0204 2117"),
         ("รหัสนศ. 6810-310-427 ห้อง 4", "6810-310-427"),
+        ("รหัสนศ.6512345678 คณะบัญชี", "6512345678"),
+        ("รหัส นศ.6512345679 คณะบัญชี", "6512345679"),
     ],
 )
 def test_labelled_student_ids_of_any_grouping_are_masked(text, value):
