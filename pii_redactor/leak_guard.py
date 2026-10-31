@@ -14,7 +14,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from pii_redactor.detectors.fp_detector import _iban_check, detect_fp
+from pii_redactor.detectors import scan_views as _shared_views
+from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_name_context
 from pii_redactor.detectors.tb_detector import detect_tb
 from pii_redactor.models import Entity
@@ -169,134 +170,29 @@ _SPACED_IBAN_START_RE = re.compile(r"(?<![A-Z0-9])([A-Z]{2}\d{2})(?= )")
 _SPACED_IBAN_GROUP_RE = re.compile(r"([A-Z0-9]{1,4})(?![A-Z0-9])")
 _MAX_IBAN_LENGTH = 34
 _MAX_IBAN_GROUPS = 9
-_OBFUSCATED_STRUCTURED_TYPES = frozenset(
-    {
-        "ADDRESS",
-        "BANK_ACCOUNT",
-        "CREDIT_CARD",
-        "DATE_OF_BIRTH",
-        "EMAIL",
-        "IBAN",
-        "MEDICAL_ID",
-        "PASSPORT",
-        "PHONE",
-        "POSTAL_CODE",
-        "STUDENT_ID",
-        "THAI_ID",
-        "VEHICLE_PLATE",
-    }
-)
+_OBFUSCATED_STRUCTURED_TYPES = _shared_views.OBFUSCATED_STRUCTURED_TYPES
 _OBFUSCATED_SIGNAL_PREFIX = "obfuscated_structured:"
 
 
 def _has_security_view_trigger(text: str) -> bool:
     return _REPEATED_WHITESPACE_RE.search(text) is not None or any(
-        unicodedata.category(character) == "Cf" for character in text
+        unicodedata.category(character) == "Cf" or 0xFF01 <= ord(character) <= 0xFF5E
+        for character in text
     )
 
 
 def _security_scan_view(text: str) -> tuple[str, list[int]]:
-    """Build a scan-only view without changing caller-visible text or spans."""
-    visible: list[str] = []
-    source_offsets: list[int] = []
-    for offset, character in enumerate(text):
-        if unicodedata.category(character) == "Cf":
-            continue
-        visible.append(character)
-        source_offsets.append(offset)
-
-    compact: list[str] = []
-    compact_offsets: list[int] = []
-    index = 0
-    while index < len(visible):
-        if not visible[index].isspace():
-            compact.append(visible[index])
-            compact_offsets.append(source_offsets[index])
-            index += 1
-            continue
-        end = index + 1
-        while end < len(visible) and visible[end].isspace():
-            end += 1
-        if end - index == 1:
-            compact.append(visible[index])
-            compact_offsets.append(source_offsets[index])
-        index = end
-    return "".join(compact), compact_offsets
+    return _shared_views._security_scan_view(text)
 
 
-def _map_security_view_entities(
-    text: str,
-    security_view: str,
-    source_offsets: list[int],
-    *,
-    allowed_types: frozenset[str],
-) -> list[Entity]:
-    mapped: list[Entity] = []
-    for entity in detect_fp(security_view):
-        if entity.data_type not in allowed_types:
-            continue
-        start, end = entity.span
-        if start < 0 or end <= start or end > len(source_offsets):
-            continue
-        source_start = source_offsets[start]
-        source_end = source_offsets[end - 1] + 1
-        mapped.append(
-            Entity(
-                entity_id=entity.entity_id,
-                redact_type=entity.redact_type,
-                data_type=entity.data_type,
-                span=(source_start, source_end),
-                score=entity.score,
-                original_text=text[source_start:source_end],
-            )
-        )
-    return mapped
+def _map_security_view_entities(text, security_view, source_offsets, *, allowed_types):
+    return _shared_views._map_security_view_entities(
+        text, security_view, source_offsets, allowed_types=allowed_types
+    )
 
 
 def _single_spaced_iban_views(text: str) -> list[tuple[str, list[int]]]:
-    """Return checksum-ready views for standard four-character IBAN groups."""
-    views: list[tuple[str, list[int]]] = []
-    for start_match in _SPACED_IBAN_START_RE.finditer(text):
-        groups = [
-            (
-                start_match.group(1),
-                start_match.start(1),
-                start_match.end(1),
-            )
-        ]
-        cursor = start_match.end(1)
-        compact_length = len(start_match.group(1))
-        while len(groups) < _MAX_IBAN_GROUPS and cursor < len(text) and text[cursor] == " ":
-            group_match = _SPACED_IBAN_GROUP_RE.match(text, cursor + 1)
-            if group_match is None:
-                break
-            group = group_match.group(1)
-            if compact_length + len(group) > _MAX_IBAN_LENGTH:
-                break
-            groups.append(
-                (
-                    group,
-                    group_match.start(1),
-                    group_match.end(1),
-                )
-            )
-            compact_length += len(group)
-            cursor = group_match.end(1)
-            if len(group) < 4:
-                break
-
-        for group_count in range(len(groups), 1, -1):
-            selected = groups[:group_count]
-            if any(len(group) != 4 for group, _start, _end in selected[1:-1]):
-                continue
-            compact = "".join(group for group, _start, _end in selected)
-            if not 15 <= len(compact) <= _MAX_IBAN_LENGTH:
-                continue
-            offsets = [offset for _group, start, end in selected for offset in range(start, end)]
-            if _iban_check(compact):
-                views.append((compact, offsets))
-                break
-    return views
+    return _shared_views._single_spaced_iban_views(text, group_pattern=_SPACED_IBAN_GROUP_RE)
 
 
 def scan_obfuscated_structured_entities(text: str) -> list[Entity]:
@@ -312,6 +208,15 @@ def scan_obfuscated_structured_entities(text: str) -> list[Entity]:
                 allowed_types=_OBFUSCATED_STRUCTURED_TYPES,
             )
         )
+        for compact, offsets in _single_spaced_iban_views(security_view):
+            mapped.extend(
+                _map_security_view_entities(
+                    text,
+                    compact,
+                    [source_offsets[i] for i in offsets],
+                    allowed_types=frozenset({"IBAN"}),
+                )
+            )
     for security_view, source_offsets in _single_spaced_iban_views(text):
         mapped.extend(
             _map_security_view_entities(

@@ -76,3 +76,33 @@ intentionally remain outside every repository at
 `C:/Users/teera/aiguard-yrss-holdout-v1/`; developer contexts must not open it.
 The held-out set has not been scored. One paired disclosure is reserved for
 the final development-selected candidate. No tuning may follow disclosure.
+
+## Research extension: source-projected input recovery
+
+The [source-backed alternatives report](reports/Thai%20PII%20research%20advances.md)
+selected bounded input recovery rather than duplicating existing training or
+introducing a heavyweight default. The shared scan view is reused, not claimed
+as a new redaction principle. The contribution is its tested integration with
+original positions, field boundaries, replacement and release behavior.
+
+Input recovery never joins hard line/tab boundaries, performs no arbitrary
+NFKC, and keeps raw source bytes/positions unchanged. It must preserve both
+raw protection intervals and structured units found by the original guard.
+Independent review proved that preserving raw intervals alone is insufficient:
+a newly recognized phone inside an obfuscated IBAN can destroy the guard's
+signature and expose the IBAN remainder. The generic original-unit admission
+constraint, synthetic composed-obfuscation regressions, and unchanged final
+guard close that newly introduced mechanism; ambiguous cases remain blocked.
+
+`benchmark.recovery_study` measures visible, dependent synthetic variants from
+60 seed/type families: original forms, format controls, width forms, repeated
+separators, and combined controls/separators. It records complete source-span
+protection, release/block outcomes, non-PII masking, a fixed non-sensitive
+amount, and exact restoration for both token and surrogate modes. This is not
+an independent population benchmark or proof of anonymity. An oracle-labelled
+`unsafe_release` means annotated non-whitespace characters remain exposed;
+it does not estimate linkage-attack success or legal risk.
+
+Residual limits include irregularly spaced email/IBAN forms, semantic NER
+misses, broader span arbitration, and real-document/human annotation evidence.
+The installed and hosted binaries have not been updated by this source work.

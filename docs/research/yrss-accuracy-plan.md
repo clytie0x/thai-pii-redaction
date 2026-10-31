@@ -101,3 +101,31 @@ reports. All historical scores retain their original corpus and commit labels.
   high-value improvements. Research current alternatives before choosing the
   next contribution. Preserve this plan and the untouched held-out boundary.
   Tasks 4-6 remain open; no held-out disclosure or accuracy improvement claimed.
+
+## Selected research extension
+
+Decision after current primary-source comparison: add bounded structured input
+recovery using original-source projections, plus a controlled metamorphic
+safe-release study. Rationale and alternatives are in
+`research/yrss2026/reports/Thai PII research advances.md`.
+
+Implementation: shared projection primitives in
+`pii_redactor/detectors/structured_views.py`; reuse the existing outbound
+scanner's format-control and IBAN logic; integrate recovery after raw detection
+assembly. Admit a recovered span only if it preserves every overlapping raw
+protection interval. No arbitrary fragments, new entity types, global NFKC,
+new model dependency, or relaxed outbound gate. Width/Thai digit conversion is
+one-character-to-one-character in a scan view only. Hard newlines and tabs
+cannot be joined by input recovery. Numeric whitespace recovery requires a
+matching same-line field cue; ambiguous cases remain blocked.
+
+Tests first: exact original occurrence/offsets, repeated values, Thai digits,
+format controls, width characters, line/field isolation, invalid checksums,
+coverage monotonicity, both masking modes, restore and PDF source boxes.
+Then compare released-and-completely-protected documents, blocked documents,
+observed released uncovered characters, non-PII masking and restoration over
+declared synthetic transformations. Variants are dependent; do not treat
+them as independent generalisation samples. Gold and the sealed held-out
+remain separate. Keep the primary held-out protocol unchanged and undisclosed
+until final candidate selection. A positive benchmark result alone does not
+establish anonymity, live-provider safety or real-document accuracy.

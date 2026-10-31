@@ -88,9 +88,11 @@ def test_unrelated_hidden_characters_and_grouped_text_remain_exact(text):
     assert result.entities == []
 
 
-def test_session_sanitize_blocks_single_spaced_iban_without_publishing_state():
+def test_session_sanitize_blocks_single_spaced_iban_if_input_recovery_misses(monkeypatch):
+    from pii_redactor.detectors import aggregate
     from pii_redactor.session_service import OutboundLeakError, SessionService
 
+    monkeypatch.setattr(aggregate, "recover_structured", lambda text: [])
     service = SessionService()
 
     with pytest.raises(OutboundLeakError):

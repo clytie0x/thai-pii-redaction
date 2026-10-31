@@ -12,6 +12,8 @@ import re
 from pii_redactor.detectors.fn_scanner import scan_fn
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_parallel_record_names
+from pii_redactor.detectors.scan_views import original_guard_entities
+from pii_redactor.detectors.structured_views import admit_recovery, recover_structured
 from pii_redactor.detectors.tb_detector import NERChunkDiagnostics, detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
@@ -340,4 +342,9 @@ def detect_all(
     kept = merge_address_spans(text, _prefer_record_names(deduped, record_names))
     kept = _extend_address_chains(text, kept, tb)
     kept = _drop_unanchored_facility_spans(text, kept)
-    return _relabel_student_ids(tb, kept)
+    recovered = recover_structured(text)
+    return admit_recovery(
+        _relabel_student_ids(tb, kept),
+        recovered,
+        required=original_guard_entities(text) if recovered else (),
+    )

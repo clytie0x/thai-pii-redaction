@@ -2,6 +2,13 @@
 
 Updated: 2026-08-14
 
+YRSS research update (2026-10-31): see
+[the current campaign](../research/yrss2026/README.md) and
+[research plan](research/yrss-accuracy-plan.md) for the local baseline,
+structured input recovery and exact-version evidence. The source campaign is
+separate from the historical acceptance records below; it does not certify a
+new installer, Hosted deployment, live provider, or physical OCR pipeline.
+
 This is the acceptance ledger for the current roadmap. It distinguishes code
 existence from evidence on the real delivery path.
 
