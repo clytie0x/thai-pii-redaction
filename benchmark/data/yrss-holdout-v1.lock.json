@@ -1,0 +1,37 @@
+{
+  "campaign_protocol": "docs/decisions/2026-10-31-yrss-heldout.md",
+  "ciphertext_sha256": "1e5456db9d4df092fa3cbd0b29b599a3a0953441e07c148db50d9fcb23344cae",
+  "created": "2026-10-31T08:03:18+00:00",
+  "documents": 185,
+  "plaintext_sha256": "eab1d171c0960f1ad75deb33345b6d307bb97f2126c1ec20c9acd2675db9f299",
+  "protocol": "docs/decisions/2026-07-28-blind-set-protocol.md",
+  "reveal_budget": 2,
+  "slice_counts": {
+    "address_varied": 12,
+    "bank_phone": 11,
+    "education": 11,
+    "finance": 11,
+    "gov_form": 11,
+    "id_docs": 19,
+    "long_form": 12,
+    "medical": 11,
+    "messy": 12,
+    "name_no_cue": 12,
+    "negative": 52,
+    "student_id_varied": 11
+  },
+  "type_counts": {
+    "ADDRESS": 110,
+    "BANK_ACCOUNT": 53,
+    "CREDIT_CARD": 27,
+    "DATE_OF_BIRTH": 61,
+    "EMAIL": 87,
+    "NAME": 133,
+    "PASSPORT": 33,
+    "PHONE": 95,
+    "STUDENT_ID": 35,
+    "THAI_ID": 55,
+    "VEHICLE_PLATE": 25
+  },
+  "version": "yrss-holdout-v1"
+}

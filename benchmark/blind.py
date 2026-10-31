@@ -226,7 +226,7 @@ def validate_draft(records: list[dict], type_minimums: dict | None = None) -> li
         if slice_ == "negative":
             if marks:
                 errors.append((doc_id, "negative-has-markup"))
-            if re.search(r"\d{13}", stripped):
+            if re.search(r"(?<!\d)\d{13}(?!\d)", stripped):
                 errors.append((doc_id, "negative-contains-13-digit-run"))
             continue
 

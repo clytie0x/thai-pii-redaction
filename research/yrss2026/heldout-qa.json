@@ -1,0 +1,134 @@
+{
+  "corpus_version": "yrss-holdout-v1",
+  "campaign_protocol": "docs/decisions/2026-10-31-yrss-heldout.md",
+  "review_method": "Full-document semantic review in an isolated same-family synthetic reviewer context, plus aggregate mechanical checks. No detector, score, detector source, development error list, or earlier blind corpus accessed. Gold consumed only in-memory by aggregate overlap code.",
+  "document_count": 185,
+  "slice_counts": {
+    "address_varied": 12,
+    "bank_phone": 11,
+    "education": 11,
+    "finance": 11,
+    "gov_form": 11,
+    "id_docs": 19,
+    "long_form": 12,
+    "medical": 11,
+    "messy": 12,
+    "name_no_cue": 12,
+    "negative": 52,
+    "student_id_varied": 11
+  },
+  "type_counts": {
+    "ADDRESS": 110,
+    "BANK_ACCOUNT": 53,
+    "CREDIT_CARD": 27,
+    "DATE_OF_BIRTH": 61,
+    "EMAIL": 87,
+    "NAME": 133,
+    "PASSPORT": 33,
+    "PHONE": 95,
+    "STUDENT_ID": 35,
+    "THAI_ID": 55,
+    "VEHICLE_PLATE": 25
+  },
+  "annotation_count": 714,
+  "semantic_review": {
+    "documents_reviewed": 185,
+    "unambiguous_missed_pii_findings": 0,
+    "type_label_findings": 0,
+    "boundary_findings": 0,
+    "name_no_cue_findings": 0,
+    "negative_purity_findings": 0,
+    "fictional_identity_context": "Author-supplied fictional personal identities, no public-figure references observed; coincidence with real people cannot be excluded.",
+    "prose_consistency_observations": 2,
+    "prose_consistency_disposition": "Minor synthetic narrative/format inconsistencies do not change the unambiguous student-code ground truth and were left unchanged under fix-only rules.",
+    "guideline_violation_count": 0,
+    "corpus_fix_count": 0
+  },
+  "mechanical_checks": {
+    "trusted_validator": "benchmark.blind.validate_draft with default minimums",
+    "trusted_validator_error_count": 0,
+    "trusted_validator_error_kinds": {},
+    "checksum_failure_counts": {
+      "THAI_ID": 0,
+      "CREDIT_CARD": 0
+    },
+    "credit_card_digit_length_counts": {
+      "13": 7,
+      "14": 7,
+      "15": 7,
+      "16": 6
+    },
+    "normalized_cross_document_duplicate_value_groups": 0,
+    "normalized_duplicate_value_document_count": 0,
+    "normalization": "NFKC, casefold, Thai-digit conversion, whitespace/punctuation removal; phone country-code canonicalization; birth-date calendar canonicalization.",
+    "negative_maximal_exactly13_digit_tokens": 0,
+    "negative_maximal_digit_token_lengths_ge13": {
+      "14": 2,
+      "15": 1,
+      "16": 1
+    },
+    "long_form_document_count": 12,
+    "long_form_min_stripped_length": 857,
+    "long_form_three_zone_count": 12
+  },
+  "gold_overlap_aggregate_only": {
+    "normalized_typed_value_overlap_count": 0,
+    "normalized_typed_value_overlap_type_counts": {},
+    "stripped_document_sha256_overlap_count": 0,
+    "earlier_blind_overlap_check": "Not performed; earlier blind corpora not accessed."
+  },
+  "diversity": {
+    "unique_first_name_components": 30,
+    "unique_surname_components": 5,
+    "unique_email_domains": 4,
+    "exact_annotation_removed_template_duplicate_groups": 0,
+    "template_similarity_method": "Pairwise character SequenceMatcher ratio after replacing annotations with type tokens; autojunk=False. Descriptive only; not a statistical independence test.",
+    "maximum_template_similarity": 0.784665,
+    "all_document_pair_counts_at_or_above": {
+      "0.8": 0,
+      "0.9": 0,
+      "0.95": 0
+    },
+    "long_form_pair_counts_at_or_above": {
+      "0.8": 0,
+      "0.9": 0,
+      "0.95": 0
+    },
+    "assessment": "Varied administrative and narrative contexts and multiple formats exist, but generated value patterns and limited name/address/contact pools remain conspicuous. Long-form documents share much framing and repeated filler. Negative documents often explicitly disclaim PII and are constructed look-alikes, not naturally sampled negatives. These limits constrain generalization and effective document independence. No diversity rewriting was performed under fix-only review."
+  },
+  "tooling_guideline_alignment": {
+    "initial_negative_validator_flags": 4,
+    "actual_maximal_exactly13_violations": 0,
+    "explanation": "The initial validator matched 13-digit substrings inside allowed longer tokens. The parent corrected its digit boundaries to implement the published maximal-token guideline, with regression checks. No corpus edit or detector-informed adjudication resulted."
+  },
+  "hashes": {
+    "draft_sha256": "eab1d171c0960f1ad75deb33345b6d307bb97f2126c1ec20c9acd2675db9f299",
+    "author_original_sha256": "eab1d171c0960f1ad75deb33345b6d307bb97f2126c1ec20c9acd2675db9f299",
+    "annotation_guidelines_sha256": "4ae72c7224e8148d2e1240cd1bff7b654d22b61f125600a5b3e9baa2dce46254",
+    "ciphertext_sha256": "1e5456db9d4df092fa3cbd0b29b599a3a0953441e07c148db50d9fcb23344cae",
+    "lock_sha256": "54d23d5df4b62044f70dade1b53d6d91df718fa18d2d44d4f9a0b367dfa31de0"
+  },
+  "limitations": [
+    "Same-family synthetic author/reviewer process; no independent human agreement, cross-family review, or real-world distribution estimate.",
+    "Mechanical validity and semantic inspection cannot prove annotation completeness or real-person nonexistence.",
+    "Repeated components and long-form framing reduce diversity and may reduce effective sample independence.",
+    "Minor prose inconsistencies were retained because they do not violate annotation rules; no aesthetic or difficulty edits.",
+    "No detector/scorer execution; no performance claims from QA."
+  ],
+  "freeze_status": "succeeded",
+  "freeze_checks": {
+    "ciphertext_sha256_matches_lock": true,
+    "plaintext_sha256_matches_lock": true,
+    "original_draft_bytes_preserved": true,
+    "exact_document_and_slice_counts": true,
+    "reveal_budget_is_two": true,
+    "common_protocol_preserved": true,
+    "campaign_protocol_set": true,
+    "external_key_file_exists": true
+  },
+  "frozen_paths": {
+    "ciphertext": "C:\\Users\\teera\\dev\\thai-pii-redaction\\benchmark\\data\\yrss-holdout-v1.enc",
+    "lock": "C:\\Users\\teera\\dev\\thai-pii-redaction\\benchmark\\data\\yrss-holdout-v1.lock.json",
+    "external_key_file": "C:\\Users\\teera\\aiguard-yrss-holdout-v1\\yrss-holdout-v1.key"
+  }
+}

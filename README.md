@@ -29,6 +29,10 @@ word boxes, and produce a PDPA-oriented risk report.
 
 ## What is included
 
+Working entry point: this repository root. Local lifecycle: `unconfirmed`.
+The YRSS accuracy campaign follows
+[the research plan](docs/research/yrss-accuracy-plan.md).
+
 | Capability | What it does |
 |---|---|
 | Thai PII detection | Detects structured PII, names, addresses, dates, and selected quasi-identifiers. |
