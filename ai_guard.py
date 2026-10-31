@@ -593,6 +593,8 @@ def cmd_pdpa(args):
 
 
 def main():
+    from pii_redactor.pdpa_catalog import DEFAULT_SEMANTIC_THRESHOLD
+
     parser = argparse.ArgumentParser(
         prog="ai_guard",
         description="AI Guard — Thai PII redaction pipeline",
@@ -620,7 +622,7 @@ def main():
                 "--strategy", choices=["keyword", "contextual", "hybrid"], default="contextual"
             )
             command.add_argument("--model-dir", help="Pinned local MiniLM revision directory")
-            command.add_argument("--threshold", type=float, default=0.50)
+            command.add_argument("--threshold", type=float, default=DEFAULT_SEMANTIC_THRESHOLD)
         command.set_defaults(func=cmd_pdpa)
 
     # sanitize subcommand

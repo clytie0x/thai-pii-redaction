@@ -11,6 +11,7 @@ from pathlib import Path
 from pii_redactor.detectors.aggregate import detect_all
 from pii_redactor.detectors.tb_detector import NERChunkDiagnostics
 from pii_redactor.pdpa_catalog import (
+    DEFAULT_SEMANTIC_THRESHOLD,
     GENERAL,
     LAW_VERSION,
     MODALITIES,
@@ -142,7 +143,7 @@ def assess_text(
     context: dict | None = None,
     modality: str = "text",
     model_dir: str | None = None,
-    threshold: float = 0.50,
+    threshold: float = DEFAULT_SEMANTIC_THRESHOLD,
     semantic_backend=None,
 ) -> dict:
     if (
@@ -215,7 +216,13 @@ def assess_text(
                         hit["similarity"],
                     )
                 )
-            engine.update({"semantic_status": "ok", "semantic_identity": semantic_backend.identity})
+            engine.update(
+                {
+                    "semantic_status": "ok",
+                    "semantic_identity": semantic_backend.identity,
+                    "semantic_threshold": threshold,
+                }
+            )
         seen = set()
         for category, start, end, evidence, similarity in raw:
             if category not in (*SENSITIVE, *GENERAL) or not (0 <= start < end <= len(text)):

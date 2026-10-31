@@ -29,6 +29,7 @@ GENERAL = (
 MODALITIES = ("text", "image", "audio", "video", "genetic_binary")
 STRATEGIES = ("keyword", "contextual", "hybrid")
 LAW_VERSION = "TH_PDPA_2026_10_31"
+DEFAULT_SEMANTIC_THRESHOLD = 0.40
 SOURCES = {
     "act": "https://ratchakitcha.soc.go.th/documents/17082307.pdf",
     "access2026": "https://ratchakitcha.soc.go.th/documents/121423.pdf",
