@@ -16,6 +16,11 @@ OIDC/web, persistent consent, retention/rights execution, wider governance,
 independent whole-branch review and deployment remain open. The local assessment
 prototype and legacy HTTP/native acceptance remain separate.
 
+Owner-requested checkpoint: development is paused; see the
+[commit/evidence handoff](implementation/pdpa-enterprise-handoff.md). The latest
+domain-source full local Python gate is 2,884 passed / 34 skipped. Task-owned test
+services are stopped. This is branch publication, not main/release promotion.
+
 PDPA design update (2026-10-31): local `ai_guard.py pdpa assess/coverage/lifecycle`
 adds category evidence and non-executing lifecycle plans. The
 [measured three-way comparison](../research/pdpa-coverage/RESULTS.md) explicitly
