@@ -75,6 +75,14 @@ def verify_arm_identity(reference: dict, current: dict) -> None:
             raise ValueError(f"arm identity mismatch: {key}")
 
 
+def verify_statistics_identity(candidate: dict, *, root: Path = ROOT) -> None:
+    actual = hashlib.sha256(
+        (root / "benchmark/campaign.py").read_bytes().replace(b"\r\n", b"\n")
+    ).hexdigest()
+    if candidate.get("evaluator_sha256", {}).get("campaign.py") != actual:
+        raise ValueError("paired statistics identity mismatch")
+
+
 def arm_identity(root: Path) -> dict:
     from pythainlp.corpus import corpus_path, get_corpus_path
 
@@ -178,6 +186,7 @@ def worker(args) -> dict:
 def evaluate(args) -> dict:
     baseline = json.loads(args.baseline.read_text(encoding="utf-8"))["manifest"]
     candidate = json.loads(args.candidate.read_text(encoding="utf-8"))["manifest"]
+    verify_statistics_identity(candidate)
     if baseline["git"]["head"] != BASE:
         raise ValueError("baseline commit differs from pre-registration")
     for key in (k for k in IDENTITY_FIELDS[1:] if k != "runtime_evaluator_sha256"):

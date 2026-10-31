@@ -21,6 +21,15 @@ def test_aggregate_arm_drops_private_per_document_counts():
     assert result["metrics"] == {"overall": {}}
 
 
+def test_paired_statistics_code_is_bound_to_frozen_candidate(tmp_path):
+    from scripts.yrss_paired_eval import verify_statistics_identity
+
+    (tmp_path / "benchmark").mkdir()
+    (tmp_path / "benchmark/campaign.py").write_text("changed implementation")
+    with pytest.raises(ValueError, match="paired statistics identity mismatch"):
+        verify_statistics_identity({"evaluator_sha256": {"campaign.py": "frozen"}}, root=tmp_path)
+
+
 def test_arm_identity_rejects_modified_detector_or_model():
     from scripts.yrss_paired_eval import verify_arm_identity
 
