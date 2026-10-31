@@ -290,6 +290,35 @@ Primary text: [Personal Data Protection Act](https://ratchakitcha.soc.go.th/docu
 Do not call a control complete merely because its schema or menu exists. The
 current text detector and prior synthetic F2 results do not satisfy this matrix.
 
+### Verified subordinate-source boundaries
+
+Additional primary notification review on 31 October 2026 changes the required
+applicability/evidence fields below. These are release requirements; no rule
+engine, organization decision or legal sign-off has been implemented.
+
+| Source reviewed | Required organization evidence | Required failure/decision example |
+|---|---|---|
+| [2023 DPO notification under Section 41(2)](https://ratchakitcha.soc.go.th/documents/140D226S0000000001200.pdf), clauses 4-8 | Core-activity purpose, regular/systematic monitoring, scale factors, relevant listed activities, reviewer rationale and conflicting-duty review | Fewer than 100,000 subjects is not an automatic DPO exemption. The 100,000 condition is one deemed-large-scale case; other criteria and Section 41 routes still require review. |
+| [2022 small-organization record exemption](https://www.dga.or.th/document/106104/), clauses 3-4 and linked notification PDF | Qualifying organization type, relevant computer-traffic provider status, frequency, rights/freedoms risk and Section 26 processing; explicit scope of exemption | An SME checkbox cannot disable every record or audit trail. The notification specifies Section 39(1) items (1)-(6) and (8); item (7) is not included. Non-occasional, risky or sensitive processing requires separate assessment. |
+| [2023 international-transfer notification under Section 28](https://ratchakitcha.soc.go.th/documents/14915.pdf), clauses 3-7 | Actual destination/recipient, technical and legal access capability, reviewed transfer classification, adequacy evidence or exact applicable exception and authority | A foreign-cloud label does not by itself settle transfer classification. Neither storage location nor a generic consent flag proves adequate protection or a valid exception. Section 29 safeguards require their own reviewed source. |
+
+The Section 28 PDF's extracted text was corrupted; all three rendered pages were
+visually inspected against the original. Preserve that distinction from text-only
+metadata discovery. Original bytes were downloaded into ignored local research
+evidence at `benchmark/reports/pdpa-enterprise-law/`; SHA-256 fingerprints:
+
+- DPO Section 41(2): `d8f067a9724ae13e80eca8387f0074d58d904090504121e05b48666faa1af3b8`.
+- Small-organization exemption, DGA-hosted official notification copy:
+  `ff48c7f8b9668a30518a4bd227ca8b17c070c8c6b40894771f5d1627b6b894fd`.
+- Transfer Section 28: `d3acae6ae04f005906cc733bf27dff826957b8b198dbf1d8adbe0eda1f71f862`.
+
+Do not label this an exhaustive or consolidated legal register. The security
+notification legacy Gazette URL was inaccessible through the web reader, and
+primary-text review of security, breach notification, processor records, Section
+29 safeguards, amendments and sector-specific duties remains open. Catalogue
+search results alone do not close those gates. Each applies-to/does-not-apply
+decision needs the organization reviewer and current source/version evidence.
+
 ## Staged delivery and proof
 
 Do not describe every stage as production-ready. Every stage must have a working
