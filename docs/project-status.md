@@ -4,8 +4,8 @@ Updated: 2026-08-14
 
 Enterprise PDPA direction (2026-10-31): the owner requested work toward a full
 organization system. The [proposed control-plane architecture](decisions/2026-10-31-pdpa-enterprise-control-plane.md)
-has had an independent builder check and awaits the owner's deployment/architecture
-decision. It adds no enterprise runtime, persistent consent, authenticated staff
+has had an independent builder check; the owner confirmed a single self-hosted
+organization and implementation is starting. The design adds no enterprise runtime, persistent consent, authenticated staff
 workflow or execution acceptance. The existing local prototype remains separate.
 
 PDPA design update (2026-10-31): local `ai_guard.py pdpa assess/coverage/lifecycle`

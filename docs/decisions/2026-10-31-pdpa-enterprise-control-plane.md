@@ -1,9 +1,10 @@
 # PDPA enterprise control plane
 
-Status: **Proposed; architecture approval pending.** No enterprise implementation,
-deployment, identity-provider configuration or real-data action is authorized by
-this document alone. The owner requested work toward a full organization system
-on 31 October 2026. The existing local assessment prototype remains usable.
+Status: **Accepted for local implementation.** The owner requested the full
+organization system and then explicitly selected a single self-hosted
+organization. Implementation proceeds under that request and confirmed deployment
+choice. Production deployment, external messages and real-data actions remain
+separate approval/acceptance gates. The local assessment prototype remains usable.
 
 ## Outcome and proposed first deployment
 
@@ -12,9 +13,9 @@ record scoped consent, manage retention and rights cases, approve specific
 actions, and inspect evidence of their actual outcome. A successful task dispatch
 or a detector finding is not legal approval or verified fulfilment.
 
-**Builder proposal:** one self-hosted organization, multiple departments and
-separate staff roles. The owner has been asked whether this should instead be a
-multi-organization SaaS. Do not treat the proposal as an answered preference.
+**Confirmed deployment:** one self-hosted organization, multiple departments and
+separate staff roles. The owner selected this option instead of multi-organization
+SaaS. The technical details below remain documented builder decisions.
 No SaaS isolation, availability or production claim follows from a local build.
 
 Keep this work in the existing repository and shared Python core. Use a dedicated
@@ -358,15 +359,14 @@ can replace that provisional workload before capacity claims are made.
 
 ## Owner decisions and next action
 
-One material question is pending: self-hosted single organization or multi-tenant
-SaaS. The proposal recommends the former. The proposed core boundary and persistent
-authority model require architecture approval under this repository's AGENTS.md.
-After approval, write the concrete Stage 1 implementation plan, independently
-review the change, and build/verify each complete stage in order. Do not mark the
+The owner confirmed a single self-hosted organization. Follow the
+[Stage 1 implementation plan](../implementation/pdpa-enterprise-stage1.md),
+independently review the change, and build/verify each complete stage in order.
+No repeat deployment-choice question is required. Do not mark the
 enterprise objective complete from this design or from the prior 2,840-test suite.
 
 Independent builder check completed read-only. Its four material questions about
 privileged enrollment, real subject consent, cross-department identity and the
 hold/execution serialization boundary are resolved above as builder proposals.
 No product tests, database, identity provider or execution adapter were created
-or run in this design phase. Local document links and whitespace checks passed.
+or run in the design phase. Local document links and whitespace checks passed.
