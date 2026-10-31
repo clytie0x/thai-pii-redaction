@@ -30,6 +30,10 @@ word boxes, and produce a PDPA-oriented risk report.
 ## What is included
 
 Working entry point: this repository root. Local lifecycle: `unconfirmed`.
+The local [PDPA category/lifecycle assessment](research/pdpa-coverage/README.md)
+adds `ai_guard.py pdpa assess`, `coverage` and `lifecycle` without modifying
+existing HTTP/native contracts. It produces evidence and non-executing review
+plans, not complete detection, consent proof or a compliance certificate.
 The YRSS accuracy campaign follows
 [the research plan](docs/research/yrss-accuracy-plan.md).
 

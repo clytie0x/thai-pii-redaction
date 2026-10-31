@@ -486,12 +486,142 @@ class _DsarSubcommandParser(argparse.ArgumentParser):
     error = _usage_error_exits_one
 
 
+def _pdpa_usage_error(self, message):
+    self.exit(2, "pdpa_error: invalid_arguments\n")
+
+
+def cmd_pdpa(args):
+    """Value-free assessment and non-executing lifecycle proposals."""
+    from pii_redactor.pdpa_assessment import assess_text
+    from pii_redactor.pdpa_catalog import LAW_VERSION, coverage_catalog
+    from pii_redactor.pdpa_lifecycle import plan_lifecycle
+
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate context key")
+            result[key] = value
+        return result
+
+    output = Path(args.output) if args.output else None
+    try:
+        if output and output.exists():
+            raise FileExistsError()
+        if output and not output.parent.is_dir():
+            raise OSError()
+        context = None
+        if getattr(args, "context", None):
+            context_path = Path(args.context)
+            if context_path.stat().st_size > 32768:
+                raise ValueError("context too large")
+            context = json.loads(
+                context_path.read_text(encoding="utf-8"), object_pairs_hook=unique_pairs
+            )
+        if args.pdpa_command == "coverage":
+            result = {
+                "schema": "aiguard.pdpa-coverage/1",
+                "rule_version": LAW_VERSION,
+                "legal_clearance": False,
+                "coverage": coverage_catalog(),
+            }
+        elif args.pdpa_command == "lifecycle":
+            result = plan_lifecycle(context)
+        else:
+            source = Path(args.file)
+            if not source.is_file():
+                raise OSError()
+            suffix = source.suffix.lower()
+            raw_types = {
+                ".png": "image",
+                ".jpg": "image",
+                ".jpeg": "image",
+                ".wav": "audio",
+                ".mp3": "audio",
+                ".mp4": "video",
+                ".vcf": "genetic_binary",
+                ".bam": "genetic_binary",
+                ".fastq": "genetic_binary",
+            }
+            if suffix in raw_types:
+                text, modality = "", raw_types[suffix]
+            elif suffix in {".txt", ".json", ".csv"}:
+                if source.stat().st_size > 100000:
+                    raise ValueError("input too large")
+                text, modality = source.read_text(encoding="utf-8"), "text"
+            elif suffix == ".pdf":
+                if source.stat().st_size > 10 * 1024 * 1024:
+                    raise ValueError("input too large")
+                from pii_redactor.ingest.file_detector import detect_source_type
+                from pii_redactor.ingest.text_extractor import extract
+
+                source_type = detect_source_type(source)
+                text, modality = (
+                    (extract(source, source_type)[0], "text")
+                    if source_type == "pdf_text"
+                    else ("", "image")
+                )
+            else:
+                raise ValueError("unsupported input")
+            result = assess_text(
+                text,
+                strategy=args.strategy,
+                context=context,
+                modality=modality,
+                model_dir=args.model_dir,
+                threshold=args.threshold,
+            )
+        blob = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+        if output:
+            with output.open("x", encoding="utf-8") as stream:
+                stream.write(blob)
+            print("PDPA report written.")
+        else:
+            print(blob, end="")
+    except FileExistsError:
+        print("pdpa_error: output_exists", file=sys.stderr)
+        sys.exit(1)
+    except (ValueError, UnicodeError):
+        print("pdpa_error: invalid_input_or_context", file=sys.stderr)
+        sys.exit(1)
+    except RuntimeError:
+        print("pdpa_error: assessment_engine_unavailable", file=sys.stderr)
+        sys.exit(1)
+    except Exception:
+        print("pdpa_error: assessment_or_io_failure", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="ai_guard",
         description="AI Guard — Thai PII redaction pipeline",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+    if sys.argv[1:2] == ["pdpa"]:
+        parser.error = _pdpa_usage_error.__get__(parser)
+
+    pdpa_parser = subparsers.add_parser(
+        "pdpa", help="Assess PDPA evidence and propose lifecycle actions"
+    )
+    pdpa_commands = pdpa_parser.add_subparsers(dest="pdpa_command", required=True)
+    pdpa_parser.error = _pdpa_usage_error.__get__(pdpa_parser)
+    for name in ("assess", "coverage", "lifecycle"):
+        command = pdpa_commands.add_parser(name)
+        command.error = _pdpa_usage_error.__get__(command)
+        command.add_argument("--output", "-o")
+        if name != "coverage":
+            command.add_argument(
+                "--context", help="Closed lifecycle context JSON; no subject values"
+            )
+        if name == "assess":
+            command.add_argument("file")
+            command.add_argument(
+                "--strategy", choices=["keyword", "contextual", "hybrid"], default="contextual"
+            )
+            command.add_argument("--model-dir", help="Pinned local MiniLM revision directory")
+            command.add_argument("--threshold", type=float, default=0.50)
+        command.set_defaults(func=cmd_pdpa)
 
     # sanitize subcommand
     sanitize_parser = subparsers.add_parser("sanitize", help="Sanitize a file")

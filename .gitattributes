@@ -8,5 +8,11 @@ benchmark/data/*.enc -text
 benchmark/data/blind-scores.jsonl text eol=lf
 benchmark/data/*.lock.json text eol=lf
 
+# The broader PDPA context corpus is also byte-exact authenticated blinding.
+research/pdpa-coverage/*.enc -text
+research/pdpa-coverage/*.json -text
+research/pdpa-coverage/annotation-guide-at-freeze.md -text
+docs/research/pdpa-coverage-plan.md -text
+
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary
