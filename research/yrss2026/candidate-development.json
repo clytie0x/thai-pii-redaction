@@ -1,0 +1,3578 @@
+{
+  "manifest": {
+    "schema": 1,
+    "git": {
+      "head": "ed01027f2e782b6f83d88520c7fe9d2547a84ba1",
+      "dirty": false
+    },
+    "source_files": {
+      "pii_redactor/__init__.py": "230474107d3bc2a222d5c19070a63f7562abd98b0502f6a2cfbd8099216ce2d5",
+      "pii_redactor/ai_client.py": "468e6d5c0c13a154f580491d85413e60e90e0a93b83adb58a3abd7f5fb82af6b",
+      "pii_redactor/anonymizer/__init__.py": "69c68e7e94f67d8e3f65c3d78280548108af51b4ea30eb0b70abc582d31f983b",
+      "pii_redactor/anonymizer/anonymizer.py": "7bd38c0eaf9f52a882ed46192cee74e87a3dd502b281a092ce583b613d619a05",
+      "pii_redactor/anonymizer/fp_generator.py": "3be2913f409d4759306d5a2d1cc8a3cf6d09853be7782324199fa49e4b6d0dff",
+      "pii_redactor/anonymizer/tb_generator.py": "db0690461fb820f9e5d49e31df3e3a4b7134977ae1ffb55d897f5901f879ee9e",
+      "pii_redactor/anonymizer/token_generator.py": "28a833f6e17222db7bca31700fa391a315d2d60832b211ef52c07c3b2cc2a49f",
+      "pii_redactor/audit.py": "960597dcd86c934b3b205708fbc44ab24326591662716a7837f4f8f7381ed933",
+      "pii_redactor/breach.py": "3e950c9c232c1eff6aff846fda6ee43c3cdae05d8a5106ae0d99fbd55121a2cb",
+      "pii_redactor/breach_pdf.py": "80ed1ef22a610bf360ef78a2a4ef98f44903d749de86e408fbad299ad46ae882",
+      "pii_redactor/detectors/__init__.py": "8e5049db71825575a571631739cffde9c6e3114c12c099d0ad75f92ff16fe4e9",
+      "pii_redactor/detectors/aggregate.py": "088504fbba6cc3ee7460efe6700b6fbeeca2cd42900aff888ec9acc4716fb733",
+      "pii_redactor/detectors/finetuned_engine.py": "1f647456888205798fb8db5afd13020c83a4c41f99bc8bdbb6e4a392e9c45176",
+      "pii_redactor/detectors/fn_scanner.py": "38beaad761cd61d0e7a598c05a2028638dd1606617e256d423155c984d9bd0c8",
+      "pii_redactor/detectors/fp_detector.py": "16c6e052c137a5f69307c666c424369c18cf947e991f5595c6b87aa05db7e2d5",
+      "pii_redactor/detectors/name_context.py": "b80b07c5c8965532244a31849c6e2062b0c0ca396db89dd0231e1b0a04237ffd",
+      "pii_redactor/detectors/ner_failure.py": "c3d0a6358265f037dec5ce23aeae0b441dd7d6acd3f4bbe77583337ef5dae82d",
+      "pii_redactor/detectors/scan_views.py": "75b25788f88d03f7cbd9ab66c6fa474f0a268a7fcfdd6293adf587f647318a82",
+      "pii_redactor/detectors/structured_views.py": "0fc0d94c92a28df43089ed15b70e3b273eb3eb769cc123f896d25102581586a7",
+      "pii_redactor/detectors/tb_detector.py": "a76404d7d3c0f7576e173dcdeafc8744b53fc03cb39723efddd57eb354896935",
+      "pii_redactor/detectors/thai_id.py": "edd814ed58e6c4864370ec4490f71dc01b2b86e159f46dd53de03f2361917ca4",
+      "pii_redactor/detectors/tner_client.py": "9f73a8533ed3bd16a29733f19b6b1a18f544975073ef8780b7347e0ae7e26a79",
+      "pii_redactor/dsar.py": "bb42bbc6ad98e562a6656829010d740b7c66307af87c591433bfabf355c10fa0",
+      "pii_redactor/dsar_pdf.py": "33e049e6c9eae36be0fc566b490406dac7c950b21f4ed8b7a1292191743da785",
+      "pii_redactor/exporter.py": "28e2fba8598c939c687008c53c5f7890e70a8a7b0e9034b972ed41cdb1c507fd",
+      "pii_redactor/guard/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pii_redactor/guard/injection.py": "10cd28d44c363cb5434f199a8683cf45c28970bec09fc84b52c8c5a0107571ca",
+      "pii_redactor/ingest/__init__.py": "d1383d4f34c0ad43ebe9130e6df3a3677e60406bd7c8cbb7ff603701c65bca41",
+      "pii_redactor/ingest/file_detector.py": "50b5d1d0551761b7c919c29f02743e991a2405bd49b1f140e861edcff19abdb9",
+      "pii_redactor/ingest/ocr_processor.py": "efa2175efced1010faf996c16447d952564618b7089d547e55ac9c6165aa6e2c",
+      "pii_redactor/ingest/quality_validator.py": "efb99330678cb58f4d09bbc83a515a7031b5fabda2172946b95082a0c85b00c2",
+      "pii_redactor/ingest/text_cleaner.py": "a8a2aa847a92127b4f0ba67c01f0546119b8fc347048b10dc4f76851193fc9ae",
+      "pii_redactor/ingest/text_extractor.py": "ce96a2f4ca2bb9a6eaff60d4f81a4a90395db5d3131edef268f4eae5d0335297",
+      "pii_redactor/leak_guard.py": "4ad1d6ebd8fe0bfb2f6bd61e737d27796ea24a06de41bba24466fa893d3e98f0",
+      "pii_redactor/models.py": "d3554bcf92182f903e232e8bcdc2d72fa7d9a208cf699ad96c73021394f6f6dc",
+      "pii_redactor/native_broker_context.py": "a2e53ae361e4bfc6007b91c2375439f49d66a472ed70a51ae18fa5d93e43f032",
+      "pii_redactor/openai_compat.py": "675feaff72ad26fa487f73c25ab23ddcce4a68ef2968a7ed6d4f00953112ef85",
+      "pii_redactor/output_validator.py": "d4293a3fdac8e0b134446667411b5675bcd0d6fd6669ca4aef22454771e7a484",
+      "pii_redactor/pdf_render.py": "059c37cd030ded09d5c1188f02458f3a79d6d7879d11cfe78e2887731ce505ab",
+      "pii_redactor/pipeline.py": "feb8203d7baa1802266688e926aa5217baa485754c641cbe5ad5f00de6d2df08",
+      "pii_redactor/receipt.py": "99f68a0a2a7156c1bbe172288a9c6d3f9919871426d65c403e0dc531c2894fb3",
+      "pii_redactor/receipt_pdf.py": "21b9431c4c2204925e41d036f59d3eb6b31de8d519bc6cb4bcf45e55315fc8aa",
+      "pii_redactor/redactor.py": "fed54ba60eb6aae740365d881abc57c06e24bb08d25e17bdecb72bd149181d11",
+      "pii_redactor/reid_risk.py": "f26657916228b1a3c8fe3ee0247eb6e309b821ed35821f8f727f6d4f38ac9eec",
+      "pii_redactor/report.py": "fa8bf494834c6048f2de05e03f9af22898698d8c9f1474087a2f1f6bfa002e9b",
+      "pii_redactor/report_pdf.py": "d216406a7437a4fa1f5f40a9b318d7754bb438bd65e5d51d4dfcb1638c7e8335",
+      "pii_redactor/reverse_mapper.py": "36364fd163a14a5a9670a6ee701fb21720841114f32c8cfeac84485ee213d6f5",
+      "pii_redactor/safe_errors.py": "5fb9138778801e629504cd029fe22ea5fb7b9b6e9a587fda3777d50e5aff14bf",
+      "pii_redactor/scan_common.py": "4a721df9be4740cac70d2cead77072e079505d3960de1356f41022f2d4a8f260",
+      "pii_redactor/sensitive_detector.py": "9e97abbe4cbc63b1f9ae0ab5b828ac6d2df38b73bb725d6eaca519c2b3c0a84f",
+      "pii_redactor/session_service.py": "84792d6053934a5a5193a51f6f02c2021f9fa967700b83d7389722283fb5b08d",
+      "pii_redactor/session_vault.py": "06f14120a91b2b7aaf0ca23ad1a4abac5652362b825ff655b11dbcf750d1e4aa",
+      "pii_redactor/stateless.py": "d50a29248493f1857e36062230b7a1ecaa4b99a1c9843303cdeedc0e2280f105",
+      "pii_redactor/thai_pdf_text.py": "62bc1b12ce345b004cf35f26bfc09adb231135f34f477a2316ad31ff79295796"
+    },
+    "source_sha256": "4e054ba842c63508fcc5e3acbe97a9ddec76425bf6770b3b88a82663337b5a37",
+    "scorer_sha256": "e136b5cf01aaa375ce2be4588dc265c70d81383dda4329263c2ad373cf29704f",
+    "evaluator_sha256": {
+      "__init__.py": "050b0c298dce704c87a5cfc03a120e26834f22fee7b4a64350014c20a64d315b",
+      "__main__.py": "989da03a4b86fd4632b97349f90c97db89a00492bede770bfc5a2c0a1acdcb6b",
+      "blind.py": "8dd559eac4e416288aee75c6dd44a3d7b7c65f0c7bcd59b031ec82f5ab7c7c0f",
+      "campaign.py": "f77f70d31010f3637c5cadb7aab686024e6587806ba43b4645f49287fb6ca968",
+      "corpus.py": "c299a4f92864282ffb1be7e7e1ef41cd863c8a31827113bce08ba9affdae44fe",
+      "gold.py": "f88cbcb7533f7054fe3d3708a7d68697d1f42b69f23733dab9a3c648a2c3e6d1",
+      "human_review.py": "100f79ff65d3a5c6a4dc79c548741afc5a6897bb8b3f9e8c81a4737db1646f74",
+      "llm_providers.py": "b13d56600df79ff5187fb7455d8fc4a303c5d91530ffe0c969579f56df4ff26f",
+      "llm_strategy.py": "90381771091b01cd7e37d65eade72075f0a248c113d30aa544d8fe325eee2131",
+      "paper_evidence.py": "25d7e6201bb56a9fb1d2cbb76db94f39eb386bbef45fcf6e47f595a193b94bd6",
+      "probe_document.py": "6e9e624234e6386e86c1fda5d96da35c6a5747249fbb42a8967c05de30da6f34",
+      "recovery_study.py": "afeb0b4c125620ebcca3603f394c39d5c9ead20f4124e36383be454397bca5d7",
+      "runner.py": "6c5ecdf455d256f617a0b47038b06b2c82136c61a106c78fa71c96a817ddf300",
+      "scorer.py": "e136b5cf01aaa375ce2be4588dc265c70d81383dda4329263c2ad373cf29704f",
+      "strategies.py": "48999f213a1c5c5d23e1ec7239222bc1fa9208b4ba80c901dc176190b56241e2",
+      "types.py": "07b0ebf6d34cee084cb4944954731cb52efd9fdf5033887eb8b5c10417ddadca"
+    },
+    "runtime_evaluator_sha256": {
+      "runner.py": "6c5ecdf455d256f617a0b47038b06b2c82136c61a106c78fa71c96a817ddf300",
+      "gold.py": "f88cbcb7533f7054fe3d3708a7d68697d1f42b69f23733dab9a3c648a2c3e6d1",
+      "scorer.py": "e136b5cf01aaa375ce2be4588dc265c70d81383dda4329263c2ad373cf29704f",
+      "types.py": "07b0ebf6d34cee084cb4944954731cb52efd9fdf5033887eb8b5c10417ddadca",
+      "blind.py": "8dd559eac4e416288aee75c6dd44a3d7b7c65f0c7bcd59b031ec82f5ab7c7c0f"
+    },
+    "paired_driver_sha256": "b9e9a780d834ac2f286eeeb2ae0cc47f6e76c7465a60af246a7ebc0a67c787db",
+    "corpus_sha256": "01f86b012c438c074b86942e21021cf39b6df54e2bf950cb2301688b1c1b935b",
+    "requirements_sha256": "283cb10a3838b72cab3dbc3b10e54c6de437f211e2ddbbc73dd789a337911d1c",
+    "model_sha256": {
+      "thainer-1.4": "8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38"
+    },
+    "pythainlp_assets_sha256": {
+      "blackboard-cls_v1.0.crfsuite": "c23f1335a7b12d1ae90e6a5fdb82a5cec91b731ba76a11c61da81e9d1fea9057",
+      "corpus_license.md": "443978471ca3e75b7e39e233c9b7b86e871416fafeb7948fdc99b229adcc40ec",
+      "countries_th.txt": "d51a3eb88574086126a4629fba5b4306c7cf5a3738dfceb7fa4e72ee5edfa5c9",
+      "crfchunk_orchidpp.model": "7d77989057beae1f64c45ad6ed084c7873ba8c1c5bb229559f0460028f190753",
+      "default_db.json": "5f300ef8962748ca41e1aa218bccd47858fa9bc228009929989d759db3e403a5",
+      "etcc.txt": "69fefde4969523bf2d2360e8d904423911ebebe088a87e7d53fde394f0ab92d2",
+      "family_names_th.txt": "365271ff81320514bc7a127f03783260820cae762963222eabcf562f657405a8",
+      "han_solo.crfsuite": "315761fdb2ac24979c1924498df9646c88de6cbbe5dcba8528c0d30b8f46bac0",
+      "icubrk_th.txt": "f71790b66ebc0945709e996072ce949b8f3b037c93ce236149d45f5edd633bfc",
+      "negations_th.txt": "266d26a231f9ea1133887045f27c7e78e7b68c3156883a6baec9f923b5dd8e7d",
+      "orst_words_th.txt": "c9cc03438d8eb58d7f13b2b8920f6a1333014fd60099439c05f7256b16263c0f",
+      "person_names_female_th.txt": "9d97b9074f7cf48b4eb3afa6bef131c58cf033ad7ff4a7e37b7c523b9402e17d",
+      "person_names_male_th.txt": "35218d2bc890510717ab1e1bb753f0ff8e63a9d25c16f2bfffe02c947ccf875e",
+      "phupha_word_freqs.txt": "cfbf7ed786ca612bd4817c35d340684b3d4f6d1c56b88ed18084725cd007fbb0",
+      "pos_orchid_perceptron.json": "4be27a9e8d5ea850714faa15c769d0f5344f61d7ca192ed859415484e0873ec9",
+      "pos_orchid_unigram.json": "d381a6bf9dba19474079e717be81ae3866e37b9865fad6398b5afecd7ae129e2",
+      "pos_tud_perceptron.json": "3545e2f68b0ad2bf00541675ffe8812ed3549df3610393a2f8393bc8e5b04dbd",
+      "pos_tud_unigram.json": "69db5229e3760a68b89d34a12637a5b95f71f4c73f845f9b8300950eda776ded",
+      "pos_ud_perceptron-v0.2.json": "18220f0cd6526b6107c6dad05c0828c5a499a9bb801a9b1ae7080c692e898164",
+      "pos_ud_unigram-v0.2.json": "d378f28f404accd7218dde9123f1a4e47fc04c514cf5085d0ac8cd2b2ba27b49",
+      "profanity_th.txt": "92960c37ca913ae013c05b6e3701bab92c3e1ccc2a8e48f2e0ad242e3943995a",
+      "sentenceseg_crfcut.model": "b03bd7e4539956151ac0ef82ae564fede28773b2fca5110ec3f9d8c2e092385d",
+      "stopwords_th.txt": "da7fb61b346e4a7a2e6ad589bb27c291b2258351a2eff020f85fbc74b64abc73",
+      "syllables_th.txt": "583db4f1e1244619f4963144b12c610618e44b64b8b7fd04daf753bf9eead412",
+      "tdtb-pt_tagger.json": "f28462c81ca2357ccda66b0b2f2680e886c92b050ef28b1f24a58359759d4e2c",
+      "tdtb-unigram_tagger.json": "824df8ef4c6d684e72c018995dc7bf1f9e010bd3653bf9f112d7a3a140bde5b9",
+      "th_en_transliteration_v1.4.tsv": "a10ab56493ba3e61f1a5992d167808972e36e6dd0166dd733166f121ea1fd015",
+      "thai2rom_decoder.onnx": "4fdf18bb2aba1f23aee87baa3c0a7901bfe8ccc1c484b411db19e52a57d26ce7",
+      "thai2rom_encoder.onnx": "8e794529bbc55cb261af2a8c4d26accf8a7077a5e9a368ba7eb59a5429977243",
+      "thai2rom_loader_onnx.json": "987a1098cb5c8d129922b8c11ed2b388369e53e0a5e5f4d3b360e6d302f712a2",
+      "thailand_provinces_th.csv": "58b803c161f72f8db46edda332d50b43efd7e667b9ef46f21d94e51d9442cb61",
+      "thainer_crf_1_5_1.model": "2bbcf0c7cd898d2a0516c79b468cc413bdbe0faa57f7202e6e4b9703de7dde1b",
+      "tnc_freq.txt": "554984d62e8735e2705bb30b06096d5710d0c9011e340ab717134e10d6dd0dda",
+      "ttc_freq.txt": "add82083660baa939f2103f1dfde74f6de90ce48e7fb94965d55fc785121dc89",
+      "volubilis_words_th.txt": "04fffe8ecc54092474a728f1cca4ced18c0556c941f5f2eca963e0310dac0cc8",
+      "wikipedia_titles_th.txt": "69eefc6bda92f3da912ea912c3c4c06c139f2f34870720e70385f32703cc4ad8",
+      "wordnet_th.db": "ea76916c6ef90cf34759459e0bbf55c47a9a7819e99c1ff0fa00207cbe084fc4",
+      "words_th.txt": "4bf0ab93a570d91b33ae7bbf627eddd5a56f81c6ba33a94c3950f38904235bda",
+      "words_th_thai2fit_201810.txt": "d2116a8d49704fad9a917e85d4d90190a69728d37dcafa4549bfe38151724f79"
+    },
+    "python": "3.13.12",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "packages": {
+      "annotated-doc": "0.0.4",
+      "annotated-types": "0.7.0",
+      "anyio": "4.14.2",
+      "certifi": "2026.6.17",
+      "cffi": "2.1.0",
+      "charset-normalizer": "3.4.9",
+      "click": "8.4.2",
+      "colorama": "0.4.6",
+      "cryptography": "49.0.0",
+      "fastapi": "0.139.2",
+      "h11": "0.16.0",
+      "httpcore": "1.0.9",
+      "httptools": "0.8.0",
+      "httpx": "0.28.1",
+      "idna": "3.18",
+      "iniconfig": "2.3.0",
+      "packaging": "26.2",
+      "pdfminer.six": "20260107",
+      "pdfplumber": "0.11.10",
+      "pillow": "12.3.0",
+      "pluggy": "1.6.0",
+      "psutil": "7.2.2",
+      "pycparser": "3.0",
+      "pydantic": "2.13.4",
+      "pydantic_core": "2.46.4",
+      "pygments": "2.20.0",
+      "pypdfium2": "5.12.1",
+      "pytest": "9.1.1",
+      "pythainlp": "5.3.4",
+      "python-crfsuite": "0.9.12",
+      "python-dotenv": "1.2.2",
+      "python-multipart": "0.0.32",
+      "pyyaml": "6.0.3",
+      "regex": "2026.7.10",
+      "reportlab": "5.0.0",
+      "ruff": "0.14.2",
+      "starlette": "1.3.1",
+      "typing-inspection": "0.4.2",
+      "typing_extensions": "4.16.0",
+      "tzdata": "2026.3",
+      "uharfbuzz": "0.55.0",
+      "uvicorn": "0.51.0",
+      "watchfiles": "1.2.0",
+      "websockets": "16.1"
+    },
+    "engine": "thainer",
+    "network": "socket connects and DNS denied; automatic corpus downloads disabled"
+  },
+  "gold_version": "gold-v4",
+  "repeat_prediction_match": true,
+  "arms": {
+    "full": {
+      "metrics": {
+        "corpus": {
+          "samples": 252,
+          "entities": 648,
+          "by_type": {
+            "NAME": 199,
+            "ADDRESS": 58,
+            "PHONE": 81,
+            "EMAIL": 47,
+            "THAI_ID": 51,
+            "CREDIT_CARD": 24,
+            "DATE_OF_BIRTH": 45,
+            "VEHICLE_PLATE": 26,
+            "STUDENT_ID": 57,
+            "PASSPORT": 25,
+            "BANK_ACCOUNT": 35
+          }
+        },
+        "overall": {
+          "tp": 628,
+          "fp": 96,
+          "fn": 20,
+          "precision": 0.8674033149171271,
+          "recall": 0.9691358024691358,
+          "f1": 0.9154518950437317,
+          "f2": 0.9469240048250904,
+          "gold_entities": 648,
+          "documents": 252,
+          "coverage_recall": 0.9864991882423311,
+          "coverage_precision": 0.8739591218773657,
+          "exact_recall": 0.8919753086419753
+        },
+        "by_type": {
+          "NAME": {
+            "tp": 197,
+            "fp": 1,
+            "fn": 2,
+            "precision": 0.9949494949494949,
+            "recall": 0.9899497487437185,
+            "f1": 0.9924433249370276,
+            "f2": 0.9909456740442656
+          },
+          "ADDRESS": {
+            "tp": 58,
+            "fp": 4,
+            "fn": 0,
+            "precision": 0.9354838709677419,
+            "recall": 1.0,
+            "f1": 0.9666666666666666,
+            "f2": 0.9863945578231291
+          },
+          "OUT_OF_SCHEME": {
+            "tp": 0,
+            "fp": 89,
+            "fn": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "f2": 0.0
+          },
+          "PHONE": {
+            "tp": 80,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.9876543209876543,
+            "f1": 0.9937888198757764,
+            "f2": 0.9900990099009901
+          },
+          "EMAIL": {
+            "tp": 47,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0
+          },
+          "THAI_ID": {
+            "tp": 51,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0
+          },
+          "CREDIT_CARD": {
+            "tp": 24,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 45,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0
+          },
+          "VEHICLE_PLATE": {
+            "tp": 25,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.9615384615384616,
+            "f1": 0.9803921568627451,
+            "f2": 0.9689922480620154
+          },
+          "STUDENT_ID": {
+            "tp": 41,
+            "fp": 0,
+            "fn": 16,
+            "precision": 1.0,
+            "recall": 0.7192982456140351,
+            "f1": 0.8367346938775511,
+            "f2": 0.7620817843866171
+          },
+          "PASSPORT": {
+            "tp": 25,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.9615384615384616,
+            "recall": 1.0,
+            "f1": 0.9803921568627451,
+            "f2": 0.9920634920634919
+          },
+          "BANK_ACCOUNT": {
+            "tp": 35,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.9722222222222222,
+            "recall": 1.0,
+            "f1": 0.9859154929577464,
+            "f2": 0.9943181818181817
+          }
+        },
+        "by_slice": {
+          "address_varied": {
+            "tp": 16,
+            "fp": 3,
+            "fn": 0,
+            "precision": 0.8421052631578947,
+            "recall": 1.0,
+            "f1": 0.9142857142857143,
+            "f2": 0.963855421686747,
+            "gold_entities": 16,
+            "documents": 16,
+            "coverage_recall": 0.9788135593220338,
+            "coverage_precision": 0.9716088328075709,
+            "exact_recall": 0.8125
+          },
+          "bank_phone": {
+            "tp": 16,
+            "fp": 4,
+            "fn": 0,
+            "precision": 0.8,
+            "recall": 1.0,
+            "f1": 0.888888888888889,
+            "f2": 0.9523809523809523,
+            "gold_entities": 16,
+            "documents": 16,
+            "coverage_recall": 1.0,
+            "coverage_precision": 0.7207207207207207,
+            "exact_recall": 1.0
+          },
+          "education": {
+            "tp": 64,
+            "fp": 8,
+            "fn": 5,
+            "precision": 0.8888888888888888,
+            "recall": 0.927536231884058,
+            "f1": 0.9078014184397163,
+            "f2": 0.9195402298850577,
+            "gold_entities": 69,
+            "documents": 18,
+            "coverage_recall": 0.9940677966101695,
+            "coverage_precision": 0.8933739527798934,
+            "exact_recall": 0.855072463768116
+          },
+          "finance": {
+            "tp": 54,
+            "fp": 6,
+            "fn": 0,
+            "precision": 0.9,
+            "recall": 1.0,
+            "f1": 0.9473684210526316,
+            "f2": 0.9782608695652175,
+            "gold_entities": 54,
+            "documents": 18,
+            "coverage_recall": 0.9844054580896686,
+            "coverage_precision": 0.912375790424571,
+            "exact_recall": 0.8888888888888888
+          },
+          "gov_form": {
+            "tp": 46,
+            "fp": 6,
+            "fn": 3,
+            "precision": 0.8846153846153846,
+            "recall": 0.9387755102040817,
+            "f1": 0.9108910891089108,
+            "f2": 0.9274193548387099,
+            "gold_entities": 49,
+            "documents": 17,
+            "coverage_recall": 0.9826325411334552,
+            "coverage_precision": 0.849802371541502,
+            "exact_recall": 0.8775510204081632
+          },
+          "id_docs": {
+            "tp": 97,
+            "fp": 4,
+            "fn": 1,
+            "precision": 0.9603960396039604,
+            "recall": 0.9897959183673469,
+            "f1": 0.9748743718592964,
+            "f2": 0.9837728194726167,
+            "gold_entities": 98,
+            "documents": 29,
+            "coverage_recall": 0.9915134370579916,
+            "coverage_precision": 0.9537414965986395,
+            "exact_recall": 0.9591836734693877
+          },
+          "long_form": {
+            "tp": 230,
+            "fp": 29,
+            "fn": 0,
+            "precision": 0.888030888030888,
+            "recall": 1.0,
+            "f1": 0.9406952965235174,
+            "f2": 0.9754028837998304,
+            "gold_entities": 230,
+            "documents": 20,
+            "coverage_recall": 0.9847058823529412,
+            "coverage_precision": 0.8786479109804745,
+            "exact_recall": 0.9173913043478261
+          },
+          "medical": {
+            "tp": 38,
+            "fp": 5,
+            "fn": 0,
+            "precision": 0.8837209302325582,
+            "recall": 1.0,
+            "f1": 0.9382716049382717,
+            "f2": 0.9743589743589743,
+            "gold_entities": 38,
+            "documents": 14,
+            "coverage_recall": 1.0,
+            "coverage_precision": 0.8343409915356711,
+            "exact_recall": 0.8947368421052632
+          },
+          "messy": {
+            "tp": 29,
+            "fp": 4,
+            "fn": 0,
+            "precision": 0.8787878787878788,
+            "recall": 1.0,
+            "f1": 0.9354838709677419,
+            "f2": 0.9731543624161072,
+            "gold_entities": 29,
+            "documents": 16,
+            "coverage_recall": 1.0,
+            "coverage_precision": 0.8678815489749431,
+            "exact_recall": 0.9655172413793104
+          },
+          "name_no_cue": {
+            "tp": 21,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "f2": 1.0,
+            "gold_entities": 21,
+            "documents": 18,
+            "coverage_recall": 0.9364548494983278,
+            "coverage_precision": 0.7887323943661971,
+            "exact_recall": 0.7142857142857143
+          },
+          "negative": {
+            "gold_entities": 0,
+            "documents": 45,
+            "false_positives": 15,
+            "clean_docs": 31,
+            "clean_doc_rate": 0.6888888888888889,
+            "coverage_precision": 0.0
+          },
+          "student_id_varied": {
+            "tp": 17,
+            "fp": 12,
+            "fn": 11,
+            "precision": 0.5862068965517241,
+            "recall": 0.6071428571428571,
+            "f1": 0.5964912280701754,
+            "f2": 0.6028368794326241,
+            "gold_entities": 28,
+            "documents": 25,
+            "coverage_recall": 1.0,
+            "coverage_precision": 0.9498207885304659,
+            "exact_recall": 0.6071428571428571
+          }
+        },
+        "confidence_intervals": {
+          "overall_f2": {
+            "metric": "f2",
+            "method": "percentile",
+            "unit": "document",
+            "scope": "unrestricted",
+            "confidence": 0.95,
+            "iterations": 1000,
+            "seed": 0,
+            "lower": 0.9282772820864789,
+            "upper": 0.9639889196675901
+          }
+        },
+        "shared_11": {
+          "overall": {
+            "tp": 628,
+            "fp": 7,
+            "fn": 20,
+            "precision": 0.988976377952756,
+            "recall": 0.9691358024691358,
+            "f1": 0.9789555728760717,
+            "f2": 0.9730399752091726,
+            "gold_entities": 648,
+            "documents": 252,
+            "coverage_recall": 0.9726565837819362,
+            "coverage_precision": 0.9485833333333333,
+            "exact_recall": 0.8919753086419753
+          },
+          "by_type": {
+            "NAME": {
+              "tp": 197,
+              "fp": 1,
+              "fn": 2,
+              "precision": 0.9949494949494949,
+              "recall": 0.9899497487437185,
+              "f1": 0.9924433249370276,
+              "f2": 0.9909456740442656
+            },
+            "ADDRESS": {
+              "tp": 58,
+              "fp": 4,
+              "fn": 0,
+              "precision": 0.9354838709677419,
+              "recall": 1.0,
+              "f1": 0.9666666666666666,
+              "f2": 0.9863945578231291
+            },
+            "PHONE": {
+              "tp": 80,
+              "fp": 0,
+              "fn": 1,
+              "precision": 1.0,
+              "recall": 0.9876543209876543,
+              "f1": 0.9937888198757764,
+              "f2": 0.9900990099009901
+            },
+            "EMAIL": {
+              "tp": 47,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0
+            },
+            "THAI_ID": {
+              "tp": 51,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0
+            },
+            "CREDIT_CARD": {
+              "tp": 24,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0
+            },
+            "DATE_OF_BIRTH": {
+              "tp": 45,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0
+            },
+            "VEHICLE_PLATE": {
+              "tp": 25,
+              "fp": 0,
+              "fn": 1,
+              "precision": 1.0,
+              "recall": 0.9615384615384616,
+              "f1": 0.9803921568627451,
+              "f2": 0.9689922480620154
+            },
+            "STUDENT_ID": {
+              "tp": 41,
+              "fp": 0,
+              "fn": 16,
+              "precision": 1.0,
+              "recall": 0.7192982456140351,
+              "f1": 0.8367346938775511,
+              "f2": 0.7620817843866171
+            },
+            "PASSPORT": {
+              "tp": 25,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.9615384615384616,
+              "recall": 1.0,
+              "f1": 0.9803921568627451,
+              "f2": 0.9920634920634919
+            },
+            "BANK_ACCOUNT": {
+              "tp": 35,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.9722222222222222,
+              "recall": 1.0,
+              "f1": 0.9859154929577464,
+              "f2": 0.9943181818181817
+            }
+          },
+          "by_slice": {
+            "address_varied": {
+              "tp": 16,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0,
+              "gold_entities": 16,
+              "documents": 16,
+              "coverage_recall": 0.9703389830508474,
+              "coverage_precision": 1.0,
+              "exact_recall": 0.8125
+            },
+            "bank_phone": {
+              "tp": 16,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0,
+              "gold_entities": 16,
+              "documents": 16,
+              "coverage_recall": 1.0,
+              "coverage_precision": 1.0,
+              "exact_recall": 1.0
+            },
+            "education": {
+              "tp": 64,
+              "fp": 0,
+              "fn": 5,
+              "precision": 1.0,
+              "recall": 0.927536231884058,
+              "f1": 0.9624060150375939,
+              "f2": 0.9411764705882354,
+              "gold_entities": 69,
+              "documents": 18,
+              "coverage_recall": 0.9601694915254237,
+              "coverage_precision": 0.9226384364820847,
+              "exact_recall": 0.855072463768116
+            },
+            "finance": {
+              "tp": 54,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.9818181818181818,
+              "recall": 1.0,
+              "f1": 0.9908256880733944,
+              "f2": 0.9963099630996309,
+              "gold_entities": 54,
+              "documents": 18,
+              "coverage_recall": 0.9717348927875243,
+              "coverage_precision": 0.9468186134852802,
+              "exact_recall": 0.8888888888888888
+            },
+            "gov_form": {
+              "tp": 46,
+              "fp": 1,
+              "fn": 3,
+              "precision": 0.9787234042553191,
+              "recall": 0.9387755102040817,
+              "f1": 0.9583333333333333,
+              "f2": 0.9465020576131686,
+              "gold_entities": 49,
+              "documents": 17,
+              "coverage_recall": 0.9826325411334552,
+              "coverage_precision": 0.9110169491525424,
+              "exact_recall": 0.8775510204081632
+            },
+            "id_docs": {
+              "tp": 97,
+              "fp": 0,
+              "fn": 1,
+              "precision": 1.0,
+              "recall": 0.9897959183673469,
+              "f1": 0.9948717948717948,
+              "f2": 0.9918200408997956,
+              "gold_entities": 98,
+              "documents": 29,
+              "coverage_recall": 0.9915134370579916,
+              "coverage_precision": 0.9915134370579916,
+              "exact_recall": 0.9591836734693877
+            },
+            "long_form": {
+              "tp": 230,
+              "fp": 3,
+              "fn": 0,
+              "precision": 0.9871244635193133,
+              "recall": 1.0,
+              "f1": 0.9935205183585313,
+              "f2": 0.997398091934085,
+              "gold_entities": 230,
+              "documents": 20,
+              "coverage_recall": 0.9835294117647059,
+              "coverage_precision": 0.960919540229885,
+              "exact_recall": 0.9173913043478261
+            },
+            "medical": {
+              "tp": 38,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.9743589743589743,
+              "recall": 1.0,
+              "f1": 0.9870129870129869,
+              "f2": 0.994764397905759,
+              "gold_entities": 38,
+              "documents": 14,
+              "coverage_recall": 1.0,
+              "coverage_precision": 0.9031413612565445,
+              "exact_recall": 0.8947368421052632
+            },
+            "messy": {
+              "tp": 29,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.9666666666666667,
+              "recall": 1.0,
+              "f1": 0.983050847457627,
+              "f2": 0.9931506849315067,
+              "gold_entities": 29,
+              "documents": 16,
+              "coverage_recall": 1.0,
+              "coverage_precision": 0.927007299270073,
+              "exact_recall": 0.9655172413793104
+            },
+            "name_no_cue": {
+              "tp": 21,
+              "fp": 0,
+              "fn": 0,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "f2": 1.0,
+              "gold_entities": 21,
+              "documents": 18,
+              "coverage_recall": 0.9364548494983278,
+              "coverage_precision": 0.7887323943661971,
+              "exact_recall": 0.7142857142857143
+            },
+            "negative": {
+              "gold_entities": 0,
+              "documents": 45,
+              "false_positives": 0,
+              "clean_docs": 45,
+              "clean_doc_rate": 1.0,
+              "coverage_precision": 1.0
+            },
+            "student_id_varied": {
+              "tp": 17,
+              "fp": 0,
+              "fn": 11,
+              "precision": 1.0,
+              "recall": 0.6071428571428571,
+              "f1": 0.7555555555555554,
+              "f2": 0.6589147286821706,
+              "gold_entities": 28,
+              "documents": 25,
+              "coverage_recall": 0.6377358490566037,
+              "coverage_precision": 1.0,
+              "exact_recall": 0.6071428571428571
+            }
+          },
+          "excluded_predictions": 89,
+          "confidence_intervals": {
+            "overall_f2": {
+              "metric": "f2",
+              "method": "percentile",
+              "unit": "document",
+              "scope": "shared_11",
+              "confidence": 0.95,
+              "iterations": 1000,
+              "seed": 0,
+              "lower": 0.9583184894905593,
+              "upper": 0.9863364645602049
+            }
+          }
+        },
+        "out_of_scheme_predictions": 89,
+        "type_scheme": {
+          "name": "shared-11",
+          "types": [
+            "THAI_ID",
+            "PHONE",
+            "EMAIL",
+            "BANK_ACCOUNT",
+            "CREDIT_CARD",
+            "PASSPORT",
+            "VEHICLE_PLATE",
+            "STUDENT_ID",
+            "DATE_OF_BIRTH",
+            "NAME",
+            "ADDRESS"
+          ],
+          "out_of_scheme_bucket": "OUT_OF_SCHEME"
+        }
+      },
+      "diagnostics": {
+        "attempted": 313,
+        "succeeded": 313,
+        "skipped": 0
+      },
+      "prediction_sha256": "ea06dd5ebf0b5850590ae0a934ca69a55318a93dfb3c6f26bac22522efba08a9",
+      "inventory": {
+        "summary": {
+          "gold_entities": 648,
+          "uncovered_characters": 158,
+          "overmasked_characters": 1665,
+          "out_of_scheme_predictions": 89,
+          "boundary_fully_covered": 36,
+          "partially_uncovered_entities": 15,
+          "partial_coverage": 15,
+          "uncovered_entities": 2,
+          "uncovered": 2,
+          "wrong_type_fully_covered": 17
+        },
+        "gold_errors": [
+          {
+            "doc_id": "nc08",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              13,
+              30
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                30,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "nc10",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              17,
+              29
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                29,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "nc11",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              25,
+              36
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                36,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "nc12",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              15,
+              29
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 6,
+            "overlapping_predictions": [
+              [
+                21,
+                29,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "nc16",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              14,
+              34
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 13,
+            "overlapping_predictions": [
+              [
+                0,
+                21,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "nc18",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              6,
+              22
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                22,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ad05",
+            "slice": "address_varied",
+            "type": "ADDRESS",
+            "span": [
+              22,
+              94
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 1,
+            "overlapping_predictions": [
+              [
+                22,
+                85,
+                "ADDRESS"
+              ],
+              [
+                86,
+                94,
+                "LOCATION"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ad09",
+            "slice": "address_varied",
+            "type": "ADDRESS",
+            "span": [
+              24,
+              88
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 5,
+            "overlapping_predictions": [
+              [
+                29,
+                88,
+                "ADDRESS"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ad10",
+            "slice": "address_varied",
+            "type": "ADDRESS",
+            "span": [
+              18,
+              84
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 14,
+            "overlapping_predictions": [
+              [
+                32,
+                84,
+                "ADDRESS"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ms14",
+            "slice": "messy",
+            "type": "NAME",
+            "span": [
+              17,
+              29
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                37,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "gf11",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              35,
+              54
+            ],
+            "kind": "uncovered",
+            "uncovered_characters": 19,
+            "overlapping_predictions": []
+          },
+          {
+            "doc_id": "gf13",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              45,
+              61
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                61,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "gf14",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              78,
+              96
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                61,
+                114,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "gf14",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              97,
+              114
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                61,
+                114,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "md04",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              40,
+              57
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                35,
+                57,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "md05",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              23,
+              38
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                20,
+                58,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "md11",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              46,
+              61
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                35,
+                61,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "md14",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              26,
+              46
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                46,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "fn02",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              36,
+              54
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                36,
+                66,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "fn03",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              45,
+              59
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 9,
+            "overlapping_predictions": [
+              [
+                45,
+                50,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "fn09",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              91,
+              106
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                78,
+                106,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "fn11",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              48,
+              62
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                40,
+                62,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "fn11",
+            "slice": "finance",
+            "type": "ADDRESS",
+            "span": [
+              75,
+              146
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 7,
+            "overlapping_predictions": [
+              [
+                75,
+                78,
+                "ADDRESS"
+              ],
+              [
+                79,
+                92,
+                "LOCATION"
+              ],
+              [
+                98,
+                146,
+                "ADDRESS"
+              ]
+            ]
+          },
+          {
+            "doc_id": "fn12",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              41,
+              58
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                41,
+                81,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed02",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              41,
+              62
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 7,
+            "overlapping_predictions": [
+              [
+                48,
+                75,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed04",
+            "slice": "education",
+            "type": "STUDENT_ID",
+            "span": [
+              61,
+              69
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                61,
+                69,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed04",
+            "slice": "education",
+            "type": "STUDENT_ID",
+            "span": [
+              93,
+              101
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                93,
+                101,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed04",
+            "slice": "education",
+            "type": "STUDENT_ID",
+            "span": [
+              129,
+              137
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                129,
+                137,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed10",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              45,
+              60
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                60,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed11",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              43,
+              55
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                34,
+                55,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed11",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              85,
+              102
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                70,
+                102,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed14",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              49,
+              63
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                36,
+                63,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed15",
+            "slice": "education",
+            "type": "STUDENT_ID",
+            "span": [
+              75,
+              83
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                75,
+                83,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "ed15",
+            "slice": "education",
+            "type": "STUDENT_ID",
+            "span": [
+              121,
+              129
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                121,
+                129,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "id14",
+            "slice": "id_docs",
+            "type": "VEHICLE_PLATE",
+            "span": [
+              36,
+              43
+            ],
+            "kind": "uncovered",
+            "uncovered_characters": 7,
+            "overlapping_predictions": []
+          },
+          {
+            "doc_id": "id15",
+            "slice": "id_docs",
+            "type": "NAME",
+            "span": [
+              24,
+              38
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                16,
+                38,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "id18",
+            "slice": "id_docs",
+            "type": "NAME",
+            "span": [
+              98,
+              117
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                94,
+                117,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "id27",
+            "slice": "id_docs",
+            "type": "ADDRESS",
+            "span": [
+              154,
+              204
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 5,
+            "overlapping_predictions": [
+              [
+                159,
+                204,
+                "ADDRESS"
+              ]
+            ]
+          },
+          {
+            "doc_id": "gf17",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              42,
+              59
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                59,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "gf17",
+            "slice": "gov_form",
+            "type": "PHONE",
+            "span": [
+              149,
+              159
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                149,
+                159,
+                "BANK_ACCOUNT"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf01",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              106,
+              125
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                99,
+                125,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf01",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              450,
+              469
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 9,
+            "overlapping_predictions": [
+              [
+                459,
+                482,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf02",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              493,
+              509
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 7,
+            "overlapping_predictions": [
+              [
+                500,
+                509,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              57,
+              75
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                53,
+                75,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              410,
+              426
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                397,
+                426,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf05",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              600,
+              616
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                592,
+                616,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf06",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              63,
+              82
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                59,
+                82,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf07",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              96,
+              114
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                92,
+                114,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf11",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              45,
+              60
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                41,
+                67,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf11",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              367,
+              381
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 1,
+            "overlapping_predictions": [
+              [
+                367,
+                375,
+                "NAME"
+              ],
+              [
+                376,
+                381,
+                "LOCATION"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf12",
+            "slice": "long_form",
+            "type": "ADDRESS",
+            "span": [
+              453,
+              534
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 14,
+            "overlapping_predictions": [
+              [
+                467,
+                534,
+                "ADDRESS"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf14",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              48,
+              65
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                44,
+                65,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf15",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              92,
+              109
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                84,
+                109,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf16",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              73,
+              86
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 6,
+            "overlapping_predictions": [
+              [
+                79,
+                105,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf17",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              508,
+              523
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                493,
+                523,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf17",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              573,
+              588
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                561,
+                588,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf18",
+            "slice": "long_form",
+            "type": "ADDRESS",
+            "span": [
+              114,
+              202
+            ],
+            "kind": "partial_coverage",
+            "uncovered_characters": 28,
+            "overlapping_predictions": [
+              [
+                114,
+                117,
+                "ADDRESS"
+              ],
+              [
+                145,
+                202,
+                "ADDRESS"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf19",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              432,
+              446
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                414,
+                446,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "lf20",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              78,
+              91
+            ],
+            "kind": "boundary_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                71,
+                91,
+                "NAME"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv09",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              22,
+              30
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                22,
+                30,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv10",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              0,
+              8
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                0,
+                8,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv11",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              25,
+              35
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                25,
+                35,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv12",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              21,
+              29
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                21,
+                29,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv12",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              30,
+              38
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                30,
+                38,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv12",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              39,
+              47
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                39,
+                47,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv15",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              12,
+              22
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                12,
+                22,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv17",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              13,
+              21
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                13,
+                21,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv18",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              5,
+              15
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                5,
+                15,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv20",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              12,
+              20
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                12,
+                20,
+                "ID_NUMBER"
+              ]
+            ]
+          },
+          {
+            "doc_id": "sv22",
+            "slice": "student_id_varied",
+            "type": "STUDENT_ID",
+            "span": [
+              12,
+              22
+            ],
+            "kind": "wrong_type_fully_covered",
+            "uncovered_characters": 0,
+            "overlapping_predictions": [
+              [
+                12,
+                22,
+                "ID_NUMBER"
+              ]
+            ]
+          }
+        ],
+        "extra_predictions": [
+          {
+            "doc_id": "nc08",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              0,
+              30
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "nc10",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              0,
+              29
+            ],
+            "outside_gold_characters": 17,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "nc11",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              0,
+              36
+            ],
+            "outside_gold_characters": 25,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "nc16",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              0,
+              21
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "nc18",
+            "slice": "name_no_cue",
+            "type": "NAME",
+            "span": [
+              0,
+              22
+            ],
+            "outside_gold_characters": 6,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ad03",
+            "slice": "address_varied",
+            "type": "ORGANIZATION",
+            "span": [
+              11,
+              26
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ad05",
+            "slice": "address_varied",
+            "type": "LOCATION",
+            "span": [
+              86,
+              94
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ad13",
+            "slice": "address_varied",
+            "type": "LOCATION",
+            "span": [
+              0,
+              12
+            ],
+            "outside_gold_characters": 12,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ms04",
+            "slice": "messy",
+            "type": "ADDRESS",
+            "span": [
+              34,
+              39
+            ],
+            "outside_gold_characters": 5,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ms08",
+            "slice": "messy",
+            "type": "MEDICAL_ID",
+            "span": [
+              27,
+              32
+            ],
+            "outside_gold_characters": 5,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ms12",
+            "slice": "messy",
+            "type": "ORGANIZATION",
+            "span": [
+              20,
+              37
+            ],
+            "outside_gold_characters": 17,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ms14",
+            "slice": "messy",
+            "type": "NAME",
+            "span": [
+              0,
+              37
+            ],
+            "outside_gold_characters": 25,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ms14",
+            "slice": "messy",
+            "type": "DATE",
+            "span": [
+              58,
+              64
+            ],
+            "outside_gold_characters": 6,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "bp01",
+            "slice": "bank_phone",
+            "type": "LOCATION",
+            "span": [
+              37,
+              45
+            ],
+            "outside_gold_characters": 8,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "bp03",
+            "slice": "bank_phone",
+            "type": "ORGANIZATION",
+            "span": [
+              39,
+              58
+            ],
+            "outside_gold_characters": 19,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "bp05",
+            "slice": "bank_phone",
+            "type": "ORGANIZATION",
+            "span": [
+              0,
+              19
+            ],
+            "outside_gold_characters": 19,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "bp09",
+            "slice": "bank_phone",
+            "type": "ORGANIZATION",
+            "span": [
+              36,
+              52
+            ],
+            "outside_gold_characters": 16,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "gf02",
+            "slice": "gov_form",
+            "type": "ORGANIZATION",
+            "span": [
+              6,
+              32
+            ],
+            "outside_gold_characters": 26,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "gf02",
+            "slice": "gov_form",
+            "type": "DATE",
+            "span": [
+              134,
+              148
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "gf09",
+            "slice": "gov_form",
+            "type": "DATE",
+            "span": [
+              165,
+              180
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "gf11",
+            "slice": "gov_form",
+            "type": "DATE",
+            "span": [
+              94,
+              109
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "gf13",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              0,
+              61
+            ],
+            "outside_gold_characters": 45,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "gf14",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              61,
+              114
+            ],
+            "outside_gold_characters": 18,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "gf16",
+            "slice": "gov_form",
+            "type": "DATE",
+            "span": [
+              92,
+              107
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "md01",
+            "slice": "medical",
+            "type": "DATE",
+            "span": [
+              101,
+              116
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "md02",
+            "slice": "medical",
+            "type": "MEDICAL_ID",
+            "span": [
+              68,
+              75
+            ],
+            "outside_gold_characters": 7,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "md04",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              35,
+              57
+            ],
+            "outside_gold_characters": 5,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "md05",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              20,
+              58
+            ],
+            "outside_gold_characters": 23,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "md05",
+            "slice": "medical",
+            "type": "DATE",
+            "span": [
+              68,
+              83
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "md08",
+            "slice": "medical",
+            "type": "ORGANIZATION",
+            "span": [
+              0,
+              26
+            ],
+            "outside_gold_characters": 26,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "md10",
+            "slice": "medical",
+            "type": "PASSPORT",
+            "span": [
+              32,
+              41
+            ],
+            "outside_gold_characters": 9,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "md11",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              35,
+              61
+            ],
+            "outside_gold_characters": 11,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "md14",
+            "slice": "medical",
+            "type": "NAME",
+            "span": [
+              0,
+              46
+            ],
+            "outside_gold_characters": 26,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "fn02",
+            "slice": "finance",
+            "type": "ORGANIZATION",
+            "span": [
+              0,
+              7
+            ],
+            "outside_gold_characters": 7,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "fn02",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              36,
+              66
+            ],
+            "outside_gold_characters": 12,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "fn04",
+            "slice": "finance",
+            "type": "DATE",
+            "span": [
+              117,
+              132
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "fn06",
+            "slice": "finance",
+            "type": "ORGANIZATION",
+            "span": [
+              84,
+              100
+            ],
+            "outside_gold_characters": 16,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "fn09",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              78,
+              106
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "fn09",
+            "slice": "finance",
+            "type": "LOCATION",
+            "span": [
+              145,
+              148
+            ],
+            "outside_gold_characters": 3,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "fn11",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              40,
+              62
+            ],
+            "outside_gold_characters": 8,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "fn11",
+            "slice": "finance",
+            "type": "LOCATION",
+            "span": [
+              79,
+              92
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "fn12",
+            "slice": "finance",
+            "type": "NAME",
+            "span": [
+              41,
+              81
+            ],
+            "outside_gold_characters": 23,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ed01",
+            "slice": "education",
+            "type": "ORGANIZATION",
+            "span": [
+              136,
+              153
+            ],
+            "outside_gold_characters": 17,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed02",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              48,
+              75
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ed02",
+            "slice": "education",
+            "type": "ORGANIZATION",
+            "span": [
+              109,
+              123
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed04",
+            "slice": "education",
+            "type": "ID_NUMBER",
+            "span": [
+              61,
+              69
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed04",
+            "slice": "education",
+            "type": "ID_NUMBER",
+            "span": [
+              93,
+              101
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed04",
+            "slice": "education",
+            "type": "ID_NUMBER",
+            "span": [
+              129,
+              137
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed10",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              0,
+              60
+            ],
+            "outside_gold_characters": 45,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ed11",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              34,
+              55
+            ],
+            "outside_gold_characters": 9,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ed11",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              70,
+              102
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ed14",
+            "slice": "education",
+            "type": "NAME",
+            "span": [
+              36,
+              63
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ed14",
+            "slice": "education",
+            "type": "DATE",
+            "span": [
+              109,
+              123
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed15",
+            "slice": "education",
+            "type": "ID_NUMBER",
+            "span": [
+              75,
+              83
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ed15",
+            "slice": "education",
+            "type": "ID_NUMBER",
+            "span": [
+              121,
+              129
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "id11",
+            "slice": "id_docs",
+            "type": "LOCATION",
+            "span": [
+              39,
+              52
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "id15",
+            "slice": "id_docs",
+            "type": "NAME",
+            "span": [
+              16,
+              38
+            ],
+            "outside_gold_characters": 8,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "id16",
+            "slice": "id_docs",
+            "type": "DATE",
+            "span": [
+              44,
+              59
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "id16",
+            "slice": "id_docs",
+            "type": "DATE",
+            "span": [
+              77,
+              92
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "id16",
+            "slice": "id_docs",
+            "type": "DATE",
+            "span": [
+              110,
+              123
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "id18",
+            "slice": "id_docs",
+            "type": "NAME",
+            "span": [
+              94,
+              117
+            ],
+            "outside_gold_characters": 4,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "ng01",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              42,
+              58
+            ],
+            "outside_gold_characters": 16,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng06",
+            "slice": "negative",
+            "type": "ORGANIZATION",
+            "span": [
+              35,
+              47
+            ],
+            "outside_gold_characters": 12,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng07",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              36,
+              50
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng07",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              80,
+              95
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "gf17",
+            "slice": "gov_form",
+            "type": "NAME",
+            "span": [
+              0,
+              59
+            ],
+            "outside_gold_characters": 42,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf01",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              99,
+              125
+            ],
+            "outside_gold_characters": 7,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf01",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              459,
+              482
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf02",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              237,
+              252
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf02",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              267,
+              282
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf02",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              621,
+              636
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf03",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              33,
+              47
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf03",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              55,
+              70
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf03",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              228,
+              242
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf03",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              563,
+              577
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              53,
+              75
+            ],
+            "outside_gold_characters": 4,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              258,
+              295
+            ],
+            "outside_gold_characters": 37,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              397,
+              426
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              441,
+              454
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf04",
+            "slice": "long_form",
+            "type": "LOCATION",
+            "span": [
+              585,
+              588
+            ],
+            "outside_gold_characters": 3,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf05",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              49,
+              64
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf05",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              483,
+              499
+            ],
+            "outside_gold_characters": 16,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf05",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              564,
+              579
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf05",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              592,
+              616
+            ],
+            "outside_gold_characters": 8,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf06",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              59,
+              82
+            ],
+            "outside_gold_characters": 4,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf06",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              170,
+              185
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf07",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              52,
+              67
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf07",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              92,
+              114
+            ],
+            "outside_gold_characters": 4,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf07",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              305,
+              320
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf08",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              27,
+              43
+            ],
+            "outside_gold_characters": 16,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf08",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              51,
+              65
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf09",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              85,
+              99
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf09",
+            "slice": "long_form",
+            "type": "LOCATION",
+            "span": [
+              102,
+              124
+            ],
+            "outside_gold_characters": 22,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf10",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              65,
+              80
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf11",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              41,
+              67
+            ],
+            "outside_gold_characters": 11,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf11",
+            "slice": "long_form",
+            "type": "LOCATION",
+            "span": [
+              376,
+              381
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf12",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              79,
+              93
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf13",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              86,
+              101
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf14",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              44,
+              65
+            ],
+            "outside_gold_characters": 4,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf15",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              84,
+              109
+            ],
+            "outside_gold_characters": 8,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf16",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              79,
+              105
+            ],
+            "outside_gold_characters": 19,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf17",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              479,
+              492
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf17",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              493,
+              523
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf17",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              561,
+              588
+            ],
+            "outside_gold_characters": 12,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf18",
+            "slice": "long_form",
+            "type": "ORGANIZATION",
+            "span": [
+              29,
+              66
+            ],
+            "outside_gold_characters": 37,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf19",
+            "slice": "long_form",
+            "type": "DATE",
+            "span": [
+              64,
+              79
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "lf19",
+            "slice": "long_form",
+            "type": "ADDRESS",
+            "span": [
+              100,
+              110
+            ],
+            "outside_gold_characters": 10,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf19",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              414,
+              446
+            ],
+            "outside_gold_characters": 18,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "lf20",
+            "slice": "long_form",
+            "type": "NAME",
+            "span": [
+              71,
+              91
+            ],
+            "outside_gold_characters": 7,
+            "out_of_scheme": false
+          },
+          {
+            "doc_id": "sv01",
+            "slice": "student_id_varied",
+            "type": "ORGANIZATION",
+            "span": [
+              22,
+              36
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv09",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              22,
+              30
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv10",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              0,
+              8
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv11",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              25,
+              35
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv12",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              21,
+              29
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv12",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              30,
+              38
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv12",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              39,
+              47
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv15",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              12,
+              22
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv17",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              13,
+              21
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv18",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              5,
+              15
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv20",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              12,
+              20
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "sv22",
+            "slice": "student_id_varied",
+            "type": "ID_NUMBER",
+            "span": [
+              12,
+              22
+            ],
+            "outside_gold_characters": 0,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng13",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              36,
+              49
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng20",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              39,
+              54
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng24",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              73,
+              87
+            ],
+            "outside_gold_characters": 14,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng26",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              58,
+              71
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng28",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              29,
+              44
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng31",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              27,
+              40
+            ],
+            "outside_gold_characters": 13,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng35",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              31,
+              47
+            ],
+            "outside_gold_characters": 16,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng37",
+            "slice": "negative",
+            "type": "ORGANIZATION",
+            "span": [
+              15,
+              30
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng40",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              66,
+              81
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng41",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              42,
+              57
+            ],
+            "outside_gold_characters": 15,
+            "out_of_scheme": true
+          },
+          {
+            "doc_id": "ng43",
+            "slice": "negative",
+            "type": "DATE",
+            "span": [
+              55,
+              73
+            ],
+            "outside_gold_characters": 18,
+            "out_of_scheme": true
+          }
+        ]
+      },
+      "one_pass_seconds_including_model_load": null
+    }
+  }
+}

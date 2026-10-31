@@ -74,8 +74,10 @@ agreement. Same-family authors, limited component pools, shared framing and
 constructed negatives limit generalisation. Originals and the blinding key
 intentionally remain outside every repository at
 `C:/Users/teera/aiguard-yrss-holdout-v1/`; developer contexts must not open it.
-The held-out set has not been scored. One paired disclosure is reserved for
-the final development-selected candidate. No tuning may follow disclosure.
+The held-out paired disclosure is complete. See [RESULTS.md](RESULTS.md) and
+`heldout-paired.json` for exact results and uncertainty. The original source
+candidate remains frozen at `ed01027`. This set is now closed to tuning and
+must never be presented as a new blind evaluation after further changes.
 
 ## Research extension: source-projected input recovery
 
@@ -106,3 +108,7 @@ it does not estimate linkage-attack success or legal risk.
 Residual limits include irregularly spaced email/IBAN forms, semantic NER
 misses, broader span arbitration, and real-document/human annotation evidence.
 The installed and hosted binaries have not been updated by this source work.
+
+Final local validation: 2,791 Python tests passed, 34 skipped, one existing
+dependency deprecation warning; lint, format, version consistency and diff
+checks passed. CI, deployment and packaged-runtime acceptance are not claimed.

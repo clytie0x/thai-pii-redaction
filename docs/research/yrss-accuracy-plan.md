@@ -129,3 +129,19 @@ them as independent generalisation samples. Gold and the sealed held-out
 remain separate. Keep the primary held-out protocol unchanged and undisclosed
 until final candidate selection. A positive benchmark result alone does not
 establish anonymity, live-provider safety or real-document accuracy.
+
+## Closure evidence
+
+- Local source candidate: `ed01027f2e782b6f83d88520c7fe9d2547a84ba1`.
+- All six local research tasks complete; exact results and limitations live at
+  `research/yrss2026/RESULTS.md`, with machine-readable evidence beside it.
+- Final Python lane: 2,791 passed, 34 skipped. Lint/format/version/diff checks
+  passed. Relative time/memory controls passed without moving legacy anchors.
+- Second independent review's mixed-obfuscation blocker was reproduced and
+  fixed by preserving original guard units, rather than a fixture-only patch.
+- One paired held-out disclosure completed, two scored arms, no skipped NER
+  chunks. No runtime source changes or tuning after disclosure.
+- Current delivery is local source/research evidence. No remote push, main
+  merge, new installer, deployment, live-provider, or human annotation claim.
+- Ruling: preserve the local research branch for owner review; the request
+  authorized research/development, not publication or promotion of a product.
