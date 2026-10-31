@@ -15,5 +15,8 @@ research/pdpa-coverage/*.json -text whitespace=blank-at-eol,blank-at-eof,space-b
 research/pdpa-coverage/annotation-guide-at-freeze.md -text
 docs/research/pdpa-coverage-plan.md -text
 
+# Migration fingerprints must survive checkout on every supported platform.
+pii_redactor/governance/migrations/*.sql text eol=lf
+
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary

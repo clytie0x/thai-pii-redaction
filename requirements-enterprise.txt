@@ -1,0 +1,3 @@
+# Optional enterprise service. Keep the ordinary application lock unchanged.
+authlib==1.9.1
+psycopg[binary]==3.3.6
