@@ -1,0 +1,44 @@
+{
+  "methods": {
+    "keyword": {
+      "strategy": "keyword",
+      "cold_start_seconds": 0.38442509999731556,
+      "warm_ms": {
+        "p50": 1.623150001250906,
+        "p95": 1.845099999627564
+      },
+      "rss_mb": 124.7578125,
+      "peak_mb": 134.33203125,
+      "peak_kind": "peak_working_set",
+      "probe": "fixed_public_synthetic_text",
+      "network": "local_artifacts_only"
+    },
+    "contextual": {
+      "strategy": "contextual",
+      "cold_start_seconds": 0.3603676999991876,
+      "warm_ms": {
+        "p50": 1.6960499960987363,
+        "p95": 1.8654000014066696
+      },
+      "rss_mb": 124.5546875,
+      "peak_mb": 134.1484375,
+      "peak_kind": "peak_working_set",
+      "probe": "fixed_public_synthetic_text",
+      "network": "local_artifacts_only"
+    },
+    "hybrid": {
+      "strategy": "hybrid",
+      "cold_start_seconds": 7.731796400003077,
+      "warm_ms": {
+        "p50": 19.764199998462573,
+        "p95": 20.209899994370062
+      },
+      "rss_mb": 1216.39453125,
+      "peak_mb": 1664.76171875,
+      "peak_kind": "peak_working_set",
+      "probe": "fixed_public_synthetic_text",
+      "network": "local_artifacts_only"
+    }
+  },
+  "limits": "Single fixed public probe, separate processes; not workload/population/SLO evidence."
+}

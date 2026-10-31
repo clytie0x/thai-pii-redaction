@@ -23,6 +23,7 @@ def worker(strategy, model_dir):
     start = time.perf_counter()
     sys.path.insert(0, str(ROOT))
     import psutil
+
     from pii_redactor.pdpa_assessment import assess_text
 
     if strategy == "hybrid":

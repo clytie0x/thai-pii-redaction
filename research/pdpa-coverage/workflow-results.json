@@ -1,0 +1,29 @@
+{
+  "schema": "pdpa-workflow-scenarios/1",
+  "rule_version": "TH_PDPA_2026_10_31",
+  "cases": 20,
+  "methods": {
+    "uniform_consent": {
+      "passed": 1,
+      "missing_required": 26,
+      "forbidden_suggestions": 3
+    },
+    "manual_only": {
+      "passed": 3,
+      "missing_required": 27,
+      "forbidden_suggestions": 0
+    },
+    "basis_lifecycle": {
+      "passed": 20,
+      "missing_required": 0,
+      "forbidden_suggestions": 0
+    }
+  },
+  "execution": "none",
+  "sources": {
+    "act": "https://ratchakitcha.soc.go.th/documents/17082307.pdf",
+    "access2026": "https://ratchakitcha.soc.go.th/documents/121423.pdf",
+    "erasure2024": "https://infocenter.oic.go.th/upload/cms/1744195455_4477.pdf"
+  },
+  "limits": "Hand-authored functional requirements, not independent legal outcome accuracy. Weak policies are experimental comparisons only."
+}

@@ -98,6 +98,13 @@ connectors before any organizational rollout.
 
 ## Existing capability reuse and boundaries
 
+Evaluation-informed routing: controller-confirmed category inventory is an
+independent input, never an inference from zero detector findings. The measured
+ACTIVITY/QUASI_IDENTIFIERS gaps require manual classification and purpose review.
+Use deep hybrid assessment on relevant records even when a fast screen is
+empty. No future executor may grant approval without authoritative inventory,
+scope/basis/condition checks and human verification of unresolved capabilities.
+
 `receipt` supplies per-run evidence; `dsar locate` helps discovery; `breach
 assess` helps incident triage. None completes consent, rights fulfilment or
 regulatory notification. Evaluate DPO, processor agreements, security measures,

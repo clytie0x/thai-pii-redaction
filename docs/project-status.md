@@ -2,6 +2,13 @@
 
 Updated: 2026-08-14
 
+PDPA design update (2026-10-31): local `ai_guard.py pdpa assess/coverage/lifecycle`
+adds category evidence and non-executing lifecycle plans. The
+[measured three-way comparison](../research/pdpa-coverage/RESULTS.md) explicitly
+reports partial coverage, unsupported modalities and remaining attribution
+gaps. It does not change HTTP/native/Hosted acceptance or establish complete
+legal compliance, consent/identity verification, deletion or rights fulfilment.
+
 YRSS research update (2026-10-31): see
 [the current campaign](../research/yrss2026/README.md) and
 [research plan](research/yrss-accuracy-plan.md) for the local baseline,

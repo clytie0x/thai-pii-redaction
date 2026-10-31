@@ -62,9 +62,9 @@ The initial calibration was retained, including poor attribution performance.
 Ordinary third-person references, student-field/generic-discussion separation,
 reported possessives and all-catalog semantic prototypes were developed with
 synthetic RED/GREEN tests before final evaluation. This is development, not an
-independent gain claim. Final calibration will choose the registered operating
-point and bind the exact metric/helper/model/source identities. One final batch
-of three strategies is reserved; no tuning follows disclosure.
+independent gain claim. Final calibration chose the registered operating
+point and bound the exact metric/helper/model/source identities. The final batch
+of three strategies is complete; no tuning follows disclosure.
 
 ## Lifecycle comparison boundary
 
@@ -86,4 +86,10 @@ remain the separate organization architecture in LIFECYCLE-DESIGN.md.
   Lint/format/version/diff checks passed. Existing-path sanitizer anchor remains
   red before and after these additive modes; it was not moved. There is no
   claim of remote CI, installed-host, provider, modality or production acceptance.
-- Final corpus comparison and method recommendation remain pending.
+- Final comparison completed once on210 records/3 strategies; see
+  [RESULTS.md](RESULTS.md) for metrics, trade-offs and measured category gaps.
+  Hybrid has the highest measured macro personal-attribution F2; contextual
+  has higher personal precision and lower cost. No automatic method covers all
+  tested categories reliably. Independent manual inventory/approval is required.
+- The final set is closed to further tuning. The original registration stays
+  immutable; current outcomes live in RESULTS.md, not edits to that protocol.

@@ -10,7 +10,8 @@ benchmark/data/*.lock.json text eol=lf
 
 # The broader PDPA context corpus is also byte-exact authenticated blinding.
 research/pdpa-coverage/*.enc -text
-research/pdpa-coverage/*.json -text
+# Keep measured bytes and accept CRLF as line endings in whitespace checks.
+research/pdpa-coverage/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 research/pdpa-coverage/annotation-guide-at-freeze.md -text
 docs/research/pdpa-coverage-plan.md -text
 

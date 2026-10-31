@@ -1,0 +1,17 @@
+{
+  "python_passed": 2840,
+  "python_skipped": 34,
+  "warnings": [
+    "existing_fastapi_starlette_deprecation"
+  ],
+  "focused_pdpa_passed": 49,
+  "checks": [
+    "ruff_check",
+    "ruff_format",
+    "version_consistency",
+    "git_diff_check",
+    "old_blind_chain_intact"
+  ],
+  "delivery": "local_source_and_research_only",
+  "no_post_disclosure_classifier_tuning": true
+}
