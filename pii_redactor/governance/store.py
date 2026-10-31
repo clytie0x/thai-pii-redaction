@@ -122,7 +122,9 @@ class Store:
             elif organization["organization_id"] != self.organization_id:
                 raise GovernanceError("organization_mismatch")
 
-    def _append_enrollment_audit(self, tx, member_count):
+    def append_event(
+        self, tx, *, event_code, actor_id=None, target_id=None, revision=None, details=None
+    ):
         self.lock(tx)
         tail = tx.execute(
             "SELECT sequence, event_hash FROM governance_audit ORDER BY sequence DESC LIMIT 1"
@@ -131,12 +133,12 @@ class Store:
             "sequence": tail["sequence"] + 1 if tail else 1,
             "event_id": uuid4(),
             "organization_id": self.organization_id,
-            "actor_id": None,
-            "event_code": "organization.enrolled",
-            "target_id": self.organization_id,
-            "record_revision": None,
+            "actor_id": actor_id,
+            "event_code": event_code,
+            "target_id": target_id,
+            "record_revision": revision,
             "occurred_at": datetime.now(UTC),
-            "details": {"member_count": member_count},
+            "details": details or {},
             "previous_hash": tail["event_hash"] if tail else _ZERO_HASH,
         }
         event["event_hash"] = _event_digest(event)
@@ -150,6 +152,7 @@ class Store:
         """,
             {**event, "details": Jsonb(event["details"])},
         )
+        return event["event_id"]
 
     def bootstrap(self, members: Sequence[Enrollment]) -> list[UUID]:
         try:
@@ -195,7 +198,12 @@ class Store:
                 )
                 ids.append(member_id)
             tx.execute("UPDATE governance_organization SET enrolled_at = now()")
-            self._append_enrollment_audit(tx, len(members))
+            self.append_event(
+                tx,
+                event_code="organization.enrolled",
+                target_id=self.organization_id,
+                details={"member_count": len(members)},
+            )
             return ids
 
     def verify_audit(self):

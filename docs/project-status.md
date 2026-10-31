@@ -5,8 +5,16 @@ Updated: 2026-08-14
 Enterprise PDPA direction (2026-10-31): the owner requested work toward a full
 organization system. The [proposed control-plane architecture](decisions/2026-10-31-pdpa-enterprise-control-plane.md)
 has had an independent builder check; the owner confirmed a single self-hosted
-organization and implementation is starting. The design adds no enterprise runtime, persistent consent, authenticated staff
-workflow or execution acceptance. The existing local prototype remains separate.
+organization. Implementation is in the managed `feat/pdpa-enterprise` worktree
+at `.worktrees/pdpa-enterprise/`. The PostgreSQL authority layer has real restart,
+transaction rollback, audit-chain and built-wheel evidence; its full Python gate
+passed 2,861 tests with 34 skips. Scoped processing/notice/membership commands
+currently pass 44 focused real-database tests, including independent approval,
+revocation, idempotency, concurrency and immutable notices. These tests use
+synthetic trusted domain principals, not accepted OIDC staff authentication.
+OIDC/web, persistent consent, retention/rights execution, wider governance,
+independent whole-branch review and deployment remain open. The local assessment
+prototype and legacy HTTP/native acceptance remain separate.
 
 PDPA design update (2026-10-31): local `ai_guard.py pdpa assess/coverage/lifecycle`
 adds category evidence and non-executing lifecycle plans. The
