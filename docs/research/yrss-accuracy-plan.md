@@ -78,3 +78,26 @@ or changes to the submitted abstract are part of this campaign.
 
 Tasks 1-6 remain open until their evidence is recorded here and in generated
 reports. All historical scores retain their original corpus and commit labels.
+
+## Progress and expanded owner scope
+
+- Tasks 1-2 complete: baseline reproduced with offline repeats and hashes;
+  `yrss-holdout-v1` frozen at 185 documents/714 annotations before detector edits.
+  Isolated author/reviewer QA is preserved at `research/yrss2026/heldout-qa.json`.
+- Task 3 format checkpoint: card lengths, checksum-collision span retention,
+  and Thai-digit phone prefixes have focused mechanism and mask/restore tests.
+  Corrected full Python suite: 2,749 passed, 34 skipped; old corpora unchanged.
+- Review corrections: preserve card detections beside numeric fields; prefer
+  complete card coverage to a shorter Thai-ID prefix; bind runner/parser/loader
+  and paired driver, not only scorer/model/source. Each was RED then GREEN.
+- Ruling: short cards require explicit card context, because an existing OCR
+  retry regression proved checksum alone promotes corrupted IDs. Existing
+  16-digit compatibility is preserved, including its known overmasking limit.
+- Ruling: reachable historical gold-v3 bytes were verified by the original
+  SHA-256 before repairing its obsolete commit reference. No old score rebound.
+- Ruling: freeze validation now rejects maximal exactly13-digit negative tokens,
+  matching the written guideline; allowed longer reference codes were retained.
+- 2026-10-31: the owner expanded the goal to research and implement difficult,
+  high-value improvements. Research current alternatives before choosing the
+  next contribution. Preserve this plan and the untouched held-out boundary.
+  Tasks 4-6 remain open; no held-out disclosure or accuracy improvement claimed.

@@ -1,0 +1,63 @@
+{
+  "controls": [
+    {
+      "arm": "baseline",
+      "iteration": 0,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "candidate",
+      "iteration": 0,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "baseline",
+      "iteration": 1,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "candidate",
+      "iteration": 1,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "baseline",
+      "iteration": 2,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "candidate",
+      "iteration": 2,
+      "legacy_gate_exit": 1
+    }
+  ],
+  "baseline_commit": "19fe9f0c209c587c7662ee5302edc752f0fd32c8",
+  "comparison": "median of three alternating source arms in the same installed environment",
+  "operations": {
+    "detect": {
+      "baseline": 5.37,
+      "candidate": 5.2,
+      "ratio": 0.9683426443202979
+    },
+    "sanitize": {
+      "baseline": 13.92,
+      "candidate": 13.9,
+      "ratio": 0.9985632183908046
+    },
+    "restore": {
+      "baseline": 0.23,
+      "candidate": 0.24,
+      "ratio": 1.0434782608695652
+    },
+    "pdf_redact": {
+      "baseline": 68.31,
+      "candidate": 68.48,
+      "ratio": 1.0024886546625678
+    }
+  },
+  "peak_rss_mb": {
+    "baseline": 151.6,
+    "candidate": 151.5
+  },
+  "peak_rss_ratio": 0.9993403693931399
+}

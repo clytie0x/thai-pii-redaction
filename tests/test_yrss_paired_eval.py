@@ -34,6 +34,8 @@ def test_arm_identity_rejects_modified_detector_or_model():
             "corpus_sha256",
             "packages",
             "python",
+            "runtime_evaluator_sha256",
+            "paired_driver_sha256",
         ),
         "original",
     )

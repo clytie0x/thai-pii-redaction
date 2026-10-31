@@ -252,6 +252,11 @@ def manifest() -> dict:
         "evaluator_sha256": {
             p.name: file_digest(p) for p in sorted((ROOT / "benchmark").glob("*.py"))
         },
+        "runtime_evaluator_sha256": {
+            name: file_digest(ROOT / "benchmark" / name)
+            for name in ("runner.py", "gold.py", "scorer.py", "types.py", "blind.py")
+        },
+        "paired_driver_sha256": file_digest(ROOT / "scripts/yrss_paired_eval.py"),
         "corpus_sha256": file_digest(ROOT / "benchmark/data/gold.jsonl"),
         "requirements_sha256": file_digest(ROOT / "requirements.lock"),
         "model_sha256": {"thainer-1.4": model_hash},
@@ -283,6 +288,8 @@ def verify_identity(reference: dict, current: dict) -> None:
         "python",
         "pythainlp_assets_sha256",
         "evaluator_sha256",
+        "runtime_evaluator_sha256",
+        "paired_driver_sha256",
     ):
         if key not in reference or key not in current or reference[key] != current[key]:
             raise ValueError(f"identity mismatch: {key}")

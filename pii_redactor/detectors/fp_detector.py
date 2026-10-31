@@ -276,7 +276,13 @@ def _student_evidence(text: str, start: int, end: int) -> int | None:
 # digit-boundary lookarounds still reject a value embedded in a longer number
 # while allowing letter/Thai adjacency (recall > precision).
 _RE_THAI_ID = re.compile(r"(?<!\d)(\d{1}[-\s]?\d{4}[-\s]?\d{5}[-\s]?\d{2}[-\s]?\d{1})(?!\d)")
-_RE_CREDIT_CARD = re.compile(r"(?<!\d)(\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4})(?!\d)")
+# Short cards need a card cue: checksum alone also admits corrupted OCR IDs.
+# Preserve the existing 16-digit forms beside row numbers or amounts. The
+# newly admitted short grouped forms must not be fragments of a longer code.
+_RE_CREDIT_CARD = re.compile(
+    r"(?<!\d)(\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}"
+    r"|(?<!\d[-\s])\d(?:[-\s]?\d){12,14}(?![-\s]?\d)|\d{13,15})(?!\d)"
+)
 # Total length is bounded 15-34 to match real IBANs (shortest is Norway at 15,
 # longest is 34) -- the old {4,30} lower bound made the total minimum 8, which
 # let a 9-char passport-length string ([A-Z]{2}\d{7}) both match the shape AND
@@ -295,7 +301,8 @@ _RE_EMAIL = re.compile(
     r"(?<![a-zA-Z0-9._%+\-])([a-zA-Z0-9][a-zA-Z0-9._%+\-]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"
     r"(?![a-zA-Z0-9\-])"
 )
-_RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\d)")
+# Accept Thai prefix digits without normalizing away authoritative offsets.
+_RE_PHONE_MOBILE = re.compile(r"(?<!\d)([0๐][- ]?[6-9๖-๙]\d[-\s]?\d{3}[-\s]?\d{4})(?!\d)")
 # Thai landlines are 9 digits (not 10). Two written shapes, both 9 digits:
 #   Bangkok    02-XXX-XXXX  (2-digit area, then 3+4)
 #   provincial 0XX-XXX-XXX  (3-digit area, then 3+3)
@@ -314,13 +321,13 @@ _RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\
 # a leading zero has no such excuse: a false entity spanning rows still causes
 # irreversible interval-based PDF masking across both rows.
 _RE_PHONE_LANDLINE = re.compile(
-    r"(?<!\d)(0[- ]?(?:2[-\s]?\d{3}[-\s]?\d{4}|[3-7]\d[-\s]?\d{3}[-\s]?\d{3}))(?!\d)"
+    r"(?<!\d)([0๐][- ]?(?:[2๒][-\s]?\d{3}[-\s]?\d{4}|[3-7๓-๗]\d[-\s]?\d{3}[-\s]?\d{3}))(?!\d)"
 )
 # +66 form drops the national leading 0, so a Thai number carries 8 (landline)
 # or 9 (mobile) digits after +66 -- e.g. +66 81 234 5678 is 9. The old pattern
 # only matched 8, missing every mobile and leaking it to the STUDENT_ID
 # catch-all. Allow an optional single separator between any two digits.
-_RE_PHONE_INTL = re.compile(r"(?<![a-zA-Z0-9_])(\+66[-\s]?\d(?:[-\s]?\d){7,8})(?!\d)")
+_RE_PHONE_INTL = re.compile(r"(?<![a-zA-Z0-9_])(\+[6๖]{2}[-\s]?\d(?:[-\s]?\d){7,8})(?!\d)")
 _RE_BANK_ACCOUNT_1 = re.compile(r"(?<!\d)(\d{3}[-\s]?\d{1}[-\s]?\d{5}[-\s]?\d{1})(?!\d)")
 _RE_BANK_ACCOUNT_2 = re.compile(r"(?<!\d)(\d{7}[-\s]?\d{3})(?!\d)")
 _RE_DATE = re.compile(
@@ -534,6 +541,8 @@ _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 # substring, so the alternation stays minimal.
 _BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
 _PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|มือถือ|ติดต่อ")
+_CARD_CUE_RE = re.compile(r"บัตรเครดิต|บัตรเดบิต|credit\s*card|debit\s*card", re.IGNORECASE)
+_PERSON_ID_CUE_RE = re.compile(r"บัตรประชาชน|เลขประจำตัวประชาชน|เลขผู้เสียภาษี")
 
 # Honest-label cues (Horizon-2 #10). "เกิด" as substring covers วันเกิด /
 # เกิดวันที่ / เกิดเมื่อ — but NOT เกิดเหตุ/เหตุเกิด, which are incident
@@ -750,7 +759,25 @@ def detect_fp(text: str) -> list[Entity]:
     # 2. CREDIT_CARD
     for m in _RE_CREDIT_CARD.finditer(text):
         raw = _SEP_RE.sub("", m.group(1))
-        if len(raw) == 16 and _luhn_check(raw):
+        if 13 <= len(raw) <= 16 and _luhn_check(raw):
+            start, end = m.span(1)
+            context = text[max(0, start - _CUE_WINDOW) : start]
+            card_cued = _rightmost_cue(_CARD_CUE_RE, context) > _rightmost_cue(
+                _PERSON_ID_CUE_RE, context
+            )
+            if len(raw) < 16 and not card_cued:
+                continue
+            # A shorter checksum-valid ID prefix must not uncover the card's
+            # suffix. Equal spans retain THAI_ID unless the nearer cue is card.
+            candidates = [
+                e
+                for e in candidates
+                if not (
+                    e.data_type == "THAI_ID"
+                    and e.span[0] == start
+                    and (e.span[1] < end or (e.span[1] == end and card_cued))
+                )
+            ]
             candidates.append(_make_entity("CREDIT_CARD", m, text, score=1.0))
 
     # 3. IBAN

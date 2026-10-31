@@ -35,6 +35,8 @@ IDENTITY_FIELDS = (
     "corpus_sha256",
     "packages",
     "python",
+    "runtime_evaluator_sha256",
+    "paired_driver_sha256",
 )
 SLICE_COUNTS = {
     "address_varied": 12,
@@ -108,6 +110,11 @@ def arm_identity(root: Path) -> dict:
             )
         ),
         "python": platform.python_version(),
+        "runtime_evaluator_sha256": {
+            name: digest(root / "benchmark" / name)
+            for name in ("runner.py", "gold.py", "scorer.py", "types.py", "blind.py")
+        },
+        "paired_driver_sha256": digest(Path(__file__)),
     }
 
 
@@ -173,9 +180,28 @@ def evaluate(args) -> dict:
     candidate = json.loads(args.candidate.read_text(encoding="utf-8"))["manifest"]
     if baseline["git"]["head"] != BASE:
         raise ValueError("baseline commit differs from pre-registration")
-    for key in IDENTITY_FIELDS[1:]:
+    for key in (k for k in IDENTITY_FIELDS[1:] if k != "runtime_evaluator_sha256"):
         if baseline[key] != candidate[key]:
             raise ValueError(f"non-detector comparison drift: {key}")
+    for name in ("runner.py", "gold.py", "scorer.py", "types.py"):
+        if (
+            baseline["runtime_evaluator_sha256"][name]
+            != candidate["runtime_evaluator_sha256"][name]
+        ):
+            raise ValueError("runtime evaluator comparison drift")
+    # The sole registered loader-file change aligns freeze validation with the
+    # written maximal-token rule. No other parser/loader difference is allowed.
+    old_blind = subprocess.check_output(
+        ["git", "show", f"{BASE}:benchmark/blind.py"], cwd=ROOT
+    ).replace(b"\r\n", b"\n")
+    old_rule = b'if re.search(r"\\d{13}", stripped):'
+    new_rule = b'if re.search(r"(?<!\\d)\\d{13}(?!\\d)", stripped):'
+    if (
+        old_blind.count(old_rule) != 1
+        or hashlib.sha256(old_blind.replace(old_rule, new_rule)).hexdigest()
+        != candidate["runtime_evaluator_sha256"]["blind.py"]
+    ):
+        raise ValueError("unregistered blind-loader difference")
     if args.out.exists():
         raise FileExistsError("paired output already exists")
     lock = json.loads((args.data_dir / f"{VERSION}.lock.json").read_text(encoding="utf-8"))
