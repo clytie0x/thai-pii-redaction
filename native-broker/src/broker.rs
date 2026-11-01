@@ -63,6 +63,10 @@ pub struct BrokerRuntime {
 struct ConnectionWorker {
     join: JoinHandle<()>,
     abort: NativeStreamAbortHandle,
+    // Held until the peer hangs up or the handler exits, whichever is first.
+    // The accept thread can release it without waiting to be scheduled inside
+    // the handler, so a closed client does not keep a slot that a new client needs.
+    permit: Arc<crate::transport::ConnectionPermit>,
 }
 
 impl std::fmt::Debug for BrokerRuntime {
@@ -205,6 +209,12 @@ impl BrokerRuntime {
                 backend_failed.store(true, Ordering::Release);
                 stop.store(true, Ordering::Release);
             }
+            // A client process can be gone while its handler thread has not run
+            // yet. Those slots still count until we observe the hangup here.
+            // Otherwise a burst that should fit overflows, and the overflow
+            // path used to block this loop, so the queued client timed out
+            // instead of receiving broker_busy.
+            release_closed_slots(&workers);
             let active = limiter.active();
             if active > 0 {
                 was_active = true;
@@ -242,15 +252,22 @@ impl BrokerRuntime {
                         continue;
                     }
                     let permit = match limiter.try_acquire() {
-                        Ok(permit) => permit,
+                        Ok(permit) => Arc::new(permit),
                         Err(_) => {
-                            send_terminal_fixed_error(
-                                connection.stream_mut(),
-                                "broker_busy",
-                                None,
-                                1,
-                                self.config.request_timeout,
-                            );
+                            // Draining the rejected client waits for it to
+                            // close. Doing that here stalled every later
+                            // accept for the whole request timeout, and those
+                            // clients observed operation_timeout.
+                            let timeout = self.config.request_timeout;
+                            std::thread::spawn(move || {
+                                send_terminal_fixed_error(
+                                    connection.stream_mut(),
+                                    "broker_busy",
+                                    None,
+                                    1,
+                                    timeout,
+                                );
+                            });
                             continue;
                         }
                     };
@@ -272,10 +289,12 @@ impl BrokerRuntime {
                     let product_version = self.product_version.clone();
                     let component_root = self.component_root.clone();
                     let config = self.config;
+                    let thread_permit = Arc::clone(&permit);
                     workers.push(ConnectionWorker {
                         abort,
+                        permit,
                         join: std::thread::spawn(move || {
-                            let _permit = permit;
+                            let _permit = thread_permit;
                             handle_connection(
                                 connection,
                                 &manifest,
@@ -775,6 +794,14 @@ fn send_fixed_error_until(
 fn abort_workers(workers: &[ConnectionWorker]) {
     for worker in workers {
         worker.abort.abort();
+    }
+}
+
+fn release_closed_slots(workers: &[ConnectionWorker]) {
+    for worker in workers {
+        if worker.abort.peer_disconnected() {
+            worker.permit.release();
+        }
     }
 }
 
