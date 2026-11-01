@@ -92,8 +92,9 @@ generated reports, model caches, and build output are deliberately ignored.
 `blind-v1` remains only as a closed historical audit trail after its six reveals;
 it is not a current blind evaluation set. The sealed `blind-v2.enc` protocol
 corpus stays closed. A separate reproducible synthetic comparison freeze now
-exists (`benchmark/blind_v2`, seed `20261101`). It is not a tuning set. Its
-results and the remaining gaps are in `docs/benchmark/`.
+exists (`benchmark/blind_v2`, seed `20261101`), with a harder prose pair
+locked beside it (dev seed `20261102`, test seed `20261103`). Neither is a
+tuning set. Results and the remaining gaps are in `docs/benchmark/`.
 
 ## Definition of done for a feature
 
