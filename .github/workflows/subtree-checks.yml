@@ -1,0 +1,99 @@
+# Imported workflows are not discovered here. Keep these jobs check-only.
+name: Imported product checks
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: subtree-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hosted-checks:
+    name: Hosted contracts and exact offline core image
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: apps/hosted
+    env:
+      CI_COMMIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.13"
+      - name: Install existing hash-locked check dependencies
+        run: |
+          python -m pip install pip==26.1.2
+          python -m pip install --require-hashes -r core/requirements.lock
+      - name: Run the complete declared check job in its pinned runner image
+        run: python tests/run_ci_local.py --job check --gitlab-network
+      - name: Build the exact Hosted core context
+        run: docker build --file core/Dockerfile --build-arg AIFT_BUILD_COMMIT=${{ github.sha }} --tag aiguard-hosted-check:${{ github.sha }} core
+      - name: Verify the image revision identity
+        run: |
+          revision=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' aiguard-hosted-check:${{ github.sha }})
+          test "$revision" = "$GITHUB_SHA"
+      - name: Exercise baked assets and detection with no container egress
+        run: |
+          docker run --rm --network none --entrypoint python \
+            -e AIGUARD_NER_ENGINE=thainer aiguard-hosted-check:${{ github.sha }} -c '
+          import os, subprocess, sys
+          assert os.environ.get("PYTHAINLP_OFFLINE") == "1"
+          subprocess.run([sys.executable, "/app/verify_thainer_assets.py"], check=True)
+          from pii_redactor.detectors.aggregate import detect_all
+          text = "Synthetic contact: 081-234-5678"
+          assert any(e.data_type == "PHONE" for e in detect_all(text))
+          print("Hosted image assets and offline synthetic detection passed")'
+
+  sdk-checks:
+    name: SDK ${{ matrix.profile }} locked checks and wheel (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+        profile: ["core", "server-mcp"]
+    defaults:
+      run:
+        working-directory: packages/amphrang
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.10.4"
+      - name: Sync frozen dependencies and install the unchanged SDK with a pinned builder
+        run: |
+          if [ "${{ matrix.profile }}" = core ]; then
+            uv sync --frozen --group dev --no-install-project --python "${{ matrix.python }}"
+          else
+            uv sync --frozen --extra server --extra mcp --group dev --no-install-project --python "${{ matrix.python }}"
+          fi
+          uv pip install --python .venv/bin/python --build-constraints ../../requirements-build.lock --no-deps --editable .
+      - name: Prove optional packages are absent from the bare profile
+        if: matrix.profile == 'core'
+        run: .venv/bin/python -c 'from importlib.util import find_spec; assert find_spec("fastapi") is None and find_spec("mcp") is None; import amphrang'
+      - name: Check the SDK contract, lint and release metadata
+        run: |
+          uv lock --check
+          .venv/bin/python scripts/check_release.py
+          .venv/bin/ruff check .
+          .venv/bin/ruff format --check .
+          .venv/bin/python scripts/prewarm_ner.py
+          .venv/bin/python -m pytest -q
+      - name: Build and install the actual SDK wheel outside source
+        run: |
+          uv build --python "${{ matrix.python }}" --wheel --build-constraints ../../requirements-build.lock --out-dir "$RUNNER_TEMP/sdk-wheel"
+          uv pip install --python .venv/bin/python --target "$RUNNER_TEMP/sdk-installed" --no-deps "$RUNNER_TEMP"/sdk-wheel/*.whl
+          AMPHRANG_NER_ENGINE=thainer PYTHAINLP_OFFLINE=1 .venv/bin/python -I ../../scripts/check_sdk_installed.py "$RUNNER_TEMP/sdk-installed" "$RUNNER_TEMP"/sdk-wheel/*.whl

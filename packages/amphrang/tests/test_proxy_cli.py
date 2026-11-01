@@ -1,5 +1,7 @@
 """Proxy CLI configuration is fail-closed before the server starts."""
 
+import builtins
+
 import pytest
 
 from amphrang.proxy.__main__ import main
@@ -18,7 +20,8 @@ def test_cli_refuses_missing_or_empty_model_allowlist(monkeypatch, capsys, raw):
 
 
 def test_cli_passes_trimmed_deduplicated_immutable_allowlist(monkeypatch):
-    import uvicorn
+    uvicorn = pytest.importorskip("uvicorn", reason="optional proxy extra")
+    pytest.importorskip("fastapi", reason="optional proxy extra")
 
     import amphrang.proxy.server as proxy_server
 
@@ -49,8 +52,26 @@ def test_cli_passes_trimmed_deduplicated_immutable_allowlist(monkeypatch):
 
 
 def test_cli_refuses_invalid_configured_model(monkeypatch, capsys):
+    pytest.importorskip("uvicorn", reason="optional proxy extra")
+    pytest.importorskip("fastapi", reason="optional proxy extra")
     monkeypatch.setenv("AMPHRANG_PROXY_UPSTREAM", "https://upstream.example")
     monkeypatch.setenv("AMPHRANG_PROXY_MODELS", "gpt-test,081-234-5678")
 
     assert main([]) == 1
     assert "contains an invalid model identifier" in capsys.readouterr().err
+
+
+def test_cli_reports_missing_proxy_extra_without_starting(monkeypatch, capsys):
+    original_import = builtins.__import__
+
+    def without_uvicorn(name, *args, **kwargs):
+        if name == "uvicorn":
+            raise ImportError("synthetic missing optional package")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setenv("AMPHRANG_PROXY_UPSTREAM", "https://upstream.example")
+    monkeypatch.setenv("AMPHRANG_PROXY_MODELS", "gpt-test")
+    monkeypatch.setattr(builtins, "__import__", without_uvicorn)
+
+    assert main([]) == 1
+    assert 'pip install "amphrang[proxy]"' in capsys.readouterr().err

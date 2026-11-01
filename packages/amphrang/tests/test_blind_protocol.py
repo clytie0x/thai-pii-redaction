@@ -19,6 +19,23 @@ import pytest
 
 from benchmark import blind
 
+
+def _in_git_checkout():
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.returncode == 0 and result.stdout.strip() == "true"
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+IN_GIT_CHECKOUT = _in_git_checkout()
+
 SENTINEL_NAME = "XQ_SENTINEL_NAME_XQ"
 SENTINEL_TEXT = "XQ_SENTINEL_BODY_XQ"
 
@@ -239,7 +256,7 @@ def test_llm_benchmark_paths_never_reference_blind():
 
 
 @pytest.mark.skipif(
-    not (Path(__file__).resolve().parents[1] / ".git").exists(),
+    not IN_GIT_CHECKOUT,
     reason="needs a git checkout",
 )
 def test_blind_scores_log_is_not_gitignored():
@@ -254,7 +271,7 @@ def test_blind_scores_log_is_not_gitignored():
 
 
 @pytest.mark.skipif(
-    not (Path(__file__).resolve().parents[1] / ".git").exists(),
+    not IN_GIT_CHECKOUT,
     reason="needs a git checkout",
 )
 def test_blind_blob_is_marked_binary_in_gitattributes():

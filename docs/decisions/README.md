@@ -11,6 +11,7 @@ by when the decision was made rather than continuously maintained.
 
 | Document | What it decides |
 |---|---|
+| [2026-11-02 shared-core compatibility](2026-11-02-shared-core-compatibility.md) | **Proposed; owner decision pending.** Compares SDK sensitive policy and namespace-preserving generated exports versus direct root dependency, and defines the required value-free provider-error migration. Independent proposal review is recorded; no runtime contract change is authorized. |
 | [2026-10-31 PDPA enterprise control plane](2026-10-31-pdpa-enterprise-control-plane.md) | **Accepted for local implementation; single self-hosted organization confirmed.** Defines authoritative records/roles, subject consent, retention/rights execution boundaries and staged acceptance. Implementation evidence remains separate from design and deployment acceptance. |
 | [2026-10-19 version reset](2026-10-19-version-reset.md) | The product version restarts at `0.1.0` and stays below `1.0.0` until the product can go to production (the hosted source too; production keeps `3.0.2` until redeployed); the `v1.0.0`-`v3.0.0` tags leave this repository and remain in the private archive |
 | [2026-10-19 monorepo import](2026-10-19-monorepo-import.md) | The hosted app and the `amphrang` SDK, whose GitHub repositories no longer exist, are imported into this repository at `apps/hosted/` and `packages/amphrang/` with full history by `git subtree`; nothing is unified yet, and the vendored hosted `pii_redactor` copy that has drifted stays until separate work replaces it |

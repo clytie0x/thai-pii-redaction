@@ -20,3 +20,16 @@ permission change, workflow bypass or main promotion was performed by the agent.
 Continue independent local engineering. Do not squash/promote this branch while
 required CI remains unexecuted. Local Windows Rust also remains blocked by the
 missing MSVC linker, so runner evidence is especially necessary before landing.
+
+## M3 exact-candidate recheck
+
+The later staff application checkpoint `a5b6f6423dff63c80248d471d80d868373f2153b`
+was pushed under the same feature-branch workflow. Its
+[CI run 41357959936](https://github.com/clytie0x/thai-pii-redaction/actions/runs/41357959936)
+has 16 failed jobs with zero executed steps, including the new mandatory
+enterprise/PostgreSQL job. Its
+[cross-platform run 41357959927](https://github.com/clytie0x/thai-pii-redaction/actions/runs/41357959927)
+has one failed job with zero steps. Both sampled check annotations repeat the
+same account-payment/spending-limit reason. This is fresh evidence of an
+unexecuted infrastructure gate, not 17 observed source/test failures. Main was
+not changed; every job still needs a real successful rerun on the exact candidate.

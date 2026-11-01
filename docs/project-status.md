@@ -18,6 +18,16 @@ See [M3 progress](acceptance/enterprise/M03-authority-progress.md),
 [M0 evidence](acceptance/enterprise/M00-baseline.md) and the
 [current release scope](enterprise/release-scope.md).
 
+M1 preparation now has a reviewed [compatibility inventory](enterprise/core-compatibility.md)
+and [proposed decision](decisions/2026-11-02-shared-core-compatibility.md).
+SDK policy, namespace/distribution and fixed-error contract choices await the
+owner; no SDK/Hosted engine or public runtime contract was changed. A partial
+root CI candidate adds existing Hosted check/image and locked SDK core/full
+profile checks. Actual isolated SDK Windows/Python 3.13 runs pass 1,989 full-profile
+tests (10 skips), 1,606 bare-profile tests (229 expected exclusions) and a fresh
+installed-wheel offline roundtrip. Configured jobs, missing local Docker and
+billing-blocked GitHub execution remain separate from passing CI; M1 is open.
+
 Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
 package/certification rows below describe their named historical candidates,
 not a current 0.x release. `apps/hosted/STATE.md` records a 3.0.2 deployment;
