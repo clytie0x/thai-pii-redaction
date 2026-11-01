@@ -544,10 +544,14 @@ protocol blobs. `corpus.py` builds synthetic documents from generation seed
 `20261101` (checksum-valid identifiers, mixed document styles, and adversarial
 spacing, zero-width, Thai-digit, Arabic-Indic, and OCR-like cases). The
 rendered text is not committed. `data/blind-v2-repro.lock.json` pins the
-SHA-256 and the counts, and `python -m benchmark.blind_v2 --self-check`
-regenerates the set in memory and compares that hash. Labels stay out of
-`pii_redactor/` and `app/`. This set is not a tuning target. It also does not
-replace `data/blind-v2.enc`: that sealed corpus stays closed.
+SHA-256 and the counts. `python -m benchmark.blind_v2 --self-check` regenerates
+the set and compares that hash. `python -m benchmark.blind_v2` scores AI Guard,
+a regex baseline, optional Presidio and WangchanBERTa runs, and PyThaiNLP NER,
+then reports per-entity precision, recall, and F2, micro and macro scores,
+latency, peak memory, cost, layer ablations, and a small utility set when a
+free or local model is available. Labels stay out of `pii_redactor/` and
+`app/`. This set is not a tuning target. It also does not replace
+`data/blind-v2.enc`: that sealed corpus stays closed.
 
 `blind.py` — the held-out blind set (Track A). **NEVER decrypt, read, or print
 the blind corpus in a development session** — it exists to measure whether

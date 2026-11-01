@@ -36,6 +36,10 @@ status page and does not silently override a newer current-state document.
   6:2566 governance practices; a correspondence, not a conformance claim.
 - [Benchmark contribution](benchmark-contribution.md) - how an outside document
   reaches the gold set, what validates it locally, and what gets turned away.
+- [Blind-v2 comparison results](benchmark/blind-v2-results.md) - the seeded
+  synthetic comparison and the command that reproduces it.
+- [Blind-v2 gap list](benchmark/gap-list.md) - what is still missing for a
+  best-in-Thailand claim.
 - [Versioning advisory](versioning-proposal.md) - preserves the published
   `v2.5.0` product line while any separate AI for Thai service version remains
   provisional.
