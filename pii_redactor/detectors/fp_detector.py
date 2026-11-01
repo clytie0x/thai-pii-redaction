@@ -675,6 +675,16 @@ def _plate_cue_before(text: str, start: int) -> bool:
     return False
 
 
+# "ป้าย" is how a plate is named in prose. It only cues when it sits directly
+# against the plate, so a sign-price sentence does not unlock a word-lead.
+_PLATE_SIGN_CUE_RE = re.compile(r"ป้าย(?:ทะเบียน|รถ)?[ \t]*$")
+
+
+def _plate_sign_cue(text: str, start: int) -> bool:
+    window = text[max(0, start - 12) : start]
+    return _PLATE_SIGN_CUE_RE.search(window) is not None
+
+
 # A cue glued straight onto the plate lets [ก-ฮ]{1,3} eat the cue word's own
 # tail consonant ("ทะเบียนรถขก 4471" -> "ถขก 4471"): over-masking, but the
 # wrong left edge. The full cue-word forms locate where the cue really ends so
@@ -851,7 +861,7 @@ def detect_fp(text: str) -> list[Entity]:
         lead = _PLATE_LEAD_RE.match(m.group(1))
         if lead and lead.group() in _PLATE_STOPWORDS:
             continue
-        plate_cued = _plate_cue_before(text, start)
+        plate_cued = _plate_cue_before(text, start) or _plate_sign_cue(text, start)
         if start > 0 and _THAI_CHAR_RE.match(text[start - 1]) and not plate_cued:
             continue
         if not plate_cued:
