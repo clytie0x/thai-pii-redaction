@@ -300,6 +300,38 @@ impl UnixAbortHandle {
     pub(crate) fn abort(&self) {
         let _ = self.stream.shutdown(std::net::Shutdown::Both);
     }
+
+    pub(crate) fn peer_disconnected(&self) -> bool {
+        use std::os::fd::AsRawFd;
+
+        let mut poll_fd = libc::pollfd {
+            fd: self.stream.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        // SAFETY: poll_fd points at one initialized descriptor and the timeout is zero.
+        let result = unsafe { libc::poll(&mut poll_fd, 1, 0) };
+        if result <= 0 {
+            return false;
+        }
+        if poll_fd.revents & (libc::POLLHUP | libc::POLLERR | libc::POLLNVAL) != 0 {
+            return true;
+        }
+        if poll_fd.revents & libc::POLLIN == 0 {
+            return false;
+        }
+        let mut byte = 0_u8;
+        // SAFETY: byte is a one-byte peek buffer and the descriptor is still owned here.
+        let received = unsafe {
+            libc::recv(
+                self.stream.as_raw_fd(),
+                (&mut byte as *mut u8).cast(),
+                1,
+                libc::MSG_PEEK | libc::MSG_DONTWAIT,
+            )
+        };
+        received == 0
+    }
 }
 
 impl Drop for UnixNativeStream {
@@ -1127,6 +1159,16 @@ fn current_executable(process_id: u32) -> Result<PathBuf, ProtocolError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn abort_handle_observes_peer_hangup_before_the_handler_runs() {
+        let (stream, peer) = UnixStream::pair().unwrap();
+        let native = UnixNativeStream { stream };
+        let abort = native.abort_handle().unwrap();
+        assert!(!abort.peer_disconnected());
+        drop(peer);
+        assert!(abort.peer_disconnected());
+    }
 
     #[test]
     fn dropping_stream_closes_peer_even_while_abort_handle_remains() {
