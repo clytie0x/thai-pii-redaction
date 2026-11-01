@@ -51,6 +51,18 @@ def test_cued_ministry_code_plate_unchanged():
     assert "กค 0409" in _plates("ทะเบียนรถ กค 0409")
 
 
+def test_sign_word_directly_before_a_plate_is_a_cue():
+    assert "กค 0409" in _plates("รถที่จอดหน้าบ้านป้าย กค 0409 เป็นของคนขับ")
+
+
+def test_sign_word_does_not_cue_a_distant_word_lead():
+    assert _plates("ป้ายราคา รวม 3 ฉบับ") == set()
+
+
+def test_uncued_ministry_code_stays_a_document_number():
+    assert _plates("บันทึก กค 0409 ในแฟ้ม") == set()
+
+
 # ── B. amounts, times, and counts behind ยอด/ออก/รวม are not plates ────────
 
 

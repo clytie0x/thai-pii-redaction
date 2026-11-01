@@ -379,9 +379,8 @@ fn handle_connection(
         stop.store(true, Ordering::Release);
         return;
     }
-    let Some(hello_deadline) = Instant::now().checked_add(config.hello_timeout) else {
-        return;
-    };
+    // Hashing the client executable is local work. The hello read deadline
+    // starts after it, so a burst does not consume the frame timeout.
     let package = match manifest.verify_client_executable(connection.peer_executable()) {
         Ok(evidence) => evidence,
         Err(_) => return,
@@ -389,6 +388,9 @@ fn handle_connection(
     if connection.ensure_peer_stable().is_err() {
         return;
     }
+    let Some(hello_deadline) = Instant::now().checked_add(config.hello_timeout) else {
+        return;
+    };
     if replacement_blocks_admission(component_root) {
         maintenance_stop.store(true, Ordering::Release);
         stop.store(true, Ordering::Release);

@@ -1,0 +1,47 @@
+{
+  "documents": 60,
+  "labels_committed": false,
+  "plaintext_sha256": "90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11",
+  "redaction_types": [
+    "THAI_ID",
+    "PHONE",
+    "EMAIL",
+    "BANK_ACCOUNT",
+    "CREDIT_CARD",
+    "PASSPORT",
+    "VEHICLE_PLATE",
+    "STUDENT_ID",
+    "DATE_OF_BIRTH",
+    "NAME",
+    "ADDRESS",
+    "IBAN"
+  ],
+  "section26_paraphrase_documents": 8,
+  "seed": 20261103,
+  "split": "test",
+  "style_counts": {
+    "negative": 4,
+    "prose-arabic_digits": 8,
+    "prose-clean": 8,
+    "prose-ocr": 8,
+    "prose-spaced": 8,
+    "prose-thai_digits": 8,
+    "prose-zwsp": 8,
+    "section26-paraphrase": 8
+  },
+  "type_counts": {
+    "ADDRESS": 6,
+    "BANK_ACCOUNT": 6,
+    "CREDIT_CARD": 6,
+    "DATE_OF_BIRTH": 6,
+    "EMAIL": 6,
+    "IBAN": 6,
+    "NAME": 38,
+    "PASSPORT": 6,
+    "PHONE": 6,
+    "STUDENT_ID": 6,
+    "THAI_ID": 6,
+    "VEHICLE_PLATE": 6
+  },
+  "version": "hard-test-v1"
+}
