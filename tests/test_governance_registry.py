@@ -52,6 +52,32 @@ def published_notice(registry, context, record):
     return registry.publish_notice(context.b, uuid4(), notice["id"], 1)
 
 
+def test_notice_creation_cannot_silently_bind_to_a_changed_activity(context):
+    from pii_redactor.governance.errors import GovernanceError
+    from pii_redactor.governance.registry import NoticeInput, Registry
+
+    registry = Registry(context.store)
+    record = registry.create_activity(context.a, uuid4(), activity())
+    registry.update_activity(
+        context.a,
+        uuid4(),
+        record["id"],
+        record["revision"],
+        activity(purpose="A changed synthetic purpose"),
+    )
+    request = NoticeInput(
+        activity_id=record["id"],
+        title="Notice for original purpose",
+        body="This notice was authored for the original synthetic purpose.",
+        language="en",
+    )
+    with pytest.raises(GovernanceError, match="^revision_conflict$"):
+        registry.create_notice(
+            context.a, uuid4(), request, expected_activity_revision=record["revision"]
+        )
+    assert registry.list_notices(context.a, record["id"]) == []
+
+
 def test_activity_retries_are_idempotent_and_changed_payload_conflicts(context):
     from pii_redactor.governance.errors import GovernanceError
     from pii_redactor.governance.registry import Registry

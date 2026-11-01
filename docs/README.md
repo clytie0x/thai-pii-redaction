@@ -48,6 +48,9 @@ status page and does not silently override a newer current-state document.
   M0-M12 scope, tasks and evidence gates; execution is now owner-authorized.
 - [Current release scope](enterprise/release-scope.md) - capability boundaries,
   independent-review requirement and owner-only inputs.
+- [Enterprise operator guide](enterprise/README.md) - separate database roles,
+  private OIDC configuration, offline enrollment, staff workflows and mandatory
+  real-PostgreSQL/package/real-path gates.
 - [Install from source](install-from-source.md) - local developer/runtime setup.
 
 ## Product and distribution

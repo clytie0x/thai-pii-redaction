@@ -71,6 +71,34 @@ class Store:
     def transaction(self):
         return self._transaction()
 
+    def check_ready(self):
+        """Check schema and enrollment without running privileged DDL."""
+        resources = sorted(
+            (
+                p
+                for p in files("pii_redactor.governance").joinpath("migrations").iterdir()
+                if p.name.endswith(".sql")
+            ),
+            key=lambda p: p.name,
+        )
+        expected = {}
+        for version, resource in enumerate(resources, 1):
+            if not resource.name.startswith(f"{version:03d}_"):
+                raise GovernanceError("migration_mismatch")
+            expected[version] = hashlib.sha256(resource.read_bytes()).hexdigest()
+        with self.transaction() as tx:
+            applied = {
+                r["version"]: r["digest"]
+                for r in tx.execute("SELECT version,digest FROM governance_schema")
+            }
+            if not expected or applied != expected:
+                raise GovernanceError("migration_mismatch")
+            row = tx.execute("SELECT enrolled_at FROM governance_organization").fetchone()
+            if row["enrolled_at"] is None:
+                raise GovernanceError("enrollment_required")
+        self.verify_audit()
+        return len(expected)
+
     def lock(self, tx):
         tx.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",

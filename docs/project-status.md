@@ -1,14 +1,21 @@
 # Project status
 
-Updated: 2026-11-01
+Updated: 2026-11-02
 
 Execution update (2026-11-02): the owner resumed M0-M12 and YRSS work and
 requires independent adversarial subagent review at every stage. The preserved
-implementation checkpoint is being reconciled with main `2480757`. The combined
-tree passed 2,922 Python tests with 34 skips after the normalization fast-path
-regression fix; Rust is blocked before tests by a
-missing MSVC linker. Staff OIDC/browser and all later enterprise stages remain
-open. See [M0 evidence](acceptance/enterprise/M00-baseline.md) and the
+implementation checkpoint was reconciled with main `2480757` in `9711d79`.
+That M0 baseline passed 2,922 Python tests with 34 skips. The subsequent M3
+candidate now passes 3,035 Python tests (34 optional/host/live skips), 156
+mandatory enterprise tests without skips and 178 JavaScript tests. Actual
+synthetic Chrome/Keycloak/PostgreSQL flows cover inventory/notices/review,
+independent membership approval, suspension/reactivation and session cleanup.
+Actual installed-wheel and graceful app/database restart checks also pass.
+M3 acceptance remains held for an unexplained performance outlier and CI;
+bounded diagnosis did not establish its cause, and GitHub jobs cannot start
+because of the account billing restriction. Local Windows Rust lacks its MSVC linker.
+See [M3 progress](acceptance/enterprise/M03-authority-progress.md),
+[M0 evidence](acceptance/enterprise/M00-baseline.md) and the
 [current release scope](enterprise/release-scope.md).
 
 Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
@@ -23,15 +30,14 @@ Enterprise PDPA direction (2026-10-31): the owner requested work toward a full
 organization system. The [proposed control-plane architecture](decisions/2026-10-31-pdpa-enterprise-control-plane.md)
 has had an independent builder check; the owner confirmed a single self-hosted
 organization. Implementation is in the managed `feat/pdpa-enterprise` worktree
-at `.worktrees/pdpa-enterprise/`. The PostgreSQL authority layer has real restart,
-transaction rollback, audit-chain and built-wheel evidence; its full Python gate
-passed 2,861 tests with 34 skips. Scoped processing/notice/membership commands
-currently pass 44 focused real-database tests, including independent approval,
-revocation, idempotency, concurrency and immutable notices. These tests use
-synthetic trusted domain principals, not accepted OIDC staff authentication.
-OIDC/web, persistent consent, retention/rights execution, wider governance,
-independent whole-branch review and deployment remain open. The local assessment
-prototype and legacy HTTP/native acceptance remain separate.
+at `.worktrees/pdpa-enterprise/`. The dedicated `app.enterprise` adapter now
+calls shared PostgreSQL authority/registry commands using verified staff sessions;
+it does not persist local reversible PII mappings. Synthetic real IdP/browser
+and restricted-runtime-role evidence is stronger than the earlier trusted-domain-
+principal checkpoint. Persistent subject consent, retention/rights execution,
+wider governance, production TLS/storage/checkpoint/recovery and human pilot
+remain open. The local assessment prototype and legacy HTTP/native acceptance
+remain separate. Operational setup is in [the enterprise guide](enterprise/README.md).
 
 Historical owner-requested checkpoint: development was paused; see the
 [commit/evidence handoff](implementation/pdpa-enterprise-handoff.md). The latest
@@ -1022,6 +1028,10 @@ applicable trade. The baseline was not moved.
 | Standards mapping (ISO/IEC 20889 + มรด. 6:2566) | Documented | [docs/standards-mapping.md](standards-mapping.md), delivered 2026-08-01: a correspondence document, explicitly not a conformance claim. Grounded in what was actually readable: a publicly served ISO/IEC 20889 preview covering the complete terms clause (3.1-3.39), Clauses 1 through the start of 7.2, and the full table of contents — clauses 8-12 and the annexes are cited by title only, and the document says so; and the full 103-page มรด. 6:2566 PDF from the DGA standards site, read end to end, which defines no de-identification technique and references neither ISO/IEC 20889 nor any de-identification standard (the only ISO citations are 27001 and 11179) — so the มรด. mapping is at governance-practice level (classification, security/privacy dimension, breach-as-risk, the Data Agents processing-record duty), each row naming what the tool supports rather than claiming the practice is thereby satisfied. Every technique family the tool does NOT implement is listed by clause title, and the re-identification risk score is explicitly disclaimed as a heuristic, not a Clause-10 formal model. An adversarial review checked every ISO term number, every มรด. page citation, the negative claims, and every code claim against the repository before this row was written. |
 
 ## Integrations and storefronts
+
+Enterprise staff application: local functional candidate with source, real
+PostgreSQL/Keycloak and synthetic Chrome evidence. This is not production or
+all-milestone acceptance; see the M3 progress and operator guide above.
 
 | Feature | Status | Evidence / remaining gate |
 |---|---|---|

@@ -23,6 +23,7 @@ COPY = ROOT / "extension" / "tokens.css"
 CONSUMERS = (
     ROOT / "desktop" / "src" / "styles.css",
     ROOT / "extension" / "sidepanel.css",
+    ROOT / "app" / "enterprise" / "static" / "style.css",
 )
 
 # Surfaces that cannot reach tokens.css and therefore declare every role they
@@ -49,6 +50,10 @@ def test_the_extension_copy_is_byte_identical():
     assert COPY.read_bytes() == CANONICAL.read_bytes(), (
         "extension/tokens.css drifted from desktop/src/tokens.css; copy the canonical file over"
     )
+
+
+def test_the_enterprise_copy_is_byte_identical():
+    assert (ROOT / "app/enterprise/static/tokens.css").read_bytes() == CANONICAL.read_bytes()
 
 
 def test_every_token_a_stylesheet_asks_for_is_declared():

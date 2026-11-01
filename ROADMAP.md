@@ -4,8 +4,12 @@
 
 The owner authorized the [M0-M12 program](docs/implementation/aiguard-production-milestones.md)
 and YRSS completion on 2026-11-02, with independent adversarial subagent checks
-at every stage. Continue the preserved enterprise checkpoint after M0
-reconciliation, then complete Stage 1 staff authentication and its caller path.
+at every stage. M0 preserved and reconciled the checkpoint. The Stage 1 staff
+application now has real synthetic IdP/browser/database, installed-wheel and
+restart evidence; [M3 acceptance](docs/acceptance/enterprise/M03-authority-progress.md)
+is held for an unexplained performance result and executing CI. Prepare the
+independent M1 compatibility decision while those gates await resolution;
+do not promote the candidate or silently replace adapter contracts.
 See [release scope](docs/enterprise/release-scope.md) and
 [M0 evidence](docs/acceptance/enterprise/M00-baseline.md). Older release and
 sibling/platform descriptions below remain candidate-specific historical

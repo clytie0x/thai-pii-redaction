@@ -26,7 +26,7 @@ deletion, external notification, public submission or production promotion.
 | Area | Source/evidence | Current allowed claim |
 |---|---|---|
 | Root protection | `pii_redactor/`, HTTP contract 2, native protocol 1 | Source implementation with candidate-specific tests; no automatic package/live acceptance |
-| Enterprise | Preserved `4d31d76`, `03b8aa3`, `1677e60`; continuation merges main `2480757` | Scoped PostgreSQL domain exists; staff OIDC/web and later stages remain open |
+| Enterprise | Preserved domain commits, reconciled M0 `9711d79`, [M3 evidence](../acceptance/enterprise/M03-authority-progress.md) | Staff OIDC/console works with synthetic real IdP/database/browser and installed-wheel/restart evidence; performance/CI acceptance and later stages remain open |
 | Hosted | `apps/hosted/STATE.md`, source `core/VERSION` 0.1.0 | Historical record describes 3.0.2 deployment; production was not rechecked for M0 |
 | SDK | `packages/amphrang/`, separate lock/tests/engine copy | Local source SDK; publication and shared-core compatibility remain open |
 | Desktop/Extension | Source 0.1.0, broker boundary | Earlier 3.0.0 package records are archived evidence, not a new 0.x installer or Store publication |

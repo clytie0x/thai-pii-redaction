@@ -250,6 +250,18 @@ class Authority:
             scope=scope,
         )
 
+    def get_member(self, principal, member_id):
+        with self.store.transaction() as tx:
+            actor = self.require(tx, principal, "membership.read")
+            row = self._target(tx, actor, member_id, for_update=False)
+            return {
+                "id": str(row["member_id"]),
+                **{
+                    k: row[k]
+                    for k in ("issuer", "subject", "roles", "departments", "enabled", "revision")
+                },
+            }
+
     def list_members(self, principal, *, limit=100, offset=0):
         self._pagination(limit, offset)
         with self.store.transaction() as tx:

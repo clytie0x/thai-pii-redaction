@@ -255,11 +255,13 @@ class Registry:
             scope=lambda tx, m: self._activity(tx, m, record_id),
         )
 
-    def create_notice(self, principal, command_key, request):
+    def create_notice(self, principal, command_key, request, *, expected_activity_revision=None):
         notice = _validated(NoticeInput, request)
         data = notice.model_dump(mode="json")
 
         def effect(tx, member, record):
+            if expected_activity_revision is not None:
+                check_revision(record, expected_activity_revision)
             row = tx.execute(
                 """INSERT INTO governance_notices(notice_id,organization_id,activity_id,
                 payload_digest,content_digest,state,revision,data,created_by)
@@ -282,7 +284,9 @@ class Registry:
             command_key,
             "notice.create",
             "notice.created",
-            data,
+            data
+            if expected_activity_revision is None
+            else {"notice": data, "activity_revision": expected_activity_revision},
             effect,
             scope=lambda tx, m: self._activity(tx, m, notice.activity_id),
         )

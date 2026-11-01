@@ -2,6 +2,7 @@
 
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -71,3 +72,10 @@ class Enrollment(ClosedModel):
         ):
             raise ValueError("invalid enrollment scope")
         return self
+
+
+class StaffPrincipal(Principal):
+    """Backend-only session identity, rechecked in each domain transaction."""
+
+    session_id: UUID
+    member_revision: int = Field(ge=1)

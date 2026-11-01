@@ -16,6 +16,14 @@ the preserved checkpoint; their unchecked lists below are task requirements,
 not the current progress ledger. The owner resumed execution on 2026-11-02 and
 requires independent adversarial review at every stage. Continue from Task 3.
 
+**Current execution:** Tasks 3-4 have a local functional candidate with real
+synthetic IdP/Chrome/database evidence and independent review. Task 5's
+installed-wheel and graceful app/database restart checks pass locally;
+performance acceptance and executing CI remain held. See
+[M3 evidence](../acceptance/enterprise/M03-authority-progress.md) and
+[operator instructions](../enterprise/README.md); the unchecked requirements
+below are not a claim that these stronger gates passed.
+
 ## Global constraints
 
 - Single self-hosted organization; no SaaS isolation claim. Every command/read binds to configured organization and current authoritative member scope.

@@ -7,7 +7,7 @@ name = "aiguard"
 description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE", "NOTICE"]
+license-files = ["LICENSE", "NOTICE", "licenses/OFL-1.1.txt"]
 requires-python = ">=3.11"
 authors = [{ name = "Teerapat Vatpitak" }]
 keywords = ["pii", "redaction", "thai", "pdpa", "privacy", "ner", "anonymization"]
@@ -52,6 +52,7 @@ packages = [
   "pii_redactor.governance",
   "pii_redactor.ingest",
   "app",
+  "app.enterprise",
   "app.worker",
 ]
 
@@ -62,6 +63,7 @@ packages = [
 [tool.setuptools.package-data]
 pii_redactor = ["fonts/*.ttf"]
 "pii_redactor.governance" = ["migrations/*.sql"]
+"app.enterprise" = ["static/*.html", "static/*.js", "static/*.css", "static/*.png", "static/fonts/*"]
 
 # ---------------------------------------------------------------------------
 # pytest (moved here from pytest.ini so tool config lives in one file)
