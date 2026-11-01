@@ -1,55 +1,69 @@
 # What is still missing for a best-in-Thailand claim
 
-This list is the gap between the 2026-11-01 blind-v2 comparison and a claim
-that AI Guard is the strongest Thai PII redactor. The numbers are from
+This list is the gap between the 2026-11-01 re-run and a claim that AI Guard
+is the strongest Thai PII redactor. The numbers are from
 [blind-v2-results.md](blind-v2-results.md). The sealed protocol corpus was
 not opened. Nothing here was fixed by weakening detection.
 
+The original freeze moved from AI Guard micro F2 0.920 to 0.964 because
+obscured digits and obscured names are recovered and mapped back onto the
+source span. That is a recall gain (0.924 to 0.977). Name precision on that
+freeze moved from 0.886 to 0.889. The negative slice did not get cleaner.
+
 ## Robustness
 
-On this freeze AI Guard micro F2 is 0.920. The misses that matter are the
-adversarial surfaces, not the clean labeled forms:
+Checksummed numbers with a zero-width mark, a Thai digit, an Arabic-Indic
+digit, a space between digits, or one OCR lookalike are found on both scored
+sets. AI Guard national-ID and phone recall are 1.000 on the original freeze
+(35 and 44) and on the hard test split (6 and 6).
 
-- Thai national IDs: recall 0.829. Checksum-valid ASCII forms are found.
-  Per-character spaces, zero-width characters, Thai digits, Arabic-Indic
-  digits, and an OCR letter standing in for a digit still get through.
-- Phones: recall 0.864, the same as the regex baseline. The shared misses are
-  the non-ASCII and fully spaced numbers.
-- Names: recall 0.886, below the cue regex (0.943). Glued OCR names, names
-  with a zero-width character, and names with a space between every character
-  are the weak shapes. WangchanBERTa NER alone reaches name recall 0.914 but
-  precision 0.577, so borrowing its tags without the product's filters would
-  not be a gain.
-- Negative documents: 7 of 12 stay clean. Five false positives land on text
-  that has no gold span, and 13 further predictions are outside the twelve
-  redaction types. A best-in-Thailand system has to keep that slice clean
-  without giving up the adversarial recall above.
+What is still open:
 
-The NER-only baselines show the other half of the gap. PyThaiNLP `thainer`
-and WangchanBERTa `thainer-v2` do not recover checksum IDs, bank accounts,
-cards, passports, plates, student ids, birth dates, or IBANs. Those types
-are a format layer, and removing AI Guard's format layer drops micro F2 from
-0.920 to 0.543. The product already has the right split. The open work is the
-surfaces the format layer still rejects.
+- Names. Original-freeze recall is 0.914 (70 gold). Hard-test recall is 0.895
+  (38 gold) at precision 1.000. The CRF still misses some people when the
+  sentence has no title, including after zero-width marks are removed. The
+  cue regex on the labeled freeze still leads on names (recall 0.943) because
+  those documents use field labels the hard split does not.
+- Outside-scheme predictions. The hard test's four negative documents are
+  clean, and the original freeze is still 7 of 12 (5 false positives, 12
+  outside-scheme predictions, down from 13). A place or organization the NER
+  tags is a product label, and it still counts as a micro false positive in
+  this twelve-type score. Dropping `LOCATION` would raise the benchmark
+  number and break the detection contract that keeps a real province.
+- Address precision on the original freeze is unchanged at 0.789 (4 false
+  positives, recall 1.000). The hard split's six addresses were exact.
+
+The NER-only baselines still do not recover checksummed identifiers. Removing
+AI Guard's format layer drops hard-test micro F2 from 0.965 to 0.515.
 
 ## PDPA Section 26 mapping
 
-Policy is warn/report, not automatic redaction. The keyword scan recalled
-every explicit phrase on this freeze (micro recall 1.000, n=11). That is not
-mapping coverage:
+The public category names are one list in `pii_redactor/pdpa_categories.py`.
+`report.py` compiles its keyword patterns from that list. `leak_guard.py`
+accepts the same names and maps the old short aliases
+(`ETHNICITY`, `CRIMINAL`, `UNION`) onto them. `sensitive_detector.py` uses
+the same set as its prototype keys.
 
-- The phrases were written to contain the current keywords. A paraphrase
-  without those words is unmeasured. The semantic detector that would catch
-  some of them needs `sentence-transformers` and did not run.
-- The category names are not one list. `pii_redactor/report.py` and
-  `sensitive_detector.py` use `RACE_ETHNICITY`, `CRIMINAL_RECORD`,
-  `LABOR_UNION`, and `SEXUAL_BEHAVIOR`. `leak_guard.py` and the entity model
-  comment use `ETHNICITY`, `CRIMINAL`, and `UNION`, and the outbound allow-list
-  has no sexual-behavior label. A warn finding and a leak-guard label for the
-  same fact can disagree.
-- Because the spans are not redacted, a downstream model still sees the
-  sensitive phrase. That is intentional. It is also why keyword recall cannot
-  be reported as redaction quality.
+That is a naming fix, not coverage. The keyword scan still recalls every
+explicit phrase on the original freeze (1.000, n=11) and none of the eight
+hard-test paraphrases (0.000). Those paraphrases were written without the
+keywords, on purpose. The semantic detector that might catch some of them
+needs `sentence-transformers` and did not run. The spans are still not
+redacted. That is the warn/report policy.
+
+## Prompt-only LLM
+
+`gemma3:1b` under Ollama ran on every document of both sets. Cost was zero.
+Recall was 0.008 on the original freeze and 0.000 on the hard test split.
+The model does not reliably emit a JSON span that occurs in the source. A
+larger Typhoon was not loaded: the 4B weights do not fit the memory this
+process could see (about 4.8 GiB). A bigger local model is the open question,
+not another prompt tuned on the hard test split.
+
+Utility on the original freeze (18 questions, same model) shows redaction
+cutting PII-answer accuracy (AI Guard 0.556 raw to 0.111 redacted) and also
+cutting some safe-question accuracy (0.556 to 0.333). The hard split has no
+question set, so it has no utility number.
 
 ## OCR memory
 
@@ -58,41 +72,25 @@ This comparison is text. It does not touch the PDF OCR path.
 The current roadmap records the hosted one-page OCR route reaching the 6 GiB
 core limit in 221 seconds, so the configured 20-page / 300-second surface is
 not deploy-ready. The performance gate does not see that path: its fixture is
-a text PDF. A best-in-Thailand claim that includes scans needs a page that
-finishes inside the memory limit, with redaction boxes still on the original
-coordinates. No OCR deskew belongs in that work unless the coordinates move
-with it.
+a text PDF. A claim that includes scans needs a page that finishes inside the
+memory limit, with redaction boxes still on the original coordinates.
 
 ## Release and version
 
-Three versions are in play, and they are not the same artifact:
+Three versions are still in play:
 
 - Source `VERSION` is `0.1.0`, reset on 2026-10-19
   (`docs/decisions/2026-10-19-version-reset.md`).
 - `ROADMAP.md` and the 2026-08-14 body of `docs/project-status.md` still
   describe owner-authorized 3.0.0 certification of the archived line. Those
-  sentences are historical. They are not the version of this tree.
-- Hosted production still reports `3.0.2`. `apps/hosted/STATE.md` says the
-  source restart was not deployed, and public health was still 3.0.2 at the
-  last recorded production check. This comparison did not redeploy anything
-  and did not re-query production.
-
-Until the source version, the docs a reader opens first, and the running
-service name the same release, a "best" claim does not have a version to
-attach to.
+  sentences are historical.
+- Hosted production still reports `3.0.2`. This comparison did not redeploy
+  anything and did not re-query production.
 
 ## What this run could not answer
 
-- Prompt-only LLM redaction, and the raw-versus-redacted question set, were
-  skipped. Nothing local was listening: no Ollama model, no llama.cpp model
-  file, no OpenRouter free-tier key. A paid model was not required and was
-  not called. The question set is 18 questions, twice per system (raw and
-  redacted), plus one redaction prompt per document. That is a few hundred
-  short prompts if someone later chooses a hosted free tier. It is not a
-  reason to spend money now.
-- The regex baseline shares this generator's field labels. Its micro F2 of
-  0.938 is a ceiling on clean forms, not a field result.
-- Presidio's Thai row is only as strong as the pattern recognizers in the
-  harness. It is not an official Thai Presidio model.
-- Layers that scored a zero delta here can still matter on gold and on the
-  sealed blind corpus. This list does not retire them.
+- Whether a larger local Thai model would beat the format-plus-NER stack.
+  `gemma3:1b` did not. No paid call was made.
+- Whether the semantic Section 26 model would flag the paraphrases. It was
+  not installed.
+- The sealed protocol corpus. It stayed closed.
