@@ -539,6 +539,16 @@ forbids in acceptance artifacts — keyed by a hash of provider, prompt and
 document text so a prompt or gold-set edit cannot silently reuse a stale answer.
 `benchmark/reports/` is gitignored.
 
+`blind_v2/` — a reproducible comparison freeze, separate from the sealed
+protocol blobs. `corpus.py` builds synthetic documents from generation seed
+`20261101` (checksum-valid identifiers, mixed document styles, and adversarial
+spacing, zero-width, Thai-digit, Arabic-Indic, and OCR-like cases). The
+rendered text is not committed. `data/blind-v2-repro.lock.json` pins the
+SHA-256 and the counts, and `python -m benchmark.blind_v2 --self-check`
+regenerates the set in memory and compares that hash. Labels stay out of
+`pii_redactor/` and `app/`. This set is not a tuning target. It also does not
+replace `data/blind-v2.enc`: that sealed corpus stays closed.
+
 `blind.py` — the held-out blind set (Track A). **NEVER decrypt, read, or print
 the blind corpus in a development session** — it exists to measure whether
 gold-set tuning generalizes, and reading it (by human or agent) burns it. The
