@@ -35,6 +35,10 @@ release rules live in [docs/release-process.md](docs/release-process.md).
 
 ## Where the project stands
 
+- Source `VERSION` is `0.1.0` after the 2026-10-19 reset. Sentences below that
+  describe 3.0.0 certification are about the archived line, not this tree.
+  Hosted production still reports `3.0.2` until this source is deployed
+  (`apps/hosted/STATE.md`).
 - `v2.5.0` is released with checksums and build provenance. The release
   pipeline (tag, CI, cross-platform builds, attestation) has run end to end on
   a real tag.
@@ -86,8 +90,10 @@ The source tree keeps live product code, required synthetic/reproducibility
 inputs, and privacy-reviewed evidence. Local environments, runtime logs,
 generated reports, model caches, and build output are deliberately ignored.
 `blind-v1` remains only as a closed historical audit trail after its six reveals;
-it is not a current blind evaluation set. Any future blind evaluation requires
-a newly frozen `blind-v2` dataset under the same protocol.
+it is not a current blind evaluation set. The sealed `blind-v2.enc` protocol
+corpus stays closed. A separate reproducible synthetic comparison freeze now
+exists (`benchmark/blind_v2`, seed `20261101`). It is not a tuning set. Its
+results and the remaining gaps are in `docs/benchmark/`.
 
 ## Definition of done for a feature
 
