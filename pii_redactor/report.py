@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from pii_redactor.detectors.aggregate import detect_all
 from pii_redactor.models import Entity
+from pii_redactor.pdpa_categories import SECTION26_PATTERNS
 from pii_redactor.reid_risk import ReidRiskResult, assess_reid_risk
 
 
@@ -20,17 +21,9 @@ class PDPAReport:
     recommendations: list[str]
 
 
-# Section 26 Sensitive Categories
 # Keyword flags only — these are reported but NOT auto-redacted.
 _SECTION26_KEYWORDS = {
-    "RACE_ETHNICITY": re.compile(r"(?:เชื้อชาติ|เผ่าพันธุ์|สัญชาติ)", re.UNICODE),
-    "POLITICAL_OPINION": re.compile(r"(?:ความคิดเห็นทางการเมือง|พรรคการเมือง|อุดมการณ์)", re.UNICODE),
-    "RELIGION": re.compile(r"(?:ศาสนา|ความเชื่อ|พุทธ|คริสต์|อิสลาม|ฮินดู)", re.UNICODE),
-    "HEALTH": re.compile(r"(?:โรค|การรักษา|ผล(?:การ)?ตรวจ|สุขภาพ|ประวัติ(?:การ)?รักษา)", re.UNICODE),
-    "SEXUAL_BEHAVIOR": re.compile(r"(?:เพศ(?:สัมพันธ์|วิถี)|รสนิยมทางเพศ)", re.UNICODE),
-    "CRIMINAL_RECORD": re.compile(r"(?:คดี|ต้องโทษ|จำคุก|ประวัติอาชญากรรม|ถูกฟ้อง)", re.UNICODE),
-    "DISABILITY": re.compile(r"(?:ทุพพลภาพ|ความพิการ|คนพิการ)", re.UNICODE),
-    "LABOR_UNION": re.compile(r"(?:สหภาพแรงงาน|สมาคมลูกจ้าง)", re.UNICODE),
+    name: re.compile(pattern, re.UNICODE) for name, pattern in SECTION26_PATTERNS.items()
 }
 
 
