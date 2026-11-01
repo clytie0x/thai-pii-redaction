@@ -306,6 +306,17 @@ _LATIN_NAME_RE = re.compile(r"[A-Z][a-z]{1,20}(?:[ \t](?:[A-Z]\.|[A-Z][a-z]{1,20
 _LATIN_TRAILING_PASSPORT_RE = re.compile(
     r"([A-Z][a-z]{1,20}(?:[ \t](?:[A-Z]\.|[A-Z][a-z]{1,20})){1,2})[ \t]+(?=passport|[A-Z]{2}\d{7})"
 )
+# A capitalized name sitting a few function words before an email. The bridge
+# is a closed word list so "Google Cloud supports customers at help@..." does
+# not qualify, while "reach Mali Jaidee at mali@..." does.
+_LATIN_EMAIL_BRIDGE_WORD = r"at|via|to|can|be|mailed|reached|emailed|contacted|email|e-mail"
+_LATIN_BEFORE_EMAIL_RE = re.compile(
+    rf"(?<![A-Za-z])([A-Z][a-z]{{1,20}}(?:[ \t]+[A-Z][a-z]{{1,20}}){{1,2}})"
+    rf"(?=(?:[ \t]+(?:{_LATIN_EMAIL_BRIDGE_WORD})){{0,6}}[ \t]+"
+    rf"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{{2,}})"
+)
+# OCR deletes the space inside a name that prose introduces with ของ / เป็นของ.
+_GLUED_AFTER_POSSESSION_RE = re.compile(r"(?:เป็นของ|ของ)[ \t]+([ก-ฮเ-ไ][ก-ฮะ-์]{3,24})(?![ก-ฮะ-์])")
 _LATIN_ORG_STOP = {
     "bank",
     "company",
@@ -426,8 +437,23 @@ def is_glued_name_run(run: str) -> bool:
     tokens = [t for t in word_tokenize(run, keep_whitespace=False) if t.strip()]
     if not (2 <= len(tokens) <= _GLUED_NAME_MAX_TOKENS):
         return False
-    return all(
-        _is_name_token(t) and t not in _LEAD_STOP and t not in _GLUED_RUN_STOP for t in tokens
+    # Every token but the last must be a name. newmm splits some real surnames
+    # onto one function word ("ทองอยู่" -> ทอง|อยู่), and that word is only
+    # allowed at the end. A function word earlier in the run is a form label.
+    if not all(_strict_glued_token(token) for token in tokens[:-1]):
+        return False
+    tail = tokens[-1]
+    if _strict_glued_token(tail):
+        return True
+    return tail in _NOT_NAME and tail not in _GLUED_RUN_STOP and tail not in _NON_PERSON_LEADS
+
+
+def _strict_glued_token(token: str) -> bool:
+    return (
+        _is_name_token(token)
+        and token not in _LEAD_STOP
+        and token not in _GLUED_RUN_STOP
+        and token not in _NON_PERSON_LEADS
     )
 
 
@@ -806,6 +832,41 @@ def _latin_names(text: str) -> list[Entity]:
             _accept(m.start(), m.group(0))
     for m in _LATIN_TRAILING_PASSPORT_RE.finditer(text):
         _accept(m.start(1), m.group(1))
+    for m in _LATIN_BEFORE_EMAIL_RE.finditer(text):
+        _accept(m.start(1), m.group(1))
+    return ents
+
+
+def _glued_possession_names(text: str) -> list[Entity]:
+    """A spaceless Thai name after ของ / เป็นของ."""
+    ents = []
+    for match in _GLUED_AFTER_POSSESSION_RE.finditer(text):
+        if is_glued_name_run(match.group(1)):
+            ents.append(_make_name(text, match.start(1), match.end(1), 0.86))
+    return ents
+
+
+def recover_obscured_names(original: str, folded: str, origins: list[int]) -> list[Entity]:
+    """Names whose letters were spaced or zero-width-split, judged after folding.
+
+    Only a run that lost a space or a zero-width mark is eligible. Ordinary
+    glued prose is left to the cue passes.
+    """
+    from pii_redactor.detectors.surface_norm import _ZERO_WIDTH
+
+    ents: list[Entity] = []
+    if not origins:
+        return ents
+    for match in _GLUED_RUN_RE.finditer(folded):
+        start, end = match.span()
+        origin_start = origins[start]
+        origin_end = origins[end - 1] + 1
+        source = original[origin_start:origin_end]
+        if " " not in source and not any(char in _ZERO_WIDTH for char in source):
+            continue
+        if not is_glued_name_run(match.group(0)):
+            continue
+        ents.append(_make_name(original, origin_start, origin_end, 0.86))
     return ents
 
 
@@ -832,6 +893,7 @@ def detect_name_context_passes(text: str) -> list[tuple[str, Entity]]:
     tagged.extend(("extended", e) for e in _roster_names(text, spans))
     tagged.extend(("extended", e) for e in _passport_roster_names(text))
     tagged.extend(("extended", e) for e in _latin_names(text))
+    tagged.extend(("extended", e) for e in _glued_possession_names(text))
     tagged.extend(("strong", e) for e in _token_pass_names(text, spans))
     return tagged
 
