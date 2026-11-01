@@ -2,7 +2,7 @@
 
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -43,6 +43,7 @@ impl ConnectionLimiter {
         }
         Ok(ConnectionPermit {
             active: Arc::clone(&self.active),
+            released: AtomicBool::new(false),
         })
     }
 
@@ -54,11 +55,20 @@ impl ConnectionLimiter {
 #[derive(Debug)]
 pub struct ConnectionPermit {
     active: Arc<AtomicUsize>,
+    released: AtomicBool,
+}
+
+impl ConnectionPermit {
+    pub(crate) fn release(&self) {
+        if !self.released.swap(true, Ordering::AcqRel) {
+            self.active.fetch_sub(1, Ordering::AcqRel);
+        }
+    }
 }
 
 impl Drop for ConnectionPermit {
     fn drop(&mut self) {
-        self.active.fetch_sub(1, Ordering::AcqRel);
+        self.release();
     }
 }
 
@@ -163,6 +173,10 @@ pub struct NativeStreamAbortHandle {
 impl NativeStreamAbortHandle {
     pub fn abort(&self) {
         self.inner.abort();
+    }
+
+    pub(crate) fn peer_disconnected(&self) -> bool {
+        self.inner.peer_disconnected()
     }
 }
 
@@ -536,4 +550,20 @@ pub(crate) fn checked_mode(path: &Path) -> Result<u32, ProtocolError> {
 pub(crate) fn current_uid() -> u32 {
     // SAFETY: geteuid takes no pointers and has no preconditions.
     unsafe { libc::geteuid() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ConnectionLimiter;
+
+    #[test]
+    fn an_early_slot_release_happens_once() {
+        let limiter = ConnectionLimiter::new(1);
+        let permit = limiter.try_acquire().unwrap();
+        assert!(limiter.try_acquire().is_err());
+        permit.release();
+        permit.release();
+        assert_eq!(limiter.active(), 0);
+        assert!(limiter.try_acquire().is_ok());
+    }
 }
