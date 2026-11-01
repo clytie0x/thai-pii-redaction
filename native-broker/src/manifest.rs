@@ -4,11 +4,13 @@
 //! not publisher attestation and do not defend against same-user replacement
 //! of an unsigned installation.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::fmt;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
+use std::sync::{Condvar, LazyLock, Mutex};
+use std::time::UNIX_EPOCH;
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -750,6 +752,40 @@ fn verify_component_bytes(
         value.push(0);
         value
     });
+    let cache_key = digest_cache_key(&file, &before, expected_build_id);
+    if let Some(key) = cache_key.clone() {
+        match claim_digest(&key, error_code)? {
+            DigestClaim::Ready {
+                digest,
+                marker_found,
+            } => {
+                return accept_cached_digest(CachedDigest {
+                    file: &file,
+                    before: &before,
+                    path,
+                    digest: &digest,
+                    marker_found,
+                    expected_digest,
+                    marker_required: marker.is_some(),
+                    error_code,
+                });
+            }
+            DigestClaim::Leader => {
+                let hashed =
+                    digest_and_find((&mut file).take(COMPONENT_MAX_BYTES + 1), marker.as_deref());
+                return finish_digest_leader(DigestLeader {
+                    key,
+                    file: &file,
+                    before: &before,
+                    path,
+                    hashed,
+                    expected_digest,
+                    marker_required: marker.is_some(),
+                    error_code,
+                });
+            }
+        }
+    }
     let (digest, marker_found) =
         digest_and_find((&mut file).take(COMPONENT_MAX_BYTES + 1), marker.as_deref())
             .map_err(|_| ProtocolError::new(error_code, None))?;
@@ -760,6 +796,215 @@ fn verify_component_bytes(
     {
         return Err(ProtocolError::new(error_code, None));
     }
+    Ok(())
+}
+
+/// One read of an unchanged component file.
+///
+/// Every hello used to hash the client executable before reading the hello
+/// frame. A burst of connections then spent the caller's read deadline on
+/// repeated disk reads and reported `operation_timeout` instead of a hello.
+/// Callers that arrive together share one read. A rewrite misses this entry
+/// because the key includes length, link count, and modification time.
+#[derive(Clone, Eq, PartialEq, Hash)]
+struct DigestCacheKey {
+    volume: u64,
+    index: u64,
+    links: u64,
+    len: u64,
+    modified_nanos: u128,
+    marker: Option<String>,
+}
+
+enum CacheEntry {
+    Reading,
+    Ready { digest: String, marker_found: bool },
+}
+
+struct DigestCache {
+    entries: Mutex<HashMap<DigestCacheKey, CacheEntry>>,
+    ready: Condvar,
+}
+
+enum DigestClaim {
+    Leader,
+    Ready { digest: String, marker_found: bool },
+}
+
+static DIGEST_CACHE: LazyLock<DigestCache> = LazyLock::new(|| DigestCache {
+    entries: Mutex::new(HashMap::new()),
+    ready: Condvar::new(),
+});
+
+fn digest_cache_key(
+    file: &File,
+    metadata: &std::fs::Metadata,
+    marker: Option<&str>,
+) -> Option<DigestCacheKey> {
+    let modified_nanos = metadata
+        .modified()
+        .ok()?
+        .duration_since(UNIX_EPOCH)
+        .ok()?
+        .as_nanos();
+    #[cfg(unix)]
+    let (volume, index, links) = {
+        use std::os::unix::fs::MetadataExt;
+        let _ = file;
+        (metadata.dev(), metadata.ino(), metadata.nlink())
+    };
+    #[cfg(windows)]
+    let (volume, index, links) = {
+        let identity = windows_file_identity(file)?;
+        (
+            u64::from(identity.volume),
+            identity.index,
+            u64::from(identity.links),
+        )
+    };
+    #[cfg(not(any(unix, windows)))]
+    let (volume, index, links) = {
+        let _ = file;
+        (0, 0, 0)
+    };
+    Some(DigestCacheKey {
+        volume,
+        index,
+        links,
+        len: metadata.len(),
+        modified_nanos,
+        marker: marker.map(str::to_owned),
+    })
+}
+
+fn claim_digest(key: &DigestCacheKey, error_code: &str) -> Result<DigestClaim, ProtocolError> {
+    let mut entries = DIGEST_CACHE
+        .entries
+        .lock()
+        .map_err(|_| ProtocolError::new(error_code, None))?;
+    loop {
+        match entries.get(key) {
+            Some(CacheEntry::Ready {
+                digest,
+                marker_found,
+            }) => {
+                return Ok(DigestClaim::Ready {
+                    digest: digest.clone(),
+                    marker_found: *marker_found,
+                });
+            }
+            Some(CacheEntry::Reading) => {
+                entries = DIGEST_CACHE
+                    .ready
+                    .wait(entries)
+                    .map_err(|_| ProtocolError::new(error_code, None))?;
+            }
+            None => {
+                entries.insert(key.clone(), CacheEntry::Reading);
+                return Ok(DigestClaim::Leader);
+            }
+        }
+    }
+}
+
+fn publish_digest(key: DigestCacheKey, digest: String, marker_found: bool) {
+    if let Ok(mut entries) = DIGEST_CACHE.entries.lock() {
+        entries.insert(
+            key,
+            CacheEntry::Ready {
+                digest,
+                marker_found,
+            },
+        );
+        DIGEST_CACHE.ready.notify_all();
+    }
+}
+
+fn abandon_digest(key: &DigestCacheKey) {
+    if let Ok(mut entries) = DIGEST_CACHE.entries.lock() {
+        if matches!(entries.get(key), Some(CacheEntry::Reading)) {
+            entries.remove(key);
+        }
+        DIGEST_CACHE.ready.notify_all();
+    }
+}
+
+struct CachedDigest<'a> {
+    file: &'a File,
+    before: &'a std::fs::Metadata,
+    path: &'a Path,
+    digest: &'a str,
+    marker_found: bool,
+    expected_digest: &'a str,
+    marker_required: bool,
+    error_code: &'a str,
+}
+
+fn accept_cached_digest(observed: CachedDigest<'_>) -> Result<(), ProtocolError> {
+    let CachedDigest {
+        file,
+        before,
+        path,
+        digest,
+        marker_found,
+        expected_digest,
+        marker_required,
+        error_code,
+    } = observed;
+    let after = std::fs::metadata(path).map_err(|_| ProtocolError::new(error_code, None))?;
+    if !same_file_identity(file, before, path, &after)
+        || digest != expected_digest
+        || marker_required && !marker_found
+    {
+        return Err(ProtocolError::new(error_code, None));
+    }
+    Ok(())
+}
+
+struct DigestLeader<'a> {
+    key: DigestCacheKey,
+    file: &'a File,
+    before: &'a std::fs::Metadata,
+    path: &'a Path,
+    hashed: std::io::Result<(String, bool)>,
+    expected_digest: &'a str,
+    marker_required: bool,
+    error_code: &'a str,
+}
+
+fn finish_digest_leader(leader: DigestLeader<'_>) -> Result<(), ProtocolError> {
+    let DigestLeader {
+        key,
+        file,
+        before,
+        path,
+        hashed,
+        expected_digest,
+        marker_required,
+        error_code,
+    } = leader;
+    let (digest, marker_found) = match hashed {
+        Ok(value) => value,
+        Err(_) => {
+            abandon_digest(&key);
+            return Err(ProtocolError::new(error_code, None));
+        }
+    };
+    let after = match std::fs::metadata(path) {
+        Ok(metadata) => metadata,
+        Err(_) => {
+            abandon_digest(&key);
+            return Err(ProtocolError::new(error_code, None));
+        }
+    };
+    if !same_file_identity(file, before, path, &after)
+        || digest != expected_digest
+        || marker_required && !marker_found
+    {
+        abandon_digest(&key);
+        return Err(ProtocolError::new(error_code, None));
+    }
+    publish_digest(key, digest, marker_found);
     Ok(())
 }
 
@@ -1044,4 +1289,73 @@ fn unavailable_error() -> ProtocolError {
 
 fn unauthorized_error() -> ProtocolError {
     ProtocolError::new("broker_unauthorized", None)
+}
+
+#[cfg(test)]
+mod digest_cache_tests {
+    use super::*;
+
+    use std::thread;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn policy() -> PackageFilePolicy {
+        PackageFilePolicy {
+            strict_installed_set: false,
+            #[cfg(unix)]
+            owner: 0,
+        }
+    }
+
+    fn hex_digest(bytes: &[u8]) -> String {
+        format!("{:x}", Sha256::digest(bytes))
+    }
+
+    #[test]
+    fn repeated_verification_of_an_unchanged_file_succeeds() {
+        let path = std::env::temp_dir().join(format!(
+            "aiguard-digest-cache-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let bytes = b"synthetic component bytes";
+        std::fs::write(&path, bytes).unwrap();
+        let digest = hex_digest(bytes);
+        verify_component_bytes(&path, &digest, None, "broker_unauthorized", policy(), false)
+            .unwrap();
+        verify_component_bytes(&path, &digest, None, "broker_unauthorized", policy(), false)
+            .unwrap();
+        let mut joined = Vec::new();
+        for _ in 0..8 {
+            let path = path.clone();
+            let digest = digest.clone();
+            joined.push(thread::spawn(move || {
+                verify_component_bytes(
+                    &path,
+                    &digest,
+                    None,
+                    "broker_unauthorized",
+                    policy(),
+                    false,
+                )
+                .unwrap();
+            }));
+        }
+        for worker in joined {
+            worker.join().unwrap();
+        }
+        std::fs::write(&path, b"synthetic component CHANGED").unwrap();
+        assert!(verify_component_bytes(
+            &path,
+            &digest,
+            None,
+            "broker_unauthorized",
+            policy(),
+            false,
+        )
+        .is_err());
+        let _ = std::fs::remove_file(path);
+    }
 }

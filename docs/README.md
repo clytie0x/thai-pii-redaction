@@ -36,10 +36,18 @@ status page and does not silently override a newer current-state document.
   6:2566 governance practices; a correspondence, not a conformance claim.
 - [Benchmark contribution](benchmark-contribution.md) - how an outside document
   reaches the gold set, what validates it locally, and what gets turned away.
-- [Versioning advisory](versioning-proposal.md) - preserves the published
-  `v2.5.0` product line while any separate AI for Thai service version remains
-  provisional.
+- [Blind-v2 comparison results](benchmark/blind-v2-results.md) - the seeded
+  synthetic comparison and the command that reproduces it.
+- [Blind-v2 gap list](benchmark/gap-list.md) - what is still missing for a
+  best-in-Thailand claim.
+- [Accepted version reset](decisions/2026-10-19-version-reset.md) - current
+  0.1.0 source policy; the older [versioning advisory](versioning-proposal.md)
+  remains historical and does not override that owner decision.
 - [Roadmap](../ROADMAP.md) - ordered delivery gates.
+- [Production milestone plan](implementation/aiguard-production-milestones.md) -
+  M0-M12 scope, tasks and evidence gates; execution is now owner-authorized.
+- [Current release scope](enterprise/release-scope.md) - capability boundaries,
+  independent-review requirement and owner-only inputs.
 - [Install from source](install-from-source.md) - local developer/runtime setup.
 
 ## Product and distribution

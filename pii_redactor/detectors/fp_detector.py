@@ -60,6 +60,10 @@ def _date_sanity(day: int, month: int) -> bool:
 
 def _make_entity(data_type: str, match: re.Match, text: str, score: float = 1.0) -> Entity:
     start, end = match.start(1), match.end(1)
+    return _entity_at(data_type, text, start, end, score)
+
+
+def _entity_at(data_type: str, text: str, start: int, end: int, score: float = 1.0) -> Entity:
     return Entity(
         entity_id=str(uuid.uuid4()),
         redact_type="FP",
@@ -680,6 +684,16 @@ def _plate_cue_before(text: str, start: int) -> bool:
     return False
 
 
+# "ป้าย" is how a plate is named in prose. It only cues when it sits directly
+# against the plate, so a sign-price sentence does not unlock a word-lead.
+_PLATE_SIGN_CUE_RE = re.compile(r"ป้าย(?:ทะเบียน|รถ)?[ \t]*$")
+
+
+def _plate_sign_cue(text: str, start: int) -> bool:
+    window = text[max(0, start - 12) : start]
+    return _PLATE_SIGN_CUE_RE.search(window) is not None
+
+
 # A cue glued straight onto the plate lets [ก-ฮ]{1,3} eat the cue word's own
 # tail consonant ("ทะเบียนรถขก 4471" -> "ถขก 4471"): over-masking, but the
 # wrong left edge. The full cue-word forms locate where the cue really ends so
@@ -874,7 +888,7 @@ def detect_fp(text: str) -> list[Entity]:
         lead = _PLATE_LEAD_RE.match(m.group(1))
         if lead and lead.group() in _PLATE_STOPWORDS:
             continue
-        plate_cued = _plate_cue_before(text, start)
+        plate_cued = _plate_cue_before(text, start) or _plate_sign_cue(text, start)
         if start > 0 and _THAI_CHAR_RE.match(text[start - 1]) and not plate_cued:
             continue
         if not plate_cued:
@@ -1098,6 +1112,56 @@ def detect_fp(text: str) -> list[Entity]:
     for m in _RE_MEDICAL_ID.finditer(text):
         candidates.append(_make_entity("MEDICAL_ID", m, text, score=0.9))
 
+    _add_folded_digit_hits(text, candidates)
     candidates = _disambiguate_bank_student(text, candidates)
     candidates = _disambiguate_bank_phone(text, candidates)
     return _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))
+
+
+_OCR_ID_RE = re.compile(r"(?<![\dOolI])([\dOolI]{13})(?![\dOolI])")
+_OCR_FOLD = str.maketrans({"O": "0", "o": "0", "I": "1", "l": "1"})
+
+
+def _add_folded_digit_hits(text: str, candidates: list[Entity]) -> None:
+    """Find checksummed numbers whose digits were obscured in the source."""
+    from pii_redactor.detectors.surface_norm import map_span, normalize_surface
+
+    folded, origins = normalize_surface(text)
+    if not origins:
+        return
+
+    def add(entity_type: str, start: int, end: int) -> None:
+        origin = map_span(origins, start, end)
+        if origin[1] - origin[0] < 2:
+            return
+        # A checksum hit covers the whole number. Drop a shorter fragment that
+        # sits inside it, such as a bank pattern on part of an OCR'd id.
+        candidates[:] = [
+            candidate
+            for candidate in candidates
+            if not (origin[0] <= candidate.span[0] and candidate.span[1] <= origin[1])
+        ]
+        candidates.append(_entity_at(entity_type, text, origin[0], origin[1]))
+
+    if folded != text:
+        for match in _RE_THAI_ID.finditer(folded):
+            raw = _SEP_RE.sub("", match.group(1))
+            if len(raw) == 13 and is_valid_thai_id(raw):
+                add("THAI_ID", match.start(1), match.end(1))
+        for match in _RE_CREDIT_CARD.finditer(folded):
+            raw = _SEP_RE.sub("", match.group(1))
+            if len(raw) == 16 and _luhn_check(raw):
+                add("CREDIT_CARD", match.start(1), match.end(1))
+        for match in _RE_PHONE_MOBILE.finditer(folded):
+            add("PHONE", match.start(1), match.end(1))
+        for match in _RE_PHONE_LANDLINE.finditer(folded):
+            add("PHONE", match.start(1), match.end(1))
+        for match in _RE_PHONE_INTL.finditer(folded):
+            add("PHONE", match.start(1), match.end(1))
+    for match in _OCR_ID_RE.finditer(folded):
+        token = match.group(1)
+        if token.isdigit() or sum(char in "OolI" for char in token) != 1:
+            continue
+        repaired = token.translate(_OCR_FOLD)
+        if is_valid_thai_id(repaired):
+            add("THAI_ID", match.start(1), match.end(1))

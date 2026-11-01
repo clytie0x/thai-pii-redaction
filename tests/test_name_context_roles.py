@@ -142,6 +142,24 @@ def test_latin_names_with_person_cues():
         assert name in ctx_names(text), text
 
 
+def test_latin_name_before_an_email_is_a_name():
+    text = "please reach Mali Jaidee at mali.jaidee.1@example.com about the move"
+    assert "Mali Jaidee" in ctx_names(text)
+
+
+def test_latin_name_with_a_short_bridge_before_an_email_is_a_name():
+    text = "A note says Mali Jaidee can be mailed at mali.jaidee.1@example.com"
+    assert "Mali Jaidee" in ctx_names(text)
+
+
+def test_latin_org_before_an_email_is_not_a_name():
+    for text in (
+        "Google Cloud supports customers at help@example.com",
+        "Write to Bangkok Bank at desk@example.com",
+    ):
+        assert ctx_names(text) == set(), text
+
+
 def test_latin_org_and_place_phrases_do_not_become_names():
     for text in (
         "ชื่อ Bangkok Bank สาขาสีลม",

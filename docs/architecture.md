@@ -1,5 +1,14 @@
 # Architecture and trust boundaries
 
+Current-source qualification (2026-11-02): the canonical core below is the target
+for storefronts. Imported `apps/hosted/core/pii_redactor/` and
+`packages/amphrang/amphrang/engine/` still contain distinct implementations;
+M1 must reconcile their policy/contracts before any copy is removed. The
+separate enterprise adapter/domain follows the accepted single-organization
+design and persists governance records, never the local reversible vault.
+See [current release scope](enterprise/release-scope.md) for implemented versus
+unaccepted paths; historical descriptions below do not prove current deployment.
+
 AI Guard follows **one core, multiple storefronts**. Detection,
 pseudonymization, leak scanning, restoration, and validation live under
 `pii_redactor/`. The extension, desktop app, Microsoft 365 add-in, CLI, HTTP

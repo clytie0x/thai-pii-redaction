@@ -79,16 +79,20 @@ For platform work, label unissued envelope, resource, timeout, retry, logging,
 and registry details as unknown or provisional. For Office, keep the unified
 release manifest Word-only until Excel and PowerPoint host gates pass.
 
-## 7. Publish only when requested
+## 7. Follow the repository delivery loop
 
-Before commit/push/PR:
+For an authorized implementation, root `AGENTS.md` controls publication:
 
 1. separate unrelated user files;
 2. group changes into reviewable commits;
 3. rerun release-relevant checks from the committed tree;
-4. push a feature branch and use a PR into `main`;
+4. push the short-lived branch without creating a PR for repository-owned work;
 5. wait for CI and inspect real logs before merging;
-6. delete only branches proven merged and without open work.
+6. squash the qualified unit into `main` only after every required CI job passes;
+7. preserve unrelated/unmerged checkpoints and never rewrite their history;
+8. delete only branches proven merged and without open work.
 
-Do not deploy, release, tag, merge, or delete branches from a general
-implementation request.
+Commit/push/squash under that established loop needs no repeated approval.
+Production deployment, releases/tags, stores, outward messages and real-data
+actions retain their explicit owner-action gates. A local branch integration
+must preserve existing work and rebind acceptance to its combined tree.

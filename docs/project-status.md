@@ -1,6 +1,23 @@
 # Project status
 
-Updated: 2026-08-14
+Updated: 2026-11-01
+
+Execution update (2026-11-02): the owner resumed M0-M12 and YRSS work and
+requires independent adversarial subagent review at every stage. The preserved
+implementation checkpoint is being reconciled with main `2480757`. The combined
+tree passed 2,922 Python tests with 34 skips after the normalization fast-path
+regression fix; Rust is blocked before tests by a
+missing MSVC linker. Staff OIDC/browser and all later enterprise stages remain
+open. See [M0 evidence](acceptance/enterprise/M00-baseline.md) and the
+[current release scope](enterprise/release-scope.md).
+
+Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
+package/certification rows below describe their named historical candidates,
+not a current 0.x release. `apps/hosted/STATE.md` records a 3.0.2 deployment;
+that record is not fresh live verification. Hosted now resides in the imported
+subtree, with its own pinned core and gates. The actual release matrix includes
+Windows/macOS only. These qualifications supersede conflicting older status
+wording below until each exact current path is requalified.
 
 Enterprise PDPA direction (2026-10-31): the owner requested work toward a full
 organization system. The [proposed control-plane architecture](decisions/2026-10-31-pdpa-enterprise-control-plane.md)
@@ -16,10 +33,10 @@ OIDC/web, persistent consent, retention/rights execution, wider governance,
 independent whole-branch review and deployment remain open. The local assessment
 prototype and legacy HTTP/native acceptance remain separate.
 
-Owner-requested checkpoint: development is paused; see the
+Historical owner-requested checkpoint: development was paused; see the
 [commit/evidence handoff](implementation/pdpa-enterprise-handoff.md). The latest
 domain-source full local Python gate is 2,884 passed / 34 skipped. Task-owned test
-services are stopped. This is branch publication, not main/release promotion.
+services were stopped at that checkpoint. This is branch publication, not main/release promotion.
 
 PDPA design update (2026-10-31): local `ai_guard.py pdpa assess/coverage/lifecycle`
 adds category evidence and non-executing lifecycle plans. The
@@ -43,10 +60,25 @@ evidence**. It is not the code map ([CODEMAP.md](../CODEMAP.md)) and it does not
 priority or order ([ROADMAP.md](../ROADMAP.md)). Every storefront named in the
 code map must have a row here; `tests/test_docs_coverage.py` enforces that.
 
+Source version: `VERSION` is `0.1.0` after the 2026-10-19 reset
+([decision](decisions/2026-10-19-version-reset.md)). Narrative below that
+still says 3.0.0 certification describes the archived line, not this tree.
+Hosted production still reports `3.0.2` until this source is deployed
+(`apps/hosted/STATE.md`). That deployment was not repeated here.
+
 Benchmark note: `blind-v1` is a closed historical evidence set. Its six-reveal
 budget is exhausted, so it must not be described as an active blind evaluation
-or used for further tuning. A future blind measurement requires a newly frozen
-`blind-v2` dataset. The exact WSL candidate at commit `ded67d3` passed the
+or used for further tuning. A reproducible synthetic comparison freeze now
+exists (`benchmark/blind_v2`, seed `20261101`, hash in
+`benchmark/data/blind-v2-repro.lock.json`), plus a harder prose split whose
+test half (seed `20261103`, hash in `benchmark/data/hard-test.lock.json`) was
+scored only after the detector change. Neither is a tuning set, and neither
+replaces the sealed `benchmark/data/blind-v2.enc` protocol corpus, which stays
+closed. The 2026-11-01 re-run, including a local `gemma3:1b` baseline and the
+raw-versus-redacted utility check, is in
+[benchmark/blind-v2-results.md](benchmark/blind-v2-results.md); the remaining
+gaps are in [benchmark/gap-list.md](benchmark/gap-list.md). The exact WSL
+candidate at commit `ded67d3` passed the
 synthetic government-form privacy gate 9/9. That is historical
 exact-candidate evidence, not a run of the current HTTP-v2/PDF composition;
 physical scans, handwriting, and broader real-form annotation remain outside
@@ -966,6 +998,7 @@ applicable trade. The baseline was not moved.
 |---|---|---|
 | Structured + Thai NER detection | Verified | Shared `detect_all` path, regression tests, a dated pre-current-candidate Docker smoke, and Issue #82 coverage for malformed default-CRF cross-line/nested spans. Existing name hygiene and cue recovery produce bounded `NAME` spans while preserving independent following addresses; the Issue #82 fix required no value-specific rule or engine change. The later Track A weakness-closure campaign added bounded detector safeguards; its latest metrics and limitations are recorded above. |
 | Detection benchmark | Verified | `python -m benchmark` scores synthetic and hand-authored gold corpora (including a negative slice) at entity, character, and exact-boundary level, plus an engine/strategy comparison and an external LLM baseline. Gold is at v4: adjudicated 2026-07-28 by two independent reviewers against [annotation-guidelines.md](annotation-guidelines.md) ([record](decisions/2026-07-28-gold-adjudication.md)). The latest local gold result is recorded above; reports are generated locally and gitignored. |
+| Blind-v2 comparison | Verified locally | `python -m benchmark.blind_v2` scores the seeded synthetic freeze (seed `20261101`, hash in `benchmark/data/blind-v2-repro.lock.json`) for AI Guard, a regex baseline, optional Presidio, PyThaiNLP NER, and WangchanBERTa NER. A harder prose split is locked beside it (`benchmark/data/hard-dev.lock.json`, `benchmark/data/hard-test.lock.json`); only the dev half was read while detectors changed. The 2026-11-01 re-run of both scored sets, the ablations, the local `gemma3:1b` baseline, and the 18-question utility check are in [benchmark/blind-v2-results.md](benchmark/blind-v2-results.md). Gaps that block a best-in-Thailand claim are in [benchmark/gap-list.md](benchmark/gap-list.md). The sealed `blind-v2.enc` protocol corpus was not opened. These freezes are not a tuning set. |
 | Government-form phase-2 probe harness | Verified locally | Source and sanitized-artifact hashes are pinned for official blank คร.1, ภ.ง.ด.91 and สปส.1-03; raw downloads are not committed, and tests reject metadata or hidden payload structures in the page-only copies. The strict runner builds and checks all nine synthetic inputs in one process, including real OCR, pixel coverage, residual, declared-decoy extraction, cardinality, unique-alignment, repository-state, dependency, and PII-free evidence checks. A current-tree WSL rerun at commit `ded67d3` completed all 9/9 inputs with 0 gate failures: 45/45 values removed, 0 exposed, 0 unmeasurable, residual OCR measured on 9/9, and no decoy false hits. The runner summary was conservatively labeled `functional_pass_repository_dirty` during the WSL run; immediately afterward both Windows and WSL `git status` were clean at the same commit. This is current-tree functional evidence, not general-form accuracy: synthetic expectations remain developer-authored and not independently adjudicated; ท.ร.6, physical scans, handwriting, and broader real-form annotation remain outside this evidence. Runtime remains a limitation: the WSL run took about 34 minutes and peaked near 8 GiB RSS, while the Windows run still has a 30-minute timeout/access-violation history. Exact sources, commands, results and limitations: [gov-doc-phase2.md](research/gov-doc-phase2.md) (2026-08-04 addenda), the superseded [dated failed-gate record](acceptance/2026-07-31-government-form-synthetic-run.md), and the gitignored run directory `benchmark/reports/gov-forms-2026-08-04-wsl-current-60m`. |
 | Blind evaluation set | Verified | `blind-v1` frozen 2026-07-28: 185 documents / 479 entities across the 11 types plus a 52-document negative slice, authored and reviewed in isolated contexts and committed only as an authenticated blob + lock (counts pinned in `benchmark/data/blind-v1.lock.json`). Scoring is aggregate-only under a 6-reveal budget with a hash-chained committed audit log. Reveals used — the freeze baseline; campaign 1 (PRs #90-#91), which generalized (F2 0.837 to 0.903, non-overlapping CIs); campaign 2 (PR #93, NAME cues), which did NOT generalize (blind F2 flat, NAME precision 0.748 to 0.700) and pointed at engine-level work; campaign 3 (PR #97 + the fine-tune), which answered campaign 2's open question — blind NAME precision 0.700 to 0.922 at recall 1.000, overall F2 0.914, negative clean rate 0.346 to 0.423 ([results](decisions/2026-07-28-finetuned-ner-results.md)); and campaign 4 (the gov-form OCR detection gaps, main `553c8af`, owner-approved reveal on 2026-08-02, default CRF engine), which was generalization-neutral by design expectation — overall F2 0.8977 to 0.8981 (flat, within the 0.877-0.916 CI), precision and both family macros unchanged, negative slice byte-identical (54 FP, clean rate 0.346) — while character coverage recall rose 0.914 to 0.929 and exact-boundary recall 0.614 to 0.639 with one fewer false positive: no overfit to gold, no regression, and the campaign's OCR-specific gains are not expressible on a prose corpus (they are evidenced by the gov-form gate instead). Reveal 6 (same day, also owner-approved) spent the final reveal re-certifying the fine-tuned opt-in engine on the same code, since the campaign changed rule layers that engine shares: overall F2 0.914 to 0.916, exact-boundary recall 0.647 to 0.666, coverage recall 0.919 to 0.931, NAME precision 0.922 to 0.915 at recall 1.000 (within noise), negative slice identical (54 FP, clean rate 0.423) — the reveal-4 certification stands on current main. The budget is EXHAUSTED at 6 of 6; any future blind measurement requires a frozen blind-v2. Protocol: [2026-07-28 ADR](decisions/2026-07-28-blind-set-protocol.md). |
 | Token and surrogate sanitization | Hardening open | New and existing sessions have automated coverage across core, Section 26, guard, response-render, audit-write, and outbound-policy failure seams; a separate cap-full regression preserves the selected victim and LRU state. For non-expiry pre-publication failures, published state, ordinals, timestamps, and concurrent restore/drop visibility remain unchanged. Current source returns no result for structured FP, text-based TB, detector-independent contiguous 6+ digit, anonymization, or missing-replacement failures. Caller mappings cannot reuse empty, identity, embedded-original, source-pre-existing, independently residual-looking, or wrong-token-type pseudonyms. Token mode mints `[<label>_<generation-tag>_<token-nonce>_<ordinal>]`; the non-secret tag carries 64 random bits and each newly minted token adds an approximately 94-bit nonce. This makes accidental identity reuse and preplay computationally impractical rather than impossible. The tag and complete tokens survive transaction clone/snapshot and are invalidated by `clear()`. Strict HTTP-v2 projection/client behavior has automated source evidence; package recertification remains open. |

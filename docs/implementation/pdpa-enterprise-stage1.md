@@ -10,6 +10,12 @@
 
 **Spec:** `docs/decisions/2026-10-31-pdpa-enterprise-control-plane.md`.
 
+**Program sequence:** [M0-M12 plan](aiguard-production-milestones.md).
+Stage 1 corresponds to M3 after M0 reconciliation. Tasks 1-2 are implemented in
+the preserved checkpoint; their unchecked lists below are task requirements,
+not the current progress ledger. The owner resumed execution on 2026-11-02 and
+requires independent adversarial review at every stage. Continue from Task 3.
+
 ## Global constraints
 
 - Single self-hosted organization; no SaaS isolation claim. Every command/read binds to configured organization and current authoritative member scope.
@@ -65,11 +71,11 @@
 
 ## Task 4: Caller-facing registry API and web application
 
-**Files:** `app/enterprise/{server,schemas}.py`, `app/enterprise/static/{index.html,app.js,style.css}`, `tests/test_enterprise_api.py`, `tests/test_enterprise_ui.js`, `pyproject.toml` package entries/data.
+**Files:** `app/enterprise/{server,schemas}.py`, `app/enterprise/static/{index.html,app.js,style.css}`, `tests/test_enterprise_api.py`, `tests/enterprise/enterprise_ui.test.js`, `vitest.config.js`, `pyproject.toml` package entries/data.
 
 **Interfaces:** `GET /api/enterprise/v1/me`, activity/notice lists and detail, explicit create/update/submit/review routes, grant proposal/approval routes and a role-filtered audit view. Exact organization is server configuration, never an arbitrary request tenant selector. Fixed error DTO: `{error: {code, correlation_id}}` with no rejected values or internal exceptions. A readiness route distinguishes database, schema, enrollment and IdP configuration from process liveness.
 
-- [ ] Write RED API tests for unauthenticated requests, forged headers, CSRF, body limits, unknown fields, invalid transitions, pagination/scope and value-free failure paths.
+- [ ] Write RED API tests for unauthenticated requests, forged headers, CSRF, body limits, unknown fields, invalid transitions, pagination/scope and value-free failure paths. Add `tests/enterprise/**/*.test.js` to Vitest discovery and verify the UI tests are collected and fail for a missing behavior before implementation.
 - [ ] Implement adapters over the domain commands, bounded pagination, security headers, strict same-origin session handling and no public business CORS.
 - [ ] Build functional login, first-use setup guidance, inventory list/form/detail, submission/review queue and audit screens. Include keyboard labels, loading/empty/error states, optimistic-revision conflict recovery, readable Thai UI and responsive layout. No fake dashboard counts or success placeholders.
 - [ ] Exercise the real local web-to-API-to-PostgreSQL path and responsive/keyboard failure states using an available permitted browser verification mechanism. Do not substitute static source assertions for browser acceptance.

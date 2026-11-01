@@ -383,6 +383,7 @@ All 8 steps are wired together by `pii_redactor/pipeline.py`'s `run_pipeline()` 
 | `pii_redactor/anonymizer/` | Package: `anonymizer.py` (vault replace), `fp_generator.py` + `tb_generator.py` (valid-format / Thai fake values) |
 | `pii_redactor/redactor.py` | Flattened PDF redaction via bbox black boxes (wired through `/api/redact-pdf`); selects boxes only by authoritative `Entity.span`/`WordBbox.source_span` intersection and fails closed on unsafe coverage |
 | `pii_redactor/reid_risk.py` | Quasi-identifier re-identification risk score (Sweeney model), 0-100 + grade |
+| `pii_redactor/pdpa_categories.py` | The one PDPA Section 26 category list, keyword patterns, and short-name aliases shared by the report, the semantic detector, and the outbound allow-list |
 | `pii_redactor/report.py` | PDPA risk report; `scan_section26` keyword flags (not auto-redacted) |
 | `pii_redactor/receipt.py` | PDPA มาตรา 39 processing receipt — one slip per run (not a cumulative RoPA; the vault is in-memory and the hosted roundtrip mapping is request-transient, so a register would mean retaining what those paths promise not to). `build_receipt()` records source sha256 + a digest over the detection result + counts/types + version/engine/PyThaiNLP version; `verify_receipt()` re-runs the same input through the shared `process_for_receipt()` and compares **every factual field**, not just the two digests — both sides build them from one `_claims()` helper, so a field added later is verified by construction (the first cut compared digests only, and a receipt edited to claim zero entities verified clean). Authenticity comes from recomputation rather than a signature (no key to keep). The digest excludes `entity_id` (fresh UUID4 per run) and `score` (a detector's internal float). Nothing derived from the document is a value — but `--purpose`/`--controller` are operator free text drawn verbatim onto the PDF, and no document may claim otherwise. Wired through `ai_guard.py receipt issue|verify`; deliberately no HTTP endpoint by design |
 | `pii_redactor/receipt_pdf.py` | The receipt rendered as a Thai PDF slip (reportlab + `thai_pdf_text.draw_text`), including the command that verifies it. PII-free by the same structural argument as `report_pdf.py` — a receipt dict has no values in it to begin with; shares that module's `_TYPE_LABELS` so both documents name a data type the same way |
@@ -538,6 +539,23 @@ type. Responses are cached under `benchmark/reports/llm_cache/` as parsed
 forbids in acceptance artifacts — keyed by a hash of provider, prompt and
 document text so a prompt or gold-set edit cannot silently reuse a stale answer.
 `benchmark/reports/` is gitignored.
+
+`blind_v2/` — a reproducible comparison freeze, separate from the sealed
+protocol blobs. `corpus.py` builds synthetic documents from generation seed
+`20261101` (checksum-valid identifiers, mixed document styles, and adversarial
+spacing, zero-width, Thai-digit, Arabic-Indic, and OCR-like cases).
+`hard_set.py` builds a second pair, seeds `20261102` (dev, readable while
+fixing) and `20261103` (test, different frames, scored only after the fix).
+The rendered text is not committed. `data/blind-v2-repro.lock.json`,
+`data/hard-dev.lock.json`, and `data/hard-test.lock.json` pin the SHA-256
+and the counts. `python -m benchmark.blind_v2 --self-check` regenerates
+the original set and compares that hash. `python -m benchmark.blind_v2` scores AI Guard,
+a regex baseline, optional Presidio and WangchanBERTa runs, and PyThaiNLP NER,
+then reports per-entity precision, recall, and F2, micro and macro scores,
+latency, peak memory, cost, layer ablations, and a small utility set when a
+free or local model is available. Labels stay out of `pii_redactor/` and
+`app/`. This set is not a tuning target. It also does not replace
+`data/blind-v2.enc`: that sealed corpus stays closed.
 
 `blind.py` — the held-out blind set (Track A). **NEVER decrypt, read, or print
 the blind corpus in a development session** — it exists to measure whether

@@ -20,6 +20,7 @@ from pii_redactor.detectors.name_context import detect_name_context
 from pii_redactor.detectors.tb_detector import detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
+from pii_redactor.pdpa_categories import canonical_section26
 
 
 class _GuardContext(Protocol):
@@ -44,15 +45,15 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "ANONYMIZE_FAILED",
         "BANK_ACCOUNT",
         "CREDIT_CARD",
-        "CRIMINAL",
+        "CRIMINAL_RECORD",
         "DATE",
         "DATE_OF_BIRTH",
         "DISABILITY",
         "EMAIL",
-        "ETHNICITY",
         "HEALTH",
         "IBAN",
         "ID_NUMBER",
+        "LABOR_UNION",
         "LOCATION",
         "MEDICAL_ID",
         "MISSING_REPLACEMENT_RECORD",
@@ -63,12 +64,13 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "PHONE",
         "POLITICAL_OPINION",
         "POSTAL_CODE",
+        "RACE_ETHNICITY",
         "RELIGION",
+        "SEXUAL_BEHAVIOR",
         "STUDENT_ID",
         "SURNAME",
         "THAI_ID",
         "UNCLASSIFIED_RESIDUAL",
-        "UNION",
         "VEHICLE_PLATE",
     }
 )
@@ -84,7 +86,13 @@ def normalize_outbound_leak_types(labels: object) -> list[str]:
     safe: set[str] = set()
     invalid = False
     for label in labels:
-        if isinstance(label, str) and label in SAFE_OUTBOUND_LEAK_TYPES:
+        if not isinstance(label, str):
+            invalid = True
+            continue
+        canonical = canonical_section26(label)
+        if canonical is not None:
+            safe.add(canonical)
+        elif label in SAFE_OUTBOUND_LEAK_TYPES:
             safe.add(label)
         else:
             invalid = True

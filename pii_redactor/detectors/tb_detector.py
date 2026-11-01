@@ -7,7 +7,7 @@ import logging
 import os
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from pythainlp import sent_tokenize
 from pythainlp.tag import NER
@@ -1123,6 +1123,36 @@ def _isolated_line_name_candidates(
 
 
 def _detect_tb_impl(
+    text: str,
+    *,
+    window_size: int = 1,
+    diagnostics: NERChunkDiagnostics | None = None,
+) -> list[Entity]:
+    """Run TB detection on prose, including zero-width and per-letter spacing.
+
+    The NER and the cue passes see the folded text. Spans are mapped back onto
+    the source so a redaction covers the obscured characters too.
+    """
+    from pii_redactor.detectors.name_context import recover_obscured_names
+    from pii_redactor.detectors.surface_norm import map_span, normalize_prose
+
+    folded, origins = normalize_prose(text)
+    found = _detect_tb_scanned(
+        text if origins is None else folded,
+        window_size=window_size,
+        diagnostics=diagnostics,
+    )
+    if origins is None:
+        return found
+    remapped = []
+    for entity in found:
+        start, end = map_span(origins, entity.span[0], entity.span[1])
+        remapped.append(replace(entity, span=(start, end), original_text=text[start:end]))
+    remapped.extend(recover_obscured_names(text, folded, origins))
+    return _deduplicate(remapped)
+
+
+def _detect_tb_scanned(
     text: str,
     *,
     window_size: int = 1,

@@ -4,6 +4,14 @@
 
 <h1 align="center">AI Guard</h1>
 
+**Current source (2026-11-02):** product source is `0.1.0` under the accepted
+version reset. Earlier 2.x/3.x release and installed-runtime statements below
+refer to their archived candidates, not a new 0.x release. Hosted and SDK source
+now live in this monorepo but still have distinct engine copies and acceptance
+gates. Follow the [current release scope](docs/enterprise/release-scope.md) and
+[M0-M12 plan](docs/implementation/aiguard-production-milestones.md) for current
+engineering work, human prerequisites and per-surface release claims.
+
 <p align="center">
   Thai PII detection, anonymization, PDF redaction, and PDPA risk analysis<br />
   for local AI workflows and AI for Thai services.
