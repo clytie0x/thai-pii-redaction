@@ -289,6 +289,12 @@ impl WindowsAbortHandle {
     pub(crate) fn abort(&self) {
         self.aborted.store(true, Ordering::Release);
     }
+
+    pub(crate) fn peer_disconnected(&self) -> bool {
+        // The Windows abort handle does not own the pipe. Slot release on
+        // hangup is observed by the handler thread there.
+        false
+    }
 }
 
 // Windows kernel handles are valid process-wide. This wrapper owns one handle
