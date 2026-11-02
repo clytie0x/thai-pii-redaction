@@ -36,7 +36,7 @@ def test_populated_version_two_upgrades_without_losing_authority(database, tmp_p
     store, _package = old_schema(database, tmp_path, monkeypatch)
     before = store.verify_audit()
     store.migrate()
-    assert store.check_ready() == 6 and store.verify_audit() == before
+    assert store.check_ready() == 7 and store.verify_audit() == before
     with store.transaction() as tx:
         assert tx.execute("SELECT count(*) AS n FROM governance_members").fetchone()["n"] == 2
         assert (
@@ -49,7 +49,7 @@ def test_two_migrators_publish_one_complete_schema(database):
     with ThreadPoolExecutor(max_workers=2) as executor:
         list(executor.map(lambda s: s.migrate(), stores))
     with stores[0].transaction() as tx:
-        assert tx.execute("SELECT count(*) AS n FROM governance_schema").fetchone()["n"] == 6
+        assert tx.execute("SELECT count(*) AS n FROM governance_schema").fetchone()["n"] == 7
         assert tx.execute("SELECT count(*) AS n FROM governance_organization").fetchone()["n"] == 1
 
 
@@ -76,4 +76,4 @@ def test_failed_upgrade_rolls_back_new_ddl_and_preserves_existing_data(
         )
         assert tx.execute("SELECT count(*) AS n FROM governance_members").fetchone()["n"] == 2
     store.migrate()
-    assert store.check_ready() == 6
+    assert store.check_ready() == 7

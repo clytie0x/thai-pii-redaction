@@ -37,6 +37,10 @@ REQUIRED = [
     "tests/test_governance_retention.py",
     "tests/test_governance_integration.py",
     "tests/test_enterprise_integrated_routes.py",
+    "tests/test_governance_rights.py",
+    "tests/test_rights_delivery.py",
+    "tests/test_rights_closure.py",
+    "tests/test_rights_api.py",
 ]
 
 
