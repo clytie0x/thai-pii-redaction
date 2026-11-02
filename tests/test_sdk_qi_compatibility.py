@@ -7,9 +7,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
-from app.http_v2 import RECOMMENDATION_TEMPLATES, ReidProjection
 from pii_redactor.reid_risk import assess_reid_risk
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +34,11 @@ def test_nationality_prefix_exclusions_are_preserved(prefix):
 
 
 def test_http_qi_projection_accepts_existing_sdk_categories_in_order():
+    pytest.importorskip("fastapi")
+    from pydantic import ValidationError
+
+    from app.http_v2 import ReidProjection
+
     values = ["religion", "nationality", "body_metrics"]
     result = ReidProjection(
         score=30.0, grade="B", quasi_identifier_categories=values, high_risk_combination=False
@@ -68,6 +71,9 @@ def test_office_qi_allowlist_keeps_canonical_order():
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node is needed for the desktop contract")
 def test_desktop_contract_projects_existing_sdk_qi_categories():
+    pytest.importorskip("fastapi")
+    from app.http_v2 import RECOMMENDATION_TEMPLATES
+
     payload = {
         "overall_score": 20.0,
         "overall_grade": "A",

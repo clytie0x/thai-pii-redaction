@@ -336,6 +336,9 @@ def test_runner_inventory_binds_canonical_wheel_input_and_refuses_synthetic_secr
     spec.loader.exec_module(module)
     canonical = canonical_inventory_fixture(tmp_path)
     module.REPO = canonical / "apps/hosted"
+    module.CANONICAL = canonical
+    (canonical / "VERSION").write_text("0.1.0\n", encoding="utf-8")
+    (canonical / "pyproject.toml").write_text("# synthetic build metadata\n", encoding="utf-8")
     module.REPO.mkdir(parents=True)
     (module.REPO / "safe.py").write_bytes(b"# synthetic\n")
     monkeypatch.setattr(

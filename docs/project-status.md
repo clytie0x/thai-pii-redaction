@@ -15,39 +15,54 @@ installed mapping-reuse probe selected root TNER despite the SDK local snapshot.
 No live provider call occurred. The config path through anonymization candidate
 validation and the standalone pipeline is now fixed (root 200 and SDK 191 focused
 tests, no skips); the preceding broad-suite totals are not new runs of this delta.
-Final artifacts must be rebuilt from the checkpoint and installed outside source.
+The [frozen combined pair](acceptance/enterprise/M01-combined-artifacts.md)
+is now built and qualified outside source on Windows/Python 3.13: six artifacts,
+three fresh profiles, 214 installed adapter tests without skips and six artifact
+negatives. This evidence is bound to `b4a8897`; packaged runtime/config/locks
+are unchanged through `b468592`. It does not qualify images or actual hosts.
 
 The local five-iteration budget run measures detect 5.75 ms, sanitize 15.65 ms,
 restore 0.37 ms, PDF 73.77 ms and peak RSS 151.4 MiB. Sanitization and restoration
 exceed the unchanged baseline budgets. This is a held feature checkpoint, not a
 performance waiver, controlled-environment M3 acceptance, main integration or
-production release. M7/M8 and operational M10 engineering remain open.
+production release. M7/M8 and operational M10 engineering are running in separate
+managed checkouts and are not integrated or accepted.
+
+Public CI on `b468592` passes all seven SDK profile jobs and the actual SDK
+offline-image smoke. The downloaded image/API reports are bound in the
+[SDK CI record](acceptance/enterprise/M09-sdk-ci.md). Imported checks still fail
+in the Hosted runner's shallow-path test before its image build. Root CI exposes
+a separate QI test collection error in the bare profile. The macOS cross-platform
+smoke also fails before package build: an immediate health assertion receives a
+valid nonterminal `broker_busy`. The test now uses the existing bounded readiness
+helper and checks retry, deadline and terminal-error behavior. Local Rust
+execution is blocked by missing MSVC `link.exe`; formatting alone does not prove
+the fix. These test-harness corrections require a new committed CI run; no
+all-green result is claimed.
 
 | Storefront | Current candidate evidence | Remaining gate |
 | --- | --- | --- |
-| Enterprise application | M4–M6 source and 298 mandatory local PostgreSQL/controlled-auth tests | Combined artifact, real browser/IdP/restart, operational recovery and organization pilot |
-| Hosted application | Canonical wheel source/build path, 16 execute contracts and source-bound safety checks | Supplied artifact, exact offline image, CI and platform acceptance |
-| Python SDK | Canonical facade/adapters and complete source profile: 2,141 passed, 10 explicit optional/platform/live skips | Frozen paired artifacts, other supported profiles/images/hosts and CI |
+| Enterprise application | M4–M6 source, 322 mandatory local PostgreSQL/controlled-auth tests and frozen installed pair | New-candidate browser/IdP/restart, operational recovery and organization pilot |
+| Hosted application | Canonical wheel source/build path, 16 execute contracts and source-bound safety checks | Exact offline image, complete CI and platform acceptance |
+| Python SDK | Complete source profile 2,141 passed/10 explicit skips; frozen installed pair; seven CI profiles and isolated image smoke on `b468592` | External hosts/live providers and remaining exact release/OS profiles; complete product CI |
 
 Current parallel wave: SDK and Hosted source consumers now use the canonical
 core, and M4 subject consent, M5 managed execution and M6 retention/holds have
 domain/API/Thai UI implementations. They are **implemented locally; qualification
 pending**, not accepted milestones. The
 [local-wave record](acceptance/enterprise/M04-M06-local-wave.md) separates focused
-candidate results, review fixes, retained failures and remaining gates. After the
-retained 286-pass/11-fail enterprise retry, the corrected complete mandatory gate
-passes 298 tests with 0 failures/0 skips (2 warnings). Root JavaScript passes 178;
-Office Node 22 manifest/type checks, 129 tests and build pass, without real Office
-host acceptance. The first full SDK run remains negative at 2,088 passed/52 failed/
-10 skipped; final global gates await source freeze. No frozen combined artifacts,
-exact images, green CI, new real-browser/IdP/restart acceptance or production
-readiness is claimed. M3's controlled-performance hold remains unchanged.
+candidate results, review fixes, retained failures and remaining gates. Its
+298-pass result and first failed SDK run are historical; the later complete
+source results and frozen artifact evidence above supersede their pending
+statements for those exact scopes. No complete green CI, new real-browser/IdP/
+restart acceptance or production readiness is claimed. M3's controlled-performance
+hold remains unchanged.
 
 SDK retains 29 internal canonical module aliases rather than maintained engine
 copies; its sensitive-span implementation is removed. Hosted copies are removed
 and its build prepares a supplied, source-bound first-party wheel/dependency/model
 context offline. Source checks and build preparation do not qualify those images.
-M7 rights/delivery and M8 organization records remain absent. M10 has collection
+M7 rights/delivery and M8 organization records are not yet integrated. M10 has collection
 quarantine/reconciliation only; whole-database recovery, independent checkpoints,
 rotation, operator workflows and drills remain incomplete. All declared
 storefronts remain in scope, with their own exact-artifact and host gates.

@@ -23,12 +23,16 @@ current execution evidence and owner-only gates live in
 implementation followed by integration. S2-S6 canonical consumers and M4-M6
 domain/API/Thai UI paths are implemented locally; qualification is pending.
 The [local-wave record](../acceptance/enterprise/M04-M06-local-wave.md) retains
-per-module results, review fixes, the failed enterprise retry (286 passed/
-11 failed/0 skipped) and corrected complete 298-pass/0-fail/0-skip run. The first
-full SDK run remains negative (2,088 passed/52 failed/10 skipped). Source freeze,
-final global gates, fresh
-artifacts/images/CI and actual-host rebinding remain pending. M3's controlled
-performance hold is unchanged. The historical starting snapshot below remains
+per-module results, review fixes and failed enterprise/SDK runs. Later source
+results are root 3,549 passed/34 explicit skips, SDK 2,141 passed/10 explicit skips
+and enterprise 322 passed without skips after consent invalidation. The
+[frozen combined pair](../acceptance/enterprise/M01-combined-artifacts.md) passes
+three fresh Windows/Python 3.13 profiles and 214 installed tests without skips.
+[SDK CI](../acceptance/enterprise/M09-sdk-ci.md) on `b468592` passes seven profiles
+and the isolated image smoke; complete CI, Hosted image and actual-host rebinding
+remain pending. M7/M8/M10 implementations run in isolated managed checkouts;
+they are not yet integrated or accepted. M3's controlled performance hold is
+unchanged. The historical starting snapshot below remains
 historical; it is not a statement that those implemented paths are still absent.
 
 ## 1. Historical starting position and scope

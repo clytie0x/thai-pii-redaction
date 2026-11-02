@@ -13,18 +13,23 @@ fixed proxy errors. The parallel S2-S6 wave implements that migration in source,
 including 29 SDK canonical module aliases and removal of Hosted engine copies.
 The parallel M4-M6 wave implements subject consent, encrypted managed execution
 and reviewed retention/holds through domain/API/Thai UI paths. These are
-**implemented locally; qualification pending**. After the retained 286-pass/
-11-fail retry, the corrected complete enterprise gate passes 298 tests without
-failures or skips. The first full SDK run remains negative at 2,088 passed/
-52 failed/10 skipped. See the
+**implemented locally; qualification pending**. Complete source results now
+include root 3,549 passed/34 explicit skips, SDK 2,141 passed/10 explicit skips
+and the later consent-fix enterprise gate 322 passed without skips. Earlier
+failed enterprise/SDK runs remain negative evidence. See the
 [local-wave record](docs/acceptance/enterprise/M04-M06-local-wave.md).
 
-Next, close remaining SDK failures, freeze both source workers' changes, independently review the integration,
-and qualify complete root/SDK/enterprise/JS/Office checks, paired artifacts,
-outside-source installs and exact Hosted/SDK images/CI. Rebind real browser,
+The [frozen combined artifacts](docs/acceptance/enterprise/M01-combined-artifacts.md)
+now pass three Windows/Python 3.13 fresh-install profiles and 214 installed tests
+without skips. SDK CI on `b468592` passes seven profiles and the isolated image
+smoke; [its evidence](docs/acceptance/enterprise/M09-sdk-ci.md) is bounded.
+Next, close the actual Hosted runner, root core-only collection and macOS
+readiness-test CI failures, then qualify the complete exact-candidate CI and
+Hosted image. Local Rust execution lacks the MSVC linker; new CI must exercise
+the bounded health helper, deadline and terminal-error assertions. Rebind real browser,
 IdP, restricted-role and restart evidence to the new candidate; older M3 runs do
-not qualify it. The controlled-performance hold remains. Then complete absent
-M7 rights/secure delivery, M8 organization records and the unfinished M10
+not qualify it. The controlled-performance hold remains. In parallel, integrate
+and independently review M7 rights/secure delivery, M8 organization records and M10
 whole-database recovery/checkpoint/rotation/operator paths. M9 keeps every
 declared storefront and its host/OS gates; M11/M12 keep their human/owner gates.
 The owner selected distribution name
