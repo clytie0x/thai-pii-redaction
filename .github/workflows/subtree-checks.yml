@@ -165,7 +165,7 @@ jobs:
           core_wheel="$1"
           set -- "$sdk_temp"/sdk-wheel/*.whl
           sdk_wheel="$1"
-          PYTHONPATH=../.. "$SDK_PYTHON" -c 'import sys; from pathlib import Path; from scripts.check_sdk_installed import compare_wheels; compare_wheels(Path(sys.argv[1]), Path(sys.argv[2])); compare_wheels(Path(sys.argv[3]), Path(sys.argv[4]))' "$core_wheel" "$sdk_temp"/core-rebuilt/*.whl "$sdk_wheel" "$sdk_temp"/sdk-rebuilt/*.whl
+          "$SDK_PYTHON" -c 'import runpy,sys; from pathlib import Path; compare_wheels=runpy.run_path(sys.argv[1])["compare_wheels"]; compare_wheels(Path(sys.argv[2]),Path(sys.argv[3])); compare_wheels(Path(sys.argv[4]),Path(sys.argv[5]))' ../../scripts/check_sdk_installed.py "$core_wheel" "$sdk_temp"/core-rebuilt/*.whl "$sdk_wheel" "$sdk_temp"/sdk-rebuilt/*.whl
           uv pip install --python "$SDK_PYTHON" --target "$sdk_temp/sdk-installed" --no-index --no-deps "$core_wheel" "$sdk_wheel"
           AMPHRANG_NER_ENGINE=thainer AIGUARD_NER_ENGINE=tner PYTHAINLP_OFFLINE=1 "$SDK_PYTHON" -I ../../scripts/check_sdk_installed.py "$sdk_temp/sdk-installed" "$sdk_wheel" "$core_wheel"
       - name: Run the existing loose catastrophic performance guard

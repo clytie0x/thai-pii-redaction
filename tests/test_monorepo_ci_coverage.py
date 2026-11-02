@@ -1,11 +1,13 @@
 """Imported products need explicit non-deploy root CI, not nested workflow files."""
 
+import os
 import re
 import runpy
 import shlex
 import subprocess
 import sys
 import textwrap
+import zipfile
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
@@ -13,6 +15,34 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/subtree-checks.yml"
+
+
+def test_pair_comparison_loads_explicit_checker_despite_sdk_scripts_package(tmp_path):
+    text = job(workflow(), "sdk-checks")
+    programs = re.findall(r"-c '([^']*)'", text)
+    program = next(value for value in programs if "compare_wheels" in value)
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/__init__.py").write_text("# Deliberate local package shadow.\n")
+    wheel = tmp_path / "identical.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr("module.py", "# Synthetic archive comparison.\n")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            program,
+            str(ROOT / "scripts/check_sdk_installed.py"),
+            str(wheel),
+            str(wheel),
+            str(wheel),
+            str(wheel),
+        ],
+        cwd=tmp_path,
+        env={**os.environ, "PYTHONPATH": ""},
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def workflow():
