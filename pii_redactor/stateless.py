@@ -22,11 +22,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from pii_redactor.anonymizer.anonymizer import PIILeakError, anonymize
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.aggregate import detect_all
 from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
 from pii_redactor.leak_guard import (
     OutboundGuardContext,
     OutboundPolicyError,
+    bind_scanner,
     enforce_outbound_policy,
     scan_outbound_leaks,
     scan_residual_signals,
@@ -37,7 +39,7 @@ from pii_redactor.output_validator import PIILeakError as OutputPIILeakError
 from pii_redactor.output_validator import validate_output
 from pii_redactor.report import scan_section26
 from pii_redactor.reverse_mapper import reverse_map
-from pii_redactor.safe_errors import discard_exception_graph
+from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
 from pii_redactor.session_vault import SessionVault, VaultTimeoutError
 
 _VALID_MODES = ("token", "surrogate")
@@ -136,6 +138,7 @@ class _RestoreValidationError(Exception):
         super().__init__("stateless restore input rejected")
 
 
+@minimize_failure_frames
 def sanitize_into_vault(
     text: str,
     vault: SessionVault,
@@ -145,6 +148,7 @@ def sanitize_into_vault(
     detection_text: str | None = None,
     scan_leaks: Callable[[str, SessionVault], list[Entity]] = scan_outbound_leaks,
     scan_residual: Callable[[str, SessionVault], list[str]] = scan_residual_signals,
+    config: CoreConfig | None = None,
 ) -> SanitizeCore:
     """Run the shared mask body without retaining sensitive exception frames."""
     failure_kind = None
@@ -158,6 +162,7 @@ def sanitize_into_vault(
             detection_text=detection_text,
             scan_leaks=scan_leaks,
             scan_residual=scan_residual,
+            config=resolve_config(config),
         )
     except StatelessLeakError as error:
         failure_kind = "residual"
@@ -186,6 +191,7 @@ def sanitize_into_vault(
     salt = ""
     scan_leaks = None
     scan_residual = None
+    config = None
     if failure_kind == "residual":
         safe_leak_types, safe_categories = failure_metadata
         raise StatelessLeakError(
@@ -209,6 +215,7 @@ def _sanitize_into_vault_impl(
     detection_text: str | None = None,
     scan_leaks: Callable[[str, SessionVault], list[Entity]] = scan_outbound_leaks,
     scan_residual: Callable[[str, SessionVault], list[str]] = scan_residual_signals,
+    config: CoreConfig | None = None,
 ) -> SanitizeCore:
     """Detect, mask and leak-guard `text` using the vault the caller supplies.
 
@@ -225,6 +232,7 @@ def _sanitize_into_vault_impl(
             any outbound residual survived. The text is never returned.
         VaultTimeoutError: propagated untouched from the supplied vault.
     """
+    config = resolve_config(config)
     scan_text = text if detection_text is None else detection_text
     if len(scan_text) != len(text):
         raise ValueError("detection text length mismatch")
@@ -237,7 +245,7 @@ def _sanitize_into_vault_impl(
             score=entity.score,
             original_text=text[entity.span[0] : entity.span[1]],
         )
-        for entity in detect_all(scan_text)
+        for entity in detect_all(scan_text, config=config)
     ]
     registry = EntityRegistry(
         entities=detected,
@@ -269,8 +277,9 @@ def _sanitize_into_vault_impl(
         enforce_outbound_policy(
             pseudo.text,
             guard_context=vault,
-            scan_leaks=scan_leaks,
-            scan_residual=scan_residual,
+            scan_leaks=bind_scanner(scan_leaks, config),
+            scan_residual=bind_scanner(scan_residual, config),
+            config=config,
         )
     except OutboundPolicyError as error:
         policy_failure = (list(error.leak_types), list(error.policy_categories))
@@ -348,17 +357,21 @@ def _clear_throwaway_vault(vault: SessionVault) -> bool:
     return True
 
 
+@minimize_failure_frames
 def restore_stateless(
     text: str,
     *,
     mapping: dict[str, str],
     mode: str | None = None,
+    config: CoreConfig | None = None,
 ) -> StatelessRestoreResult:
     """Restore from a caller mapping without retaining sensitive failures."""
     failure_kind = None
     validation_kind = None
     try:
-        return _restore_stateless_impl(text, mapping=mapping, mode=mode)
+        return _restore_stateless_impl(
+            text, mapping=mapping, mode=mode, config=resolve_config(config)
+        )
     except _RestoreValidationError as error:
         validation_kind = error.kind
         failure_kind = "validation"
@@ -375,6 +388,7 @@ def restore_stateless(
     text = ""
     mapping = None
     mode = None
+    config = None
     if failure_kind == "validation":
         if validation_kind == "empty_text":
             raise ValueError(_EMPTY_RESTORE_MESSAGE)
@@ -389,6 +403,7 @@ def _restore_stateless_impl(
     *,
     mapping: dict[str, str],
     mode: str | None,
+    config: CoreConfig | None = None,
 ) -> StatelessRestoreResult:
     """Restore through a throwaway vault and clear it before any return."""
     if not isinstance(mapping, dict):
@@ -427,6 +442,7 @@ def _restore_stateless_impl(
                 result,
                 EntityRegistry(entities=[], fp_count=0, tb_count=0),
                 vault,
+                config=config,
             )
         except OutputPIILeakError as error:
             generated_pii_count = error.count
@@ -474,6 +490,7 @@ def _restore_stateless_impl(
     return output
 
 
+@minimize_failure_frames
 def sanitize_stateless(
     text: str,
     *,
@@ -481,6 +498,7 @@ def sanitize_stateless(
     salt: str,
     prior_mapping: dict[str, str] | None = None,
     detection_text: str | None = None,
+    config: CoreConfig | None = None,
 ) -> StatelessSanitizeResult:
     """Mask PII without retaining a throwaway-vault failure graph."""
     failure_kind = None
@@ -495,6 +513,7 @@ def sanitize_stateless(
                 salt=salt,
                 prior_mapping=prior_mapping,
                 detection_text=detection_text,
+                config=resolve_config(config),
             )
         except StatelessLeakError as error:
             failure_kind = "residual"
@@ -521,6 +540,7 @@ def sanitize_stateless(
     mode = ""
     salt = ""
     prior_mapping = None
+    config = None
     if failure_kind == "mode":
         raise ValueError(_INVALID_MODE_MESSAGE)
     if failure_kind == "residual":
@@ -544,6 +564,7 @@ def _sanitize_stateless_impl(
     salt: str,
     prior_mapping: dict[str, str] | None,
     detection_text: str | None,
+    config: CoreConfig | None = None,
 ) -> StatelessSanitizeResult:
     """Build the complete result before clearing the function-local vault."""
     vault = SessionVault()
@@ -564,6 +585,7 @@ def _sanitize_stateless_impl(
             detection_text=detection_text,
             scan_leaks=scan_outbound_leaks,
             scan_residual=scan_residual_signals,
+            config=config,
         )
         mapping = vault.export_mapping()
         guard_context = OutboundGuardContext(frozenset(vault.trusted_pseudonyms()))

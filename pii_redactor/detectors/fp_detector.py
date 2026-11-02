@@ -222,6 +222,44 @@ def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Enti
     return out
 
 
+def _disambiguate_thai_juristic(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Use a juristic cue to label a checksum-valid 0-leading identifier."""
+    result: list[Entity] = []
+    for entity in candidates:
+        if entity.data_type == "THAI_ID":
+            digits = re.sub(r"\D", "", entity.original_text.translate(_OCR_FOLD))
+            if (
+                digits
+                and int(digits[0]) == 0
+                and _cue_before(_JURISTIC_CUE_RE, text, entity.span[0])
+            ):
+                entity = _entity_at("JURISTIC_ID", text, *entity.span, score=entity.score)
+        result.append(entity)
+    return result
+
+
+def _disambiguate_driver_student(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Keep the nearest cue; a tie favours the directly cued licence."""
+    types_by_span: dict[tuple[int, int], set[str]] = {}
+    for entity in candidates:
+        types_by_span.setdefault(entity.span, set()).add(entity.data_type)
+    dropped: set[tuple[tuple[int, int], str]] = set()
+    for span, types in types_by_span.items():
+        if not {"DRIVER_LICENSE", "STUDENT_ID"} <= types:
+            continue
+        context = text[max(0, span[0] - _CUE_WINDOW) : span[0]]
+        driver = _rightmost_cue(_DRIVER_CUE_RE, context)
+        driver_distance = len(context) - driver if driver >= 0 else None
+        student_distance = _student_evidence(text, *span)
+        if driver_distance is not None and (
+            student_distance is None or driver_distance <= student_distance
+        ):
+            dropped.add((span, "STUDENT_ID"))
+        else:
+            dropped.add((span, "DRIVER_LICENSE"))
+    return [entity for entity in candidates if (entity.span, entity.data_type) not in dropped]
+
+
 def _student_evidence(text: str, start: int, end: int) -> int | None:
     """Return the distance to a student cue, or ``None``.
 
@@ -534,6 +572,48 @@ _RE_POSTAL_CODE = re.compile(r"(?<!\d)(\d{5})(?!\d)")
 # also makes the MEDICAL_ID label honest rather than a guess.
 _RE_MEDICAL_ID = re.compile(
     r"(?<![A-Za-z])(?:HN|เวชระเบียน|ผู้ป่วยเลขที่)\s*[:：]?\s*(\d{4,9})(?!\d)", re.IGNORECASE
+)
+
+_RE_DRIVER_LICENSE = re.compile(r"(?<!\d)(\d{8})(?!\d)")
+_RE_HOUSE_REG = re.compile(r"(?<!\d)(\d{11})(?!\d)")
+_RE_LINE_ID = re.compile(
+    r"(?<![A-Za-z0-9_])(?:LINE|ไลน์)[ \t]*(?:ID|ไอดี)?[ \t:：=]{0,12}"
+    r"(@?[A-Za-z0-9][A-Za-z0-9._\-]{3,23})(?![A-Za-z0-9._\-])",
+    re.IGNORECASE,
+)
+_RE_GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{4,7},\s?-?\d{1,3}\.\d{4,7})(?![\d.])")
+_RE_IP_V4 = re.compile(r"(?<![\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?!\.?\d)")
+_RE_IP_V6 = re.compile(
+    r"(?<![0-9A-Za-z:])("
+    r"(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}"
+    r"|(?:[0-9A-Fa-f]{1,4}:){1,7}:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6})?"
+    r"|::(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,7})?"
+    r")(?![0-9A-Za-z:])"
+)
+_RE_MAC = re.compile(
+    r"(?<![0-9A-Za-z:\-])((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}"
+    r"|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2})(?![0-9A-Za-z:\-])"
+)
+_RE_LAND_DEED = re.compile(
+    r"(?:โฉนด(?:ที่ดิน)?\s*เลขที่|เลขที่โฉนด|น\.ส\.\s*(?:3\s*[กข]?|4\s*[กขคงจ]?)\s*เลขที่)"
+    r"[ \t:：]{0,20}(?<!\d)(\d{1,6})(?!\d)"
+)
+_JURISTIC_CUE_RE = re.compile(
+    r"นิติบุคคล|ทะเบียนบริษัท|ทะเบียนพาณิชย์|เลข(?:ประจำตัว)?ผู้เสียภาษี|tax\s*id|juristic",
+    re.IGNORECASE,
+)
+_DRIVER_CUE_RE = re.compile(
+    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er'?s?|ing)\s*licen[cs]e", re.IGNORECASE
+)
+_HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
+_IP_CUE_RE = re.compile(
+    r"IP|ไอพี|address|แอดเดรส|server|เซิร์ฟเวอร์|host|โฮสต์|router|เราเตอร์|เชื่อมต่อ|log"
+)
+_IP_SUPPRESS_CUE_RE = re.compile(
+    r"version|เวอร์ชัน|รุ่น|build"
+    r"|(?:ข้อ|มาตรา|เอกสารหมายเลข)[ \t:：]*\Z"
+    r"|หนังสือที่[ \t:：]*(?:[ก-๙]{1,4}[ \t]*)?\Z",
+    re.IGNORECASE,
 )
 
 _SEP_RE = re.compile(r"[-\s]")
@@ -1113,6 +1193,42 @@ def detect_fp(text: str) -> list[Entity]:
         candidates.append(_make_entity("MEDICAL_ID", m, text, score=0.9))
 
     _add_folded_digit_hits(text, candidates)
+    # Admit these after recovery, which removes fragments inside checksum hits.
+    # Juristic IDs share the Thai-ID checksum and span, so only their cue differs.
+    candidates = _disambiguate_thai_juristic(text, candidates)
+    for match in _RE_DRIVER_LICENSE.finditer(text):
+        if _cue_before(_DRIVER_CUE_RE, text, match.start(1)):
+            candidates.append(_make_entity("DRIVER_LICENSE", match, text, score=0.9))
+    for match in _RE_LINE_ID.finditer(text):
+        candidates.append(_make_entity("LINE_ID", match, text, score=0.9))
+    for match in _RE_GPS.finditer(text):
+        latitude, longitude = map(float, match.group(1).split(","))
+        if -90 <= latitude <= 90 and -180 <= longitude <= 180:
+            candidates.append(_make_entity("GPS_COORD", match, text, score=0.95))
+    for match in _RE_HOUSE_REG.finditer(text):
+        if _cue_before(_HOUSE_REG_CUE_RE, text, match.start(1)):
+            candidates.append(_make_entity("HOUSE_REG_ID", match, text, score=0.9))
+    for match in _RE_IP_V4.finditer(text):
+        if any(int(octet) > 255 for octet in match.group(1).split(".")):
+            continue
+        start = match.start(1)
+        if _cue_before(_IP_CUE_RE, text, start):
+            candidates.append(_make_entity("IP_ADDRESS", match, text, score=0.9))
+        elif not (start > 0 and text[start - 1] in "vV") and not _cue_before(
+            _IP_SUPPRESS_CUE_RE, text, start
+        ):
+            candidates.append(_make_entity("IP_ADDRESS", match, text, score=0.8))
+    for match in _RE_IP_V6.finditer(text):
+        if 2 <= len([group for group in match.group(1).split(":") if group]) <= 8:
+            candidates.append(_make_entity("IP_ADDRESS", match, text, score=0.9))
+    for match in _RE_MAC.finditer(text):
+        candidates.append(_make_entity("MAC_ADDRESS", match, text, score=0.9))
+    for match in _RE_LAND_DEED.finditer(text):
+        entity = _make_entity("LAND_DEED_ID", match, text, score=0.9)
+        candidates.append(entity)
+        if entity.span[1] - entity.span[0] < 2:
+            single_char_ok.add(entity.span)
+    candidates = _disambiguate_driver_student(text, candidates)
     candidates = _disambiguate_bank_student(text, candidates)
     candidates = _disambiguate_bank_phone(text, candidates)
     return _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))

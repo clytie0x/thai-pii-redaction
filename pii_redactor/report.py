@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.aggregate import detect_all
 from pii_redactor.models import Entity
 from pii_redactor.pdpa_categories import SECTION26_PATTERNS
@@ -108,9 +109,9 @@ def _generate_report(text: str, entities: list[Entity]) -> PDPAReport:
     )
 
 
-def generate_report(text: str) -> PDPAReport:
+def generate_report(text: str, *, config: CoreConfig | None = None) -> PDPAReport:
     """Generate a PDPA risk report without changing the text."""
-    return _generate_report(text, detect_all(text))
+    return _generate_report(text, detect_all(text, config=resolve_config(config)))
 
 
 def _risk_label(score: float) -> str:
@@ -127,12 +128,12 @@ def _risk_label(score: float) -> str:
     )
 
 
-def analyze_text(text: str) -> dict:
+def analyze_text(text: str, *, config: CoreConfig | None = None) -> dict:
     """Build the shared PDPA response for clean text.
 
     The API, PDF report, and worker use this same result.
     """
-    entities = detect_all(text)
+    entities = detect_all(text, config=resolve_config(config))
     report = _generate_report(text, entities)
     reid = report.reid_risk
 

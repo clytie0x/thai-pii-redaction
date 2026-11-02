@@ -1,6 +1,6 @@
 # AI Guard Production Milestone Plan
 
-> **For agentic workers:** Use `superpowers:executing-plans` to implement this plan task by task with tests first. Preserve the existing Stage 1 execution method. Obtain an independent review for security-sensitive, migration and public-contract changes before they land. This planning document does not resume the paused implementation, authorize production actions or mark any runtime gate passed.
+> **For agentic workers:** Use `superpowers:executing-plans` to implement this plan task by task with tests first. The owner resumed execution and requested Astra review followed by Sol 6.1 implementation. Use the [current execution addendum](2026-11-02-astra-sol-execution-review.md), preserve existing work and obtain independent adversarial review at every stage. This plan does not authorize production actions or mark runtime gates passed.
 
 **Goal:** Deliver a usable single-organization, self-hosted PDPA system and qualify each supported AI Guard delivery surface against its actual trust boundary.
 
@@ -19,7 +19,7 @@ Historical planning/pause statements below describe the planning snapshot;
 current execution evidence and owner-only gates live in
 [release scope](../enterprise/release-scope.md) and the milestone acceptance records.
 
-## 1. Starting position and scope
+## 1. Historical starting position and scope
 
 The canonical design branch contains no enterprise web application. The separate implementation branch already contains foundation and registry work, so Stage 1 must be resumed from its evidence rather than rebuilt from an empty directory.
 
@@ -34,7 +34,7 @@ The canonical design branch contains no enterprise web application. The separate
 | Imported products | Hosted and SDK still have separate engine copies and check systems | Explicit policy/contract inventory, shared-core migration and CI coverage |
 | Distribution | Root/source version is `0.1.0`; older evidence names archived releases | Exact new artifacts and separate release/host/platform evidence |
 
-Checkpoint details are available on `feat/pdpa-enterprise` in `docs/implementation/pdpa-enterprise-handoff.md`. Do not copy its test totals into a new acceptance record without rerunning the relevant gates. Its development pause remains in force until implementation is requested; this task produces the plan only.
+Checkpoint details are available on `feat/pdpa-enterprise` in `docs/implementation/pdpa-enterprise-handoff.md`. Do not copy its test totals into a new acceptance record without rerunning the relevant gates. The earlier development pause was revoked by the owner. The execution addendum records the clean post-privacy-rewrite checkout, preserved prerequisite candidate and outstanding gates; re-resolve those identities before further implementation.
 
 The enterprise release includes staff inventory, notices, subject consent, managed-document retention, rights cases, processor/transfer records, incidents, responsibility and risk review, recovery and a supervised organizational pilot. Desktop, Extension, Hosted, SDK and Office have individual support decisions. An enterprise pilot does not require an unclaimed Office host, Web Store publication or PyPI publication. A product-wide release claiming all those surfaces must pass every corresponding surface gate.
 
@@ -157,6 +157,12 @@ Execution order is by dependencies, not a blanket numeric lock. Continue M3 from
 
 **Interfaces:** Root `detect_all`, `sanitize_stateless`, `restore_stateless` and `SessionService` remain canonical. Keep the SDK facade's public signatures, HTTP v2 DTOs and native protocol v1 stable through adapters. New/changed public behavior requires a reviewed contract decision before migration.
 
+The owner has now approved warn/report, direct first-party core consumption with
+the larger footprint, distribution name `thai-pii-redaction-core`, and fixed
+proxy errors/qualified rollback. Do not re-ask these resolved choices. Their
+implementation, complete contract projections and artifact/CI gates remain open;
+execute S0-S7 in the Astra/Sol addendum.
+
 - [ ] **M1.1 Inventory differences before removal:** Compare imports, detectors, normalization, span units, supported types, sensitive-data policy, mappings, restoration, retries, PDF and failure DTOs across all three engines. Pin shared synthetic probes and adapter-specific expected results. Test `test_each_adapter_declares_policy_and_contract` rejects an unclassified difference. SDK sensitive-span masking is not silently replaced by the root warn/review policy; resolve the exposed behavior under an ADR before switching that path.
 - [ ] **M1.2 Make the compatibility decision reviewable:** Write the smallest adapter/package proposal for consuming the root core in SDK installs and Hosted builds. Include distribution contents, namespace/import compatibility, model assets, dependency isolation and offline install behavior. Independently review the ADR and obtain the required owner decision for public-contract or packaging changes. Continue unrelated enterprise work if this decision remains open.
 - [ ] **M1.3 Migrate one adapter at a time:** First write `test_adapter_preserves_source_spans_and_failure_contract`, `test_sdk_mapping_stays_in_explicit_python_boundary`, `test_http_and_mcp_never_expose_mapping` and `test_installed_wheel_contains_required_core`. Then implement the approved dependency/import arrangement. Build/install clean wheels and Hosted images outside the source tree; prove the imported core identity at runtime. Remove a duplicate only after import, entry-point, build, docs and test searches show no live consumer.
@@ -164,7 +170,7 @@ Execution order is by dependencies, not a blanket numeric lock. Continue M3 from
 
 **Gate:** Included adapters consume an identifiable canonical core, intentional policy differences are approved/tested, clean install/build succeeds, and complete per-project CI is green. No unresolved sensitive-policy change, unsupported fallback or undeclared engine copy can hide behind the phrase "one core."
 
-**Recovery:** Switch back to the previous immutable package/image when compatible. If a consumer contract changes, use a tested versioned migration; do not overwrite the previous package or force installed clients to consume it.
+**Recovery:** Use only immutable rollback artifacts qualified for the approved privacy/error and compatibility contract. A retained old package is provenance, not permission to restore unsafe provider-error behavior. If no safe fallback qualifies, keep the affected proxy path disabled. Use a tested versioned migration; do not overwrite an earlier artifact or silently force changed contracts on installed clients.
 
 ### M2. Qualify protection, restoration, PDF and detector limits
 
@@ -407,13 +413,21 @@ Provider, OCR, large export and remote-system latency have separate queues/timeo
 
 Estimate work after M0 using remaining tasks rather than total milestone count: review each task's database/IdP/host dependencies, implement one complete vertical slice, measure actual throughput, then estimate a range and contingency. Re-estimate after M3, M6, M9 and M10. A calendar date cannot overrule an unmet safety or real-host gate.
 
-## 8. Immediate next work when implementation is requested
+## 8. Current execution sequence
 
-1. Complete M0: verify the paused implementation checkpoint and current branch/upstream state, reproduce its real-database baseline and reconcile source/release/CI claims.
-2. Resume existing Stage 1 Task 3: solve the real local IdP boot/setup problem and implement authenticated staff sessions with failing-then-passing tests. Do not rebuild the completed authority/registry modules.
-3. Finish Stage 1 Tasks 4-5: real console/API, clean-wheel packaging, complete dedicated enterprise CI and independent review. Mark only M3 complete when its precise gates pass.
-4. Continue M4 and M5; progress M1/M2 and early M8 source review without changing closed evaluations or silently changing a client policy.
-5. Build subsequent milestones in dependency order and maintain one acceptance record per milestone. Stop at the concrete owner decision/action gates, with all independently authorized preparation complete.
+1. Follow the [Astra/Sol addendum](2026-11-02-astra-sol-execution-review.md) from
+   the clean checkout. S0/S1 preserves the prerequisite/proxy candidate with local
+   Windows/Python 3.13 artifact evidence and a clear independent review. Continue
+   from S2; do not rebuild the completed M3 staff path.
+2. Finish actual SDK/Hosted canonical consumption and full adapter/artifact checks.
+   Keep M0/M1/M3 acceptance held while executing CI and controlled performance are
+   missing. The owner's performance hold and GitHub privacy purge remain in force.
+3. Rebind M2/M3 regression, installed package and real local browser/IdP/database
+   evidence to the combined exact candidate.
+4. Build M4-M8 as complete subject-to-managed-document workflows using the accepted
+   authority, transaction and recovery design, then qualify M9-M12 in dependency order.
+5. Maintain separate implemented/verified/accepted facts and explicit owner inputs.
+   Prepare concrete pilot/release actions before the required final authorization.
 
 ## 9. Planning-document verification
 

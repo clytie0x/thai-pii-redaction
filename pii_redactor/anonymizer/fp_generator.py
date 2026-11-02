@@ -140,6 +140,37 @@ def _gen_vehicle_plate(rng: random.Random) -> str:
     return f"{c1}{c2} {nums}"
 
 
+def _gen_juristic_id(rng: random.Random) -> str:
+    """Generate a 0-leading identifier with the shared mod-11 checksum."""
+    digits = [0] + [rng.randint(0, 9) for _ in range(11)]
+    total = sum(digit * (13 - index) for index, digit in enumerate(digits))
+    return "".join(str(digit) for digit in digits) + str((11 - total % 11) % 10)
+
+
+def _gen_line_id(rng: random.Random, original: str) -> str:
+    """Keep the handle length and its optional leading @."""
+    has_at = original.startswith("@")
+    length = len(original) - int(has_at)
+    body = "".join(rng.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(length))
+    return f"@{body}" if has_at else body
+
+
+def _gen_gps(rng: random.Random) -> str:
+    """Generate a synthetic Thailand-range coordinate pair."""
+    return f"{rng.uniform(5.6, 20.5):.6f}, {rng.uniform(97.3, 105.6):.6f}"
+
+
+def _gen_ip_address(rng: random.Random) -> str:
+    """Use a private IPv4 shape for IPv4 and IPv6 originals."""
+    return f"10.{rng.randint(0, 255)}.{rng.randint(0, 255)}.{rng.randint(1, 254)}"
+
+
+def _gen_mac_address(rng: random.Random, original: str) -> str:
+    """Keep the original separator style across all six pairs."""
+    separator = "-" if "-" in original else ":"
+    return separator.join(f"{rng.randint(0, 255):02x}" for _ in range(6))
+
+
 def _gen_generic(rng: random.Random, original: str) -> str:
     """Fallback: same length, same char class (digit->digit, letter->letter)."""
     result = []
@@ -195,6 +226,22 @@ def generate_fp(data_type: str, original: str, *, salt: str, attempt: int = 0) -
     elif data_type == "DATE":
         return _gen_date(rng, original)
     elif data_type == "ID_NUMBER":
+        return "".join(str(rng.randint(0, 9)) for _ in range(len(original)))
+    elif data_type == "JURISTIC_ID":
+        return _gen_juristic_id(rng)
+    elif data_type == "DRIVER_LICENSE":
+        return "".join(str(rng.randint(0, 9)) for _ in range(8))
+    elif data_type == "LINE_ID":
+        return _gen_line_id(rng, original)
+    elif data_type == "GPS_COORD":
+        return _gen_gps(rng)
+    elif data_type == "HOUSE_REG_ID":
+        return "".join(str(rng.randint(0, 9)) for _ in range(11))
+    elif data_type == "IP_ADDRESS":
+        return _gen_ip_address(rng)
+    elif data_type == "MAC_ADDRESS":
+        return _gen_mac_address(rng, original)
+    elif data_type == "LAND_DEED_ID":
         return "".join(str(rng.randint(0, 9)) for _ in range(len(original)))
     else:
         return _gen_generic(rng, original)

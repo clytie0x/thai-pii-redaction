@@ -4,11 +4,13 @@ import re
 import unicodedata
 
 from pii_redactor.detectors import scan_views
+from pii_redactor.detectors.fp_detector import _JURISTIC_CUE_RE
 from pii_redactor.models import Entity
 
 _TYPES = frozenset(
     {
         "THAI_ID",
+        "JURISTIC_ID",
         "PHONE",
         "EMAIL",
         "CREDIT_CARD",
@@ -23,6 +25,7 @@ _TYPES = frozenset(
 _CUES = {
     "PHONE": re.compile(r"โทร|เบอร์|มือถือ|phone", re.IGNORECASE),
     "THAI_ID": re.compile(r"บัตรประชาชน|เลขประจำตัวประชาชน|ปชช"),
+    "JURISTIC_ID": _JURISTIC_CUE_RE,
     "CREDIT_CARD": re.compile(r"บัตรเครดิต|บัตรเดบิต|credit\s*card", re.IGNORECASE),
     "BANK_ACCOUNT": re.compile(r"บัญชี|account", re.IGNORECASE),
     "STUDENT_ID": re.compile(r"รหัสนักศึกษา|รหัสนักเรียน|รหัสนิสิต"),

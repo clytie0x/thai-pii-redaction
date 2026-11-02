@@ -1614,7 +1614,7 @@ def test_http_sanitize_tner_failure_publishes_no_session(client, monkeypatch):
     monkeypatch.setattr(
         stateless_module,
         "detect_all",
-        lambda _text: (_ for _ in ()).throw(failure),
+        lambda _text, *, config=None: (_ for _ in ()).throw(failure),
     )
 
     response = client.post(
@@ -1646,7 +1646,7 @@ def test_http_roundtrip_tner_failure_never_invokes_provider(client, monkeypatch)
     monkeypatch.setattr(
         stateless_module,
         "detect_all",
-        lambda _text: (_ for _ in ()).throw(
+        lambda _text, *, config=None: (_ for _ in ()).throw(
             NERFailureError("ner_unavailable", category="upstream", count=1)
         ),
     )
@@ -1724,7 +1724,7 @@ def test_consistency_replacements_have_authoritative_sanitized_offsets(monkeypat
         score=1.0,
         original_text="AA",
     )
-    monkeypatch.setattr(stateless_module, "detect_all", lambda _text: [entity])
+    monkeypatch.setattr(stateless_module, "detect_all", lambda _text, *, config=None: [entity])
     monkeypatch.setattr(stateless_module, "enforce_outbound_policy", lambda *_args, **_kwargs: None)
 
     vault = SessionVault()

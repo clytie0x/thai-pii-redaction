@@ -8,6 +8,12 @@ mask personal data before it reaches an external AI, restore it locally.
 > first public release, install it from a local source checkout; the package
 > name and version remain subject to pre-publication review.
 
+The current development candidate deliberately replaces upstream proxy error
+bodies with fixed metadata. Its proxy extra requires AnyIO 4.4 or newer. The
+approved shared-core/warn-report migration is a subsequent integration gate;
+the legacy engine still runs here until that gate is implemented. Read the
+[migration guide](docs/migrations/shared-core.md) before adopting this candidate.
+
 Install the surface you need in editable mode:
 
 ```

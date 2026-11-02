@@ -8,6 +8,7 @@ Security design:
 
 from dataclasses import dataclass
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.aggregate import detect_all
 from pii_redactor.leak_guard import scan_obfuscated_structured_entities
 from pii_redactor.models import EntityRegistry, ReverseResult
@@ -37,6 +38,8 @@ class PIILeakError(Exception):
 def _layer1_pii_scan(
     reverse_result: ReverseResult,
     vault: SessionVault,
+    *,
+    config: CoreConfig | None = None,
 ) -> tuple[bool, list[str]]:
     """
     Run the shared structured and text-based detector on restored text.
@@ -79,7 +82,7 @@ def _layer1_pii_scan(
         ):
             expected_ranges.append(item)
 
-    detected = detect_all(text)
+    detected = detect_all(text, config=resolve_config(config))
     for candidate in scan_obfuscated_structured_entities(text):
         if any(
             existing.data_type == candidate.data_type
@@ -190,6 +193,8 @@ def validate_output(
     reverse_result: ReverseResult,
     entity_registry: EntityRegistry,
     vault: SessionVault,
+    *,
+    config: CoreConfig | None = None,
 ) -> ValidationResult:
     """
     Run 3-layer output validation.
@@ -213,7 +218,7 @@ def validate_output(
     all_flags = []
 
     # Layer 1: PII scan
-    l1_ok, l1_flags = _layer1_pii_scan(reverse_result, vault)
+    l1_ok, l1_flags = _layer1_pii_scan(reverse_result, vault, config=resolve_config(config))
     all_flags.extend(l1_flags)
 
     if not l1_ok:

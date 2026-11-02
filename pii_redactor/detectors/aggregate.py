@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.fn_scanner import scan_fn
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_parallel_record_names
@@ -17,6 +18,7 @@ from pii_redactor.detectors.structured_views import admit_recovery, recover_stru
 from pii_redactor.detectors.tb_detector import NERChunkDiagnostics, detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
+from pii_redactor.safe_errors import minimize_failure_frames
 
 
 def dedupe_spans(entities: list[Entity]) -> list[Entity]:
@@ -324,18 +326,21 @@ def _relabel_student_ids(tb: list[Entity], kept: list[Entity]) -> list[Entity]:
     return out
 
 
+@minimize_failure_frames
 @native_broker_detector_phase
 def detect_all(
     text: str,
     *,
     ner_diagnostics: NERChunkDiagnostics | None = None,
+    config: CoreConfig | None = None,
 ) -> list[Entity]:
     """Run the full detection ensemble and return deduped entities."""
+    config = resolve_config(config)
     fp = detect_fp(text)
     if ner_diagnostics is None:
-        tb = detect_tb(text)
+        tb = detect_tb(text, config=config)
     else:
-        tb = detect_tb(text, diagnostics=ner_diagnostics)
+        tb = detect_tb(text, diagnostics=ner_diagnostics, config=config)
     fn = scan_fn(text, fp + tb)
     record_names = detect_parallel_record_names(text, fp + tb + fn)
     deduped = dedupe_spans(fp + tb + fn + record_names)

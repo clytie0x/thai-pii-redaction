@@ -1,11 +1,20 @@
 # M1 compatibility inventory and decision boundary
 
-Date: 2026-11-02. Inventory baseline: `a5b6f64`; runtime source in the imported
-subtrees remains unchanged. Subsequent CI/test-only changes are recorded below.
+Date: 2026-11-02. Inventory baseline: `a5b6f64`. The comparison/line references
+below identify that baseline, not the current line numbers. Subsequent root
+prerequisites and SDK proxy runtime changes are recorded separately.
 State: **inventory reviewed; B/B migration approved; implementation/acceptance open**.
 
 Source/test/artifact fingerprints and bounded qualification counts are in the
 [M1 CI manifest](../acceptance/enterprise/M01-ci-manifest.json).
+
+Current candidate: canonical configuration/type/error-containment prerequisites
+and fixed SDK proxy errors are implemented and preserved in the S0/S1 checkpoint.
+Its Windows/Python 3.13 prerequisite artifacts passed bounded installed checks
+and independent review. Actual SDK facade,
+HTTP/MCP and Hosted canonical consumption remains open. See the
+[prerequisite evidence](../acceptance/enterprise/M01-prerequisites.md) and
+[Astra/Sol execution plan](../implementation/2026-11-02-astra-sol-execution-review.md).
 
 The owner requested one shared protection core and independent adversarial
 checks at every milestone. Source inspection confirms that the three existing
@@ -73,9 +82,12 @@ error projection, optional assets and source fingerprint. Test the following:
    and structured field boundaries preserve exact source slices and type labels.
 3. Missing/unsupported explicitly selected engines fail; no adapter changes
    process-global environment variables temporarily to select its policy.
-4. Success restoration follows the explicit Python/proxy boundary. HTTP/MCP,
-   errors, audit and logs cannot emit mappings, raw/provider error bodies or
-   restored sensitive values.
+4. Success restoration/inspection follows each declared caller boundary. HTTP/MCP
+   must not export mappings. Current MCP `detect_pii` returns matched text and
+   `reidentify` returns restored text, so its host-specific plaintext exposure
+   must be qualified explicitly. Errors/audit/logs cannot emit raw values,
+   mappings or provider bodies. Do not silently remove documented MCP success
+   fields or claim no-plaintext merely because no mapping DTO exists.
 5. Clean SDK wheels preserve the approved namespace/dependency surface and run
    outside the checkout. Hosted images retain separately reviewed configuration,
    model digests, offline behavior and deployment identity.

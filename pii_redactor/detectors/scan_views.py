@@ -31,6 +31,14 @@ OBFUSCATED_STRUCTURED_TYPES = frozenset(
         "STUDENT_ID",
         "THAI_ID",
         "VEHICLE_PLATE",
+        "JURISTIC_ID",
+        "DRIVER_LICENSE",
+        "LINE_ID",
+        "GPS_COORD",
+        "HOUSE_REG_ID",
+        "IP_ADDRESS",
+        "MAC_ADDRESS",
+        "LAND_DEED_ID",
     }
 )
 

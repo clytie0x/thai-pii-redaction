@@ -102,7 +102,7 @@ def test_explicit_tner_failure_preserves_existing_session_and_error_secrecy(monk
     retained.credential = credential
     retained.provider_body = provider_body
 
-    def fail_detection(_text):
+    def fail_detection(_text, *, config=None):
         raise retained
 
     monkeypatch.setattr(stateless_mod, "detect_all", fail_detection)
@@ -586,7 +586,7 @@ def test_token_nonce_exhaustion_is_value_free_and_does_not_publish(monkeypatch):
     )
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: namespace)
     monkeypatch.setattr(anonymizer_mod, "new_token_nonce", lambda: nonce)
-    monkeypatch.setattr(stateless_mod, "detect_all", lambda _text: [entity])
+    monkeypatch.setattr(stateless_mod, "detect_all", lambda _text, *, config=None: [entity])
     service, _ = _svc()
 
     with pytest.raises(

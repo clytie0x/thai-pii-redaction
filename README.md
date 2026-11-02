@@ -18,6 +18,10 @@ PyPI's `aiguard` belongs to an unrelated project. This source candidate is not
 a published release: use verified first-party artifacts and follow the
 [distribution migration guide](docs/enterprise/distribution-migration.md).
 
+The current M1 candidate adds shared configuration/type prerequisites and corrects
+SDK proxy errors. SDK/Hosted core consumption, performance acceptance and CI remain
+open; see the [prerequisite evidence](docs/acceptance/enterprise/M01-prerequisites.md).
+
 <p align="center">
   Thai PII detection, anonymization, PDF redaction, and PDPA risk analysis<br />
   for local AI workflows and AI for Thai services.

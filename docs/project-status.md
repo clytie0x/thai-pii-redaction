@@ -2,6 +2,23 @@
 
 Updated: 2026-11-02
 
+Astra execution review: keep the accepted single-organization self-hosted design
+and finish actual canonical-core consumption before expanding features. The
+[execution addendum](implementation/2026-11-02-astra-sol-execution-review.md)
+assigns the current checkpoint/artifact work and detailed Sol 6.1 sequence.
+Prerequisite source checks recorded before S0/S1 pass 3,297 root tests (34 skips), 156 mandatory
+enterprise tests (zero skips) and 2,038 SDK tests (10 skips). Proxy focused checks
+pass on locked AnyIO 4.14.2 and the declared 4.4.0 floor. These are local candidate
+results, not current-main, installed-artifact or production acceptance.
+Fresh S0/S1 root/SDK wheels and sdists are locally qualified on Windows/Python 3.13:
+offline archive rebuilds match direct-wheel bytes, fresh offline installs pass
+43 root configuration and 206 SDK proxy tests, and installed synthetic roundtrips
+and source origins pass. The [artifact manifest](acceptance/enterprise/M01-prerequisite-artifacts.json)
+binds these results to the unchanged candidate; its fresh S0/S1 adversarial review
+is CLEAR. The [prerequisite record](acceptance/enterprise/M01-prerequisites.md) retains
+consumer/host gaps and the restore performance budget miss. M1 is not complete;
+M3's controlled-environment hold and CI/public-purge gates remain in force.
+
 Repository privacy update: the owner approved screenshot-only history cleanup
 before making this repository public. A reviewed, backed-up rewrite now matches
 all 19 remote branches and one tag. Other file bytes are unchanged in every
@@ -42,7 +59,7 @@ is prohibited for local qualification; no package publication/release is authori
 
 The expanded CI candidate configures the existing Hosted checks, SDK Windows/
 Python floor and optional profiles, API collection, catastrophic performance
-guard and legacy Docker smoke. Current local root checks pass 3,112 tests with
+guard and legacy Docker smoke. That CI-preparation checkpoint recorded 3,112 tests with
 34 skips; mandatory enterprise 156 with no skips. SDK server-only passes 1,963
 tests (11 skips); prior full/core profile counts remain 1,989/1,606. Actual owned
 loopback collection checks cover 8 requests, 9 assertions and 4 script tests,
@@ -51,7 +68,7 @@ three diagnostic plus twenty bounded reruns passed, which does not explain or
 erase that failure. Docker/Actions are unexecuted locally/billing-blocked and M3
 remains held until controlled-environment performance measurement.
 
-After the distribution rename and code-map correction, the qualified local root
+At the earlier distribution-rename/code-map checkpoint, the qualified local root
 suite passes 3,118 tests with 34 skips. The earlier failed run is retained: it
 caught the missing `tools` map entry and lacked the existing enterprise test DB
 reference. The corrected run supplied that synthetic fixture; no integration
@@ -69,7 +86,9 @@ Enterprise PDPA direction (2026-10-31): the owner requested work toward a full
 organization system. The [proposed control-plane architecture](decisions/2026-10-31-pdpa-enterprise-control-plane.md)
 has had an independent builder check; the owner confirmed a single self-hosted
 organization. Implementation is in the managed `feat/pdpa-enterprise` worktree
-at `.worktrees/pdpa-enterprise/`. The dedicated `app.enterprise` adapter now
+originally at `.worktrees/pdpa-enterprise/`; that old-history checkout is now
+preserved privately and current work uses the clean checkout named above. The
+dedicated `app.enterprise` adapter now
 calls shared PostgreSQL authority/registry commands using verified staff sessions;
 it does not persist local reversible PII mappings. Synthetic real IdP/browser
 and restricted-runtime-role evidence is stronger than the earlier trusted-domain-

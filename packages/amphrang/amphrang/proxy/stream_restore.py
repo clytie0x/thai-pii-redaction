@@ -26,6 +26,10 @@ class StreamRestorer:
     def flush(self) -> str:
         return self._drain(final=True)
 
+    def discard(self) -> None:
+        self._buffer = ""
+        self._mapping.clear()
+
     def _drain(self, *, final: bool) -> str:
         out: list[str] = []
         buffer = self._buffer

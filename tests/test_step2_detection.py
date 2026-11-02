@@ -937,7 +937,10 @@ def test_explicit_tner_failure_aborts_instead_of_skipping(monkeypatch, caplog):
             error.provider_body = secret
             raise error
 
-    monkeypatch.setitem(tbd._ner_cache, "tner", BoomTner())
+    monkeypatch.setenv("AIFORTHAI_API_KEY", "synthetic-test-key")
+    monkeypatch.setattr(
+        "pii_redactor.detectors.tner_client.TnerEngine", lambda *, api_key: BoomTner()
+    )
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "tner")
     diagnostics = tbd.NERChunkDiagnostics()
 
@@ -977,7 +980,10 @@ def test_explicit_tner_later_chunk_failure_discards_earlier_candidates(monkeypat
         "sent_tokenize",
         lambda _text, engine: ["สมชาย", "ไปดี", "ต่อไป"],
     )
-    monkeypatch.setitem(tbd._ner_cache, "tner", PartialThenIncomplete())
+    monkeypatch.setenv("AIFORTHAI_API_KEY", "synthetic-test-key")
+    monkeypatch.setattr(
+        "pii_redactor.detectors.tner_client.TnerEngine", lambda *, api_key: PartialThenIncomplete()
+    )
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "tner")
     diagnostics = tbd.NERChunkDiagnostics()
 

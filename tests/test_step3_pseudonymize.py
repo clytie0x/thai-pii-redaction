@@ -601,7 +601,29 @@ def test_token_label_map_matches_v2_contract():
 
     assert TOKEN_LABEL["THAI_ID"] == "บัตรประชาชน"
     assert TOKEN_LABEL["BANK_ACCOUNT"] == "บัญชีธนาคาร"
-    assert len(TOKEN_LABEL) == 19
+    assert len(TOKEN_LABEL) == 27
+    assert {
+        kind: TOKEN_LABEL[kind]
+        for kind in (
+            "JURISTIC_ID",
+            "DRIVER_LICENSE",
+            "LINE_ID",
+            "GPS_COORD",
+            "HOUSE_REG_ID",
+            "IP_ADDRESS",
+            "MAC_ADDRESS",
+            "LAND_DEED_ID",
+        )
+    } == {
+        "JURISTIC_ID": "ทะเบียนนิติบุคคล",
+        "DRIVER_LICENSE": "ใบขับขี่",
+        "LINE_ID": "ไลน์ไอดี",
+        "GPS_COORD": "พิกัด",
+        "HOUSE_REG_ID": "รหัสประจำบ้าน",
+        "IP_ADDRESS": "ไอพี",
+        "MAC_ADDRESS": "แมคแอดเดรส",
+        "LAND_DEED_ID": "โฉนด",
+    }
     assert TOKEN_LABEL["ORGANIZATION"] == "องค์กร"
     assert TOKEN_LABEL["ID_NUMBER"] == "รหัสอ้างอิง"
     # Added with the Thai address/health detectors: a postal code and a

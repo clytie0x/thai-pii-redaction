@@ -763,7 +763,7 @@ def test_retry_validation_failure_survives_rollback_exception_group(monkeypatch)
             provider_errors.append(error)
             raise error
 
-    def fail_second_validation(text, received_vault):
+    def fail_second_validation(text, received_vault, *, config=None):
         nonlocal validation_calls
         validation_calls += 1
         assert text == SYNTHETIC_OUTBOUND_TEXT

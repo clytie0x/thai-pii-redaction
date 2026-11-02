@@ -3,6 +3,23 @@
 from __future__ import annotations
 
 import traceback
+from functools import wraps
+
+
+def minimize_failure_frames(function):
+    """Drop completed call-frame payloads while keeping the error contract."""
+
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except BaseException as error:
+            args = ()
+            kwargs = {}
+            traceback.clear_frames(BaseException.__getattribute__(error, "__traceback__"))
+            raise
+
+    return wrapped
 
 
 def _exception_attr(error: BaseException, name: str, default=None):

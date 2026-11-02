@@ -14,6 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors import scan_views as _shared_views
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_name_context
@@ -21,6 +22,7 @@ from pii_redactor.detectors.tb_detector import detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
 from pii_redactor.pdpa_categories import canonical_section26
+from pii_redactor.safe_errors import minimize_failure_frames
 
 
 class _GuardContext(Protocol):
@@ -72,6 +74,14 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "THAI_ID",
         "UNCLASSIFIED_RESIDUAL",
         "VEHICLE_PLATE",
+        "JURISTIC_ID",
+        "DRIVER_LICENSE",
+        "LINE_ID",
+        "GPS_COORD",
+        "HOUSE_REG_ID",
+        "IP_ADDRESS",
+        "MAC_ADDRESS",
+        "LAND_DEED_ID",
     }
 )
 _POLICY_CATEGORIES = frozenset(
@@ -258,7 +268,9 @@ def _obfuscated_structured_signals(
     return [f"{_OBFUSCATED_SIGNAL_PREFIX}{data_type}" for data_type in sorted(found)]
 
 
-def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
+def scan_residual_signals(
+    text: str, guard_context: _GuardContext, *, config: CoreConfig | None = None
+) -> list[str]:
     """A second opinion over structural and obfuscated residuals.
 
     `scan_outbound_leaks` runs the same `detect_fp`/`detect_tb` that produced
@@ -284,17 +296,21 @@ def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
     return signals
 
 
+@minimize_failure_frames
 @native_broker_detector_phase
-def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]:
+def scan_outbound_leaks(
+    text: str, guard_context: _GuardContext, *, config: CoreConfig | None = None
+) -> list[Entity]:
     """Return real leaks in pseudonymized text (empty list = safe to send)."""
     # Caller-seeded mappings are declarations, not proof. Only replacements
     # minted or actually reused by this processing turn may excuse any FP or TB
     # hit. A fuzzy TB span can cross a trusted replacement, so re-scan only its
     # uncovered segments and preserve cue-linked checks around the full span.
+    config = resolve_config(config)
     trusted = guard_context.trusted_pseudonyms()
     trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
     real_leaks = []
-    for entity in detect_fp(text) + detect_tb(text):
+    for entity in detect_fp(text) + detect_tb(text, config=config):
         if entity.original_text in trusted:
             continue
         start, end = entity.span
@@ -319,7 +335,8 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
                 if position < end:
                     segments.append(text[position:end])
                 segments_clean = all(
-                    not segment.strip() or (not detect_fp(segment) and not detect_tb(segment))
+                    not segment.strip()
+                    or (not detect_fp(segment) and not detect_tb(segment, config=config))
                     for segment in segments
                 )
                 if segments_clean and not _cue_leak_in_window(
@@ -333,18 +350,33 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
     return real_leaks
 
 
+_CONFIG_SCANNERS = (scan_outbound_leaks, scan_residual_signals)
+
+
+def bind_scanner(scanner: Callable, config: CoreConfig) -> Callable:
+    """Bind core settings without changing the two-argument callback protocol."""
+    if any(scanner is canonical for canonical in _CONFIG_SCANNERS):
+        return lambda text, context: scanner(text, context, config=config)
+    return scanner
+
+
+@minimize_failure_frames
 def enforce_outbound_policy(
     text: str,
     *,
     guard_context: _GuardContext,
     scan_leaks: Callable[[str, _GuardContext], list[Entity]] = scan_outbound_leaks,
     scan_residual: Callable[[str, _GuardContext], list[str]] = scan_residual_signals,
+    config: CoreConfig | None = None,
 ) -> None:
     """Fail closed on structured, text, or detector-independent residuals.
 
     The exception retains only bounded type labels and fixed policy categories.
     It never retains Entity objects, scanner signals, or source text.
     """
+    config = resolve_config(config)
+    scan_leaks = bind_scanner(scan_leaks, config)
+    scan_residual = bind_scanner(scan_residual, config)
     leak_types: set[str] = set()
     categories: set[str] = set()
     leaks = list(scan_leaks(text, guard_context))
@@ -381,6 +413,7 @@ def enforce_outbound_policy(
         guard_context = None
         scan_leaks = None
         scan_residual = None
+        config = None
         leaks.clear()
         leaks = []
         leak = None

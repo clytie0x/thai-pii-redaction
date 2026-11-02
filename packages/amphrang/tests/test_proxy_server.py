@@ -257,16 +257,18 @@ def test_invalid_json_body_is_400():
     assert upstream.requests == []
 
 
-def test_upstream_error_status_passes_through():
+def test_upstream_error_status_keeps_only_fixed_metadata():
     upstream = FakeUpstream(status=429, body={"error": {"message": "rate limited"}})
     response = _client(upstream).post(
         "/v1/chat/completions", json=_chat([{"role": "user", "content": "หวัดดี ทดสอบ"}])
     )
     assert response.status_code == 429
-    assert response.json()["error"]["message"] == "rate limited"
+    assert response.json() == {
+        "error": {"message": "upstream request failed", "type": "upstream_error"}
+    }
 
 
-def test_tokens_in_upstream_json_error_values_are_restored_recursively():
+def test_upstream_json_error_values_are_never_restored_or_returned():
     recorded: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -296,12 +298,9 @@ def test_tokens_in_upstream_json_error_values_are_restored_recursively():
     assert response.status_code == 429
     assert "081-234-5678" not in recorded[0].content.decode("utf-8")
     assert response.json() == {
-        "error": {
-            "message": "retry for 081-234-5678",
-            "details": ["081-234-5678", {"echo": "081-234-5678"}],
-            "code": 429,
-        }
+        "error": {"message": "upstream request failed", "type": "upstream_error"}
     }
+    assert "081-234-5678" not in response.text and "retry for" not in response.text
 
 
 def test_streaming_reply_is_restored_across_split_tokens():

@@ -57,9 +57,16 @@ release blockers; an agent or test fixture cannot sign them on the owner's behal
 
 ## Starting integration decision
 
-Use the existing linked `feat/pdpa-enterprise` worktree. Main has four commits
-absent from the checkpoint, including broker admission-race hardening. Merge
-current main into that branch without rewriting its logical commits; rebind
-tests to the combined tree. Do not replace main with the older checkpoint.
-Core/Hosted/SDK policy consolidation remains an M1 ADR/compatibility gate, not
-permission to silently change sensitive-data masking or an installed contract.
+The original checkpoint reconciliation was completed and its identities were
+later mapped by the owner-authorized screenshot-only privacy rewrite. Preserve
+that provenance; do not repeat the old merge or push preserved old-history clones.
+Current engineering uses `.worktrees/pdpa-enterprise-clean/`, branch
+`feat/pdpa-enterprise`, with the S0/S1 prerequisite checkpoint based on `6f1e63f`.
+Its local artifact evidence does not clear the held main-integration gates.
+`origin/main` is the clean main reference; the clone currently has no local main.
+
+The owner approved warn/report, direct first-party core consumption, distribution
+name `thai-pii-redaction-core` and fixed proxy errors with qualified rollback.
+The [Astra/Sol execution addendum](../implementation/2026-11-02-astra-sol-execution-review.md)
+defines the next integration/checkpoint steps. Those choices do not accept an
+unimplemented adapter, an untested public projection or a release/deployment.

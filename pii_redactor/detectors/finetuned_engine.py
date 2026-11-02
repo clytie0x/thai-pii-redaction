@@ -20,8 +20,11 @@ from __future__ import annotations
 
 import os
 
+from pii_redactor.config import CoreConfig, resolve_config
+
 _WINDOW_TOKENS = 240
 _STRIDE_TOKENS = 60
+_DEFAULT_MODEL = object()
 
 
 class FinetunedEngineUnavailableError(RuntimeError):
@@ -31,8 +34,11 @@ class FinetunedEngineUnavailableError(RuntimeError):
 class FinetunedEngine:
     """Char-span NER over a fine-tuned HF token-classification model."""
 
-    def __init__(self, model_dir: str | None = None) -> None:
-        model_dir = model_dir or os.environ.get("AIGUARD_FINETUNED_MODEL_DIR")
+    def __init__(
+        self, model_dir: str | None | object = _DEFAULT_MODEL, *, config: CoreConfig | None = None
+    ) -> None:
+        if model_dir is _DEFAULT_MODEL:
+            model_dir = resolve_config(config).finetuned_model_dir
         if not model_dir or not os.path.isdir(model_dir):
             raise FinetunedEngineUnavailableError(
                 "AIGUARD_FINETUNED_MODEL_DIR must point at a trained model directory"
