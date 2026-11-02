@@ -19,14 +19,26 @@ See [M3 progress](acceptance/enterprise/M03-authority-progress.md),
 [current release scope](enterprise/release-scope.md).
 
 M1 preparation now has a reviewed [compatibility inventory](enterprise/core-compatibility.md)
-and [proposed decision](decisions/2026-11-02-shared-core-compatibility.md).
-SDK policy, namespace/distribution and fixed-error contract choices await the
-owner; no SDK/Hosted engine or public runtime contract was changed. A partial
-root CI candidate adds existing Hosted check/image and locked SDK core/full
-profile checks. Actual isolated SDK Windows/Python 3.13 runs pass 1,989 full-profile
-tests (10 skips), 1,606 bare-profile tests (229 expected exclusions) and a fresh
-installed-wheel offline roundtrip. Configured jobs, missing local Docker and
-billing-blocked GitHub execution remain separate from passing CI; M1 is open.
+and [owner-approved decision](decisions/2026-11-02-shared-core-compatibility.md).
+The owner selected SDK warn/report migration, a direct first-party root dependency
+with the broader footprint, and fixed proxy errors with qualified rollback.
+Runtime migration and M1 acceptance remain open. PyPI's existing `aiguard` is an
+unrelated project. The owner selected distribution name `thai-pii-redaction-core`,
+preserving existing imports and caller entry paths. Renaming, clean installation
+and old first-party artifact migration still need implementation/qualification;
+public-index resolution is prohibited for local qualification. No publication
+or release is authorized.
+
+The expanded CI candidate configures the existing Hosted checks, SDK Windows/
+Python floor and optional profiles, API collection, catastrophic performance
+guard and legacy Docker smoke. Current local root checks pass 3,112 tests with
+34 skips; mandatory enterprise 156 with no skips. SDK server-only passes 1,963
+tests (11 skips); prior full/core profile counts remain 1,989/1,606. Actual owned
+loopback collection checks cover 8 requests, 9 assertions and 4 script tests,
+with fresh private audit storage. One prior CLI nonzero remains unexplained;
+three diagnostic plus twenty bounded reruns passed, which does not explain or
+erase that failure. Docker/Actions are unexecuted locally/billing-blocked and M3
+remains held until controlled-environment performance measurement.
 
 Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
 package/certification rows below describe their named historical candidates,

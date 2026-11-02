@@ -1,6 +1,26 @@
 # Shared-core compatibility and SDK boundaries
 
-Date: 2026-11-02. Status: **proposed, not owner-approved or implemented**.
+Date: 2026-11-02. Status: **owner-approved for local implementation; B/B selected**.
+
+## Owner disposition
+
+On 2 November the owner explicitly selected:
+
+1. Choice 1B: migrate SDK sensitive handling to root warn/report with a versioned
+   migration plan. Do not retain an automatic sensitive-masking compatibility
+   profile.
+2. Choice 2B: consume the first-party root distribution directly, accepting its
+   generic `app`/`pii_redactor` namespaces and broader dependency footprint.
+3. Fixed, value-free proxy errors for HTTP, 2xx error envelopes, SSE and late
+   stream failures. Operational rollback may use only privacy-qualified artifacts.
+4. Use `thai-pii-redaction-core` as the first-party distribution name, preserving
+   existing imports and caller entry paths. This replaces the colliding `aiguard`
+   distribution identity; it does not authorize publication or release.
+
+The alternatives and builder recommendations below are retained as the decision
+record; the owner selected B/B rather than those recommendations. This approval
+does not authorize a release, deployment or main promotion. M3 remains held until
+a controlled-environment performance measurement, as separately chosen by the owner.
 
 ## Problem and existing alternatives
 
@@ -84,7 +104,9 @@ already fit the smaller SDK footprint or choose unverified module exclusions.
 If closure requires broader dependencies or changes facade outputs, stop and
 bring the concrete conflict back to the owner rather than silently widening it.
 
-**B. Depend on the existing root `aiguard` distribution.** This is mechanically
+**B. Depend on the first-party root distribution.** The original proposal named
+it `aiguard`; the additional owner decision below renames it
+`thai-pii-redaction-core`. This is mechanically
 simpler, but explicitly changes SDK installed top-level namespaces and dependency
 footprint. It needs a documented migration/compatibility policy and clean
 environment collision/optional-dependency tests. No project that installs only
@@ -143,11 +165,54 @@ approved policy/packaging/error decisions are tested, clean artifacts pass and
 all required CI jobs actually run green. M3's performance/CI holds remain in
 force; this proposal grants no main/release promotion.
 
-Owner disposition: **pending** for sensitive policy, distribution boundary and
-the fixed-error contract migration. Silence and elapsed time do not approve a
-choice. Separate-context review findings and any owner response must be recorded
-before accepting this ADR. Historical accepted SDK ADRs remain unchanged; their
-status is updated only through the decision index after an approved replacement.
+Owner disposition is recorded above. Historical SDK ADRs remain unchanged;
+the decision index marks the earlier automatic-sensitive-masking policy as
+superseded for the new migration candidate. Current shipped/historical artifacts
+retain their recorded behavior until an explicitly qualified replacement.
+
+Post-decision packaging discovery: current PyPI `aiguard`, including version
+`0.1.0`, belongs to the unrelated SyntaxSama project and depends on `ollama`.
+[Primary version metadata](https://pypi.org/pypi/aiguard/0.1.0/json).
+The approved dependency means our first-party core, never that index artifact.
+Local qualification must use explicit first-party paths/wheels with index
+resolution disabled. Distribution naming/registry delivery needs a concrete
+additional disposition before independently installable public publication;
+no bare public-index pin is accepted as proof of identity.
+
+### Registry disposition accepted after discovery
+
+The owner selected **`thai-pii-redaction-core`** for the first-party
+distribution, while preserving the existing `pii_redactor`/`app` imports and
+caller entry paths. This does not introduce an installed CLI command. The SDK
+will depend on that distribution's matching qualified version.
+The primary PyPI endpoint returned 404 on 2 November; this is not ownership or a
+reservation and must be rechecked before a separately authorized publication.
+
+The alternative is to retain `aiguard` only for explicitly provided first-party
+private/offline wheel bundles or a controlled private index. The SDK must not
+be advertised as safely installable through a bare public-index dependency in
+that arrangement. Resolve this core exclusively from provenance-verified,
+hash-qualified first-party artifacts. Private-index delivery must prohibit public
+fallback or mixed-index resolution for this distribution. A clean qualification
+environment must verify the installed identity. The owner did not select this
+private-only naming alternative. Local qualification still uses source-bound
+paths and explicit first-party wheels, without public-index fallback.
+
+A renamed distribution does not automatically upgrade a prior first-party
+`aiguard` installation. Test clean installation and explicit migration from
+verified old first-party artifacts, including overlapping installed files;
+coexistence is not assumed safe. Never remove an unrelated installed package
+merely because it has the colliding name. The release migration must identify
+the old artifact before replacing it.
+
+Owner disposition for this additional distribution/registry choice: **accepted**.
+It does not reopen the approved warn/report, direct first-party dependency or
+fixed-error choices. No name was registered and no package was published.
+
+A separate-context adversarial documentation review independently confirmed the
+collision/404 and added the caller-entry wording, exclusive artifact resolution
+and old/new distribution coexistence gates above. It did not run an installation
+or establish package-name ownership.
 
 Independent proposal review: a fresh separate-context adversarial/builder review
 identified in-band/2xx/late-stream failure handling, immutable adapter config and

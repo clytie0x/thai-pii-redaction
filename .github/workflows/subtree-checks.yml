@@ -54,17 +54,29 @@ jobs:
           print("Hosted image assets and offline synthetic detection passed")'
 
   sdk-checks:
-    name: SDK ${{ matrix.profile }} locked checks and wheel (Python ${{ matrix.python }})
-    runs-on: ubuntu-latest
+    name: SDK ${{ matrix.profile }} checks (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
+        os: ["ubuntu-latest", "windows-latest"]
         python: ["3.11", "3.13"]
         profile: ["core", "server-mcp"]
+        include:
+          - os: ubuntu-latest
+            python: "3.13"
+            profile: server
+        exclude:
+          - os: windows-latest
+            python: "3.11"
     defaults:
       run:
+        shell: bash
         working-directory: packages/amphrang
+    env:
+      PYTHONUTF8: "1"
+      AMPHRANG_NER_ENGINE: thainer
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
@@ -77,23 +89,105 @@ jobs:
         run: |
           if [ "${{ matrix.profile }}" = core ]; then
             uv sync --frozen --group dev --no-install-project --python "${{ matrix.python }}"
+          elif [ "${{ matrix.profile }}" = server ]; then
+            uv sync --frozen --extra server --group dev --no-install-project --python "${{ matrix.python }}"
           else
             uv sync --frozen --extra server --extra mcp --group dev --no-install-project --python "${{ matrix.python }}"
           fi
-          uv pip install --python .venv/bin/python --build-constraints ../../requirements-build.lock --no-deps --editable .
+          if [ "$RUNNER_OS" = Windows ]; then
+            SDK_PYTHON=.venv/Scripts/python.exe
+          else
+            SDK_PYTHON=.venv/bin/python
+          fi
+          uv pip install --python "$SDK_PYTHON" --build-constraints ../../requirements-build.lock --no-deps --editable .
+          echo "SDK_PYTHON=$SDK_PYTHON" >> "$GITHUB_ENV"
       - name: Prove optional packages are absent from the bare profile
         if: matrix.profile == 'core'
-        run: .venv/bin/python -c 'from importlib.util import find_spec; assert find_spec("fastapi") is None and find_spec("mcp") is None; import amphrang'
+        run: |
+          "$SDK_PYTHON" -c 'from importlib.util import find_spec; assert find_spec("fastapi") is None and find_spec("mcp") is None; import amphrang'
+      - name: Prove the server-only profile does not inherit MCP
+        if: matrix.profile == 'server'
+        run: |
+          "$SDK_PYTHON" -c 'from importlib.util import find_spec; assert find_spec("mcp") is None; import fastapi,amphrang'
       - name: Check the SDK contract, lint and release metadata
         run: |
           uv lock --check
-          .venv/bin/python scripts/check_release.py
-          .venv/bin/ruff check .
-          .venv/bin/ruff format --check .
-          .venv/bin/python scripts/prewarm_ner.py
-          .venv/bin/python -m pytest -q
+          "$SDK_PYTHON" scripts/check_release.py
+          "$SDK_PYTHON" -m ruff check .
+          "$SDK_PYTHON" -m ruff format --check .
+          "$SDK_PYTHON" scripts/prewarm_ner.py
+          "$SDK_PYTHON" -m pytest -q
       - name: Build and install the actual SDK wheel outside source
         run: |
-          uv build --python "${{ matrix.python }}" --wheel --build-constraints ../../requirements-build.lock --out-dir "$RUNNER_TEMP/sdk-wheel"
-          uv pip install --python .venv/bin/python --target "$RUNNER_TEMP/sdk-installed" --no-deps "$RUNNER_TEMP"/sdk-wheel/*.whl
-          AMPHRANG_NER_ENGINE=thainer PYTHAINLP_OFFLINE=1 .venv/bin/python -I ../../scripts/check_sdk_installed.py "$RUNNER_TEMP/sdk-installed" "$RUNNER_TEMP"/sdk-wheel/*.whl
+          if [ "$RUNNER_OS" = Windows ]; then
+            sdk_temp=$(cygpath -u "$RUNNER_TEMP")
+          else
+            sdk_temp="$RUNNER_TEMP"
+          fi
+          uv build --python "$SDK_PYTHON" --wheel --build-constraints ../../requirements-build.lock --out-dir "$sdk_temp/sdk-wheel"
+          uv pip install --python "$SDK_PYTHON" --target "$sdk_temp/sdk-installed" --no-deps "$sdk_temp"/sdk-wheel/*.whl
+          AMPHRANG_NER_ENGINE=thainer PYTHAINLP_OFFLINE=1 "$SDK_PYTHON" -I ../../scripts/check_sdk_installed.py "$sdk_temp/sdk-installed" "$sdk_temp"/sdk-wheel/*.whl
+      - name: Run the existing loose catastrophic performance guard
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13' && matrix.profile == 'core'
+        run: |
+          PYTHAINLP_OFFLINE=1 "$SDK_PYTHON" -m benchmark.perf --profile ci --json "$RUNNER_TEMP/sdk-perf-ci.json"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13' && matrix.profile == 'server'
+        with:
+          node-version: "24"
+      - name: Install the isolated locked API collection tool without install scripts
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13' && matrix.profile == 'server'
+        working-directory: tools/sdk-api-checks
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Exercise the real collection with an owned temporary loopback server
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13' && matrix.profile == 'server'
+        run: |
+          "$SDK_PYTHON" ../../scripts/run_sdk_api_collection.py --cli ../../tools/sdk-api-checks/node_modules/@usebruno/cli/bin/bru.js --report "$RUNNER_TEMP/sdk-api-summary.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.python == '3.13' && matrix.profile == 'server'
+        with:
+          name: sdk-api-summary-${{ github.sha }}
+          path: ${{ runner.temp }}/sdk-api-summary.json
+          if-no-files-found: error
+          retention-days: 7
+
+  sdk-container:
+    name: Existing SDK Dockerfile keyed route smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SDK_CI_OWNER: sdk-${{ github.run_id }}-${{ github.run_attempt }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.13"
+      - name: Build the existing SDK context with an explicit source label
+        run: >-
+          docker --host unix:///var/run/docker.sock build
+          --file packages/amphrang/Dockerfile
+          --label org.opencontainers.image.revision=${{ github.sha }}
+          --tag amphrang-sdk-check:${{ github.sha }} packages/amphrang
+      - name: Check no-key refusal and keyed routes in isolated containers
+        run: >-
+          python scripts/check_sdk_container.py amphrang-sdk-check:${{ github.sha }}
+          --revision ${{ github.sha }} --owner "$SDK_CI_OWNER"
+          --report "$RUNNER_TEMP/sdk-container-summary.json"
+      - name: Remove only this job's remaining labeled containers after cancellation
+        if: always()
+        run: |
+          identifiers=$(timeout 15s docker --host unix:///var/run/docker.sock container ls --all --no-trunc \
+            --filter "label=org.aiguard.sdk-ci=$SDK_CI_OWNER" \
+            --filter "label=org.opencontainers.image.revision=$GITHUB_SHA" --format '{{.ID}}')
+          for identifier in $identifiers; do
+            [[ "$identifier" =~ ^[0-9a-f]{64}$ ]]
+            timeout 15s docker --host unix:///var/run/docker.sock container rm --force "$identifier"
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sdk-container-summary-${{ github.sha }}
+          path: ${{ runner.temp }}/sdk-container-summary.json
+          if-no-files-found: error
+          retention-days: 7

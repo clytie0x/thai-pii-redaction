@@ -2,6 +2,7 @@
 
 import re
 import runpy
+import shlex
 import subprocess
 import sys
 import textwrap
@@ -32,7 +33,7 @@ def test_ci_covers_each_shipped_subtree():
     assert "working-directory: apps/hosted" in hosted
     assert "working-directory: packages/amphrang" in sdk
     assert 'python: ["3.11", "3.13"]' in sdk
-    assert ".venv/bin/python -m pytest -q" in sdk
+    assert '"$SDK_PYTHON" -m pytest -q' in sdk
     assert "enterprise-postgres:" in (ROOT / ".github/workflows/ci.yml").read_text()
 
 
@@ -70,7 +71,6 @@ def test_check_pipeline_cannot_deploy_or_inherit_production_credentials():
         "deploy_production",
         "--job deploy",
         "--job acceptance",
-        "--all",
         "docker compose up",
         "docker stack deploy",
         "git push",
@@ -78,6 +78,10 @@ def test_check_pipeline_cannot_deploy_or_inherit_production_credentials():
         "twine upload",
     ):
         assert forbidden not in text, f"A check-only job acquired an outward action: {forbidden}"
+    invocations = re.findall(r"python tests/run_ci_local\.py([^\n]*)", text)
+    assert [shlex.split(arguments) for arguments in invocations] == [
+        ["--job", "check", "--gitlab-network"]
+    ]
 
 
 def test_sdk_core_profile_does_not_hide_optional_dependency_imports():
@@ -86,6 +90,43 @@ def test_sdk_core_profile_does_not_hide_optional_dependency_imports():
     assert "uv sync --frozen --group dev --no-install-project" in sdk
     assert 'find_spec("fastapi") is None' in sdk
     assert 'find_spec("mcp") is None' in sdk
+
+
+def test_sdk_preserves_windows_coverage_with_portable_shell_and_paths():
+    sdk = job(workflow(), "sdk-checks")
+    assert "runs-on: ${{ matrix.os }}" in sdk
+    assert 'os: ["ubuntu-latest", "windows-latest"]' in sdk
+    assert "shell: bash" in sdk
+    assert ".venv/Scripts/python.exe" in sdk and ".venv/bin/python" in sdk
+    assert '"$SDK_PYTHON" -m pytest -q' in sdk
+    assert "cygpath -u" in sdk
+
+
+def test_sdk_preserves_existing_api_and_catastrophic_perf_checks():
+    sdk = job(workflow(), "sdk-checks")
+    assert "-m benchmark.perf --profile ci" in sdk
+    assert "run_sdk_api_collection.py" in sdk
+    assert "tools/sdk-api-checks" in sdk
+    assert "npm ci --ignore-scripts --no-audit --no-fund" in sdk
+    assert "sdk-api-summary.json" in sdk
+
+
+def test_api_collection_keeps_the_original_server_only_extra_profile():
+    sdk = job(workflow(), "sdk-checks")
+    assert "profile: server" in sdk
+    assert "uv sync --frozen --extra server --group dev --no-install-project" in sdk
+    assert "matrix.profile == 'server'" in sdk
+
+
+def test_sdk_container_job_has_exact_context_and_scoped_always_cleanup():
+    container = job(workflow(), "sdk-container")
+    assert "packages/amphrang/Dockerfile" in container
+    assert "check_sdk_container.py" in container
+    assert "--revision" in container and "--owner" in container
+    assert "if: always()" in container
+    assert "org.aiguard.sdk-ci=" in container
+    assert "org.opencontainers.image.revision=" in container
+    assert "--host unix:///var/run/docker.sock" in container
 
 
 @pytest.mark.parametrize("asset_ok", [True, False])

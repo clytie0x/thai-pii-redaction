@@ -154,14 +154,14 @@ scheduler explanation or rerun-until-green claim is justified.
 
 All formal runs exit 1 against the pre-existing sanitizer anchor in
 `perf/baseline.json`; both the control and candidate exceed that old anchor.
-No performance baseline was moved. The owner must decide how to handle the
-unexplained regression under `AGENTS.md` before this change can land. A branch
-checkpoint is not approval or main promotion.
+No performance baseline was moved. On 2 November the owner explicitly chose to
+**keep M3 held until a controlled-environment measurement**. No timing exception
+was granted. A branch checkpoint is not performance acceptance or main promotion.
 
 ## Open gates
 
-- Owner disposition of the unexplained performance outlier, or a controlled
-  dedicated-environment measurement. The performance gate is not green.
+- A controlled-environment measurement that resolves the performance gate.
+  The owner selected continued hold; the gate is not green.
 - Every GitHub CI job must actually execute and pass. The account billing/
   spending restriction currently prevents runner startup, as recorded in
   [the CI blocker](M00-ci-blocker.md). No payment/workflow bypass is applied.

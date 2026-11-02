@@ -2,7 +2,7 @@
 
 Date: 2026-11-02. Inventory baseline: `a5b6f64`; runtime source in the imported
 subtrees remains unchanged. Subsequent CI/test-only changes are recorded below.
-State: **inventory reviewed; implementation/acceptance open**.
+State: **inventory reviewed; B/B migration approved; implementation/acceptance open**.
 
 Source/test/artifact fingerprints and bounded qualification counts are in the
 [M1 CI manifest](../acceptance/enterprise/M01-ci-manifest.json).
@@ -87,7 +87,7 @@ No detection score from a closed holdout transfers automatically to a new
 adapter/profile. Use regression/development probes and retain independent M2/M11
 quality gates.
 
-## Work that can continue before an owner decision
+## Approved migration and distribution identity
 
 - Add explicit, non-deploy root CI jobs for existing SDK/Hosted checks; retain
   each subtree's locks/build inputs and classify local/environment failures.
@@ -95,11 +95,23 @@ quality gates.
   changing default policy or marking them desirable.
 - Prepare clean wheel/image import and provenance checks and bounded rollback.
 
-Changing SDK sensitive behavior, restoring provider errors, replacing imports,
-adding the root wheel as an SDK runtime dependency, or removing engine copies
-must wait for the reviewed compatibility decision. M1 remains open.
+The owner selected root warn/report, a direct first-party core dependency with
+the broader footprint, and fixed proxy errors with qualified rollback. Runtime
+migration is now authorized. Preserve the SDK's other supported structured types,
+ten reporting categories, configuration names, source spans and caller trust
+boundaries rather than treating the policy change as approval to drop them.
+The owner selected distribution name `thai-pii-redaction-core` because PyPI's
+`aiguard==0.1.0` is unrelated. Preserve existing imports/entry paths and qualify
+clean installation plus explicit migration from verified old first-party
+artifacts; overlapping installed namespaces are not assumed safe. Use explicit
+first-party paths/artifacts locally. This is not publication/release approval.
 
 ## CI qualification work in progress
+
+The [CI completion manifest](../acceptance/enterprise/M01-ci-completion-manifest.json)
+binds the current gate sources and retained local evidence to base `02dd827`.
+The earlier `M01-ci-manifest.json` remains the first preparatory checkpoint's
+record; neither manifest accepts M1 or certifies a canonical SDK migration.
 
 The new root `subtree-checks.yml` candidate calls Hosted's existing simulator
 only with `--job check --gitlab-network`, which retains its complete declared
@@ -147,9 +159,31 @@ The smoke now checks the validator as a subprocess before detection, and tests
 prove both that successful assets reach inference and failed assets stop it.
 These are control-flow unit tests; Docker execution remains unverified locally.
 
-The CI candidate is **partial coverage**, not complete M1.4 acceptance: executing
-GitHub jobs is billing-blocked; Hosted runner/image checks need Docker; SDK's
-declared Windows CI, API collection, performance and Docker checks have not yet
-all been moved to the root workflow. The checked source/subtree contracts stay
-separate from proposed core/profile/export changes. No engine implementation,
-public facade, frozen evaluation data, SDK lock or deployed service was changed.
+The expanded root workflow now declares the original SDK check categories:
+Ubuntu 3.11/3.13 and Windows 3.13, core/full optional profiles, a distinct Ubuntu
+3.13 server-only profile without MCP, the core catastrophic performance guard,
+the actual server-only API collection and legacy Docker smoke. The exact Windows
+wheel block was executed through Git Bash using a temporary path containing
+spaces and passed installed-artifact checks. This does not prove a GitHub runner.
+
+Latest root Python: 3,112 passed / 34 skips; mandatory enterprise: 156 passed /
+zero skips. The SDK server-only suite passed 1,963 / 11 skips with MCP absent.
+Both API and keyed HTTP probes use fresh private CWDs, generated/cleared auth
+configuration and only value-free reports. Native Windows startup interruption
+after spawn was exercised and reaped the owned process before workspace cleanup.
+
+An earlier collection run returned nonzero before diagnostic details were
+retained. Its failed minimized report remains available. Three diagnostic and
+twenty bounded fresh-server reruns passed; that does not explain the original
+failure. A separate reviewer reported 500 successful in-memory core guard probes,
+but its wrapper cleanup failed and no replay script was retained. This weaker
+observation neither clears HTTP/Bruno uncertainty nor counts as a clean gate.
+Future failures retain only whitelisted request names and HTTP status.
+
+Executing GitHub jobs remains billing-blocked; local Docker is absent. Container
+checks are source/unit preparation, not observed image acceptance. The legacy
+SDK Dockerfile has floating build inputs and is not reproducible-build proof.
+Canonical migration will require two explicit first-party artifacts and a new
+container build arrangement; it cannot install bare public-index `aiguard`.
+No engine/facade/runtime migration, frozen-corpus change or deployed-service
+change is claimed by this CI-preparation unit. M1 remains open.

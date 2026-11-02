@@ -7,9 +7,13 @@ and YRSS completion on 2026-11-02, with independent adversarial subagent checks
 at every stage. M0 preserved and reconciled the checkpoint. The Stage 1 staff
 application now has real synthetic IdP/browser/database, installed-wheel and
 restart evidence; [M3 acceptance](docs/acceptance/enterprise/M03-authority-progress.md)
-is held for an unexplained performance result and executing CI. Prepare the
-independent M1 compatibility decision while those gates await resolution;
-do not promote the candidate or silently replace adapter contracts.
+is held until controlled-environment performance measurement and executing CI.
+The owner approved SDK warn/report, direct first-party core consumption and
+fixed proxy errors. Implement that reviewed migration while preserving the
+remaining adapter contracts. The owner selected distribution name
+`thai-pii-redaction-core`, preserving imports and caller entry paths; qualify its
+installation/migration before any separately authorized publication. Do not
+promote the held candidate.
 See [release scope](docs/enterprise/release-scope.md) and
 [M0 evidence](docs/acceptance/enterprise/M00-baseline.md). Older release and
 sibling/platform descriptions below remain candidate-specific historical

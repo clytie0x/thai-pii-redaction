@@ -1,0 +1,17 @@
+{
+  "name": "aiguard-sdk-api-checks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pinned development tooling for the existing SDK Bruno collection",
+  "devDependencies": {
+    "@usebruno/cli": "4.3.0"
+  },
+  "overrides": {
+    "@usebruno/cli": {
+      "axios": "1.20.0",
+      "form-data": "4.0.6",
+      "js-yaml": "4.3.2",
+      "yaml": "2.8.3"
+    }
+  }
+}
