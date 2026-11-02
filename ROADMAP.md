@@ -15,9 +15,11 @@ remaining adapter contracts. The owner selected distribution name
 installation/migration before any separately authorized publication. Do not
 promote the held candidate.
 The owner also approved screenshot-only history cleanup and public visibility.
-The remote rewrite is complete; [GitHub PR/cache purge](docs/acceptance/enterprise/M00-public-visibility.md)
-still gates visibility and running public CI. Do not push preserved old-history
-clones or backups back into the cleaned repository.
+The remote rewrite is complete. After disclosure the owner accepted the retained
+image risk and instructed public visibility; public CI now executes. [GitHub
+PR/cache purge](docs/acceptance/enterprise/M00-public-visibility.md) remains
+unconfirmed. Do not push preserved old-history clones or backups back into the
+cleaned repository.
 See [release scope](docs/enterprise/release-scope.md) and
 [M0 evidence](docs/acceptance/enterprise/M00-baseline.md). Older release and
 sibling/platform descriptions below remain candidate-specific historical

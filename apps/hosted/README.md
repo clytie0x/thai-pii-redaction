@@ -128,7 +128,7 @@ The browser permits one unresolved provider-bound request at a time.
 | `api/` | Read-only nginx on loopback host port 20071.  Re-adds the stripped `/api` prefix, exact allowlist, holds the inner service key, applies limits and fixed errors. |
 | `core/` | Non-root/read-only FastAPI container, internal network only.  Port-owned auth/report policy wraps a vendored upstream slice. |
 | `pdf-parser/` | Secretless, networkless, non-root parser on a Unix socket. It accepts one bounded text-layer PDF job, returns strict extracted segments/metadata, and cleans its volatile work directory before readmission. |
-| `sync/` | Pins 75 upstream provenance entries from `3c2997835dbdc9842e38b38fb89f09642a713817` with per-file hashes; Hosted keeps its release-owned VERSION. |
+| `sync/` | Pins 75 unchanged source hashes to reconstructed checkpoint `cf50512a043b54ca28f4264d8c103dcc25da1a6d`; [provenance](sync/SOURCE_PROVENANCE.json) preserves the unavailable historical identity without claiming recovery. Hosted keeps its release-owned VERSION. |
 | `evaluation/thai_pii/` | Sprint 3 deterministic synthetic/adversarial evidence; outside all runtime build contexts and provider-free. |
 
 The hosted image omits disabled Paddle OCR dependencies.  Its PyThaiNLP

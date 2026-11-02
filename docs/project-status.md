@@ -17,15 +17,29 @@ and source origins pass. The [artifact manifest](acceptance/enterprise/M01-prere
 binds these results to the unchanged candidate; its fresh S0/S1 adversarial review
 is CLEAR. The [prerequisite record](acceptance/enterprise/M01-prerequisites.md) retains
 consumer/host gaps and the restore performance budget miss. M1 is not complete;
-M3's controlled-environment hold and CI/public-purge gates remain in force.
+M3's controlled-environment performance hold and executing-green-CI gate remain.
 
 Repository privacy update: the owner approved screenshot-only history cleanup
 before making this repository public. A reviewed, backed-up rewrite now matches
 all 19 remote branches and one tag. Other file bytes are unchanged in every
-verified commit. Public visibility remains held because GitHub still retains
-the removed images through read-only PR/cached objects; owner Support action is
-prepared. Continue from the clean checkout, not the preserved old-history clone.
+verified commit. The owner subsequently accepted the retained-image risk after
+explicit disclosure and instructed public visibility; GitHub now reports PUBLIC.
+Server-side purge remains unconfirmed. Public reruns now execute; the first
+actual attempt exposed Hosted provenance-fetch and core-only optional-import
+failures. Continue from the clean checkout, not the preserved old-history clone.
 See the [cleanup record](acceptance/enterprise/M00-public-visibility.md).
+
+Hosted provenance repair preserves all 75 manifest source hashes and every Hosted
+core byte. Its unavailable historical source commit has no certified rewrite
+mapping. A new explicitly reconstructed source checkpoint is recorded in
+`apps/hosted/sync/SOURCE_PROVENANCE.json`; it is not recovery of the original
+commit. Verification still fetches an exact public SHA and compares every hash.
+The corrected `--check --verify-upstream` passes anonymously with credential
+helpers disabled; 26 host-level Hosted contracts pass. Nginx/Compose checks are
+unavailable locally because Docker is absent, and remain actual CI requirements.
+The core-only test collection guard is locally verified with 2,770 passed/303
+optional skips; the same governance model tests pass 12/12 with Pydantic installed.
+CI on the corrected candidate remains a separate gate.
 
 Execution update (2026-11-02): the owner resumed M0-M12 and YRSS work and
 requires independent adversarial subagent review at every stage. The preserved

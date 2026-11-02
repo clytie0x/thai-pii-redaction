@@ -11,7 +11,8 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parent.parent
-UPSTREAM = "436d9ab7880762513826cc204d6ff770faf0e193"
+UPSTREAM = "cf50512a043b54ca28f4264d8c103dcc25da1a6d"
+UPSTREAM_REPOSITORY = "https://github.com/clytie0x/thai-pii-redaction"
 CURRENT_DOCS = (
     ROOT / "README.md",
     ROOT / "STATE.md",
@@ -66,6 +67,23 @@ def main() -> int:
         raise AssertionError("secret-pattern candidates: " + ", ".join(findings))
 
     manifest = json.loads((ROOT / "sync" / "PORT_MANIFEST.json").read_text(encoding="utf-8"))
+    assert manifest["upstream"] == UPSTREAM_REPOSITORY
+    sync = runpy.run_path(str(ROOT / "sync" / "sync_from_upstream.py"))
+    assert sync["UPSTREAM_URL"] == UPSTREAM_REPOSITORY
+    provenance_path = ROOT / "sync" / manifest["provenance"]["record"]
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert provenance["source_checkpoint"] == manifest["commit"]
+    assert (
+        provenance["kind"]
+        == manifest["provenance"]["kind"]
+        == "reconstructed_source_checkpoint"
+    )
+    assert manifest["provenance"]["historical_commit_verified"] is False
+    assert provenance["historical_commit_verified"] is False
+    assert (
+        provenance["historical_unavailable_commit"]
+        == manifest["provenance"]["historical_commit"]
+    )
     assert manifest["commit"] == UPSTREAM
     assert len(manifest["files"]) == 75
     assert (ROOT / "core" / "VERSION").read_text(encoding="utf-8").strip() == "0.1.0"

@@ -1,6 +1,12 @@
 {
- "upstream": "https://github.com/Teerapat-Vatpitak/thai-pii-redaction",
- "commit": "436d9ab7880762513826cc204d6ff770faf0e193",
+ "upstream": "https://github.com/clytie0x/thai-pii-redaction",
+ "commit": "cf50512a043b54ca28f4264d8c103dcc25da1a6d",
+ "provenance": {
+  "kind": "reconstructed_source_checkpoint",
+  "historical_commit": "436d9ab7880762513826cc204d6ff770faf0e193",
+  "historical_commit_verified": false,
+  "record": "SOURCE_PROVENANCE.json"
+ },
  "synced_at": "2026-08-17T14:54:42+00:00",
  "files": {
   "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

@@ -1,6 +1,19 @@
 # Public repository transition: privacy cleanup
 
-Date: 2026-11-02. State: **writable remote history cleaned; public visibility held**.
+Date: 2026-11-02. State: **writable remote history cleaned; repository public
+after explicit owner acceptance of retained-image risk; server purge unconfirmed**.
+
+## Current owner disposition
+
+After being told that the two old private screenshot objects remained retrievable
+and could become accessible through old PR/cache links, the owner explicitly
+accepted that risk and instructed an immediate public transition. GitHub now
+reports `clytie0x/thai-pii-redaction` as PUBLIC. The three check-only workflows
+were rerun at `f60854f`, attempt 2, and executed real steps. This removes the
+prior visibility wait; it does not certify server-side purge or erase the earlier
+privacy findings. Do not publish private backups or push preserved old history.
+
+The remaining sections retain the cleanup and pre-transition observations.
 
 The owner authorized a private backup, removal of only two private screenshots
 from every branch/tag, reviewed force-push and then public visibility to enable
@@ -40,17 +53,18 @@ source work. Backups must not be pushed or published.
 After the successful rewrite, authenticated Git Blobs API requests still
 returned the two removed objects, sized 60,752 and 66,407 bytes. This verifies
 retention for an authorized caller, not public accessibility while private.
-The live repository remains private with zero forks. The separate YRSS
+At that pre-transition check the repository was private with zero forks. The separate YRSS
 documentation repository also remains private.
 
 There are 14 affected PRs and 21 head/merge refs. GitHub read-only PR refs,
 cached views and unreachable objects need server-side cleanup. The owner has a
 prepared Support request in the ignored private audit workspace; no Support
-message was sent. Do not expose the repository while waiting for the purge.
+message was sent. The original disposition was to keep the repository private
+while awaiting purge; the explicit owner disposition above supersedes that wait.
 This follows [GitHub's sensitive-data removal procedure](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository).
 
-After Support confirms removal, recheck the PR/cache/object state and repository
-identity, then perform the already authorized visibility change. Run every
+If Support later confirms removal, recheck the PR/cache/object state before
+claiming purge. The visibility change is already complete. Run every
 required CI job on the exact clean candidate and inspect actual results. Public
 visibility alone is not green CI. M3's controlled-environment performance hold
 and the remaining M0-M12 milestone gates stay in force.

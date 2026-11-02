@@ -1,6 +1,8 @@
 """Closed enrollment input must not invent roles or normalize identity."""
 
 import pytest
+
+pytest.importorskip("pydantic", reason="optional enterprise validation dependency")
 from pydantic import ValidationError
 
 

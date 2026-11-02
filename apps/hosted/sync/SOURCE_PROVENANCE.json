@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "date": "2026-11-02",
+  "kind": "reconstructed_source_checkpoint",
+  "upstream": "https://github.com/clytie0x/thai-pii-redaction",
+  "source_checkpoint": "cf50512a043b54ca28f4264d8c103dcc25da1a6d",
+  "retained_source_branch": "source/hosted-core-75-file-pin",
+  "historical_unavailable_commit": "436d9ab7880762513826cc204d6ff770faf0e193",
+  "historical_commit_verified": false,
+  "base_commit": "ea57c694f1be40d9db1f09e2dade42e361fae858",
+  "vendored_source_commit": "f60854f0de5faea936cb022964b317af9fac5c83",
+  "normalized_file_hashes_verified": 75,
+  "manifest_file_hashes_changed": 0,
+  "hosted_core_files_changed": 0,
+  "replaced_source_paths": [
+    "pii_redactor/detectors/tb_detector.py",
+    "pii_redactor/output_validator.py",
+    "pii_redactor/stateless.py"
+  ],
+  "method": "Clean public base matches 72 of 75 recorded source hashes. Replace exactly three source blobs with the already-public Hosted copies. The base VERSION matches the original provenance hash; Hosted VERSION remains release-owned. Verify all 75 normalized file hashes, including the unchanged binary font, before publishing the new source checkpoint.",
+  "limits": [
+    "This is a new reconstruction from existing source bytes, not recovery or authentication of the historical commit, its date or authorship.",
+    "The unavailable historical commit is absent from both preserved and clean Git object stores and has no certified privacy-rewrite mapping.",
+    "No Hosted runtime, policy, dependency, version, deployment or canonical-core migration is changed.",
+    "The source archive branch is retained for exact-SHA fetch and must not be integrated into main as a feature or release."
+  ]
+}

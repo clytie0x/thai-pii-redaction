@@ -29,7 +29,7 @@ from pathlib import Path
 PORT_ROOT = Path(__file__).resolve().parent.parent
 CORE = PORT_ROOT / "core"
 MANIFEST = Path(__file__).resolve().parent / "PORT_MANIFEST.json"
-UPSTREAM_URL = "https://github.com/Teerapat-Vatpitak/thai-pii-redaction"
+UPSTREAM_URL = "https://github.com/clytie0x/thai-pii-redaction"
 
 # Directories are copied recursively minus caches; files are copied as-is.
 SLICE = [
