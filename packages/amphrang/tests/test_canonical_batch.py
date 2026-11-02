@@ -29,8 +29,9 @@ def test_batches_capture_one_config_for_serial_jobs(monkeypatch):
     monkeypatch.setattr(
         amphrang,
         "_anonymize_with_config",
-        lambda text, *, config, **kwargs: observed.append(config)
-        or amphrang.AnonymizeResult(text, {}, [], {}),
+        lambda text, *, config, **kwargs: (
+            observed.append(config) or amphrang.AnonymizeResult(text, {}, [], {})
+        ),
     )
     amphrang.anonymize_batch(["first", "second"])
     assert resolutions == [1, 1]

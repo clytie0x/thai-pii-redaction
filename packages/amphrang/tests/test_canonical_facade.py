@@ -220,14 +220,16 @@ def test_cli_report_uses_public_canonical_analysis(monkeypatch, tmp_path, capsys
     monkeypatch.setattr(
         amphrang,
         "analyze",
-        lambda text: calls.append(text)
-        or {
-            "direct_pii_count": 0,
-            "fp_count": 0,
-            "tb_count": 0,
-            "breakdown": [],
-            "section26": [{"category": "HEALTH", "start": 0, "end": 3}],
-        },
+        lambda text: (
+            calls.append(text)
+            or {
+                "direct_pii_count": 0,
+                "fp_count": 0,
+                "tb_count": 0,
+                "breakdown": [],
+                "section26": [{"category": "HEALTH", "start": 0, "end": 3}],
+            }
+        ),
     )
     cmd_report(Namespace(file=str(source)))
     assert calls == ["โทร 081-234-5678"]
