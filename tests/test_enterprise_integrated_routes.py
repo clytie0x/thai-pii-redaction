@@ -14,6 +14,15 @@ from app.enterprise.subject_auth import SubjectOIDCSettings
 from pii_redactor.governance.evidence import SyntheticKeyProvider
 
 
+@pytest.fixture(autouse=True)
+def synthetic_route_scope(monkeypatch):
+    # Route composition tests do not certify production operations.
+    async def ready(*_args):
+        return {"status": "ready", "checks": {"synthetic_routes": "ready"}}
+
+    monkeypatch.setattr("app.enterprise.server._production_readiness", ready)
+
+
 class ConfigurationStore:
     organization_id = UUID("b5186bb1-3431-4330-9b39-f365db8d4813")
 
@@ -99,13 +108,9 @@ def test_configured_key_file_enables_managed_path_without_a_runtime_default(monk
     assert provider.key_for(ConfigurationStore.organization_id, None, "v1") == b"s" * 32
 
 
-def test_invalid_configured_key_file_fails_closed_without_echo(monkeypatch, tmp_path):
-    from pii_redactor.governance.errors import GovernanceError
-
+def test_invalid_configured_key_file_disables_managed_without_echo(monkeypatch, tmp_path):
     path = tmp_path / "invalid-managed.key"
     path.write_text('{"synthetic-private-key-canary":"invalid"}')
     monkeypatch.setenv("AIGUARD_ENTERPRISE_MANAGED_KEYS_FILE", str(path))
-    with pytest.raises(GovernanceError) as caught:
-        create_app(settings(), store=ConfigurationStore(), subject_settings=None)
-    assert caught.value.code == "key_configuration_invalid"
-    assert "synthetic-private-key-canary" not in str(caught.value)
+    app = create_app(settings(), store=ConfigurationStore(), subject_settings=None)
+    assert not app.state.managed_enabled

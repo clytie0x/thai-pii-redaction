@@ -131,6 +131,27 @@ class _RequestBoundary:
 _FROM_ENV = object()
 
 
+async def _production_readiness(settings, store, key_provider, oidc, subject_router):
+    from app.enterprise.operations import runtime_report
+
+    report = await run_in_threadpool(runtime_report, settings, store, key_provider)
+    if report["status"] != "ready":
+        report["checks"]["idp"] = "unverified_prerequisites"
+        return report
+    try:
+        await oidc.check_ready(refresh=True)
+        if subject_router is None:
+            raise GovernanceError("identity_unavailable")
+        await subject_router.subject_oidc.check_ready(refresh=True)
+        report["checks"]["idp"] = "ready"
+    except Exception:
+        report["checks"]["idp"] = "blocked"
+    report["status"] = (
+        "ready" if all(v == "ready" for v in report["checks"].values()) else "blocked"
+    )
+    return report
+
+
 def create_app(
     settings: Settings,
     *,
@@ -146,7 +167,9 @@ def create_app(
     store = store or Store(settings.database_dsn, settings.organization_id)
     if store.organization_id != settings.organization_id:
         raise GovernanceError("configuration_invalid")
-    store.check_ready()
+    store.production_operations_required = not settings.development
+    if settings.development:
+        store.check_ready()
     sessions, registry, authority = StaffSessions(store), Registry(store), Authority(store)
     oidc = OIDCClient(settings, transport=oidc_transport)
     from app.enterprise.capabilities import managed_keys_from_env, subject_from_env
@@ -154,22 +177,45 @@ def create_app(
     if subject_settings is _FROM_ENV:
         subject_settings = subject_from_env(settings)
     if managed_key_provider is _FROM_ENV:
-        managed_key_provider = managed_keys_from_env(settings)
+        try:
+            managed_key_provider = managed_keys_from_env(settings)
+        except GovernanceError:
+            if settings.development:
+                raise
+            managed_key_provider = None
+    store.runtime_key_version = getattr(managed_key_provider, "active_version", "")
     subject_router = None
     managed_collection = None
 
     @asynccontextmanager
     async def lifespan(_app):
-        await oidc.check_ready()
-        if subject_router is not None:
-            await subject_router.subject_oidc.check_ready()
+        if settings.development:
+            await oidc.check_ready()
+            if subject_router is not None:
+                await subject_router.subject_oidc.check_ready()
         yield
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+    prefix = settings.cookie_prefix
+
+    async def production_readiness():
+        return await _production_readiness(
+            settings, store, managed_key_provider, oidc, subject_router
+        )
+
+    @app.middleware("http")
+    async def production_barrier(request, call_next):
+        if not settings.development and request.url.path != "/health/live":
+            report = await production_readiness()
+            if request.url.path == "/health/ready":
+                return JSONResponse(report, status_code=200 if report["status"] == "ready" else 503)
+            if report["status"] != "ready":
+                return _error("production_prerequisites_unverified", 503)
+        return await call_next(request)
+
     app.add_middleware(
         _RequestBoundary, origin=settings.public_origin, secure=not settings.development
     )
-    prefix = settings.cookie_prefix
 
     @app.exception_handler(GovernanceError)
     async def governance_error(_request, error):

@@ -39,7 +39,10 @@ def test_tampering_and_key_service_failure_have_value_free_errors():
         crypto.SyntheticKeyProvider({(organization, collection, "v1"): b"k" * 32})
     )
     envelope = cipher.seal(organization, collection, "v1", b"Synthetic secret", {})
-    broken = {**envelope, "ciphertext": envelope["ciphertext"][:-1] + b"\x00"}
+    broken = {
+        **envelope,
+        "ciphertext": envelope["ciphertext"][:-1] + bytes([envelope["ciphertext"][-1] ^ 1]),
+    }
     with pytest.raises(Exception, match="^protected_content_invalid$"):
         cipher.open(organization, collection, broken, {})
     missing = crypto.ProtectedStorage(None)

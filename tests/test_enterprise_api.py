@@ -26,7 +26,24 @@ database = governance_helpers.database
 
 
 @pytest.fixture
-def web(context):
+def web(context, monkeypatch):
+    # These contracts isolate BFF auth. Real operations gates have dedicated suites.
+    async def ready(_settings, store, *_args):
+        from pii_redactor.governance.errors import GovernanceError
+
+        try:
+            store.check_ready()
+        except GovernanceError as error:
+            return {
+                "status": "blocked",
+                "checks": {"schema_audit": "blocked"},
+                "error": {"code": error.code},
+            }
+        return {"status": "ready", "checks": {"synthetic_auth_scope": "ready"}}
+
+    monkeypatch.setattr("app.enterprise.server._production_readiness", ready)
+    with context.store.transaction() as tx:
+        tx.execute("UPDATE governance_operations SET state='reconciled'")
     settings = Settings(
         organization_id=context.store.organization_id,
         database_dsn=context.store._dsn,

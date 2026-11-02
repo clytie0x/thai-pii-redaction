@@ -67,6 +67,32 @@ def main(argv=None):
             store = _store()
             store.check_ready()
             keys = ConfiguredKeyProvider(key_file, store.organization_id)
+            from app.enterprise.operations import runtime_report
+
+            settings = Settings.from_env()
+            if (
+                not settings.development
+                and runtime_report(settings, store, keys)["status"] != "ready"
+            ):
+                raise GovernanceError("production_prerequisites_unverified")
+            if not settings.development:
+                import asyncio
+                from types import SimpleNamespace
+
+                from app.enterprise.auth import OIDCClient
+                from app.enterprise.server import _production_readiness
+                from app.enterprise.subject_auth import SubjectOIDCClient, SubjectOIDCSettings
+
+                subject = SimpleNamespace(
+                    subject_oidc=SubjectOIDCClient(SubjectOIDCSettings.from_env(settings))
+                )
+                report = asyncio.run(
+                    _production_readiness(settings, store, keys, OIDCClient(settings), subject)
+                )
+                if report["status"] != "ready":
+                    raise GovernanceError("production_prerequisites_unverified")
+            store.production_operations_required = not settings.development
+            store.runtime_key_version = keys.active_version
             _collection, _evidence, _execution, worker = managed_services(store, keys)
             print(json.dumps(worker.run_once(args.worker_id), sort_keys=True))
         elif args.command == "migrate":

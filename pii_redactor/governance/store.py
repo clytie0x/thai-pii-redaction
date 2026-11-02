@@ -45,6 +45,8 @@ class Store:
             raise GovernanceError("configuration_invalid")
         self._dsn = dsn
         self.organization_id = organization_id
+        self.production_operations_required = False
+        self.runtime_key_version = ""
 
     @contextmanager
     def _transaction(self, *, check_organization=True):
@@ -64,6 +66,13 @@ class Store:
                             or organization["organization_id"] != self.organization_id
                         ):
                             raise GovernanceError("organization_mismatch")
+                    if self.production_operations_required:
+                        connection.execute("SET LOCAL aiguard.production_operations = 'on'")
+                        connection.execute(
+                            "SELECT set_config('aiguard.key_version',%s,true)",
+                            (self.runtime_key_version,),
+                        )
+                        self.lock(connection)
                     yield connection
         except psycopg.Error:
             raise GovernanceError("storage_failure") from None

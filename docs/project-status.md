@@ -47,9 +47,14 @@ SDK retains 29 internal canonical module aliases rather than maintained engine
 copies; its sensitive-span implementation is removed. Hosted copies are removed
 and its build prepares a supplied, source-bound first-party wheel/dependency/model
 context offline. Source checks and build preparation do not qualify those images.
-M7 rights/delivery and M8 organization records remain absent. M10 has collection
-quarantine/reconciliation only; whole-database recovery, independent checkpoints,
-rotation, operator workflows and drills remain incomplete. All declared
+M7 rights/delivery and M8 organization records remain absent on this branch.
+The M10 [operations candidate](enterprise/operations.md) extends existing collection
+recovery with encrypted whole-DB backup/isolated quarantine, a signed HTTP witness
+adapter, production request/DB fences, additive key operations and operator assets.
+Current-authority replay/release remains blocked without the mandatory M7 handler;
+conservative existing-control comparisons require a fresh backup on divergence.
+Whole-environment recovery acceptance, custody, load, RPO/RTO and Docker/TLS/IdP
+qualification remain open. All declared
 storefronts remain in scope, with their own exact-artifact and host gates.
 
 The accepted single-organization self-hosted design remains in force. The
