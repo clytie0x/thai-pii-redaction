@@ -48,15 +48,23 @@ enable standard public runners. Preflight found two committed private screenshot
 in the imported Hosted attachment directory, including a private conversation;
 they are also present in remote history. The owner then explicitly authorized a
 private backup, removal of only those screenshots from all branches/tags and a
-force-push before changing visibility. That operation is being prepared in an
-isolated mirror; the repository is still private. Deleting current files alone
-does not remove past versions. GitHub's read-only PR refs/cached views require
-separate removal before a cleaned existing repository can safely be made public.
-At this checkpoint no history rewrite or visibility change has been performed.
+force-push before changing visibility. The isolated mirror passed independent
+full-history review, then an atomic push with explicit old-SHA leases updated
+all 19 branches and one tag. Every writable remote ref was checked afterward.
+The first push failed with HTTP 408 without ref changes; its log was retained
+and the bounded second attempt succeeded.
+
+The repository is still private. Authenticated Git Blobs API requests after the
+rewrite still returned both old image objects. GitHub's read-only PR refs/cached
+views need a server-side purge before public visibility. A private Support request
+is prepared for the owner; none was sent. See the
+[cleanup record](M00-public-visibility.md) and [manifest](M00-public-cleanup-manifest.json).
 The YRSS documentation repository remains private.
 
-A verified private local Git bundle preserves the existing refs. A redacted
-Gitleaks 8.30.1 scan of 615 remote-history commits reported 43 generic-key matches;
-parent classified 42 as source/evidence hashes and one as documentation prose.
-No credential finding was confirmed by that scan. This does not certify binary
-artifacts, hidden credentials or private-image publication safety.
+A verified private mirror and bundle preserve all original refs and signed
+objects. The full mirror includes 681 commits with PR refs, compared with the
+initial 615-commit branch/tag-only scan. Both redacted Gitleaks 8.30.1 scans
+reported the same 43 generic-key matches: 42 source/evidence hashes and one
+documentation sentence. No credential finding was confirmed by those scans.
+This does not certify binary artifacts, hidden credentials or private-image
+publication safety.

@@ -2,6 +2,14 @@
 
 Updated: 2026-11-02
 
+Repository privacy update: the owner approved screenshot-only history cleanup
+before making this repository public. A reviewed, backed-up rewrite now matches
+all 19 remote branches and one tag. Other file bytes are unchanged in every
+verified commit. Public visibility remains held because GitHub still retains
+the removed images through read-only PR/cached objects; owner Support action is
+prepared. Continue from the clean checkout, not the preserved old-history clone.
+See the [cleanup record](acceptance/enterprise/M00-public-visibility.md).
+
 Execution update (2026-11-02): the owner resumed M0-M12 and YRSS work and
 requires independent adversarial subagent review at every stage. The preserved
 implementation checkpoint was reconciled with main `2480757` in `9711d79`.
