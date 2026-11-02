@@ -24,10 +24,13 @@ The owner selected SDK warn/report migration, a direct first-party root dependen
 with the broader footprint, and fixed proxy errors with qualified rollback.
 Runtime migration and M1 acceptance remain open. PyPI's existing `aiguard` is an
 unrelated project. The owner selected distribution name `thai-pii-redaction-core`,
-preserving existing imports and caller entry paths. Renaming, clean installation
-and old first-party artifact migration still need implementation/qualification;
-public-index resolution is prohibited for local qualification. No publication
-or release is authorized.
+preserving existing imports and caller entry paths. The root metadata is renamed;
+local Windows/Python 3.13 artifact checks cover an offline sdist rebuild, clean
+installation and replacement of a verified old first-party core installation.
+See the [artifact manifest](acceptance/enterprise/M01-core-distribution-manifest.json)
+and [migration guide](enterprise/distribution-migration.md). The SDK dependency/
+runtime migration and other platform gates remain open. Public-index resolution
+is prohibited for local qualification; no package publication/release is authorized.
 
 The expanded CI candidate configures the existing Hosted checks, SDK Windows/
 Python floor and optional profiles, API collection, catastrophic performance
@@ -39,6 +42,12 @@ with fresh private audit storage. One prior CLI nonzero remains unexplained;
 three diagnostic plus twenty bounded reruns passed, which does not explain or
 erase that failure. Docker/Actions are unexecuted locally/billing-blocked and M3
 remains held until controlled-environment performance measurement.
+
+After the distribution rename and code-map correction, the qualified local root
+suite passes 3,118 tests with 34 skips. The earlier failed run is retained: it
+caught the missing `tools` map entry and lacked the existing enterprise test DB
+reference. The corrected run supplied that synthetic fixture; no integration
+tests were weakened or skipped to obtain the result.
 
 Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
 package/certification rows below describe their named historical candidates,

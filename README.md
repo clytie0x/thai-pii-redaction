@@ -12,6 +12,12 @@ gates. Follow the [current release scope](docs/enterprise/release-scope.md) and
 [M0-M12 plan](docs/implementation/aiguard-production-milestones.md) for current
 engineering work, human prerequisites and per-surface release claims.
 
+The first-party Python distribution is now named `thai-pii-redaction-core`.
+Imports remain `pii_redactor` and `app`; this does not add a console command.
+PyPI's `aiguard` belongs to an unrelated project. This source candidate is not
+a published release: use verified first-party artifacts and follow the
+[distribution migration guide](docs/enterprise/distribution-migration.md).
+
 <p align="center">
   Thai PII detection, anonymization, PDF redaction, and PDPA risk analysis<br />
   for local AI workflows and AI for Thai services.

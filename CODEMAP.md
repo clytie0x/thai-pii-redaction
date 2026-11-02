@@ -27,6 +27,11 @@ repository starts telling three different stories.
 from this map or a storefront named here has no status row, so a new lane cannot
 be added without appearing in both.
 
+`tools/sdk-api-checks/` holds the private, locked development CLI profile for
+the existing synthetic SDK API collection. The owned server/report harness
+lives in `scripts/run_sdk_api_collection.py`; this tool profile is not a product
+runtime dependency or a general-purpose sandbox.
+
 ## Environment Setup
 
 Windows console is cp1252 by default - set UTF-8 before every Python invocation:

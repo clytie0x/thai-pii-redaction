@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aiguard"
+name = "thai-pii-redaction-core"
 description = "Thai PII detection and redaction — mask personal data before it reaches an external AI, restore it locally"
 readme = "README.md"
 license = "Apache-2.0"

@@ -33,3 +33,30 @@ has one failed job with zero steps. Both sampled check annotations repeat the
 same account-payment/spending-limit reason. This is fresh evidence of an
 unexecuted infrastructure gate, not 17 observed source/test failures. Main was
 not changed; every job still needs a real successful rerun on the exact candidate.
+
+## M1 CI preparation and requested visibility change
+
+Checkpoint `55b48da7a1878b01c350d42be1dca94add2ac3c4` declares 26 jobs across
+[Imported checks](https://github.com/clytie0x/thai-pii-redaction/actions/runs/41386314317)
+(9), [CI](https://github.com/clytie0x/thai-pii-redaction/actions/runs/41386314333)
+(16) and [cross-platform smoke](https://github.com/clytie0x/thai-pii-redaction/actions/runs/41386314419)
+(1). All completed as failures with zero executed steps. Sampled annotations in
+all three repeat the billing/payment/spending-limit reason.
+
+The owner subsequently authorized making this product repository public to
+enable standard public runners. Preflight found two committed private screenshots
+in the imported Hosted attachment directory, including a private conversation;
+they are also present in remote history. The owner then explicitly authorized a
+private backup, removal of only those screenshots from all branches/tags and a
+force-push before changing visibility. That operation is being prepared in an
+isolated mirror; the repository is still private. Deleting current files alone
+does not remove past versions. GitHub's read-only PR refs/cached views require
+separate removal before a cleaned existing repository can safely be made public.
+At this checkpoint no history rewrite or visibility change has been performed.
+The YRSS documentation repository remains private.
+
+A verified private local Git bundle preserves the existing refs. A redacted
+Gitleaks 8.30.1 scan of 615 remote-history commits reported 43 generic-key matches;
+parent classified 42 as source/evidence hashes and one as documentation prose.
+No credential finding was confirmed by that scan. This does not certify binary
+artifacts, hidden credentials or private-image publication safety.
