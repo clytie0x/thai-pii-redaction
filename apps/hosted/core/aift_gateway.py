@@ -19,7 +19,7 @@ install_hosted_report_policy()
 
 from app import server as _server  # noqa: E402
 
-# Vendored call sites ask for the audit directory before passing it to the
+# Shared call sites ask for the audit directory before passing it to the
 # audit writer. In hosted stdout mode the writer never touches that path, so
 # do not try to create `/app/logs` on the intentionally read-only rootfs.
 if os.environ.get("AIGUARD_AUDIT_STDOUT") == "1":

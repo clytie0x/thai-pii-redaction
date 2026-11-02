@@ -1,11 +1,62 @@
 # Project status
 
-Updated: 2026-11-02
+Updated: 2026-11-03
 
-Astra execution review: keep the accepted single-organization self-hosted design
-and finish actual canonical-core consumption before expanding features. The
+Production-goal checkpoint: the complete source profiles reached root 3,549 passed/
+34 optional/platform/live skips, SDK 2,141 passed/10 such skips, JavaScript 178,
+and Office Node 22 manifest/type checks, 129 tests and build. A subsequent real
+production-composition test exposed queued approval resurrection after consent
+withdrawal and genuine regrant. Atomic exact-scope invalidation now passes 27
+integration cases and all 322 mandatory enterprise tests without skips, with a
+clear independent review. It preserves immutable outcomes and non-consent work.
+
+The first newly built paired artifacts are retained as negative evidence: an
+installed mapping-reuse probe selected root TNER despite the SDK local snapshot.
+No live provider call occurred. The config path through anonymization candidate
+validation and the standalone pipeline is now fixed (root 200 and SDK 191 focused
+tests, no skips); the preceding broad-suite totals are not new runs of this delta.
+Final artifacts must be rebuilt from the checkpoint and installed outside source.
+
+The local five-iteration budget run measures detect 5.75 ms, sanitize 15.65 ms,
+restore 0.37 ms, PDF 73.77 ms and peak RSS 151.4 MiB. Sanitization and restoration
+exceed the unchanged baseline budgets. This is a held feature checkpoint, not a
+performance waiver, controlled-environment M3 acceptance, main integration or
+production release. M7/M8 and operational M10 engineering remain open.
+
+| Storefront | Current candidate evidence | Remaining gate |
+| --- | --- | --- |
+| Enterprise application | M4–M6 source and 298 mandatory local PostgreSQL/controlled-auth tests | Combined artifact, real browser/IdP/restart, operational recovery and organization pilot |
+| Hosted application | Canonical wheel source/build path, 16 execute contracts and source-bound safety checks | Supplied artifact, exact offline image, CI and platform acceptance |
+| Python SDK | Canonical facade/adapters and complete source profile: 2,141 passed, 10 explicit optional/platform/live skips | Frozen paired artifacts, other supported profiles/images/hosts and CI |
+
+Current parallel wave: SDK and Hosted source consumers now use the canonical
+core, and M4 subject consent, M5 managed execution and M6 retention/holds have
+domain/API/Thai UI implementations. They are **implemented locally; qualification
+pending**, not accepted milestones. The
+[local-wave record](acceptance/enterprise/M04-M06-local-wave.md) separates focused
+candidate results, review fixes, retained failures and remaining gates. After the
+retained 286-pass/11-fail enterprise retry, the corrected complete mandatory gate
+passes 298 tests with 0 failures/0 skips (2 warnings). Root JavaScript passes 178;
+Office Node 22 manifest/type checks, 129 tests and build pass, without real Office
+host acceptance. The first full SDK run remains negative at 2,088 passed/52 failed/
+10 skipped; final global gates await source freeze. No frozen combined artifacts,
+exact images, green CI, new real-browser/IdP/restart acceptance or production
+readiness is claimed. M3's controlled-performance hold remains unchanged.
+
+SDK retains 29 internal canonical module aliases rather than maintained engine
+copies; its sensitive-span implementation is removed. Hosted copies are removed
+and its build prepares a supplied, source-bound first-party wheel/dependency/model
+context offline. Source checks and build preparation do not qualify those images.
+M7 rights/delivery and M8 organization records remain absent. M10 has collection
+quarantine/reconciliation only; whole-database recovery, independent checkpoints,
+rotation, operator workflows and drills remain incomplete. All declared
+storefronts remain in scope, with their own exact-artifact and host gates.
+
+The accepted single-organization self-hosted design remains in force. The
 [execution addendum](implementation/2026-11-02-astra-sol-execution-review.md)
 assigns the current checkpoint/artifact work and detailed Sol 6.1 sequence.
+Earlier candidate evidence is retained below; it does not supersede the current
+qualification limits or qualify the new source wave.
 Prerequisite source checks recorded before S0/S1 pass 3,297 root tests (34 skips), 156 mandatory
 enterprise tests (zero skips) and 2,038 SDK tests (10 skips). Proxy focused checks
 pass on locked AnyIO 4.14.2 and the declared 4.4.0 floor. These are local candidate
@@ -51,8 +102,10 @@ synthetic Chrome/Keycloak/PostgreSQL flows cover inventory/notices/review,
 independent membership approval, suspension/reactivation and session cleanup.
 Actual installed-wheel and graceful app/database restart checks also pass.
 M3 acceptance remains held for an unexplained performance outlier and CI;
-bounded diagnosis did not establish its cause, and GitHub jobs cannot start
-because of the account billing restriction. Local Windows Rust lacks its MSVC linker.
+bounded diagnosis did not establish its cause. At that checkpoint GitHub jobs
+could not start because of the account billing restriction; public CI now
+executes, but the new combined candidate is not qualified. Local Windows Rust
+lacks its MSVC linker.
 See [M3 progress](acceptance/enterprise/M03-authority-progress.md),
 [M0 evidence](acceptance/enterprise/M00-baseline.md) and the
 [current release scope](enterprise/release-scope.md).
@@ -61,14 +114,16 @@ M1 preparation now has a reviewed [compatibility inventory](enterprise/core-comp
 and [owner-approved decision](decisions/2026-11-02-shared-core-compatibility.md).
 The owner selected SDK warn/report migration, a direct first-party root dependency
 with the broader footprint, and fixed proxy errors with qualified rollback.
-Runtime migration and M1 acceptance remain open. PyPI's existing `aiguard` is an
+The runtime migration is implemented in the current local wave; M1 acceptance
+remains open. PyPI's existing `aiguard` is an
 unrelated project. The owner selected distribution name `thai-pii-redaction-core`,
 preserving existing imports and caller entry paths. The root metadata is renamed;
 local Windows/Python 3.13 artifact checks cover an offline sdist rebuild, clean
 installation and replacement of a verified old first-party core installation.
 See the [artifact manifest](acceptance/enterprise/M01-core-distribution-manifest.json)
-and [migration guide](enterprise/distribution-migration.md). The SDK dependency/
-runtime migration and other platform gates remain open. Public-index resolution
+and [migration guide](enterprise/distribution-migration.md). The SDK now pins the
+first-party dependency; final paired-artifact and platform gates remain open.
+Public-index resolution
 is prohibited for local qualification; no package publication/release is authorized.
 
 The expanded CI candidate configures the existing Hosted checks, SDK Windows/
@@ -79,8 +134,9 @@ tests (11 skips); prior full/core profile counts remain 1,989/1,606. Actual owne
 loopback collection checks cover 8 requests, 9 assertions and 4 script tests,
 with fresh private audit storage. One prior CLI nonzero remains unexplained;
 three diagnostic plus twenty bounded reruns passed, which does not explain or
-erase that failure. Docker/Actions are unexecuted locally/billing-blocked and M3
-remains held until controlled-environment performance measurement.
+erase that failure. Docker was unexecuted locally and Actions was billing-blocked
+at that checkpoint; current image/CI qualification remains separate. M3 remains
+held until controlled-environment performance measurement.
 
 At the earlier distribution-rename/code-map checkpoint, the qualified local root
 suite passes 3,118 tests with 34 skips. The earlier failed run is retained: it
@@ -91,8 +147,9 @@ tests were weakened or skipped to obtain the result.
 Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
 package/certification rows below describe their named historical candidates,
 not a current 0.x release. `apps/hosted/STATE.md` records a 3.0.2 deployment;
-that record is not fresh live verification. Hosted now resides in the imported
-subtree, with its own pinned core and gates. The actual release matrix includes
+that record is not fresh live verification. Hosted resides in the imported
+subtree and now consumes the supplied canonical core wheel in source/build
+preparation; exact installed-image and platform gates remain open. The release matrix includes
 Windows/macOS only. These qualifications supersede conflicting older status
 wording below until each exact current path is requalified.
 
@@ -106,9 +163,10 @@ dedicated `app.enterprise` adapter now
 calls shared PostgreSQL authority/registry commands using verified staff sessions;
 it does not persist local reversible PII mappings. Synthetic real IdP/browser
 and restricted-runtime-role evidence is stronger than the earlier trusted-domain-
-principal checkpoint. Persistent subject consent, retention/rights execution,
-wider governance, production TLS/storage/checkpoint/recovery and human pilot
-remain open. The local assessment prototype and legacy HTTP/native acceptance
+principal checkpoint. Subject consent, protected managed execution and reviewed
+retention/holds now have local implementations and bounded evidence in the wave
+record. Combined qualification, rights fulfilment, wider governance, production
+TLS/storage/checkpoint/recovery and human pilot remain open. The local assessment prototype and legacy HTTP/native acceptance
 remain separate. Operational setup is in [the enterprise guide](enterprise/README.md).
 
 Historical owner-requested checkpoint: development was paused; see the

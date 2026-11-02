@@ -2,8 +2,10 @@
 
 This package measures the exact hosted detector and local protection primitives without starting
 the HTTP service or calling an AI provider. It is deliberately outside `core/`, `api/`, and `web/`:
-the detector remains the manifest-pinned vendored implementation and the evaluation files are not
-copied into any runtime image.
+the evaluation files are not copied into any runtime image. New runs use the
+supplied canonical-core candidate and require its `CORE_BUILD_IDENTITY.json`.
+The stored production baseline remains bound to the earlier vendored detector;
+its scores do not transfer to this migration candidate.
 
 The corpus is constructed locally from templates. It contains no sourced user, log, production,
 provider, or real-person record. Shape-valid strings are synthetic-context test values; because no

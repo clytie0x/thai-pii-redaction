@@ -45,7 +45,15 @@ def test_hosted_uses_complete_existing_check_inventory_and_exact_image():
     assert "node tests/frontend_session_contract.mjs" in check
     assert "node tests/hosted3_frontend_behavior_contract.mjs" in check
     assert "sync/sync_from_upstream.py --check --verify-upstream" in check
-    assert "--file core/Dockerfile" in hosted and " core" in hosted
+    assert "scripts/prepare_hosted_core.py" in hosted
+    assert "--core-wheel-sha256" in hosted and "--source-tree-sha256" in hosted
+    assert "--source-revision" in hosted and '"$GITHUB_SHA"' in hosted
+    assert '"$RUNNER_TEMP/hosted-context/Dockerfile"' in hosted
+    assert "--require-hashes" in hosted and "--no-index" in hosted
+    assert re.search(
+        r"pip download[^\n]*--no-deps[^\n]*-r core/requirements-aift-security.lock", hosted
+    )
+    assert "hosted_canonical_image_contract.py" in hosted
     assert "--network none" in hosted
 
 
@@ -120,7 +128,9 @@ def test_api_collection_keeps_the_original_server_only_extra_profile():
 
 def test_sdk_container_job_has_exact_context_and_scoped_always_cleanup():
     container = job(workflow(), "sdk-container")
-    assert "packages/amphrang/Dockerfile" in container
+    assert "working-directory: packages/amphrang" in container
+    assert '"$RUNNER_TEMP/sdk-context/Dockerfile"' in container
+    assert "cp Dockerfile" in container
     assert "check_sdk_container.py" in container
     assert "--revision" in container and "--owner" in container
     assert "if: always()" in container
@@ -132,38 +142,44 @@ def test_sdk_container_job_has_exact_context_and_scoped_always_cleanup():
 @pytest.mark.parametrize("asset_ok", [True, False])
 def test_hosted_image_smoke_reaches_detection_only_after_asset_success(monkeypatch, asset_ok):
     hosted = job(workflow(), "hosted-checks")
-    match = re.search(r" -c '\n(.*?)'(?=\n|$)", hosted, re.S)
-    assert match, "Hosted image Python smoke is missing"
-    program = textwrap.dedent(match.group(1))
+    assert "hosted_canonical_image_contract.py" in hosted
+    program = runpy.run_path(str(ROOT / "apps/hosted/tests/hosted_canonical_image_contract.py"))
     calls = []
 
     def checked_asset(command, **kwargs):
-        assert command == [sys.executable, "/app/verify_thainer_assets.py"]
+        assert command[0] == sys.executable
+        if command[1] == "/app/verify_core_install.py":
+            calls.append("core")
+            return subprocess.CompletedProcess(command, 0)
+        assert command[1] == "/app/verify_thainer_assets.py"
         calls.append("assets")
-        if not asset_ok and kwargs.get("check"):
+        if not asset_ok:
             raise subprocess.CalledProcessError(1, ["synthetic-asset-check"])
-        return subprocess.CompletedProcess(command, 0 if asset_ok else 1)
+        return subprocess.CompletedProcess(command, 0)
 
-    def old_asset_entry(*_args, **_kwargs):
-        calls.append("assets")
-        raise SystemExit(0 if asset_ok else 1)
+    class ProtectionReached(RuntimeError):
+        pass
 
-    def detect(_text):
-        calls.append("detect")
-        return [SimpleNamespace(data_type="PHONE")]
+    def protect(*_args, **_kwargs):
+        calls.append("protect")
+        raise ProtectionReached
 
-    aggregate = ModuleType("pii_redactor.detectors.aggregate")
-    aggregate.detect_all = detect
-    monkeypatch.setitem(sys.modules, "pii_redactor", ModuleType("pii_redactor"))
-    monkeypatch.setitem(sys.modules, "pii_redactor.detectors", ModuleType("pii_redactor.detectors"))
-    monkeypatch.setitem(sys.modules, "pii_redactor.detectors.aggregate", aggregate)
-    monkeypatch.setattr(runpy, "run_path", old_asset_entry)
+    package = ModuleType("aift_hosted3")
+    package.__path__ = []
+    protection = ModuleType("aift_hosted3.protection")
+    protection.ProtectionService = lambda: SimpleNamespace(protect=protect)
+    execution = ModuleType("aift_hosted3.execution")
+    execution._generated_pii_spans = execution._mask_spans = lambda *_args: ()
+    monkeypatch.setitem(sys.modules, "aift_hosted3", package)
+    monkeypatch.setitem(sys.modules, "aift_hosted3.protection", protection)
+    monkeypatch.setitem(sys.modules, "aift_hosted3.execution", execution)
     monkeypatch.setattr(subprocess, "run", checked_asset)
     monkeypatch.setenv("PYTHAINLP_OFFLINE", "1")
     if asset_ok:
-        exec(program, {})
-        assert calls == ["assets", "detect"]
+        with pytest.raises(ProtectionReached):
+            program["main"]()
+        assert calls == ["core", "assets", "protect"]
     else:
-        with pytest.raises((subprocess.CalledProcessError, SystemExit)):
-            exec(program, {})
-        assert calls == ["assets"]
+        with pytest.raises(subprocess.CalledProcessError):
+            program["main"]()
+        assert calls == ["core", "assets"]

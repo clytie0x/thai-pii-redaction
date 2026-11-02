@@ -35,23 +35,45 @@ jobs:
           python -m pip install --require-hashes -r core/requirements.lock
       - name: Run the complete declared check job in its pinned runner image
         run: python tests/run_ci_local.py --job check --gitlab-network
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.10.4"
+      - name: Build the supplied canonical core and collect hash-locked Linux artifacts
+        run: |
+          uv build ../.. --wheel --build-constraints ../../requirements-build.lock --out-dir "$RUNNER_TEMP/hosted-wheels"
+          python -m pip download --require-hashes --only-binary=:all: -r core/requirements.lock --dest "$RUNNER_TEMP/hosted-wheelhouse"
+          python -m pip download --no-deps --require-hashes --only-binary=:all: -r core/requirements-aift-security.lock --dest "$RUNNER_TEMP/hosted-wheelhouse"
+      - name: Prepare the exact offline Hosted build context
+        run: |
+          core_wheel=$(python -c 'import glob,os; wheels=glob.glob(os.environ["RUNNER_TEMP"]+"/hosted-wheels/*.whl"); assert len(wheels)==1; print(wheels[0])')
+          wheel_sha=$(python -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$core_wheel")
+          uv venv --python "$(command -v python)" "$RUNNER_TEMP/hosted-model-env"
+          model_python="$RUNNER_TEMP/hosted-model-env/bin/python"
+          uv pip install --python "$model_python" --offline --no-index --find-links "$RUNNER_TEMP/hosted-wheelhouse" --require-hashes -r core/requirements.lock
+          uv pip install --python "$model_python" --offline --no-index --find-links "$RUNNER_TEMP/hosted-wheelhouse" --no-deps --require-hashes -r core/requirements-aift-security.lock
+          uv pip install --python "$model_python" --offline --no-index --no-deps "$core_wheel"
+          uv pip check --python "$model_python"
+          PYTHAINLP_DATA="$RUNNER_TEMP/hosted-models" "$model_python" -c 'from pythainlp.tag import NER; NER(engine="thainer")'
+          PYTHAINLP_DATA="$RUNNER_TEMP/hosted-models" "$model_python" core/verify_thainer_assets.py
+          python ../../scripts/prepare_hosted_core.py \
+            --source ../.. --core-wheel "$core_wheel" --core-wheel-sha256 "$wheel_sha" \
+            --source-revision "$GITHUB_SHA" \
+            --source-tree-sha256 "$(python ../../scripts/prepare_hosted_core.py --source ../.. --print-source-digest)" \
+            --wheelhouse "$RUNNER_TEMP/hosted-wheelhouse" --models "$RUNNER_TEMP/hosted-models" \
+            --output "$RUNNER_TEMP/hosted-context"
       - name: Build the exact Hosted core context
-        run: docker build --file core/Dockerfile --build-arg AIFT_BUILD_COMMIT=${{ github.sha }} --tag aiguard-hosted-check:${{ github.sha }} core
+        run: docker build --file "$RUNNER_TEMP/hosted-context/Dockerfile" --build-arg AIFT_BUILD_COMMIT=${{ github.sha }} --tag aiguard-hosted-check:${{ github.sha }} "$RUNNER_TEMP/hosted-context"
       - name: Verify the image revision identity
         run: |
           revision=$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' aiguard-hosted-check:${{ github.sha }})
           test "$revision" = "$GITHUB_SHA"
       - name: Exercise baked assets and detection with no container egress
         run: |
-          docker run --rm --network none --entrypoint python \
-            -e AIGUARD_NER_ENGINE=thainer aiguard-hosted-check:${{ github.sha }} -c '
-          import os, subprocess, sys
-          assert os.environ.get("PYTHAINLP_OFFLINE") == "1"
-          subprocess.run([sys.executable, "/app/verify_thainer_assets.py"], check=True)
-          from pii_redactor.detectors.aggregate import detect_all
-          text = "Synthetic contact: 081-234-5678"
-          assert any(e.data_type == "PHONE" for e in detect_all(text))
-          print("Hosted image assets and offline synthetic detection passed")'
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --mount type=bind,src="$GITHUB_WORKSPACE/apps/hosted/tests/hosted_canonical_image_contract.py",dst=/proof.py,readonly \
+            -e AIGUARD_NER_ENGINE=thainer -e PYTHONPATH=/app \
+            --entrypoint python aiguard-hosted-check:${{ github.sha }} /proof.py
 
   sdk-checks:
     name: SDK ${{ matrix.profile }} checks (${{ matrix.os }}, Python ${{ matrix.python }})
@@ -85,20 +107,31 @@ jobs:
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           version: "0.10.4"
-      - name: Sync frozen dependencies and install the unchanged SDK with a pinned builder
+      - name: Sync frozen dependencies without implicitly building the first-party core
         run: |
           if [ "${{ matrix.profile }}" = core ]; then
-            uv sync --frozen --group dev --no-install-project --python "${{ matrix.python }}"
+            uv sync --frozen --group dev --no-install-project --no-install-package thai-pii-redaction-core --python "${{ matrix.python }}"
           elif [ "${{ matrix.profile }}" = server ]; then
-            uv sync --frozen --extra server --group dev --no-install-project --python "${{ matrix.python }}"
+            uv sync --frozen --extra server --group dev --no-install-project --no-install-package thai-pii-redaction-core --python "${{ matrix.python }}"
           else
-            uv sync --frozen --extra server --extra mcp --group dev --no-install-project --python "${{ matrix.python }}"
+            uv sync --frozen --extra server --extra mcp --group dev --no-install-project --no-install-package thai-pii-redaction-core --python "${{ matrix.python }}"
           fi
           if [ "$RUNNER_OS" = Windows ]; then
             SDK_PYTHON=.venv/Scripts/python.exe
           else
             SDK_PYTHON=.venv/bin/python
           fi
+          SDK_PYTHON=$("$SDK_PYTHON" -c 'import sys; print(sys.executable)')
+          if [ "$RUNNER_OS" = Windows ]; then
+            sdk_temp=$(cygpath -u "$RUNNER_TEMP")
+          else
+            sdk_temp="$RUNNER_TEMP"
+          fi
+          uv build ../.. --python "$SDK_PYTHON" --wheel --sdist --no-sources --build-constraints ../../requirements-build.lock --out-dir "$sdk_temp/core-wheel"
+          set -- "$sdk_temp"/core-wheel/*.whl
+          test "$#" = 1
+          core_wheel="$1"
+          uv pip install --python "$SDK_PYTHON" --no-index --no-deps "$core_wheel"
           uv pip install --python "$SDK_PYTHON" --build-constraints ../../requirements-build.lock --no-deps --editable .
           echo "SDK_PYTHON=$SDK_PYTHON" >> "$GITHUB_ENV"
       - name: Prove optional packages are absent from the bare profile
@@ -112,21 +145,29 @@ jobs:
       - name: Check the SDK contract, lint and release metadata
         run: |
           uv lock --check
+          "$SDK_PYTHON" ../../scripts/check_version.py
           "$SDK_PYTHON" scripts/check_release.py
           "$SDK_PYTHON" -m ruff check .
           "$SDK_PYTHON" -m ruff format --check .
           "$SDK_PYTHON" scripts/prewarm_ner.py
           "$SDK_PYTHON" -m pytest -q
-      - name: Build and install the actual SDK wheel outside source
+      - name: Build and qualify the supplied SDK/core pair outside source
         run: |
           if [ "$RUNNER_OS" = Windows ]; then
             sdk_temp=$(cygpath -u "$RUNNER_TEMP")
           else
             sdk_temp="$RUNNER_TEMP"
           fi
-          uv build --python "$SDK_PYTHON" --wheel --build-constraints ../../requirements-build.lock --out-dir "$sdk_temp/sdk-wheel"
-          uv pip install --python "$SDK_PYTHON" --target "$sdk_temp/sdk-installed" --no-deps "$sdk_temp"/sdk-wheel/*.whl
-          AMPHRANG_NER_ENGINE=thainer PYTHAINLP_OFFLINE=1 "$SDK_PYTHON" -I ../../scripts/check_sdk_installed.py "$sdk_temp/sdk-installed" "$sdk_temp"/sdk-wheel/*.whl
+          uv build --python "$SDK_PYTHON" --wheel --sdist --build-constraints ../../requirements-build.lock --no-sources --out-dir "$sdk_temp/sdk-wheel"
+          uv build "$sdk_temp"/core-wheel/*.tar.gz --python "$SDK_PYTHON" --wheel --build-constraints ../../requirements-build.lock --no-sources --out-dir "$sdk_temp/core-rebuilt"
+          uv build "$sdk_temp"/sdk-wheel/*.tar.gz --python "$SDK_PYTHON" --wheel --build-constraints ../../requirements-build.lock --no-sources --out-dir "$sdk_temp/sdk-rebuilt"
+          set -- "$sdk_temp"/core-wheel/*.whl
+          core_wheel="$1"
+          set -- "$sdk_temp"/sdk-wheel/*.whl
+          sdk_wheel="$1"
+          PYTHONPATH=../.. "$SDK_PYTHON" -c 'import sys; from pathlib import Path; from scripts.check_sdk_installed import compare_wheels; compare_wheels(Path(sys.argv[1]), Path(sys.argv[2])); compare_wheels(Path(sys.argv[3]), Path(sys.argv[4]))' "$core_wheel" "$sdk_temp"/core-rebuilt/*.whl "$sdk_wheel" "$sdk_temp"/sdk-rebuilt/*.whl
+          uv pip install --python "$SDK_PYTHON" --target "$sdk_temp/sdk-installed" --no-index --no-deps "$core_wheel" "$sdk_wheel"
+          AMPHRANG_NER_ENGINE=thainer AIGUARD_NER_ENGINE=tner PYTHAINLP_OFFLINE=1 "$SDK_PYTHON" -I ../../scripts/check_sdk_installed.py "$sdk_temp/sdk-installed" "$sdk_wheel" "$core_wheel"
       - name: Run the existing loose catastrophic performance guard
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13' && matrix.profile == 'core'
         run: |
@@ -152,7 +193,7 @@ jobs:
           retention-days: 7
 
   sdk-container:
-    name: Existing SDK Dockerfile keyed route smoke
+    name: SDK supplied wheel pair and offline image keyed route smoke
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -163,12 +204,33 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.13"
-      - name: Build the existing SDK context with an explicit source label
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.10.4"
+      - name: Prepare explicit first-party wheels, hash-locked dependencies and model assets
+        working-directory: packages/amphrang
+        run: |
+          context="$RUNNER_TEMP/sdk-context"
+          mkdir -p "$context/wheels" "$context/wheelhouse" "$context/models" "$context/qualification"
+          uv build ../.. --wheel --no-sources --build-constraints ../../requirements-build.lock --out-dir "$context/wheels"
+          uv build --wheel --no-sources --build-constraints ../../requirements-build.lock --out-dir "$context/wheels"
+          uv export --frozen --extra server --no-dev --no-emit-project --no-emit-package thai-pii-redaction-core --output-file "$RUNNER_TEMP/sdk-runtime.txt"
+          python -m pip download --require-hashes --only-binary=:all: --dest "$context/wheelhouse" -r "$RUNNER_TEMP/sdk-runtime.txt"
+          uv venv "$RUNNER_TEMP/sdk-model-preparation" --python 3.13
+          prep_python="$RUNNER_TEMP/sdk-model-preparation/bin/python"
+          uv pip install --python "$prep_python" --no-index --find-links "$context/wheelhouse" "$context"/wheels/*.whl
+          PYTHAINLP_DATA="$context/models" "$prep_python" scripts/prewarm_ner.py
+          cp ../../scripts/check_sdk_installed.py "$context/qualification/"
+          cp Dockerfile "$context/Dockerfile"
+          cp .dockerignore "$context/.dockerignore"
+          python -c 'import hashlib,sys; from pathlib import Path; root=Path(sys.argv[1]); [(directory/"SHA256SUMS").write_text("".join(hashlib.sha256(path.read_bytes()).hexdigest()+"  "+path.relative_to(directory).as_posix()+"\n" for path in sorted(directory.rglob("*")) if path.is_file()), encoding="utf-8") for directory in (root/"wheels",root/"wheelhouse",root/"models")]' "$context"
+      - name: Build only supplied artifacts with an explicit source label
         run: >-
           docker --host unix:///var/run/docker.sock build
-          --file packages/amphrang/Dockerfile
+          --file "$RUNNER_TEMP/sdk-context/Dockerfile"
+          --build-arg AIGUARD_BUILD_COMMIT=${{ github.sha }}
           --label org.opencontainers.image.revision=${{ github.sha }}
-          --tag amphrang-sdk-check:${{ github.sha }} packages/amphrang
+          --tag amphrang-sdk-check:${{ github.sha }} "$RUNNER_TEMP/sdk-context"
       - name: Check no-key refusal and keyed routes in isolated containers
         run: >-
           python scripts/check_sdk_container.py amphrang-sdk-check:${{ github.sha }}
@@ -188,6 +250,10 @@ jobs:
         if: always()
         with:
           name: sdk-container-summary-${{ github.sha }}
-          path: ${{ runner.temp }}/sdk-container-summary.json
+          path: |
+            ${{ runner.temp }}/sdk-container-summary.json
+            ${{ runner.temp }}/sdk-context/wheels/SHA256SUMS
+            ${{ runner.temp }}/sdk-context/wheelhouse/SHA256SUMS
+            ${{ runner.temp }}/sdk-context/models/SHA256SUMS
           if-no-files-found: error
           retention-days: 7

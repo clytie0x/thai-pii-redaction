@@ -436,7 +436,10 @@ def test_field_label_gate_covers_primary_rescan_and_segment_rescan(monkeypatch):
         original_text=segment_text.strip(),
     )
 
-    def fake_detect_tb(candidate):
+    scans = []
+
+    def fake_detect_tb(candidate, *, config):
+        scans.append((candidate, config))
         if candidate == text:
             return [address_entity, tax_label_entity]
         if candidate == segment_text:
@@ -448,6 +451,8 @@ def test_field_label_gate_covers_primary_rescan_and_segment_rescan(monkeypatch):
 
     context = OutboundGuardContext(_trusted=frozenset({name_tok, id_tok}))
     assert scan_outbound_leaks(text, context) == []
+    assert text in [candidate for candidate, _ in scans]
+    assert segment_text in [candidate for candidate, _ in scans]
 
 
 # --- rescan invariants ------------------------------------------------------

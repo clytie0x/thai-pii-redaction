@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "scope": "Text protection operations. PDF coordinates, OCR, installed clients and actual hosts retain their separate qualification gates. This inventory is not client-selectable runtime policy.",
+  "assessment_aliases": {"GENETIC": "GENETIC_DATA", "BIOMETRIC": "BIOMETRIC_IDENTITY"},
+  "profiles": {
+    "root_python": {
+      "config_prefix": "AIGUARD", "engines": ["thainer", "wangchanberta", "union", "finetuned", "tner"], "default_engine": "thainer", "remote_detection": "explicit_tner_only",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "explicit_python_caller_or_local_session",
+      "warning_projection": "category_only_warning_codes_and_report", "sensitive_policy": "warn_report", "success_plaintext": ["matched_text", "restored_text", "explicit_mapping"],
+      "errors": "typed_value_free_failures", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates"
+    },
+    "root_http": {
+      "config_prefix": "AIGUARD", "engines": ["thainer", "wangchanberta", "union", "finetuned", "tner"], "default_engine": "thainer", "remote_detection": "explicit_tner_only",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "server_memory_opaque_session",
+      "warning_projection": "existing_section26_categories", "sensitive_policy": "warn_report", "success_plaintext": ["restored_text"],
+      "errors": "fixed_value_free_http_contract_2", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates"
+    },
+    "local_broker": {
+      "config_prefix": "fixed_installed_local_profile", "engines": ["thainer"], "default_engine": "thainer", "remote_detection": "forbidden",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "broker_memory_connection_generation_handles",
+      "warning_projection": "existing_category_projection", "sensitive_policy": "warn_report", "success_plaintext": ["restored_text"],
+      "errors": "fixed_value_free_broker_protocol_1", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates"
+    },
+    "sdk_python": {
+      "config_prefix": "AMPHRANG", "engines": ["thainer", "wangchanberta", "union", "finetuned"], "default_engine": "thainer", "remote_detection": "forbidden",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "explicit_python_caller_or_session",
+      "warning_projection": "section26_category_codes_in_existing_warnings", "sensitive_policy": "warn_report", "success_plaintext": ["matched_text", "restored_text", "explicit_mapping"],
+      "errors": "preserved_typed_value_free_failures", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates"
+    },
+    "sdk_cli": {
+      "config_prefix": "AMPHRANG", "engines": ["thainer", "wangchanberta", "union", "finetuned"], "default_engine": "thainer", "remote_detection": "forbidden",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "explicit_operator_owned_output",
+      "warning_projection": "category_only_report_lines", "sensitive_policy": "warn_report", "success_plaintext": ["matched_text", "restored_text"],
+      "errors": "existing_value_free_cli_failures", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates"
+    },
+    "sdk_http": {
+      "config_prefix": "AMPHRANG", "engines": ["thainer", "wangchanberta", "union", "finetuned"], "default_engine": "thainer", "remote_detection": "forbidden",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "server_memory_opaque_session",
+      "warning_projection": "existing_section26_categories_and_closed_warning_fields", "sensitive_policy": "warn_report", "success_plaintext": ["restored_text"],
+      "errors": "fixed_value_free_http_contract_2", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates"
+    },
+    "sdk_mcp": {
+      "config_prefix": "AMPHRANG", "engines": ["thainer", "wangchanberta", "union", "finetuned"], "default_engine": "thainer", "remote_detection": "forbidden",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "server_memory_caller_bound_handles",
+      "warning_projection": "existing_warning_strings_and_value_free_analysis", "sensitive_policy": "warn_report", "success_plaintext": ["matched_text", "restored_text"],
+      "errors": "fixed_value_free_tool_errors", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates",
+      "host_limit": "No-mapping is not no-plaintext. Actual host treatment of successful tool output needs its own canary acceptance."
+    },
+    "sdk_proxy": {
+      "config_prefix": "AMPHRANG", "engines": ["thainer", "wangchanberta", "union", "finetuned"], "default_engine": "thainer", "remote_detection": "forbidden",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "request_local_memory",
+      "warning_projection": "static_operator_warning_codes", "sensitive_policy": "warn_report", "success_plaintext": ["restored_answer_to_caller"],
+      "errors": "fixed_json_sse_and_cancellation_metadata", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates",
+      "wire_limit": "No new OpenAI response fields or public warning headers. Sensitive findings alone do not block outbound text."
+    },
+    "hosted": {
+      "config_prefix": "AIGUARD", "engines": ["thainer", "wangchanberta", "union", "finetuned", "tner"], "default_engine": "thainer", "remote_detection": "explicit_tner_only",
+      "inputs": ["text"], "span_units": "source_unicode_codepoints", "mapping_owner": "stateless_request_memory",
+      "warning_projection": "preserved_legacy_wire_category_projection", "sensitive_policy": "warn_report", "success_plaintext": ["raw_request_reaches_hosted_service", "restored_answer_to_authorized_caller"],
+      "errors": "existing_fixed_hosted_contract", "core": "pii_redactor", "qualification": "pending_combined_artifact_and_host_gates",
+      "wire_section26_categories": ["RACE_ETHNICITY", "POLITICAL_OPINION", "RELIGION", "HEALTH", "SEXUAL_BEHAVIOR", "CRIMINAL_RECORD", "DISABILITY", "LABOR_UNION"],
+      "surface_limit": "Canonical core has ten report categories; the established Hosted wire projection remains eight. No new Hosted reporting coverage is claimed."
+    }
+  }
+}

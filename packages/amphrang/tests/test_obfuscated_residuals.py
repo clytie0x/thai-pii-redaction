@@ -88,15 +88,31 @@ def test_unrelated_hidden_characters_and_grouped_text_remain_exact(text):
     assert result.entities == []
 
 
-def test_session_sanitize_blocks_single_spaced_iban_without_publishing_state():
+def test_session_sanitize_blocks_single_spaced_iban_if_input_recovery_misses(monkeypatch):
+    from pii_redactor.detectors import aggregate
+
     from amphrang.engine.session_service import OutboundLeakError, SessionService
 
+    monkeypatch.setattr(aggregate, "recover_structured", lambda text: [])
     service = SessionService()
 
     with pytest.raises(OutboundLeakError):
         service.sanitize(SINGLE_SPACED_IBAN, mode="token")
 
     assert service.session_count == 0
+
+
+def test_session_sanitize_recovers_single_spaced_iban_as_one_protected_unit():
+    from amphrang.engine.session_service import SessionService
+
+    service = SessionService()
+    result = service.sanitize(SINGLE_SPACED_IBAN, mode="token")
+    assert "GB82" not in result.sanitized_text
+    assert result.entity_type_counts.get("IBAN") == 1
+    assert (
+        service.restore(result.session_id, result.sanitized_text).restored_text
+        == SINGLE_SPACED_IBAN
+    )
 
 
 def test_stateless_restore_counts_generated_single_spaced_iban():

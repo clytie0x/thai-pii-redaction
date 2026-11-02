@@ -26,6 +26,17 @@ REQUIRED = [
     "tests/test_enterprise_cli.py",
     "tests/test_enterprise_migrations.py",
     "tests/test_enterprise_test_gate.py",
+    "tests/test_governance_subjects.py",
+    "tests/test_governance_consent.py",
+    "tests/test_subject_portal.py",
+    "tests/test_governance_collection.py",
+    "tests/test_governance_execution.py",
+    "tests/test_governance_outbox.py",
+    "tests/test_managed_ui.py",
+    "tests/test_governance_holds.py",
+    "tests/test_governance_retention.py",
+    "tests/test_governance_integration.py",
+    "tests/test_enterprise_integrated_routes.py",
 ]
 
 

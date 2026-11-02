@@ -18,6 +18,7 @@ from pathlib import Path
 from unittest import mock
 
 import httpx
+from canonical_core import CANONICAL
 
 ROOT = Path(__file__).resolve().parent.parent
 CORE = ROOT / "core"
@@ -34,7 +35,7 @@ def _purge_core_modules() -> None:
 def _load_ai_client():
     _purge_core_modules()
     package = types.ModuleType("pii_redactor")
-    package.__path__ = [str(CORE / "pii_redactor")]
+    package.__path__ = [str(CANONICAL / "pii_redactor")]
     sys.modules["pii_redactor"] = package
 
     leak_guard = types.ModuleType("pii_redactor.leak_guard")
@@ -91,7 +92,7 @@ def _load_ai_client():
     vault.VaultTimeoutError = VaultTimeoutError
     sys.modules[vault.__name__] = vault
 
-    path = CORE / "pii_redactor" / "ai_client.py"
+    path = CANONICAL / "pii_redactor" / "ai_client.py"
     spec = importlib.util.spec_from_file_location("pii_redactor.ai_client", path)
     if spec is None or spec.loader is None:
         raise AssertionError("could not load synchronized ai_client")
@@ -181,7 +182,7 @@ class HostedProviderContract(unittest.TestCase):
         self.assertEqual(provider.calls, [(SYSTEM_PROMPT, MASKED_TEXT, 60.0)])
         self.assertEqual(self.delays, [])
 
-        server = (CORE / "app" / "server.py").read_text(encoding="utf-8")
+        server = (CANONICAL / "app" / "server.py").read_text(encoding="utf-8")
         roundtrip_path = server[server.index("def roundtrip(") : server.index("def guard(")]
         self.assertEqual(roundtrip_path.count("complete_provider_with_retry_policy("), 1)
         self.assertIn("before_attempt=validate_provider_attempt", roundtrip_path)
@@ -276,7 +277,7 @@ class HostedProviderContract(unittest.TestCase):
         compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
         self.assertIn('AIGUARD_PROVIDERS: "tokenmind"', compose)
         self.assertNotIn('AIGUARD_PROVIDERS: "tokenmind,', compose)
-        server = (CORE / "app" / "server.py").read_text(encoding="utf-8")
+        server = (CANONICAL / "app" / "server.py").read_text(encoding="utf-8")
         self.assertIn("get_provider_factories(\n    allowed=", server)
         self.assertNotIn("provider_fallback", server)
 
@@ -397,10 +398,10 @@ class InternalPdfProvenanceContract(unittest.TestCase):
             self.assertNotIn(text, str(raised.exception))
 
     def test_extractors_record_intervals_and_flattening_is_unchanged(self):
-        extractor = (CORE / "pii_redactor" / "ingest" / "text_extractor.py").read_text(
+        extractor = (CANONICAL / "pii_redactor" / "ingest" / "text_extractor.py").read_text(
             encoding="utf-8"
         )
-        redactor = (CORE / "pii_redactor" / "redactor.py").read_text(encoding="utf-8")
+        redactor = (CANONICAL / "pii_redactor" / "redactor.py").read_text(encoding="utf-8")
         self.assertGreaterEqual(extractor.count("source_span="), 4)
         self.assertIn('_PDF_PAGE_SEPARATOR = "\\n\\n"', extractor)
         self.assertIn('.convert("P", palette=Image.ADAPTIVE)', redactor)

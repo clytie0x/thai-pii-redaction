@@ -9,9 +9,9 @@ import pytest
 pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient
+from pii_redactor.session_service import SessionService
 
 import amphrang.server.server as server
-from amphrang.engine.session_service import SessionService
 
 _NOW = 1_800_000_000.0
 _V2_DATA_HEADERS = {
@@ -26,7 +26,7 @@ def keyed_client(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_BOOT_TOKEN", "synthetic-control-authority")
     monkeypatch.setattr(server, "_authorization_now", lambda: _NOW)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
-    monkeypatch.setattr(server, "SERVICE", SessionService())
+    monkeypatch.setattr(server, "SERVICE", SessionService(config=server._CORE_CONFIG))
     return TestClient(server.app, base_url="http://localhost")
 
 

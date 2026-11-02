@@ -53,6 +53,12 @@ def _date_sanity(day: int, month: int) -> bool:
     return 1 <= day <= 31 and 1 <= month <= 12
 
 
+def is_valid_juristic_id(value: str) -> bool:
+    """Validate a 0-leading registration number with the shared mod-11 check."""
+    raw = _SEP_RE.sub("", value)
+    return raw.startswith("0") and is_valid_thai_id(raw)
+
+
 # ---------------------------------------------------------------------------
 # Entity factory
 # ---------------------------------------------------------------------------
@@ -656,7 +662,10 @@ _POSTAL_GLUE_RE = re.compile(r"(?:\s|,|/|และ|หรือ)*")
 # also labels รหัสสินค้า / รหัสวิชา / รหัสหลักสูตร / รหัสไปรษณีย์, and those are
 # still masked as ID_NUMBER anyway, so admitting them would buy no redaction
 # safety and cost an honest label.
-_STUDENT_CUE_RE = re.compile(r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student", re.IGNORECASE)
+_STUDENT_CUE_RE = re.compile(
+    r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ผู้เข้าสอบ|อาจารย์ที่ปรึกษา",
+    re.IGNORECASE,
+)
 # Compound code words: "รหัสX" names a non-student code and blocks every
 # student tier, even with education words nearby (a course code in a syllabus
 # is still a course code). Kept literal and short on purpose — each entry is a
@@ -670,17 +679,18 @@ _STUDENT_BLOCKER_RE = re.compile(
 _STUDENT_INTRO_RE = re.compile(r"รหัสประจำตัว|เลขประจำตัว|รหัส|\bid\b", re.IGNORECASE)
 # Education-context tokens: deliberately the narrow list that survived the
 # adversarial review — no คณะ (คณะกรรมการ), no วิชา alone (วิชาชีพ/วิชาการ),
-# no สอบ family (civil-service exams), no มหาวิทยาลัย/โรงเรียน (ambient org
+# no bare สอบ (civil-service exams), no มหาวิทยาลัย/โรงเรียน (ambient org
 # context), no ทะเบียน (vehicle/civil registries), no คัดเลือก (hiring).
 _EDU_CONTEXT_RE = re.compile(
     r"นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ลงทะเบียนเรียน|ภาคเรียน|สหกิจศึกษา"
-    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย",
+    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย"
+    r"|ที่นั่งสอบ|สอบสัมภาษณ์|ทุนวิจัย",
     re.IGNORECASE,
 )
 _STUDENT_PERSON_WINDOW = 60  # tier 1: person cue before the digits
 _STUDENT_AFTER_WINDOW = 45  # tier 2: person cue after the digits
 _STUDENT_INTRO_WINDOW = 20  # tier 3: introducer must be this close, same line
-_EDU_WINDOW = 100  # tier 3: education token within this many chars either side
+_EDU_WINDOW = 120  # Keep all rows tied to the SDK's accepted interview heading.
 # Words that introduce a number which is not a student identifier. A bare
 # person-word is weak evidence: "นักเรียนสั่งซื้อสินค้ารหัส 88910423" is an
 # order number in a sentence about a pupil. Same nearest-cue-wins rule as the

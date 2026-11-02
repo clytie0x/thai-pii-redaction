@@ -53,6 +53,8 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "DISABILITY",
         "EMAIL",
         "HEALTH",
+        "GENETIC",
+        "BIOMETRIC",
         "IBAN",
         "ID_NUMBER",
         "LABOR_UNION",
@@ -296,6 +298,24 @@ def scan_residual_signals(
     return signals
 
 
+def _is_field_label(candidate: str) -> bool:
+    """Use the detector's existing non-person rule for bare form labels."""
+    from pii_redactor.detectors.name_context import is_non_person_segment
+
+    return is_non_person_segment(candidate.strip())
+
+
+@minimize_failure_frames
+def _segment_leaks(segment: str, *, config: CoreConfig | None = None) -> list[Entity]:
+    """Recheck an uncovered segment while excluding known NAME field labels."""
+    config = resolve_config(config)
+    return [
+        entity
+        for entity in detect_fp(segment) + detect_tb(segment, config=config)
+        if not (entity.data_type == "NAME" and _is_field_label(entity.original_text))
+    ]
+
+
 @minimize_failure_frames
 @native_broker_detector_phase
 def scan_outbound_leaks(
@@ -312,6 +332,8 @@ def scan_outbound_leaks(
     real_leaks = []
     for entity in detect_fp(text) + detect_tb(text, config=config):
         if entity.original_text in trusted:
+            continue
+        if entity.data_type == "NAME" and _is_field_label(entity.original_text):
             continue
         start, end = entity.span
         overlapping = [
@@ -335,8 +357,7 @@ def scan_outbound_leaks(
                 if position < end:
                     segments.append(text[position:end])
                 segments_clean = all(
-                    not segment.strip()
-                    or (not detect_fp(segment) and not detect_tb(segment, config=config))
+                    not segment.strip() or not _segment_leaks(segment, config=config)
                     for segment in segments
                 )
                 if segments_clean and not _cue_leak_in_window(

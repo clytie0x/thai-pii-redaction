@@ -29,23 +29,29 @@ from dataclasses import replace as _dc_replace
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _dist_version
 
-from amphrang.engine.detectors.aggregate import detect_all as _detect_all
-from amphrang.engine.ingest.text_cleaner import clean as _clean
-from amphrang.engine.ingest.text_cleaner import clean_length_preserving as _clean_lp
-from amphrang.engine.models import Entity
-from amphrang.engine.report import analyze_text as _analyze_text
-from amphrang.engine.session_service import OutboundLeakError as _OutboundLeakError
-from amphrang.engine.session_service import SessionExpiredError, _identity_finalize
-from amphrang.engine.session_service import SessionService as _SessionService
-from amphrang.engine.stateless import (
+from pii_redactor.config import CoreConfig
+from pii_redactor.detectors.aggregate import detect_all as _detect_all
+from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
+from pii_redactor.ingest.text_cleaner import clean as _clean
+from pii_redactor.ingest.text_cleaner import clean_length_preserving as _clean_lp
+from pii_redactor.models import Entity
+from pii_redactor.report import analyze_text as _analyze_text
+from pii_redactor.report import project_analysis as _project_analysis
+from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
+from pii_redactor.session_service import OutboundLeakError as _OutboundLeakError
+from pii_redactor.session_service import SessionExpiredError, _identity_finalize
+from pii_redactor.session_service import SessionService as _SessionService
+from pii_redactor.stateless import (
     StatelessLeakError,
 )
-from amphrang.engine.stateless import (
+from pii_redactor.stateless import (
     restore_stateless as _restore_stateless,
 )
-from amphrang.engine.stateless import (
+from pii_redactor.stateless import (
     sanitize_stateless as _sanitize_stateless,
 )
+
+from amphrang._core_config import sdk_core_config
 
 try:
     __version__ = _dist_version("amphrang")
@@ -71,6 +77,14 @@ __all__ = [
 LeakBlockedError = StatelessLeakError
 
 
+def _require_local_config(config: CoreConfig) -> None:
+    if not isinstance(config, CoreConfig):
+        raise TypeError("SDK config must be a CoreConfig")
+    if config.allow_remote:
+        raise ValueError("SDK remote engines are disabled")
+
+
+@minimize_failure_frames
 def detect(text: str) -> list[Entity]:
     """Detect Thai PII in ``text`` and return deduplicated entities.
 
@@ -78,7 +92,13 @@ def detect(text: str) -> list[Entity]:
     Arabic only), so every ``Entity.span`` indexes directly into the caller's
     ``text`` and ``Entity.original_text`` is the exact slice of it.
     """
-    entities = _detect_all(_clean_lp(text))
+    return _detect_with_config(text, config=sdk_core_config())
+
+
+@minimize_failure_frames
+def _detect_with_config(text: str, *, config: CoreConfig) -> list[Entity]:
+    _require_local_config(config)
+    entities = _detect_all(_clean_lp(text), config=config)
     return [
         _dc_replace(entity, original_text=text[entity.span[0] : entity.span[1]])
         for entity in entities
@@ -96,6 +116,7 @@ class AnonymizeResult:
     warnings: list[str] = field(default_factory=list)
 
 
+@minimize_failure_frames
 def anonymize(
     text: str,
     *,
@@ -112,14 +133,29 @@ def anonymize(
     previous call's ``mapping`` as ``prior_mapping`` keeps token continuity
     across calls.
     """
-    # detection_text mirrors detect(): without the length-preserving Thai-digit normalization a
-    # Thai-numeral phone number is never detected or masked.
+    return _anonymize_with_config(
+        text, mode=mode, salt=salt, prior_mapping=prior_mapping, config=sdk_core_config()
+    )
+
+
+@minimize_failure_frames
+def _anonymize_with_config(
+    text: str,
+    *,
+    mode: str = "token",
+    salt: str | None = None,
+    prior_mapping: dict[str, str] | None = None,
+    config: CoreConfig,
+) -> AnonymizeResult:
+    # Keep caller spans while recognizing Thai numerals.
+    _require_local_config(config)
     result = _sanitize_stateless(
         text,
         mode=mode,
         salt=salt or secrets.token_hex(16),
         prior_mapping=prior_mapping,
         detection_text=_clean_lp(text),
+        config=config,
     )
     return AnonymizeResult(
         text=result.sanitized_text,
@@ -157,6 +193,7 @@ def _restore_warnings(warnings: list[str], generated: int, foreign: int) -> list
     return merged
 
 
+@minimize_failure_frames
 def restore(
     text: str,
     mapping: dict[str, str],
@@ -164,7 +201,19 @@ def restore(
     mode: str | None = None,
 ) -> RestoreResult:
     """Restore originals into ``text`` using a mapping from ``anonymize``."""
-    result = _restore_stateless(text, mapping=mapping, mode=mode)
+    return _restore_with_config(text, mapping, mode=mode, config=sdk_core_config())
+
+
+@minimize_failure_frames
+def _restore_with_config(
+    text: str,
+    mapping: dict[str, str],
+    *,
+    mode: str | None = None,
+    config: CoreConfig,
+) -> RestoreResult:
+    _require_local_config(config)
+    result = _restore_stateless(text, mapping=mapping, mode=mode, config=config)
     return RestoreResult(
         text=result.restored_text,
         replaced_count=result.replaced_count,
@@ -180,23 +229,39 @@ def restore(
 
 
 _LEAK_SENTINEL = "__amphrang_leak_blocked__"
+_NER_SENTINEL = "__amphrang_ner_failed__"
 
 
-def _detect_one(text: str) -> list[Entity]:
-    return detect(text)
+@minimize_failure_frames
+def _detect_one(job: tuple[str, CoreConfig]):
+    text, config = job
+    try:
+        return _detect_with_config(text, config=config)
+    except NERFailureError as error:
+        failure = (_NER_SENTINEL, *ner_failure_metadata(error))
+        discard_exception_graph(error)
+        return failure
 
 
-def _anonymize_one(job: tuple[str, str, str | None]):
+@minimize_failure_frames
+def _anonymize_one(job: tuple[str, str, str | None, CoreConfig]):
     """One anonymize for the batch paths. A leak block comes back as a plain
     tuple, not the exception: exceptions with keyword-only constructors do
     not survive the process-pool pickle round trip."""
-    text, mode, salt = job
+    text, mode, salt, config = job
     try:
-        return anonymize(text, mode=mode, salt=salt)
+        return _anonymize_with_config(text, mode=mode, salt=salt, config=config)
     except LeakBlockedError as error:
-        return (_LEAK_SENTINEL, list(error.leak_types), list(error.policy_categories))
+        failure = (_LEAK_SENTINEL, list(error.leak_types), list(error.policy_categories))
+        discard_exception_graph(error)
+        return failure
+    except NERFailureError as error:
+        failure = (_NER_SENTINEL, *ner_failure_metadata(error))
+        discard_exception_graph(error)
+        return failure
 
 
+@minimize_failure_frames
 def _run_in_pool(fn, jobs: list, workers: int) -> list:
     from concurrent.futures import ProcessPoolExecutor
 
@@ -204,6 +269,7 @@ def _run_in_pool(fn, jobs: list, workers: int) -> list:
         return list(pool.map(fn, jobs))
 
 
+@minimize_failure_frames
 def detect_batch(texts: list[str], *, workers: int = 1) -> list[list[Entity]]:
     """``detect`` over many texts, one entity list per input, in order.
 
@@ -211,12 +277,23 @@ def detect_batch(texts: list[str], *, workers: int = 1) -> list[list[Entity]]:
     model load once, so it only pays off for large batches. Results are
     identical to calling ``detect`` in a loop.
     """
-    texts = list(texts)
-    if workers > 1 and len(texts) > 1:
-        return _run_in_pool(_detect_one, texts, workers)
-    return [detect(text) for text in texts]
+    config = sdk_core_config()
+    jobs = [(text, config) for text in texts]
+    if workers > 1 and len(jobs) > 1:
+        outcomes = _run_in_pool(_detect_one, jobs, workers)
+    else:
+        outcomes = [_detect_one(job) for job in jobs]
+    for outcome in outcomes:
+        _raise_ner_failure(outcome)
+    return outcomes
 
 
+def _raise_ner_failure(outcome) -> None:
+    if isinstance(outcome, tuple) and outcome and outcome[0] == _NER_SENTINEL:
+        raise NERFailureError(outcome[1], category=outcome[2], count=outcome[3])
+
+
+@minimize_failure_frames
 def anonymize_batch(
     texts: list[str],
     *,
@@ -233,7 +310,8 @@ def anonymize_batch(
     position in ``batch_index``, and no partial batch is returned.
     ``workers`` behaves as in ``detect_batch``.
     """
-    jobs = [(text, mode, salt) for text in texts]
+    config = sdk_core_config()
+    jobs = [(text, mode, salt, config) for text in texts]
     if workers > 1 and len(jobs) > 1:
         outcomes = _run_in_pool(_anonymize_one, jobs, workers)
     else:
@@ -241,6 +319,7 @@ def anonymize_batch(
 
     results: list[AnonymizeResult] = []
     for index, outcome in enumerate(outcomes):
+        _raise_ner_failure(outcome)
         if isinstance(outcome, tuple) and outcome and outcome[0] == _LEAK_SENTINEL:
             error = LeakBlockedError(outcome[1], policy_categories=outcome[2])
             error.batch_index = index
@@ -249,11 +328,17 @@ def anonymize_batch(
     return results
 
 
+@minimize_failure_frames
 def analyze(text: str) -> dict:
     """PDPA-oriented risk analysis: entity counts, Section 26 signals, and a
     re-identification risk score. The result contains no raw PII values."""
-    # Full clean is safe here: the analyzer expects cleaned text and the result carries no spans.
-    return _analyze_text(_clean(text).text)
+    return _analyze_with_config(text, config=sdk_core_config())
+
+
+@minimize_failure_frames
+def _analyze_with_config(text: str, *, config: CoreConfig) -> dict:
+    _require_local_config(config)
+    return _project_analysis(_analyze_text(_clean(text).text, config=config))
 
 
 class Session:
@@ -271,11 +356,13 @@ class Session:
     """
 
     def __init__(self, *, mode: str = "token", ttl_s: int = 1800):
-        self._service = _SessionService(cap=1, ttl_s=ttl_s)
+        self._service = _SessionService(cap=1, ttl_s=ttl_s, config=sdk_core_config())
         self._mode = mode
         self._session_id: str | None = None
 
+    @minimize_failure_frames
     def anonymize(self, text: str) -> AnonymizeResult:
+        failure = None
         try:
             outcome = self._service.sanitize_transaction(
                 text,
@@ -285,10 +372,10 @@ class Session:
                 finalize=_identity_finalize,
             )
         except _OutboundLeakError as error:
-            raise LeakBlockedError(
-                list(error.leak_types),
-                policy_categories=list(error.policy_categories),
-            ) from None
+            failure = (list(error.leak_types), list(error.policy_categories))
+            discard_exception_graph(error)
+        if failure is not None:
+            raise LeakBlockedError(failure[0], policy_categories=failure[1])
         self._session_id = outcome.session_id
         return AnonymizeResult(
             text=outcome.sanitized_text,
@@ -298,6 +385,7 @@ class Session:
             warnings=list(outcome.warnings),
         )
 
+    @minimize_failure_frames
     def restore(self, text: str) -> RestoreResult:
         if self._session_id is None:
             raise ValueError("nothing anonymized in this session yet")

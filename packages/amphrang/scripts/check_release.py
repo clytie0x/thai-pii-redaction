@@ -28,7 +28,8 @@ _SURFACE_MANIFEST = Path("docs") / "api-surface.txt"
 _FACADE = Path("amphrang") / "__init__.py"
 
 _COVERAGE_PROFILE = Path("docs") / "pdpa-coverage.md"
-_TOKEN_GENERATOR = Path("amphrang") / "engine" / "anonymizer" / "token_generator.py"
+_TOKEN_GENERATOR = Path("pii_redactor") / "anonymizer" / "token_generator.py"
+_REPORT_CATEGORIES = Path("pii_redactor") / "pdpa_categories.py"
 _PROFILE_TYPE_NAME = re.compile(r"`([A-Z][A-Z0-9_]*)`")
 
 
@@ -134,37 +135,32 @@ def check_surface(root: Path) -> list[str]:
     return problems
 
 
-def _token_label_keys(root: Path) -> set[str] | str:
-    """Keys of ``TOKEN_LABEL`` in ``token_generator.py`` (parsed, never imported), or an error."""
-    path = root / _TOKEN_GENERATOR
+def _literal_table(path: Path, table_name: str) -> set[str] | str:
+    """Read canonical type names without importing model or provider code."""
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except (OSError, SyntaxError) as error:
-        return f"{_TOKEN_GENERATOR}: {error}"
+        return f"{path.name}: {error}"
     for node in tree.body:
         target = None
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             target = node.target
         elif isinstance(node, ast.Assign) and len(node.targets) == 1:
             target = node.targets[0]
-        if isinstance(target, ast.Name) and target.id == "TOKEN_LABEL" and node.value is not None:
+        if isinstance(target, ast.Name) and target.id == table_name and node.value is not None:
             try:
                 mapping = ast.literal_eval(node.value)
             except ValueError:
-                return f"{_TOKEN_GENERATOR}: TOKEN_LABEL is not a literal dict"
+                return f"{path.name}: {table_name} is not literal"
             return set(mapping)
-    return f"{_TOKEN_GENERATOR}: no TOKEN_LABEL found"
+    return f"{path.name}: no {table_name} found"
 
 
-def check_profile(root: Path) -> list[str]:
-    """The PDPA coverage profile's backticked data types must equal ``TOKEN_LABEL`` exactly.
+def check_profile(root: Path, *, core_root: Path | None = None) -> list[str]:
+    """Check documented type names against canonical identifiers and report categories.
 
-    Compares ``TOKEN_LABEL`` keys (every data_type the code can emit or mask)
-    against the backticked ``^[A-Z][A-Z0-9_]*$`` names in every table row
-    (line starting with ``|``) across the whole profile document — Level A
-    and Level C tables together, since the ม.26 sensitive types live in
-    Level C, not Level A. A category present in the code but undocumented,
-    or documented but no longer in the code, fails the gate with a named diff.
+    Sensitive reporting categories are not masking types. This gate checks names;
+    it does not qualify archived measurements for the current core or policy.
     """
     profile_path = root / _COVERAGE_PROFILE
     try:
@@ -175,20 +171,24 @@ def check_profile(root: Path) -> list[str]:
     for line in lines:
         if line.startswith("|"):
             documented.update(_PROFILE_TYPE_NAME.findall(line))
-    actual = _token_label_keys(root)
-    if isinstance(actual, str):
-        return [actual]
+    core_root = core_root if core_root is not None else root.resolve().parents[1]
+    identifiers = _literal_table(core_root / _TOKEN_GENERATOR, "TOKEN_LABEL")
+    categories = _literal_table(core_root / _REPORT_CATEGORIES, "SECTION26_CATEGORIES")
+    errors = [item for item in (identifiers, categories) if isinstance(item, str)]
+    if errors:
+        return errors
+    actual = identifiers | categories
     problems: list[str] = []
     missing = sorted(actual - documented)
     extra = sorted(documented - actual)
     if missing:
         problems.append(
-            f"{_COVERAGE_PROFILE}: missing data_type(s) in TOKEN_LABEL but not documented: "
+            f"{_COVERAGE_PROFILE}: canonical identifier/report type(s) not documented: "
             f"{', '.join(missing)}"
         )
     if extra:
         problems.append(
-            f"{_COVERAGE_PROFILE}: documented data_type(s) not in TOKEN_LABEL: {', '.join(extra)}"
+            f"{_COVERAGE_PROFILE}: documented type(s) outside canonical identifier/report tables: {', '.join(extra)}"
         )
     return problems
 
@@ -207,6 +207,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--expect-tag", default=None, help="git tag being released (v<VERSION>)")
     parser.add_argument(
+        "--core-root", type=Path, help="matching canonical source tree (default: monorepo root)"
+    )
+    parser.add_argument(
         "--notes", action="store_true", help="print the CHANGELOG section on success"
     )
     args = parser.parse_args(argv)
@@ -214,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
         args.root, expect_tag=args.expect_tag, require_dated=args.expect_tag is not None
     )
     problems += check_surface(args.root)
-    problems += check_profile(args.root)
+    problems += check_profile(args.root, core_root=args.core_root)
     if problems:
         for problem in problems:
             print(f"release gate: {problem}", file=sys.stderr)

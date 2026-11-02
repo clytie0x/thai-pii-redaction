@@ -85,7 +85,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("amphrang.engine.", "amphrang.server.")):
+        if module.startswith(("amphrang.engine.", "amphrang.server.", "pii_redactor.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -102,7 +102,7 @@ def test_explicit_tner_failure_preserves_existing_session_and_error_secrecy(monk
     retained.credential = credential
     retained.provider_body = provider_body
 
-    def fail_detection(_text):
+    def fail_detection(_text, *, config):
         raise retained
 
     monkeypatch.setattr(stateless_mod, "detect_all", fail_detection)
@@ -586,7 +586,13 @@ def test_token_nonce_exhaustion_is_value_free_and_does_not_publish(monkeypatch):
     )
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: namespace)
     monkeypatch.setattr(anonymizer_mod, "new_token_nonce", lambda: nonce)
-    monkeypatch.setattr(stateless_mod, "detect_all", lambda _text: [entity])
+    detections = []
+
+    def detect(_text, *, config):
+        detections.append(config)
+        return [entity]
+
+    monkeypatch.setattr(stateless_mod, "detect_all", detect)
     service, _ = _svc()
 
     with pytest.raises(
@@ -596,6 +602,7 @@ def test_token_nonce_exhaustion_is_value_free_and_does_not_publish(monkeypatch):
         service.sanitize(source, mode="token")
 
     assert service.session_count == 0
+    assert len(detections) == 1
     assert excinfo.value.leak_types == ["ANONYMIZE_FAILED"]
     assert excinfo.value.__cause__ is None
     assert excinfo.value.__context__ is None

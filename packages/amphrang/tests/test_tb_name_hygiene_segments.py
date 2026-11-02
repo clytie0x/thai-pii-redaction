@@ -196,10 +196,16 @@ def test_full_birth_date_label_rejected_by_both_rules():
     assert is_glued_name_run("วันเดือนปีเกิด") is False
 
 
-def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkeypatch):
+def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkeypatch, tmp_path):
     """Same contract on the fine-tuned engine call site (`_detect_tb_finetuned`,
     'every neural engine' per its docstring)."""
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
+    from amphrang._core_config import sdk_core_config
+
+    directory = tmp_path / "synthetic-model"
+    directory.mkdir()
+    monkeypatch.setenv("AMPHRANG_FINETUNED_MODEL_DIR", str(directory))
+    calls = []
     prefix = "หัวข้อฟอร์ม\n"
     text = prefix + OCR_LABEL_FIRST_SPAN + "\nท้ายเอกสาร"
     start = len(prefix)
@@ -207,14 +213,17 @@ def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkey
 
     class _FakeEngine:
         def spans(self, _text):
+            calls.append(_text)
             return [(start, end, "PERSON", 0.97)]
 
-    monkeypatch.setitem(tbd._finetuned_cache, "engine", _FakeEngine())
+    key = (str(directory.resolve()), None)
+    monkeypatch.setitem(tbd._finetuned_cache, key, _FakeEngine())
     try:
-        entities = tbd.detect_tb(text)
+        entities = tbd.detect_tb(text, config=sdk_core_config())
     finally:
-        tbd._finetuned_cache.pop("engine", None)
+        tbd._finetuned_cache.pop(key, None)
 
+    assert calls == [text]
     names = {e.original_text for e in entities if e.data_type == "NAME"}
     assert names == {"กิตติ พรดี", "พิมพ์ใจ แสนดี"}
     assert not any(e.original_text == "เดือนปีเกิด" for e in entities)

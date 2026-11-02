@@ -19,6 +19,7 @@ from .approval import (
 from .authority import AuthorityContext
 from .document_artifact import PROMPT_REVISION as DOCUMENT_PROMPT_REVISION
 from .protection import ProtectionResult, ProtectionService
+from .core_identity import protection_source_sha256
 
 MAX_CUSTOM_TEXT_CODEPOINTS = 20_000
 MAX_CUSTOM_PROTECTED_UTF8_BYTES = 96 * 1024
@@ -28,7 +29,7 @@ QUEUE_ADMISSION_SECONDS = 900
 CUSTOM_MINIMUM_REVIEW_SECONDS = 120
 PROVIDER_ID = "tokenmind"
 PROVIDER_MODEL = "thaillm-8b"
-DETECTOR_CODE_SHA256 = "f33b7de49ef3b76b2ee8c51692f681b622490b0ee404726c2fb6f6d6ff4d44c1"
+DETECTOR_CODE_SHA256 = protection_source_sha256()
 DETECTOR_MODEL_SHA256 = "bc36ef28c16dbca39911add53e9b9a96ebb23edf6c8b00555d5647ba8629c315"
 DEFAULT_SYSTEM_PROMPT = (
     "คุณเป็น AI assistant ที่มีประสิทธิภาพ "

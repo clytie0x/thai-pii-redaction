@@ -19,6 +19,18 @@ Historical planning/pause statements below describe the planning snapshot;
 current execution evidence and owner-only gates live in
 [release scope](../enterprise/release-scope.md) and the milestone acceptance records.
 
+**Current execution update, 2026-11-03:** the owner requested parallel S and M
+implementation followed by integration. S2-S6 canonical consumers and M4-M6
+domain/API/Thai UI paths are implemented locally; qualification is pending.
+The [local-wave record](../acceptance/enterprise/M04-M06-local-wave.md) retains
+per-module results, review fixes, the failed enterprise retry (286 passed/
+11 failed/0 skipped) and corrected complete 298-pass/0-fail/0-skip run. The first
+full SDK run remains negative (2,088 passed/52 failed/10 skipped). Source freeze,
+final global gates, fresh
+artifacts/images/CI and actual-host rebinding remain pending. M3's controlled
+performance hold is unchanged. The historical starting snapshot below remains
+historical; it is not a statement that those implemented paths are still absent.
+
 ## 1. Historical starting position and scope
 
 The canonical design branch contains no enterprise web application. The separate implementation branch already contains foundation and registry work, so Stage 1 must be resumed from its evidence rather than rebuilt from an empty directory.
@@ -108,27 +120,36 @@ For `pii_redactor/` or `app/` changes also run `scripts/measure_perf.py`. Preser
 
 Enterprise tests run with the separately locked enterprise environment and a real configured PostgreSQL service. The checkpoint's database fixture reads `AIGUARD_TEST_DB_FILE`, an ignored secret-file reference; never print its DSN or file contents. Record the resolved interpreter and service configuration without secrets. M3 must provide a dedicated CI job that fails setup when its required database is missing; ordinary core-only optional skips do not satisfy that job. Root Vitest currently discovers only Extension/Desktop/Demo test directories; enterprise browser-unit tests require an explicit discovery addition and observed nonzero test execution.
 
-Focused test file names in later milestones are **planned files**, not runnable commands today. Create them in the task that owns them. Do not execute deployment, publication or live-provider scripts merely to verify this document.
+Later milestone sections define the required tests and exits. Some named files
+now exist; resolve them against the selected candidate and current acceptance
+record before running commands. An unchecked full-exit task does not mean its
+source implementation is absent. Do not execute deployment, publication or
+live-provider scripts merely to verify this document.
 
 ## 4. Milestone map and dependencies
 
-| ID | Working result | Depends on | Accepted-design stage | Starting status |
+| ID | Working result | Depends on | Accepted-design stage | Current status, 2026-11-03 |
 |---|---|---|---|---|
-| M0 | Reconciled evidence, scope, environments and release decisions | None | Program foundation | Not started |
-| M1 | Shared-core compatibility and complete cross-product CI | M0 | Cross-product foundation | Not started |
+| M0 | Reconciled evidence, scope, environments and release decisions | None | Program foundation | Reconciled/local; exact combined CI pending |
+| M1 | Shared-core compatibility and complete cross-product CI | M0 | Cross-product foundation | S2-S6 source implemented/local; combined/artifact/image/CI qualification pending |
 | M2 | Qualified protection behavior and fresh evaluation protocol | M0; M1 for final cross-surface gate | Cross-product protection | Existing core; acceptance pending |
-| M3 | Authenticated staff, durable inventory/notices and usable console | M0 | Stage 1 | Domain checkpoint partial; web/auth open |
-| M4 | Verified subject linkage and actual consent/withdrawal | M3 | Stage 2 | Not started |
-| M5 | Protected collection, execution boundary and recoverable worker | M3 | Stage 3 foundation | Not started |
-| M6 | Retention, holds and evidence-backed disposal/restriction | M4, M5 | Stage 3 completion | Not started |
-| M7 | Rights cases, secure delivery and evidence-based closure | M4, M5, M6 | Stage 4 | Not started |
-| M8 | Organization governance and reviewed legal applicability | M3; M6/M7 for integrated gate | Stage 5 | Design only |
-| M9 | Exact-candidate acceptance per supported client/delivery surface | M1, M2; M3 for enterprise console | Client qualification | Historical evidence only |
-| M10 | Hardened deployment candidate and rehearsed recovery | M3-M8; M9 for every included surface | Stage 6 foundation | Not started |
-| M11 | Supervised pilot on named organization infrastructure | M10, applicable M9 gates | Stage 6 pilot | Not started |
-| M12 | Authorized production launch and repeatable operations | M11 | Stage 6 release/maintenance | Not started |
+| M3 | Authenticated staff, durable inventory/notices and usable console | M0 | Stage 1 | Implemented/local with earlier real-path evidence; controlled performance/CI and new-candidate rebinding pending |
+| M4 | Verified subject linkage and actual consent/withdrawal | M3 | Stage 2 | Implemented/local; combined and actual IdP/browser/artifact qualification pending |
+| M5 | Protected collection, execution boundary and recoverable worker | M3 | Stage 3 foundation | Implemented/local; combined/runtime-role/recovery/artifact qualification pending |
+| M6 | Retention, holds and evidence-backed disposal/restriction | M4, M5 | Stage 3 completion | Restriction/suppression and holds implemented/local; combined qualification pending; physical erasure absent |
+| M7 | Rights cases, secure delivery and evidence-based closure | M4, M5, M6 | Stage 4 | Domain/case/delivery implementation absent |
+| M8 | Organization governance and reviewed legal applicability | M3; M6/M7 for integrated gate | Stage 5 | Design only; organization control-record implementation absent |
+| M9 | Exact-candidate acceptance per supported client/delivery surface | M1, M2; M3 for enterprise console | Client qualification | Historical evidence; every declared storefront still needs exact-candidate gates |
+| M10 | Hardened deployment candidate and rehearsed recovery | M3-M8; M9 for every included surface | Stage 6 foundation | Partial collection quarantine/reconciliation; whole-DB/checkpoint/rotation/operator/drill work incomplete |
+| M11 | Supervised pilot on named organization infrastructure | M10, applicable M9 gates | Stage 6 pilot | Pending implementation gates and real organization/people inputs |
+| M12 | Authorized production launch and repeatable operations | M11 | Stage 6 release/maintenance | Pending qualification and exact owner action approval |
 
-Execution order is by dependencies, not a blanket numeric lock. Continue M3 from the preserved checkpoint after M0; M1/M2 may proceed alongside it without blocking authenticated inventory delivery. M4 and M5 can then be implemented independently. M8 source/applicability review should start early; its end-to-end closure waits for M6/M7. M9 clients are separate qualifications, not instructions to spawn agents. Nothing auto-resumes the paused implementation.
+Execution follows dependencies. The owner has resumed the program and requested
+parallel S and M work with disjoint file ownership. Integrate and qualify the
+implemented wave before treating it as accepted. M7/M8 remain required next
+domains; M8 closure depends on the related workflows and qualified applicability
+review. M9 clients retain separate host/OS/artifact qualifications. Parallel
+source progress does not waive a dependency's acceptance gate.
 
 ## 5. Detailed milestones
 
@@ -416,16 +437,17 @@ Estimate work after M0 using remaining tasks rather than total milestone count: 
 ## 8. Current execution sequence
 
 1. Follow the [Astra/Sol addendum](2026-11-02-astra-sol-execution-review.md) from
-   the clean checkout. S0/S1 preserves the prerequisite/proxy candidate with local
-   Windows/Python 3.13 artifact evidence and a clear independent review. Continue
-   from S2; do not rebuild the completed M3 staff path.
-2. Finish actual SDK/Hosted canonical consumption and full adapter/artifact checks.
+   the clean checkout. Preserve S0/S1 artifact evidence and the parallel S2-S6/M4-M6
+   work; do not rebuild the existing staff, subject or managed paths from scratch.
+2. Resolve remaining SDK failures, freeze source and complete independent
+   integration review plus full adapter/artifact/image checks.
    Keep M0/M1/M3 acceptance held while executing CI and controlled performance are
-   missing. The owner's performance hold and GitHub privacy purge remain in force.
+   missing. The owner's performance hold remains; public visibility was explicitly
+   accepted with retained-image risk and server-side purge remains unconfirmed.
 3. Rebind M2/M3 regression, installed package and real local browser/IdP/database
-   evidence to the combined exact candidate.
-4. Build M4-M8 as complete subject-to-managed-document workflows using the accepted
-   authority, transaction and recovery design, then qualify M9-M12 in dependency order.
+   evidence, plus the new M4-M6 paths, to the combined exact candidate.
+4. Complete absent M7/M8 and unfinished M10 operational recovery, then qualify
+   M9-M12 in dependency order with every declared storefront still visible.
 5. Maintain separate implemented/verified/accepted facts and explicit owner inputs.
    Prepare concrete pilot/release actions before the required final authorization.
 

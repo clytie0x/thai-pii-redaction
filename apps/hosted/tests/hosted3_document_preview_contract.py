@@ -10,6 +10,7 @@ import sys
 import unittest
 from dataclasses import dataclass
 from pathlib import Path
+from canonical_core import CANONICAL  # noqa: F401
 
 
 ROOT = Path(__file__).resolve().parents[1]

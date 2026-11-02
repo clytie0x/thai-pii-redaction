@@ -1,15 +1,21 @@
-# Enterprise staff application: setup and acceptance
+# Enterprise application: setup and acceptance
 
-This is the single-organization Stage 1 application. It uses the shared
-governance domain, PostgreSQL authority and a configured OIDC staff issuer.
+This single-organization application uses the shared governance domain,
+PostgreSQL authority and a configured OIDC staff issuer.
 It is separate from local Desktop/Extension redaction and the Hosted service.
 Persistent governance records are protected organization data; the local
 reversible PII vault is not persisted here.
 
 Stage 1 supports inventory, notices, independent processing review, staff
-membership proposals and minimized scoped audit views. Subject consent,
-retention/rights execution, wider governance, checkpoint/recovery and production
-pilot acceptance remain M4-M12 work. Do not advertise those as shipped.
+membership proposals and minimized scoped audit views. The current source also
+implements configured subject consent, encrypted managed collections/execution
+and reviewed retention/holds. These M4-M6 paths are implemented locally;
+qualification is pending. The corrected mandatory enterprise gate passes 298
+tests without failures or skips after a retained failed retry. Global SDK and
+actual subject IdP/browser, new installed-artifact/restart and production gates
+have not passed. See the [local-wave record](../acceptance/enterprise/M04-M06-local-wave.md).
+Rights/secure delivery, organization records and complete operational recovery
+remain unfinished. Do not advertise production readiness.
 
 ## Install the selected optional profile
 
@@ -32,7 +38,7 @@ enrollment use an offline administrative credential. The serving process uses
 a separate non-superuser role with schema USAGE, not schema CREATE or role/
 database creation. Keep the schema owner distinct from the runtime role.
 
-The runtime needs:
+The Stage 1 runtime needs:
 
 - SELECT on the governance schema/version, organization, membership, command,
   activity, notice, grant, audit, outbox, login-state and session tables;
@@ -41,7 +47,14 @@ The runtime needs:
 - UPDATE on membership/grant, activity/notice and session tables;
 - DELETE on expiring login-state rows only; no audit UPDATE/DELETE or schema DDL.
 
-Grant only those operations in the intended schema. Test readiness and the
+That Stage 1 list is not a complete grant recipe for M4-M6. The current schema
+also includes subject sessions/consent, encrypted collection/evidence and
+execution/retention/hold tables in migrations 004-006. Qualify the selected
+runtime role against all enabled workflows; do not grant blanket DML or DDL to
+make a candidate pass. Append-only audit, consent history and document versions
+must keep their intended immutability.
+
+Grant only required operations in the intended schema. Test readiness and the
 actual staff workflows under that runtime role; do not infer least privilege
 from tests that connect with a schema-creating administrative account. SQL
 migrations are fingerprinted and LF-pinned. Do not edit applied SQL files to
@@ -88,6 +101,37 @@ issuer/subject, not email. Organizational reauthentication/MFA and IdP lifecycle
 integration are separately configured decisions. `max_token_age` checks token
 `iat`; it does not itself prove `auth_time` freshness or MFA.
 
+### Optional subject and managed capabilities
+
+Enable subject access with a separate confidential client/audience and secret
+file; its client ID must differ from the staff client. It shares the configured
+public origin and registers the exact `/subject/auth/callback` URI:
+
+```powershell
+$env:AIGUARD_ENTERPRISE_SUBJECT_ISSUER='https://<subject issuer>/<realm>'
+$env:AIGUARD_ENTERPRISE_SUBJECT_CLIENT_ID='<approved subject client ID>'
+$env:AIGUARD_ENTERPRISE_SUBJECT_OIDC_SECRET_FILE='<absolute private subject OIDC file>'
+$env:AIGUARD_ENTERPRISE_MANAGED_KEYS_FILE='<absolute private managed-key file>'
+```
+
+The subject secret file has the same single `client_secret` field as the staff
+secret file. Partial subject configuration fails closed. Staff credentials
+cannot stand in for a subject act; reviewed linkage and the exact current
+notice/purpose remain required.
+
+The managed-key file has `organization_id`, `active_version` and `keys`; each key
+entry has `version` and `key_hex` (64 hexadecimal characters for a 32-byte key).
+The active version must name an entry and the organization must match. Provision
+real key material only through the organization's approved private key process.
+Serving loads these keys into process memory outside the ciphertext database. This file-backed
+authority is not production KMS, key rotation or recovery acceptance.
+
+With no subject configuration, subject routes are disabled. With no managed-key
+reference, managed/retention routes are disabled. Selected malformed or missing
+key material fails closed; there is no plaintext storage fallback. Managed
+collection/evidence reads and actions apply current scope, consent and hold
+checks; execution rechecks exact approved targets and retention bindings.
+
 ## Offline setup, then serving
 
 With the administrative database file selected:
@@ -127,8 +171,21 @@ or deployment acceptance. Serving does not run migrations or privileged DDL.
 Unconfigured or unenrolled service fails closed. The server validates IdP
 metadata during startup; `/health/ready` rechecks schema, enrollment, local audit
 integrity and IdP metadata. `/health/live` proves only that the process responds.
-Readiness is Stage 1 authority readiness, not completion of M10-M12 production
-storage/checkpoint/restore/pilot gates.
+When enabled, service readiness additionally checks subject IdP metadata and
+managed protection/key availability. CLI `check` remains a schema/enrollment
+check; it does not prove those optional capabilities. Neither readiness path
+completes M10-M12 storage/checkpoint/restore/pilot gates.
+
+The explicit managed worker consumes one already approved outbox action:
+
+```powershell
+python -m app.enterprise work-once --worker-id '<operator-assigned worker ID>'
+```
+
+It needs organization/database/key references, not the staff OIDC secret. It
+cannot create approval authority or turn queued work into a verified outcome.
+Use it only for authorized synthetic qualification until the exact real-data
+operation and environment are accepted.
 
 Use the configured TLS reverse proxy/origin for production. Preserve the exact
 Host authority, deny untrusted proxy headers and keep authentication queries,
@@ -162,6 +219,15 @@ Session deadlines are checked again after acquiring authorization locks. The UI
 clears private references on expiry, revocation or principal/scope replacement;
 it does not use localStorage/sessionStorage for records or credentials.
 
+The configured subject path is `/subject`, with reviewed staff linkage at
+`/subject/staff`. Managed staff work uses `/managed`; reviewed due actions and
+holds use `/retention`. Their Thai interfaces have local API/DOM evidence only,
+not fresh real-browser accessibility or human usability acceptance. Retention
+dispatch supports `restrict`/`suppress`; processor/backup copy obligations remain
+separate evidence. Physical ciphertext/history/snapshot, WAL/replica and backup
+erasure are not implemented. Collection quarantine/reconciliation does not
+establish whole-database recovery.
+
 ## Mandatory automated and real-path gates
 
 ```powershell
@@ -180,8 +246,13 @@ test configuration, separate from production/migration/runtime files. Missing
 dependencies/configuration, failed DB connection, missing suite, skipped test or
 empty test report fails the gate. It cannot turn core-only optional skips into
 enterprise acceptance. The dedicated CI job pins the official PostgreSQL image
-and binds its port to loopback. CI execution is still blocked by the account
-billing condition recorded in [M0 CI evidence](../acceptance/enterprise/M00-ci-blocker.md).
+and binds its port to loopback. Public CI now executes after the owner's
+visibility decision; the [earlier billing block](../acceptance/enterprise/M00-ci-blocker.md)
+is historical. Every job must pass on the exact combined candidate. The current
+failed mandatory retry records 286 passed/11 failed/0 skipped; the corrected
+complete enterprise gate passes 298/0 failed/0 skipped (2 warnings). The first
+full SDK run still records 2,088 passed/52 failed/10 skipped. Final global gates,
+source freeze and installed artifacts remain pending.
 
 Package qualification must build with the pinned backend constraints, verify
 actual wheel resources with `scripts/check_enterprise_wheel.py`, install outside

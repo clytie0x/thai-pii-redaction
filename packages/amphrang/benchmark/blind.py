@@ -450,7 +450,7 @@ def run_blind(
     if not reason.strip():
         raise BlindError("a blind run must state --reason (it is recorded in the audit log)")
 
-    from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics
+    from pii_redactor.detectors.tb_detector import NERChunkDiagnostics
 
     from .runner import predict_samples
 

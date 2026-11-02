@@ -8,8 +8,7 @@ def cmd_report(args):
     """Generate a PII risk report for a text file (no redaction)."""
     from pathlib import Path
 
-    from amphrang.engine.detectors.aggregate import detect_all
-    from amphrang.engine.ingest.text_cleaner import clean
+    from amphrang import analyze
 
     try:
         raw_text = Path(args.file).read_text(encoding="utf-8")
@@ -20,34 +19,39 @@ def cmd_report(args):
         print(f"Failed to read file: {e}", file=sys.stderr)
         sys.exit(1)
 
-    text = clean(raw_text).text
-
-    merged = detect_all(text)
-    fp_entities = [e for e in merged if e.redact_type == "FP"]
-    tb_entities = [e for e in merged if e.redact_type != "FP"]
+    report = analyze(raw_text)
+    fp_count = report["fp_count"]
+    tb_count = report["tb_count"]
 
     print(f"=== PII Risk Report: {args.file} ===")
-    print(f"Total entities detected: {len(merged)}")
-    print(f"  Structured PII (FP): {len(fp_entities)}")
-    print(f"  Name/Address/Date (TB): {len(tb_entities)}")
+    print(f"Total entities detected: {report['direct_pii_count']}")
+    print(f"  Structured PII (FP): {fp_count}")
+    print(f"  Name/Address/Date (TB): {tb_count}")
 
-    if fp_entities:
+    if fp_count:
         print("\nStructured PII types:")
         type_counts = {}
-        for e in fp_entities:
-            type_counts[e.data_type] = type_counts.get(e.data_type, 0) + 1
+        for row in report["breakdown"]:
+            if row["redact_type"] == "FP":
+                type_counts[row["data_type"]] = row["count"]
         for dtype, count in sorted(type_counts.items()):
             print(f"  {dtype}: {count}")
 
-    if tb_entities:
+    if tb_count:
         print("\nNamed entity types:")
         type_counts = {}
-        for e in tb_entities:
-            type_counts[e.data_type] = type_counts.get(e.data_type, 0) + 1
+        for row in report["breakdown"]:
+            if row["redact_type"] != "FP":
+                type_counts[row["data_type"]] = row["count"]
         for dtype, count in sorted(type_counts.items()):
             print(f"  {dtype}: {count}")
 
-    total = len(fp_entities) + len(tb_entities)
+    if report["section26"]:
+        print("\nSection 26 warnings (not automatically masked):")
+        for hit in report["section26"]:
+            print(f"  {hit['category']}")
+
+    total = fp_count + tb_count
     if total == 0:
         risk = "Low"
     elif total <= 5:

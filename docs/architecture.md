@@ -1,11 +1,13 @@
 # Architecture and trust boundaries
 
-Current-source qualification (2026-11-02): the canonical core below is the target
-for storefronts. Imported `apps/hosted/core/pii_redactor/` and
-`packages/amphrang/amphrang/engine/` still contain distinct implementations;
-M1 must reconcile their policy/contracts before any copy is removed. The
-separate enterprise adapter/domain follows the accepted single-organization
-design and persists governance records, never the local reversible vault.
+Current-source architecture (2026-11-03): SDK and Hosted consumers call the
+canonical root core. SDK retains 29 thin internal module aliases and its
+adapter-owned public contracts/configuration; Hosted builds from a supplied
+canonical wheel instead of maintained `core/app/`/`core/pii_redactor/` copies.
+The separate enterprise adapter/domain implements subject consent, encrypted
+managed execution and retention/holds under the accepted single-organization
+design. It persists protected governance/managed records, never the local
+reversible vault. Source implementation is not artifact or production acceptance.
 See [current release scope](enterprise/release-scope.md) for implemented versus
 unaccepted paths; historical descriptions below do not prove current deployment.
 
@@ -26,10 +28,15 @@ Office add-in -> HTTPS development proxy --------> fixed-port local FastAPI --+-
 Hosted HTTP -----------------------------------------------> hosted adapter --+    detect -> mask
 Demo playground --------------------------------------------> demo/API ------+    -> guard
 CLI --------------------------------------------------------> direct core ---+    -> provider
+SDK Python/CLI/HTTP/MCP/proxy -------------------------------> core adapters --+    -> restore
 Provisional job runner -------------------------------------> worker adapter-/    -> restore
+
+Staff/subject browsers -> enterprise BFF/session boundaries -> governance domain
+  -> PostgreSQL authority/consent/managed records + audit/outbox -> managed worker
+  -> separately configured key authority for encrypted content/evidence
 ```
 
-The adapters serve four deliberately different lifecycles:
+The adapters serve distinct lifecycles:
 
 - Desktop uses connection-owned broker scopes (`desktop_ui` per window and a
   separate `desktop_hotkey` scope). Broker session handles are bound to the
@@ -49,6 +56,17 @@ The adapters serve four deliberately different lifecycles:
   reconstructable original-space entity projection. Callers still necessarily
   handle submitted and returned text. The official platform route set and
   lifecycle remain unconfirmed.
+- The imported `apps/hosted/` service receives raw requests remotely and keeps
+  protection/restoration mappings transient within its stateless workflow. Its
+  gateway, approval and protected-Markdown projection are adapter-owned. It is
+  distinct from the generic mixed-state `app.hosted` reference above.
+- SDK Python callers can explicitly receive and own mappings; `Session` keeps
+  them in process. SDK HTTP/MCP expose opaque session handles, not mappings.
+  Successful MCP inspection/restoration may still return matched/restored text;
+  actual host treatment of that text needs separate external-model qualification.
+- Enterprise staff and subjects have separate authentication/session authority.
+  Protected consent/managed records persist under organization governance; they
+  are not an extension of the local memory-only redaction vault.
 - The worker operations and internal versioned job envelope remain a local
   emulator and replaceable compatibility boundary. The official participant
   guide selects an HTTP/FastAPI service behind its reverse proxy, so the worker
@@ -450,21 +468,30 @@ fail-closed scan immediately before every actual provider invocation through
 the shared orchestration layer. Automated tests also assert PII-free
 application errors and logs. This remains a generic hosted
 reference, not the AI for Thai deployment vehicle. The accepted platform
-decision selects a separate sibling repository, not an independently versioned
-service. Its public unversioned and `/v1` aliases proxy strict HTTP contract 2,
-and its inherited product metadata is not hosted-release evidence. The official
+decision selects the AI for Thai port, now imported under `apps/hosted/`, rather
+than the generic reference. Its adapter contracts and inherited product metadata
+are not hosted-release evidence. The official
 guide confirms its frontend/API proxy, port, health, CI, resource, log, and
 secret shape but does not prescribe business routes or caller auth. The
 [accepted caller-auth ADR](decisions/2026-08-07-aift-caller-authentication.md)
 keeps static/health public and gates every business operation with a
 short-lived signed cookie. Nginx separately injects contract 2 plus the
-proxy-to-core key. The sibling now vendors current core `8c6efef`, consumes its
-literal roundtrip mapping internally, and returns the minimized v2 projection
-without mapping or token-bearing entities. Immutable port commit `e075ca4`
-passes exact provider-free local check/deploy and independent review. Live
-Tokenmind/soak/OCR evidence predates that final commit, and its exact one-page
-PDF resource profile is a red deployment gate. Credential rotation, official
-platform logs, and platform acceptance remain unverified. The intended hosted
+proxy-to-core key. The current build consumes a supplied canonical
+`thai-pii-redaction-core` wheel, trusted dependency wheelhouse and pinned model
+assets offline. `scripts/prepare_hosted_core.py` and installed-source verification
+bind canonical `app/`/`pii_redactor/` files to the supplied source identity;
+approval binding and source-bound secret scanning include that canonical source.
+The gateway consumes transient mappings internally and returns minimized output.
+Protected Markdown withholds the complete reply when generated-text offset proof
+is incomplete. Its declared eight-category public wire projection remains
+narrower than the canonical ten-category report vocabulary.
+
+The old pinned-core `8c6efef`/port `e075ca4` check/deploy and live
+Tokenmind/soak/OCR records describe historical candidates. Their one-page PDF
+resource failure is retained evidence, not acceptance of current Protected
+Markdown or a PDF/OCR capability claim. Exact images, current provider/proxy,
+credential rotation, platform logs and platform acceptance remain unverified.
+The intended hosted
 boundary therefore remains:
 
 - no deliberate mapping persistence to disk;
@@ -481,9 +508,47 @@ evidence predates this change and must be rerun. Until that exact hosted
 composition passes, public
 claims remain limited to **AI Guard is designed not to write the canonical
 mapping to disk and to send policy-checked masked text to its configured
-downstream provider**. The current sibling port uses Tokenmind as a local
-candidate; source tests, the main candidate, and that sibling are not claims of
+downstream provider**. The imported port supports its configured provider
+adapters; source tests, the generic reference and that port are not claims of
 official deployment acceptance.
+
+## Trust boundary C - enterprise governance and managed execution
+
+`app/enterprise/` is a separate single-organization BFF/API/Thai UI adapter over
+`pii_redactor/governance/`. Staff identity comes from reviewed membership;
+`subject_auth.py` uses a separate subject OIDC client/audience, cookie/session and
+reviewed immutable linkage. A staff cookie cannot authorize a subject consent
+act. `subjects.py`/`consent.py` bind presentation and append-only grant, refusal
+or withdrawal to exact notice/purpose versions and subject authority. Pending or
+failed propagation blocks consent-bound processing.
+
+`collections.py`/`evidence.py` protect versioned managed documents and evidence
+with authenticated encryption. `app/enterprise/capabilities.py` supplies an
+explicit file-backed key authority separately from the ciphertext database;
+keys are loaded into process memory. Missing selected key/protection configuration
+fails closed, with no plaintext fallback. This is not production KMS, rotation
+or key-recovery acceptance, and it does not persist local pseudonym mappings.
+
+Common transactions serialize the managed target, check current membership,
+scope/revisions, exact activity/purpose/category consent and effective holds,
+then commit domain changes with minimized audit and outbox state. A previous
+approval is not continuing authority: `execution.py` rechecks proposer/reviewer
+membership revisions, expiry, action, target version/revision and retention
+bindings at the execution/reconciliation boundary. `holds.py` makes a hold
+effective under the same serialization boundary; releasing it needs distinct
+review. `retention.py` binds reviewed policy/trigger/due records to the exact
+instruction and keeps processor/replica/backup obligations separate.
+
+`app/enterprise/worker.py` and explicit `work-once` consume already approved
+managed outbox work using leases, attempts, reconciliation and verified target
+outcomes. This is a governance execution worker, separate from `app/worker/`'s
+AI for Thai failure emulator. Restriction/suppression and reviewed corrections
+do not physically erase ciphertext/history, WAL/replicas or backups.
+Collection-level snapshots restore into quarantine and reapply effective controls
+before release; they do not establish whole-database backup/restore, independent
+checkpoints, rotation or completed operational recovery. Current evidence and
+remaining workflow/host/operator gates live in the
+[local-wave record](acceptance/enterprise/M04-M06-local-wave.md).
 
 ## Core processing layers
 
@@ -655,6 +720,10 @@ signals into automatic blocking or redaction.
 | `app/server.py` | Local/HTTP adapter and API contract. |
 | `app/http_v2.py` | Strict HTTP-v2 response and error DTOs shared by the main adapters. |
 | `app/hosted.py` | Generic main-repository hosted candidate with required API-key/provider configuration and a fixed seven-route allowlist; not an official-platform acceptance claim. |
+| `app/enterprise/` | Separate staff/subject OIDC/session boundaries, scoped routers/Thai pages, optional file-key capability wiring and explicit managed outbox worker. |
+| `pii_redactor/governance/` | PostgreSQL authority, registry/notices, subject linkage/consent, protected collection/evidence, exact execution/outbox, holds/retention and collection-level quarantine; migrations 004-006 extend the existing schema. |
+| `packages/amphrang/` | SDK public adapters and immutable local-only configuration over the exact first-party core dependency; 29 thin internal aliases replace maintained engine code. |
+| `apps/hosted/` | Imported gateway/auth/protected-Markdown adapters and checks; offline supplied canonical wheel/dependency/model build, installed identities and source-bound approval/scanning. |
 | `app/worker/` | Stateless job operations plus a provisional transport used for local pre-platform acceptance; not the official HTTP delivery path. |
 | `native-broker/` | Broker-v1 Rust codec, authenticated transport/bootstrap, connection-owned data plane, typed Desktop/Extension clients, strict Chrome Native Messaging adapter, and build-specific native-host registration. It owns admission, private HTTP-v2 forwarding, broker scope/session metadata, deterministic disposal, generation invalidation, and no replay; it contains no mapping or duplicate PII/provider/PDF logic. |
 | `native_broker_protocol.py` | Transport-free Python reference implementation of the same broker-v1 policy and shared fixture behavior; not a server or packaged runtime path. |
@@ -663,7 +732,7 @@ signals into automatic blocking or redaction.
 | `desktop/` | Tauri shell, static UI, updater, typed allowlisted broker commands, per-window/hotkey scope lifecycle, native-host install/repair/uninstall integration, fixed-error UX, and fail-closed output validation. It has no production direct HTTP or Python-process authority. |
 | `office-addin/` | One TypeScript task pane with Word, Excel, and PowerPoint host adapters. Its retained state is display text plus a security-sensitive `session_id`, with no explicit mapping collection; current source validates strict v2 projections and blocks document writes on malformed, incomplete, or unsafe results. Automated packaged-backend/HTTPS-development-proxy transport composition is verified locally; all eight real-host/package gates remain open. |
 | `demo/` | Opt-in demonstration UI; not a separate production frontend. |
-| `benchmark/` | Diagnostic corpora, scorers, and engine comparisons. |
+| `benchmark/` | Diagnostic corpora, scorers and engine comparisons. Explicit unmasked synthetic LLM-baseline callers are scientific tooling, not product provider paths; migration does not execute calls or alter scores/corpora. |
 | `research/` | Privacy-reviewed external evidence and reproducibility records; not a runtime package. |
 | `training/` | Optional, gold-disjoint training inputs and lexicons; model weights stay outside the repository. |
 | `examples/` | Synthetic prompts, sample documents, and reproducible example builders. |
@@ -696,9 +765,14 @@ is deferred unless a concrete dependency or ownership problem appears.
 - Current HTTP v2 uses `X-AIGuard-Contract-Version: 2` as a required assertion
   on every API operation except health; clients also validate the fixed
   response header before using a result.
-- `AIGUARD_NER_ENGINE` selects a process-wide NER implementation for the broader
-  core, CLI, HTTP/hosted, and worker boundaries. It cannot reconfigure installed
-  Desktop/native-broker execution.
+- `pii_redactor.config.CoreConfig` is an immutable snapshot. Root operations and
+  bound adapters capture the intended `AIGUARD_*` configuration; residual,
+  restoration, retry and batch paths retain it rather than rereading environment
+  mid-operation. SDK factories capture `AMPHRANG_*` with remote detection disabled.
+  `config/shared-core-qualification.json` names nine text profiles and intentional
+  input/span, engine, warning, mapping and error differences. It is a qualification
+  inventory, not client-selectable policy. These selectors cannot reconfigure
+  installed Desktop/native-broker execution.
 - The installed profile validates a parent selector before broker connection or
   launch: only `AIGUARD_NER_ENGINE=thainer` (or unset) and
   `AIGUARD_PROVIDERS=fake` (or unset) are accepted. Other values fail closed as

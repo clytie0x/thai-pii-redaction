@@ -15,6 +15,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from canonical_core import CANONICAL  # noqa: F401
 from types import SimpleNamespace
 from unittest import mock
 
@@ -518,6 +519,7 @@ class ExecuteContractTests(unittest.TestCase):
             generated_pii_count=1,
             foreign_replacement_count=0,
             generated_pii_spans=((start, end),),
+            generated_pii_spans_complete=True,
         )
 
         h = Harness()
@@ -578,6 +580,30 @@ class ExecuteContractTests(unittest.TestCase):
 
         self.assertEqual(response["restoration"]["status"], "unsafe")
         self.assertEqual(response["restored_text"], "")
+
+    def test_partial_or_unproven_offset_metadata_withholds_the_whole_answer(self):
+        for proof, spans in ((None, ((0, 2),)), (False, ((0, 2),)), (True, ((0, 2), (4, 999))), (True, ((0, 2), (True, 4)))):
+            with self.subTest(proof=proof, spans=spans):
+                restored = SimpleNamespace(restored_text="SYNTHETIC", replaced_count=1, leftover_pseudonyms=[], generated_pii_count=2, foreign_replacement_count=0, generated_pii_spans=spans)
+                if proof is not None:
+                    restored.generated_pii_spans_complete = proof
+                h = Harness()
+                capability, claim = h.claim(h.custom_ticket())
+                service, *_rest = self.custom_service(h, restore_call=lambda *_args, **_kwargs: restored)
+                response = service.execute_custom({"text": CUSTOM_SOURCE, "queue_capability": capability, "claim_token": claim}, authority=h.authority)
+                self.assertEqual(response["restoration"]["status"], "unsafe")
+                self.assertEqual(response["restored_text"], "")
+
+    def test_complete_offset_metadata_can_split_or_merge_finding_segments(self):
+        for count, spans in ((1, ((0, 2), (5, 9))), (2, ((0, 3), (3, 6))), (2, ((0, 6), (2, 7)))):
+            with self.subTest(count=count, spans=spans):
+                restored = SimpleNamespace(restored_text="SYNTHETIC", replaced_count=1, leftover_pseudonyms=[], generated_pii_count=count, foreign_replacement_count=0, generated_pii_spans=spans, generated_pii_spans_complete=True)
+                h = Harness()
+                capability, claim = h.claim(h.custom_ticket())
+                service, *_rest = self.custom_service(h, restore_call=lambda *_args, **_kwargs: restored)
+                response = service.execute_custom({"text": CUSTOM_SOURCE, "queue_capability": capability, "claim_token": claim}, authority=h.authority)
+                self.assertEqual(response["restoration"]["status"], "sanitized")
+                self.assertIn(GENERATED_PII_MARKER, response["restored_text"])
 
     def test_custom_nonusable_restoration_never_returns_restored_text(self):
         cases = (

@@ -150,9 +150,17 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write('AIGUARD_TEST_DB_FILE=' + str(target) + '\n')
           PY
+      - name: Set up the locked enterprise DOM test runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install the existing locked DOM test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Execute every mandatory real-database enterprise suite
         env:
           PYTHONUTF8: "1"
+          NODE_PATH: ${{ github.workspace }}/node_modules
         run: python scripts/run_enterprise_tests.py --report "$RUNNER_TEMP/enterprise-tests.xml"
 
   pytest-core-only:

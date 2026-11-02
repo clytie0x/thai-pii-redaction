@@ -239,6 +239,30 @@ def _extend_address_chains(text: str, entities: list[Entity], tb: list[Entity]) 
     return merge_address_spans(text, out)
 
 
+# Numberless places remain protected, but must not claim a numbered address.
+_ADMIN_AREA_RE = re.compile(r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่|ต\.|อ\.|จ\.|ม\.")
+
+
+def _relabel_numberless_addresses(entities: list[Entity]) -> list[Entity]:
+    out: list[Entity] = []
+    for entity in entities:
+        if (
+            entity.data_type == "ADDRESS"
+            and not any(char.isdigit() for char in entity.original_text)
+            and not _ADMIN_AREA_RE.search(entity.original_text)
+        ):
+            entity = Entity(
+                entity_id=entity.entity_id,
+                redact_type=entity.redact_type,
+                data_type="LOCATION",
+                span=entity.span,
+                score=entity.score,
+                original_text=entity.original_text,
+            )
+        out.append(entity)
+    return out
+
+
 # Bare facility designators (ng19): a bookable meeting room in a facilities
 # notice is furniture, not a place tied to a person. thainer maps FACILITY to
 # nothing by design, but the CRF emits these as LOCATION. Runs post-merge,
@@ -346,6 +370,7 @@ def detect_all(
     deduped = dedupe_spans(fp + tb + fn + record_names)
     kept = merge_address_spans(text, _prefer_record_names(deduped, record_names))
     kept = _extend_address_chains(text, kept, tb)
+    kept = _relabel_numberless_addresses(kept)
     kept = _drop_unanchored_facility_spans(text, kept)
     recovered = recover_structured(text)
     return admit_recovery(

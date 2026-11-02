@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException
@@ -128,7 +128,18 @@ class _RequestBoundary:
             await _error("internal_error", 500)(scope, bounded_receive, protected_send)
 
 
-def create_app(settings: Settings, *, store=None, oidc_transport=None):
+_FROM_ENV = object()
+
+
+def create_app(
+    settings: Settings,
+    *,
+    store=None,
+    oidc_transport=None,
+    subject_settings=_FROM_ENV,
+    subject_oidc_transport=None,
+    managed_key_provider=_FROM_ENV,
+):
     if not isinstance(settings, Settings):
         raise GovernanceError("configuration_invalid")
     install_uvicorn_access_log_filter()
@@ -138,10 +149,20 @@ def create_app(settings: Settings, *, store=None, oidc_transport=None):
     store.check_ready()
     sessions, registry, authority = StaffSessions(store), Registry(store), Authority(store)
     oidc = OIDCClient(settings, transport=oidc_transport)
+    from app.enterprise.capabilities import managed_keys_from_env, subject_from_env
+
+    if subject_settings is _FROM_ENV:
+        subject_settings = subject_from_env(settings)
+    if managed_key_provider is _FROM_ENV:
+        managed_key_provider = managed_keys_from_env(settings)
+    subject_router = None
+    managed_collection = None
 
     @asynccontextmanager
     async def lifespan(_app):
         await oidc.check_ready()
+        if subject_router is not None:
+            await subject_router.subject_oidc.check_ready()
         yield
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
@@ -221,6 +242,10 @@ def create_app(settings: Settings, *, store=None, oidc_transport=None):
     async def ready():
         version = await run_in_threadpool(store.check_ready)
         await oidc.check_ready(refresh=True)
+        if subject_router is not None:
+            await subject_router.subject_oidc.check_ready(refresh=True)
+        if managed_collection is not None:
+            await run_in_threadpool(managed_collection.check_ready)
         return {"status": "ready", "schema_version": version}
 
     @app.get("/auth/login")
@@ -445,12 +470,80 @@ def create_app(settings: Settings, *, store=None, oidc_transport=None):
             identity(request, mutation=True), body.command_key, record_id, body.expected_revision
         )
 
+    app.state.subjects_enabled = subject_settings is not None
+    app.state.managed_enabled = managed_key_provider is not None
+    if subject_settings is not None:
+        from app.enterprise.subject_auth import SubjectOIDCSettings
+        from app.enterprise.subject_routes import create_subject_router
+
+        if (
+            not isinstance(subject_settings, SubjectOIDCSettings)
+            or subject_settings.public_origin != settings.public_origin
+            or subject_settings.staff_client_id != settings.client_id
+        ):
+            raise GovernanceError("configuration_invalid")
+        subject_router = create_subject_router(
+            subject_settings,
+            store,
+            staff_identity=identity,
+            oidc_transport=subject_oidc_transport,
+        )
+        app.include_router(subject_router)
+    if managed_key_provider is not None:
+        from app.enterprise.capabilities import managed_services
+        from app.enterprise.managed_routes import build_managed_router
+
+        managed_collection, managed_evidence, managed_execution, managed_worker = managed_services(
+            store,
+            managed_key_provider,
+        )
+        app.state.managed_collection = managed_collection
+        app.state.managed_execution = managed_execution
+        app.state.managed_worker = managed_worker
+        app.include_router(
+            build_managed_router(
+                managed_collection,
+                managed_execution,
+                managed_evidence,
+                identity,
+            )
+        )
+        from app.enterprise.retention_routes import build_retention_router
+        from pii_redactor.governance.holds import Holds
+        from pii_redactor.governance.retention import Retention
+
+        app.include_router(
+            build_retention_router(
+                Retention(store, execution=managed_execution),
+                Holds(store),
+                identity,
+            )
+        )
+
     static = Path(__file__).with_name("static")
     if static.is_dir():
         app.mount("/static", StaticFiles(directory=static), name="static")
 
         @app.get("/")
         def home():
+            links = []
+            if subject_settings is not None:
+                links.append('<a class="secondary" href="/subject/staff">ตัวตนและความยินยอม</a>')
+            if managed_collection is not None:
+                links.extend(
+                    [
+                        '<a class="secondary" href="/managed">เอกสารและคำสั่งที่อนุมัติ</a>',
+                        '<a class="secondary" href="/retention">การเก็บรักษาและระงับการดำเนินการ</a>',
+                    ]
+                )
+            if links:
+                content = (static / "index.html").read_text(encoding="utf-8")
+                navigation = (
+                    '<nav class="toolbar" aria-label="งานข้อมูลส่วนบุคคล">' + " ".join(links) + "</nav>"
+                )
+                return HTMLResponse(
+                    content.replace("<!-- enterprise-feature-links -->", navigation)
+                )
             return FileResponse(static / "index.html")
 
     return app

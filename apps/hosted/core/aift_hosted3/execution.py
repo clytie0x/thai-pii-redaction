@@ -610,8 +610,7 @@ class ExecuteService:
         elif leftover_count:
             restoration_status = "incomplete"
         elif generated:
-            # Without usable offsets the distrusted text cannot be located, so
-            # withholding the whole reply stays the only safe answer.
+            # Every finding needs trustworthy offsets before any reply is shown.
             restoration_status = "sanitized" if masked_spans else "unsafe"
         else:
             restoration_status = "complete"
@@ -1024,57 +1023,14 @@ def _restore_warnings(value: object) -> list[dict[str, object]]:
 
 # Value-free and type-free. The detector's type guess on text the model wrote is
 # frequently wrong, so naming a type here would assert something the pipeline
-# does not actually know.
-GENERATED_PII_MARKER = "[ปกปิดโดยระบบ]"
-
-
-def _generated_pii_spans(value: object, text_length: int) -> tuple[tuple[int, int], ...]:
-    """Normalize reported offsets into sorted, merged, in-bounds ranges."""
-    raw = getattr(value, "generated_pii_spans", ())
-    if not isinstance(raw, (tuple, list)):
-        return ()
-    clean: list[tuple[int, int]] = []
-    for item in raw:
-        if (
-            isinstance(item, tuple)
-            and len(item) == 2
-            and type(item[0]) is int
-            and type(item[1]) is int
-            and 0 <= item[0] < item[1] <= text_length
-        ):
-            clean.append((item[0], item[1]))
-    if not clean:
-        return ()
-    clean.sort()
-    merged: list[tuple[int, int]] = [clean[0]]
-    for start, end in clean[1:]:
-        last_start, last_end = merged[-1]
-        if start <= last_end:
-            merged[-1] = (last_start, max(last_end, end))
-        else:
-            merged.append((start, end))
-    return tuple(merged)
-
-
-def _mask_spans(text: str, spans: tuple[tuple[int, int], ...]) -> str:
-    parts: list[str] = []
-    cursor = 0
-    for start, end in spans:
-        parts.append(text[cursor:start])
-        parts.append(GENERATED_PII_MARKER)
-        cursor = end
-    parts.append(text[cursor:])
-    return "".join(parts)
-
-
-# Value-free and type-free. The detector's type guess on text the model wrote is
-# frequently wrong, so naming a type here would assert something the pipeline
 # does not know.
 GENERATED_PII_MARKER = "[ปกปิดโดยระบบ]"
 
 
 def _generated_pii_spans(value: object, text_length: int) -> tuple[tuple[int, int], ...]:
     """Normalize reported offsets into sorted, merged, in-bounds ranges."""
+    if getattr(value, "generated_pii_spans_complete", False) is not True:
+        return ()
     raw = getattr(value, "generated_pii_spans", ())
     if not isinstance(raw, (tuple, list)):
         return ()
@@ -1088,6 +1044,8 @@ def _generated_pii_spans(value: object, text_length: int) -> tuple[tuple[int, in
             and 0 <= item[0] < item[1] <= text_length
         ):
             clean.append((item[0], item[1]))
+        else:
+            return ()
     if not clean:
         return ()
     clean.sort()

@@ -647,6 +647,10 @@ def _asset_tree_hash(path: str | None) -> str | None:
 def evaluate(repository_sha: str, runtime_image: str, runtime_revision: str, performance_repeats: int) -> dict:
     _sanitize_environment()
     _install_network_tripwire()
+    # New runs must identify the installed candidate, never the old port slice.
+    core_identity = _load_json(Path("/app/CORE_BUILD_IDENTITY.json"))
+    if core_identity.get("distribution") != "thai-pii-redaction-core":
+        raise RuntimeError("canonical core build identity is required")
     logging.disable(logging.WARNING)
     corpus_path = ROOT / "corpus.v1.json"
     section26_path = ROOT / "section26.v1.json"
@@ -703,7 +707,10 @@ def evaluate(repository_sha: str, runtime_image: str, runtime_revision: str, per
         "claim_scope": "deterministic synthetic/adversarial evaluation; not a population-representative benchmark",
         "repository_sha": repository_sha,
         "production_baseline_sha": capabilities["production_baseline_sha"],
-        "vendored_upstream_sha": _load_json(ROOT.parent.parent / "sync" / "PORT_MANIFEST.json")["commit"],
+        "canonical_core": {
+            key: core_identity[key]
+            for key in ("distribution", "version", "source_revision", "source_tree_sha256", "wheel_sha256", "model_tree_sha256")
+        },
         "runtime": {
             "image": runtime_image,
             "image_revision": runtime_revision,

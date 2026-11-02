@@ -3,6 +3,7 @@
 import pytest
 
 import amphrang.engine.detectors.tb_detector as tbd
+from amphrang._core_config import sdk_core_config
 
 
 class SpyNER:
@@ -348,7 +349,7 @@ def test_isolated_line_fallback_never_adds_calls_for_other_single_engines(monkey
     monkeypatch.setitem(tbd._ner_cache, engine_name, ner)
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", engine_name)
 
-    entities = tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
+    entities = tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ", config=sdk_core_config())
 
     assert ner.calls == ["หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"]
     assert not any(e.data_type == "NAME" for e in entities)
@@ -362,7 +363,7 @@ def test_isolated_line_fallback_never_adds_calls_for_union(monkeypatch):
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "union")
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 
-    entities = tbd.detect_tb(text)
+    entities = tbd.detect_tb(text, config=sdk_core_config())
 
     assert thainer.calls == [text]
     assert wangchanberta.calls == [text]
@@ -372,8 +373,10 @@ def test_isolated_line_fallback_never_adds_calls_for_union(monkeypatch):
 def test_isolated_line_fallback_never_runs_for_finetuned(monkeypatch):
     calls = []
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
-    monkeypatch.setattr(tbd, "_detect_tb_finetuned", lambda text: calls.append(text) or [])
+    monkeypatch.setattr(
+        tbd, "_detect_tb_finetuned", lambda text, *, config: calls.append(text) or []
+    )
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 
-    assert tbd.detect_tb(text) == []
+    assert tbd.detect_tb(text, config=sdk_core_config()) == []
     assert calls == [text]

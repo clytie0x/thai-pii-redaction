@@ -1,5 +1,13 @@
 # AI Guard — local-first Thai PII protection for AI
 
+Source/build update (3 November 2026): Hosted now consumes the supplied
+`thai-pii-redaction-core==0.1.0` wheel from the canonical monorepo source.
+The old `core/app` and `core/pii_redactor` authored copies are removed.
+`sync/PORT_MANIFEST.json` is inactive historical provenance, not the runtime
+identity. Prepare the offline context as described in
+[`docs/canonical-core-build.md`](docs/canonical-core-build.md). Exact-image and
+deployment acceptance are still separate gates; this change is not deployed.
+
 AI Guard is Desktop-first.  Desktop 0.1.0 keeps detection,
 masking/pseudonymization, the reversible vault/mapping, restoration, and
 deterministic PDPA report generation on the user's device, and does not expose
@@ -128,7 +136,7 @@ The browser permits one unresolved provider-bound request at a time.
 | `api/` | Read-only nginx on loopback host port 20071.  Re-adds the stripped `/api` prefix, exact allowlist, holds the inner service key, applies limits and fixed errors. |
 | `core/` | Non-root/read-only FastAPI container, internal network only.  Port-owned auth/report policy wraps a vendored upstream slice. |
 | `pdf-parser/` | Secretless, networkless, non-root parser on a Unix socket. It accepts one bounded text-layer PDF job, returns strict extracted segments/metadata, and cleans its volatile work directory before readmission. |
-| `sync/` | Pins 75 unchanged source hashes to reconstructed checkpoint `cf50512a043b54ca28f4264d8c103dcc25da1a6d`; [provenance](sync/SOURCE_PROVENANCE.json) preserves the unavailable historical identity without claiming recovery. Hosted keeps its release-owned VERSION. |
+| `sync/` | Retains the inactive 75-file historical checkpoint `cf50512a043b54ca28f4264d8c103dcc25da1a6d` and its [provenance](sync/SOURCE_PROVENANCE.json). `--check` rejects a new authored engine copy; legacy `--from` is disabled. Hosted keeps its release-owned VERSION. |
 | `evaluation/thai_pii/` | Sprint 3 deterministic synthetic/adversarial evidence; outside all runtime build contexts and provider-free. |
 
 The hosted image omits disabled Paddle OCR dependencies.  Its PyThaiNLP

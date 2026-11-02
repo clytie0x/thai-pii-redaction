@@ -229,6 +229,19 @@ _SECTION26_ORDER = (
     "GENETIC",
     "BIOMETRIC",
 )
+_SECTION26_WARNING_CODES = tuple(f"section26:{category}" for category in _SECTION26_ORDER)
+Section26WarningCode = Literal[
+    "section26:RACE_ETHNICITY",
+    "section26:POLITICAL_OPINION",
+    "section26:RELIGION",
+    "section26:HEALTH",
+    "section26:SEXUAL_BEHAVIOR",
+    "section26:CRIMINAL_RECORD",
+    "section26:DISABILITY",
+    "section26:LABOR_UNION",
+    "section26:GENETIC",
+    "section26:BIOMETRIC",
+]
 RECOMMENDATION_TEMPLATES = {
     "direct": {
         "level": "high",
@@ -290,7 +303,11 @@ def _validate_guard_findings(value: list[GuardFinding]) -> list[GuardFinding]:
 
 def _validate_restore_warnings(value: list[RestoreWarning]) -> list[RestoreWarning]:
     codes = [item.code for item in value]
-    expected = [code for code in ("generated_pii", "foreign_replacement") if code in codes]
+    expected = [
+        code
+        for code in ("generated_pii", "foreign_replacement", *_SECTION26_WARNING_CODES)
+        if code in codes
+    ]
     if codes != expected:
         raise ValueError("invalid warning order")
     return value
@@ -345,12 +362,12 @@ class Safety(StrictDTO):
 
 
 class SanitizeWarning(StrictDTO):
-    code: Literal["__no_sanitize_warning_codes__"]
+    code: Section26WarningCode
     count: Annotated[int, Field(gt=0)]
 
 
 class RestoreWarning(StrictDTO):
-    code: Literal["generated_pii", "foreign_replacement"]
+    code: Literal["generated_pii", "foreign_replacement"] | Section26WarningCode
     count: Annotated[int, Field(gt=0)]
 
 
@@ -376,9 +393,10 @@ class SanitizeResponse(StrictDTO):
         ]
     ]
     guard_findings: list[GuardFinding]
-    warnings: Annotated[list[SanitizeWarning], Field(max_length=0)]
+    warnings: list[SanitizeWarning]
     safety: Safety
 
+    _warning_order = field_validator("warnings")(_validate_restore_warnings)
     _count_map = field_validator("entity_type_counts")(_validate_count_map)
     _section26_order = field_validator("section26_categories")(_validate_section26_order)
     _guard_finding_order = field_validator("guard_findings")(_validate_guard_findings)
@@ -451,7 +469,7 @@ class RoundtripResponse(StrictDTO):
             raise ValueError("detected count mismatch")
         expected_status = (
             "unsafe"
-            if self.warnings
+            if any(item.code in {"generated_pii", "foreign_replacement"} for item in self.warnings)
             else "incomplete"
             if self.restoration.leftover_count
             else "complete"

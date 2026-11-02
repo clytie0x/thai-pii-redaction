@@ -10,6 +10,8 @@
     "CRIMINAL_RECORD",
     "DISABILITY",
     "LABOR_UNION",
+    "GENETIC",
+    "BIOMETRIC",
   ]);
   const GUARD_CATEGORIES = new Set([
     "instruction_override",

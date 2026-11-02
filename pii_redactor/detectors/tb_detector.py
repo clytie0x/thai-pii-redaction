@@ -143,6 +143,8 @@ _NAME_DOC_COMPOUND_RE = re.compile(
 # the strict shape gate below would otherwise discard the name because of a
 # comma. Deliberately narrow: only characters that end a clause.
 _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
+# Fixed presentation syntax, never a person's name.
+_NAME_FORMAT_LABEL_RE = re.compile(r"^[*_`# \t]*คำตอบ[:：*_`# \t]*$")
 # A digit run (with its separators) inside a NAME span is the same class of
 # invariant as the line break: a person's name never contains one. The CRF
 # glues a trailing account number into the PERSON span ("บัญชี ศักดิ์ชัย
@@ -155,6 +157,8 @@ _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
 # name text can be lost. Tail segments keep their existing wholesale shape
 # rejection instead — see the loop below.
 _NAME_DIGIT_RUN_RE = re.compile(r"[0-9][0-9\s./-]*")
+# A digit after this prefix denotes a land document, not a person title.
+_LAND_DOC_ABBREV_RE = re.compile(r"น\.ส\.\d")
 
 
 # A CRF "location" that is really หนังสือราชการ numbering, in two shapes seen
@@ -237,6 +241,18 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str 
     return data_type
 
 
+def _spaceless_run_is_not_a_name(segment: str) -> bool:
+    """Reject a space-free form label while keeping ordinary name shapes."""
+    from pii_redactor.detectors.name_context import (
+        _GLUED_NAME_MAX_CHARS,
+        is_non_person_segment,
+    )
+
+    if not _ISOLATED_GLUED_LINE_RE.fullmatch(segment):
+        return False
+    return len(segment) > _GLUED_NAME_MAX_CHARS or is_non_person_segment(segment)
+
+
 def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     """Shared NAME span hygiene for every neural engine (CRF and fine-tuned).
 
@@ -288,6 +304,15 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         lstripped = line.lstrip()
         pad = len(line) - len(lstripped)
         seg = lstripped.rstrip().rstrip(_NAME_SEGMENT_TRIM_CHARS).rstrip()
+        if _NAME_FORMAT_LABEL_RE.fullmatch(seg):
+            return None
+        t_lo, _t_hi = trim_same_line_name_edges(seg)
+        first_group = re.match(r"[^ \t]+", seg)
+        # Trim only a role glued to the name; keep a separately spaced role.
+        if first_group is not None and 0 < t_lo < first_group.end():
+            seg = seg[t_lo:]
+        else:
+            t_lo = 0
         if len(seg) < 2:
             return None
         if _NAME_DOC_COMPOUND_RE.match(seg):
@@ -296,11 +321,13 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
             return None
         if is_non_person_segment(seg):
             return None
-        seg_start = line_start + pad
+        seg_start = line_start + pad + t_lo
         return (seg_start, seg_start + len(seg))
 
     entity_text = text[start:end]
     if "\n" not in entity_text and not _NAME_DIGIT_RUN_RE.search(entity_text):
+        if _NAME_FORMAT_LABEL_RE.fullmatch(entity_text.strip()):
+            return []
         compound = _NAME_DOC_COMPOUND_RE.match(entity_text)
         if compound:
             # A document compound at the head does NOT mean the whole span is
@@ -324,6 +351,8 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         t_lo, t_hi = trim_same_line_name_edges(entity_text)
         if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(entity_text[t_lo:t_hi]):
             return []
+        if _spaceless_run_is_not_a_name(entity_text[t_lo:t_hi]):
+            return []
         return [(start + t_lo, start + t_hi)]
 
     if "\n" in entity_text:
@@ -337,6 +366,8 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         line_start = start + offset
         offset += len(line) + 1
         if index == 0:
+            if _LAND_DOC_ABBREV_RE.match(line.lstrip()):
+                continue
             # HEAD only: split at the first digit run. Tail lines keep the
             # stricter rule they always had — the shape gate rejects a
             # digit-bearing line wholesale, and truncating one instead would
@@ -357,13 +388,19 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
                 if got:
                     spans.append(got)
             seg = head.rstrip()
-            if len(seg) < 2 or _NAME_DOC_COMPOUND_RE.match(seg):
+            if (
+                len(seg) < 2
+                or _NAME_FORMAT_LABEL_RE.fullmatch(seg.strip())
+                or _NAME_DOC_COMPOUND_RE.match(seg)
+            ):
                 continue
             # Same-line role/label edge trim (B1/B2/B3), re-checking the
             # compound gate on the result: a trim can expose a document
             # compound the role word was glued in front of.
             t_lo, t_hi = trim_same_line_name_edges(seg)
             if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(seg[t_lo:t_hi]):
+                continue
+            if _spaceless_run_is_not_a_name(seg[t_lo:t_hi]):
                 continue
             spans.append((line_start + t_lo, line_start + t_hi))
             continue

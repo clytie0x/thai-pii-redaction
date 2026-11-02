@@ -15,6 +15,7 @@ import unittest
 from dataclasses import dataclass, replace
 from pathlib import Path
 from types import SimpleNamespace
+from canonical_core import CANONICAL
 
 ROOT = Path(__file__).resolve().parent.parent
 CORE = ROOT / "core"
@@ -41,7 +42,9 @@ from aift_hosted3.preview import (  # noqa: E402
 )
 from aift_hosted3.overlay import Hosted3Overlay  # noqa: E402
 from aift_hosted3.protection import (  # noqa: E402
+    LEGACY_HOSTED_SECTION26_CATEGORIES,
     ProtectionResult,
+    _section26_categories,
     _token_seed_mapping,
 )
 from aift_hosted3.runtime import require_single_worker  # noqa: E402
@@ -49,28 +52,6 @@ from aift_hosted3.runtime import require_single_worker  # noqa: E402
 
 HASH_A = "a" * 64
 HASH_B = "b" * 64
-PROTECTION_REVISION_FILES = (
-    "pii_redactor/detectors/aggregate.py",
-    "pii_redactor/detectors/fn_scanner.py",
-    "pii_redactor/detectors/fp_detector.py",
-    "pii_redactor/detectors/name_context.py",
-    "pii_redactor/detectors/ner_failure.py",
-    "pii_redactor/detectors/tb_detector.py",
-    "pii_redactor/detectors/thai_id.py",
-    "pii_redactor/detectors/tner_client.py",
-    "pii_redactor/anonymizer/anonymizer.py",
-    "pii_redactor/anonymizer/fp_generator.py",
-    "pii_redactor/anonymizer/tb_generator.py",
-    "pii_redactor/anonymizer/token_generator.py",
-    "pii_redactor/guard/injection.py",
-    "pii_redactor/ingest/text_cleaner.py",
-    "pii_redactor/leak_guard.py",
-    "pii_redactor/models.py",
-    "pii_redactor/report.py",
-    "pii_redactor/scan_common.py",
-    "pii_redactor/session_vault.py",
-    "pii_redactor/stateless.py",
-)
 
 
 @dataclass
@@ -279,7 +260,9 @@ class Hosted3ApprovalContractTests(unittest.TestCase):
     def test_key_derivation_and_deterministic_vector(self):
         self.assertEqual(len(self.key), 32)
         self.assertNotEqual(self.key, b"K" * 32)
-        engine = self.engine(random_bytes=lambda size: bytes([size]) * size)
+        # Freeze the cryptographic vector; current-source binding is checked below.
+        vector_bindings = replace(self.bindings, detector_code_sha256="f33b7de49ef3b76b2ee8c51692f681b622490b0ee404726c2fb6f6d6ff4d44c1")
+        engine = self.engine(random_bytes=lambda size: bytes([size]) * size, bindings=vector_bindings)
         ticket = self.mint_custom(engine)
         self.assertEqual(len(ticket), 1279)
         self.assertEqual(
@@ -730,14 +713,22 @@ class Hosted3ApprovalContractTests(unittest.TestCase):
 
     def test_detector_and_model_hashes_are_bound_to_current_sources(self):
         digest = hashlib.sha256()
-        for relative in PROTECTION_REVISION_FILES:
+        files = sorted(
+            (path
+            for namespace in ("app", "pii_redactor")
+            for path in (CANONICAL / namespace).rglob("*")
+            if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"),
+            key=lambda path: path.relative_to(CANONICAL).as_posix(),
+        )
+        for path in files:
+            relative = path.relative_to(CANONICAL).as_posix()
             digest.update(relative.encode("utf-8"))
             digest.update(b"\0")
-            digest.update((CORE / relative).read_bytes())
+            digest.update(path.read_bytes())
         self.assertEqual(digest.hexdigest(), DETECTOR_CODE_SHA256)
         verifier = (ROOT / "core" / "verify_thainer_assets.py").read_text(encoding="utf-8")
         self.assertIn(DETECTOR_MODEL_SHA256, verifier)
-        ai_client_path = CORE / "pii_redactor" / "ai_client.py"
+        ai_client_path = CANONICAL / "pii_redactor" / "ai_client.py"
         ai_client_text = ai_client_path.read_text(encoding="utf-8")
         tree = ast.parse(ai_client_text)
         prompt = None
@@ -755,6 +746,11 @@ class Hosted3ApprovalContractTests(unittest.TestCase):
         )
         self.assertIn('MODEL = "thaillm-8b"', ai_client_text)
         self.assertIn('"tokenmind": TokenmindProvider', ai_client_text)
+
+    def test_legacy_hosted_section26_projection_remains_eight_categories(self):
+        self.assertEqual(len(LEGACY_HOSTED_SECTION26_CATEGORIES), 8)
+        findings = [{"category": category} for category in (*LEGACY_HOSTED_SECTION26_CATEGORIES, "GENETIC", "BIOMETRIC")]
+        self.assertEqual(_section26_categories(findings), list(LEGACY_HOSTED_SECTION26_CATEGORIES))
 
     def test_internal_overlay_is_strict_timed_and_provider_free(self):
         fake = FakePreviewService()

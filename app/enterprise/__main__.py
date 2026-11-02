@@ -29,6 +29,8 @@ def main(argv=None):
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("migrate", help="Apply migrations with the offline migration credential")
     commands.add_parser("check", help="Check schema and enrollment without DDL")
+    work = commands.add_parser("work-once", help="Run one already approved managed action")
+    work.add_argument("--worker-id", required=True)
     enroll = commands.add_parser("enroll", help="Enroll initial distinct staff authorities offline")
     enroll.add_argument("--file", type=Path, required=True)
     serve = commands.add_parser("serve", help="Run the authenticated staff application")
@@ -56,6 +58,17 @@ def main(argv=None):
                 log_level="warning",
                 access_log=False,
             )
+        elif args.command == "work-once":
+            from app.enterprise.capabilities import ConfiguredKeyProvider, managed_services
+
+            key_file = os.environ.get("AIGUARD_ENTERPRISE_MANAGED_KEYS_FILE")
+            if not key_file:
+                raise GovernanceError("key_service_unavailable")
+            store = _store()
+            store.check_ready()
+            keys = ConfiguredKeyProvider(key_file, store.organization_id)
+            _collection, _evidence, _execution, worker = managed_services(store, keys)
+            print(json.dumps(worker.run_once(args.worker_id), sort_keys=True))
         elif args.command == "migrate":
             _store().migrate()
             print(

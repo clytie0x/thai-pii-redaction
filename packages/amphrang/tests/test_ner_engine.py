@@ -4,6 +4,7 @@ import builtins
 
 import pytest
 
+from amphrang._core_config import sdk_core_config
 from amphrang.engine.detectors import tb_detector
 
 
@@ -23,7 +24,7 @@ def test_default_engine_is_thainer_when_env_unset(monkeypatch):
     monkeypatch.delenv("AMPHRANG_NER_ENGINE", raising=False)
     _reset(monkeypatch)
     monkeypatch.setattr(tb_detector, "NER", _FakeNER)
-    ner = tb_detector._get_ner()
+    ner = tb_detector._get_ner(config=sdk_core_config())
     assert ner.engine == "thainer"
 
 
@@ -31,7 +32,7 @@ def test_unknown_engine_raises_value_error(monkeypatch):
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "bogus")
     _reset(monkeypatch)
     with pytest.raises(ValueError, match="bogus"):
-        tb_detector._get_ner()
+        tb_detector._get_ner(config=sdk_core_config())
 
 
 def test_wangchanberta_without_transformers_raises(monkeypatch):
@@ -45,8 +46,8 @@ def test_wangchanberta_without_transformers_raises(monkeypatch):
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
-    with pytest.raises(tb_detector.NEREngineUnavailableError, match=r"amphrang\[ml\]"):
-        tb_detector._get_ner()
+    with pytest.raises(tb_detector.NEREngineUnavailableError, match="requirements-ml.txt"):
+        tb_detector._get_ner(config=sdk_core_config())
 
 
 # --- Tier 2: requires transformers installed --------------------------------
@@ -57,7 +58,7 @@ def test_wangchanberta_maps_to_thainer_v2_engine(monkeypatch):
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "wangchanberta")
     _reset(monkeypatch)
     monkeypatch.setattr(tb_detector, "NER", _FakeNER)
-    ner = tb_detector._get_ner()
+    ner = tb_detector._get_ner(config=sdk_core_config())
     assert ner.engine == "thainer-v2"
 
 
@@ -65,7 +66,7 @@ def test_wangchanberta_real_engine_detects_person(monkeypatch):
     pytest.importorskip("transformers")
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "wangchanberta")
     _reset(monkeypatch)
-    ner = tb_detector._get_ner()
+    ner = tb_detector._get_ner(config=sdk_core_config())
     tagged = ner.tag("นายสมชาย ใจดี อาศัยอยู่ที่กรุงเทพมหานคร")
     labels = {tag.split("-", 1)[1] for _, tag in tagged if tag != "O"}
     assert "PERSON" in labels
@@ -82,8 +83,8 @@ def test_engine_is_cached_after_first_load(monkeypatch):
             self.engine = engine
 
     monkeypatch.setattr(tb_detector, "NER", _CountingNER)
-    first = tb_detector._get_ner()
-    second = tb_detector._get_ner()
+    first = tb_detector._get_ner(config=sdk_core_config())
+    second = tb_detector._get_ner(config=sdk_core_config())
     assert first is second
     assert calls["n"] == 1
 
@@ -101,8 +102,8 @@ def test_union_without_transformers_raises(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
     from amphrang.engine.detectors.tb_detector import detect_tb
 
-    with pytest.raises(tb_detector.NEREngineUnavailableError, match=r"amphrang\[ml\]"):
-        detect_tb("นายสมชาย ใจดี อยู่กรุงเทพมหานคร")
+    with pytest.raises(tb_detector.NEREngineUnavailableError, match="requirements-ml.txt"):
+        detect_tb("นายสมชาย ใจดี อยู่กรุงเทพมหานคร", config=sdk_core_config())
 
 
 def test_union_runs_both_engines_and_merges(monkeypatch):
@@ -115,9 +116,9 @@ def test_union_runs_both_engines_and_merges(monkeypatch):
     text = "นายวิชัย ประสงค์ดี อยู่บ้านเลขที่ 45/12 หมู่ 3 ตำบลบางพระ อำเภอศรีราชา จังหวัดชลบุรี"
 
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "thainer")
-    crf_types = {e.data_type for e in detect_tb(text)}
+    crf_types = {e.data_type for e in detect_tb(text, config=sdk_core_config())}
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "union")
-    uni_types = {e.data_type for e in detect_tb(text)}
+    uni_types = {e.data_type for e in detect_tb(text, config=sdk_core_config())}
 
     # Union mode ran and produced a person + a location.
     assert "NAME" in uni_types
@@ -133,10 +134,14 @@ def test_offline_engine_stays_the_default(monkeypatch):
     from amphrang.engine.detectors import tb_detector
 
     monkeypatch.delenv("AMPHRANG_NER_ENGINE", raising=False)
-    assert tb_detector._resolve_engine_name() == "thainer"
+    assert tb_detector._resolve_engine_name(sdk_core_config()) == "thainer"
 
 
 def test_detect_resolves_the_selected_engine_once(monkeypatch):
+    from pii_redactor.config import CoreConfig
+
+    import amphrang
+
     calls = []
 
     class EmptyEngine:
@@ -147,10 +152,10 @@ def test_detect_resolves_the_selected_engine_once(monkeypatch):
         calls.append("resolved")
         if len(calls) > 1:
             raise AssertionError("engine selection changed during one detection")
-        return "wangchanberta"
+        return CoreConfig(engine="wangchanberta", allow_remote=False)
 
-    monkeypatch.setattr(tb_detector, "_resolve_engine_name", resolve_once)
+    monkeypatch.setattr(amphrang, "sdk_core_config", resolve_once)
     monkeypatch.setitem(tb_detector._ner_cache, "wangchanberta", EmptyEngine())
 
-    assert tb_detector.detect_tb("ข้อความทดสอบ") == []
+    assert amphrang.detect("ข้อความทดสอบ") == []
     assert calls == ["resolved"]

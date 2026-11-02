@@ -32,6 +32,30 @@ def _synthetic_juristic():
 
 
 JURISTIC = _synthetic_juristic()
+
+
+def test_juristic_private_validator_preserves_checksum_and_type_honesty():
+    from pii_redactor.detectors.fp_detector import is_valid_juristic_id
+
+    assert is_valid_juristic_id(JURISTIC)
+    assert is_valid_juristic_id(
+        f"{JURISTIC[0]}-{JURISTIC[1:5]}-{JURISTIC[5:10]}-{JURISTIC[10:12]}-{JURISTIC[12]}"
+    )
+    assert not is_valid_juristic_id(JURISTIC[:-1] + str((int(JURISTIC[-1]) + 1) % 10))
+    assert not is_valid_juristic_id("1101700230708")
+
+
+def test_juristic_private_validator_delegates_to_existing_checksum(monkeypatch):
+    from pii_redactor.detectors import fp_detector
+
+    calls = []
+    monkeypatch.setattr(fp_detector, "is_valid_thai_id", lambda raw: calls.append(raw) or True)
+    assert fp_detector.is_valid_juristic_id("0-0000-00000-00-1")
+    assert calls == ["0000000000001"]
+    assert not fp_detector.is_valid_juristic_id("1-0000-00000-00-1")
+    assert calls == ["0000000000001"]
+
+
 CASES = [
     ("JURISTIC_ID", "ทะเบียนนิติบุคคล ", JURISTIC),
     ("DRIVER_LICENSE", "ใบขับขี่ ", "42424242"),

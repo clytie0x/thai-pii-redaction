@@ -22,15 +22,18 @@ except ImportError as _error:  # pragma: no cover - exercised only without the e
         "the MCP adapter needs the 'mcp' package: pip install 'amphrang[mcp]'"
     ) from _error
 
-import amphrang
-from amphrang.engine.guard.injection import scan_injection
-from amphrang.engine.ingest.text_cleaner import clean_length_preserving
-from amphrang.engine.session_service import (
+from pii_redactor.guard.injection import scan_injection
+from pii_redactor.ingest.text_cleaner import clean_length_preserving
+from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
+from pii_redactor.session_service import (
     OutboundLeakError,
     SessionExpiredError,
     SessionService,
     _identity_finalize,
 )
+
+import amphrang
+from amphrang._core_config import sdk_core_config
 
 _SESSION_CAP = 64
 _SESSION_TTL_S = 1800
@@ -78,13 +81,14 @@ def _authenticated_caller(context: Context) -> str | None:
     return caller
 
 
+@minimize_failure_frames
 def parse_caller_keys(raw: str) -> dict[str, str]:
     """Parse ``AMPHRANG_MCP_KEYS`` ("caller_id:key,caller_id2:key2") into {key: caller_id}."""
     keys: dict[str, str] = {}
     for entry in filter(None, (item.strip() for item in raw.split(","))):
         caller_id, sep, secret = entry.partition(":")
         if not sep or not caller_id or not secret:
-            raise ValueError(f"malformed AMPHRANG_MCP_KEYS entry {entry!r}: expected caller_id:key")
+            raise ValueError("malformed AMPHRANG_MCP_KEYS entry: expected caller_id:key")
         keys[secret] = caller_id
     return keys
 
@@ -153,7 +157,8 @@ def build_server(
     session_ttl_s: int = _SESSION_TTL_S,
 ) -> MCPServer:
     """Create the amphrang MCP server with its own in-memory session vault."""
-    service = SessionService(cap=session_cap, ttl_s=session_ttl_s)
+    config = sdk_core_config()
+    service = SessionService(cap=session_cap, ttl_s=session_ttl_s, config=config)
     handle_key = secrets.token_bytes(32)
 
     def bind_session_handle(session_id: str, caller: str | None) -> str:
@@ -193,12 +198,13 @@ def build_server(
 
     @server.tool(
         description=(
-            "Detect Thai PII in text. Returns each entity's type, character "
+            "Detect Thai PII in text. The host receives raw matched text. Returns each entity's type, character "
             "span, and matched text (spans index into the input)."
         )
     )
+    @minimize_failure_frames
     def detect_pii(text: str) -> dict[str, Any]:
-        entities = amphrang.detect(text)
+        entities = amphrang._detect_with_config(text, config=config)
         counts: dict[str, int] = {}
         for entity in entities:
             counts[entity.data_type] = counts.get(entity.data_type, 0) + 1
@@ -220,13 +226,15 @@ def build_server(
             "Mask Thai PII before text goes to an external model or service. "
             "mode 'token' emits placeholders, 'surrogate' emits realistic "
             "fake values. Returns sanitized_text plus an opaque "
-            "session_handle for reidentify — the real values stay in this "
-            "server's memory and are never returned. Pass a previous "
+            "session_handle for reidentify. Replaced direct identifiers stay in this "
+            "server's memory; the mapping is never returned. Section 26 signals "
+            "are warnings only and their content remains in sanitized_text. Pass a previous "
             "session_handle to keep the same entity→pseudonym assignments "
             "across turns. Fails with an error (never a partial mask) when "
             "residual PII would remain."
         )
     )
+    @minimize_failure_frames
     def sanitize(
         text: str,
         context: Context,
@@ -239,6 +247,7 @@ def build_server(
             session_id = resolve_session_handle(session_handle, caller)
             if session_id is None:
                 raise _unknown_session_error()
+        failure = None
         try:
             outcome = service.sanitize_transaction(
                 text,
@@ -248,9 +257,13 @@ def build_server(
                 finalize=_identity_finalize,
             )
         except OutboundLeakError as error:
-            raise _safe_leak_error(error) from None
-        except SessionExpiredError:
-            raise _unknown_session_error() from None
+            failure = _safe_leak_error(error)
+            discard_exception_graph(error)
+        except SessionExpiredError as error:
+            failure = _unknown_session_error()
+            discard_exception_graph(error)
+        if failure is not None:
+            raise failure
         return {
             "sanitized_text": outcome.sanitized_text,
             "session_handle": bind_session_handle(outcome.session_id, caller),
@@ -262,19 +275,24 @@ def build_server(
         description=(
             "Restore the original values into a reply that contains "
             "pseudonyms from a previous sanitize call. The output contains "
-            "real personal data: present it to the end user only — never "
+            "real personal data and enters the host context. Present it to the end user only; never "
             "forward it to another service, tool, or model."
         )
     )
+    @minimize_failure_frames
     def reidentify(session_handle: str, text: str, context: Context) -> dict[str, Any]:
         caller = _authenticated_caller(context)
         session_id = resolve_session_handle(session_handle, caller)
         if session_id is None:
             raise _unknown_session_error()
+        expired = False
         try:
             outcome = service.restore(session_id, text)
-        except SessionExpiredError:
-            raise _unknown_session_error() from None
+        except SessionExpiredError as error:
+            expired = True
+            discard_exception_graph(error)
+        if expired:
+            raise _unknown_session_error()
         return {
             "restored_text": outcome.restored_text,
             "replaced_count": outcome.replaced_count,
@@ -289,8 +307,9 @@ def build_server(
             "risk score. The result carries no raw values."
         )
     )
+    @minimize_failure_frames
     def pdpa_analyze(text: str) -> dict[str, Any]:
-        return amphrang.analyze(text)
+        return amphrang._analyze_with_config(text, config=config)
 
     @server.tool(
         description=(

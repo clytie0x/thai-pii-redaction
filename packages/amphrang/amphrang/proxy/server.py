@@ -10,15 +10,17 @@ import anyio
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from pii_redactor.config import CoreConfig
+from pii_redactor.safe_errors import discard_exception_graph
 
 import amphrang
-from amphrang.engine.safe_errors import discard_exception_graph
+from amphrang._core_config import sdk_core_config
 from amphrang.proxy.core import (
     ProxyRequestError,
-    restore_text,
-    sanitize_chat_request,
     validate_allowed_models,
 )
+from amphrang.proxy.core import _restore_text_with_config as restore_text
+from amphrang.proxy.core import _sanitize_chat_request_with_config as sanitize_chat_request
 from amphrang.proxy.stream_restore import StreamRestorer
 
 _ENVELOPE_FIELDS = frozenset(
@@ -158,11 +160,11 @@ def _validate_completion(body, *, streaming: bool) -> None:
     _wire_json(body)
 
 
-def _restore_completion(body: dict, mapping: dict[str, str]) -> dict:
+def _restore_completion(body: dict, mapping: dict[str, str], *, config: CoreConfig) -> dict:
     _validate_completion(body, streaming=False)
     for choice in body["choices"]:
         message = choice["message"]
-        message["content"] = restore_text(message["content"], mapping)
+        message["content"] = restore_text(message["content"], mapping, config=config)
     return body
 
 
@@ -323,6 +325,7 @@ def create_app(
     transport: httpx.AsyncBaseTransport | None = None,
     timeout_s: float = 120.0,
 ) -> FastAPI:
+    core_config = sdk_core_config()
     configured_models = validate_allowed_models(allowed_models)
     if not callable(getattr(anyio.TaskInfo, "has_pending_cancellation", None)):
         upstream_api_key = None
@@ -371,7 +374,10 @@ def create_app(
             return _error(400, "request body is not a JSON object", "invalid_request_error")
         try:
             sanitized, mapping = sanitize_chat_request(
-                payload, salt=secrets.token_hex(16), allowed_models=configured_models
+                payload,
+                salt=secrets.token_hex(16),
+                allowed_models=configured_models,
+                config=core_config,
             )
         except ProxyRequestError as error:
             return _error(422, str(error), "invalid_request_error")
@@ -397,7 +403,7 @@ def create_app(
                     status = upstream.status_code
                 elif 200 <= upstream.status_code < 300:
                     await upstream.aread()
-                    body = _restore_completion(upstream.json(), mapping)
+                    body = _restore_completion(upstream.json(), mapping, config=core_config)
                     status = upstream.status_code
                     response = JSONResponse(status_code=status, content=body)
         except Exception as error:

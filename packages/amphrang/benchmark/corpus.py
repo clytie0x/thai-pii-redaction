@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import random
 
-from amphrang.engine.anonymizer import fp_generator as fg
-from amphrang.engine.anonymizer.tb_generator import (
+from pii_redactor.anonymizer import fp_generator as fg
+from pii_redactor.anonymizer.tb_generator import (
     DISTRICTS,
     FEMALE_NAMES,
     MALE_NAMES,
@@ -61,7 +61,7 @@ def _sample_value(entity_type: str, rng: random.Random) -> str:
     if entity_type == "JURISTIC_ID":
         return fg._gen_juristic_id(rng)
     if entity_type == "DRIVER_LICENSE":
-        return fg._gen_driver_license(rng)
+        return fg._gen_generic(rng, "00000000")
     if entity_type == "LINE_ID":
         return "@" + "".join(rng.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(9))
     if entity_type == "GPS_COORD":

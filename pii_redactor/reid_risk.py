@@ -22,6 +22,14 @@ _QI_PATTERNS = {
     "province": re.compile(r"(?:จังหวัด|จ\.)\s*\w+", re.UNICODE),
     "occupation": re.compile(r"(?:อาชีพ|ทำงาน(?:เป็น)?|ประกอบอาชีพ)\s*\w+", re.UNICODE),
     "religion": re.compile(r"(?:ศาสนา|พุทธ|คริสต์|อิสลาม|ฮินดู|ซิกข์)", re.UNICODE),
+    "nationality": re.compile(
+        r"(?<!ข้าม)(?<!ต่าง)(?<!นานา)(?<!หลาย)สัญชาติ\s*(?:ไทย|ลาว|พม่า|เมียนมา|กัมพูชา|เขมร|จีน|เวียดนาม|มาเลเซีย|อินเดีย|ญี่ปุ่น|เกาหลี|อเมริกัน|อังกฤษ|ฝรั่งเศส|เยอรมัน|[ก-๙]{2,12})",
+        re.UNICODE,
+    ),
+    "body_metrics": re.compile(
+        r"(?:น้ำหนัก\s*\d{2,3}(?:\.\d+)?\s*(?:กก\.?|กิโลกรัม)|ส่วนสูง\s*\d{2,3}\s*(?:ซม\.?|เซนติเมตร))",
+        re.UNICODE,
+    ),
 }
 
 
@@ -37,6 +45,8 @@ def assess_reid_risk(text: str) -> ReidRiskResult:
     - province: Thai province keywords (จังหวัด + name)
     - occupation: Thai occupation keywords (อาชีพ/ทำงาน)
     - religion: mention of religion keywords
+    - nationality: person-linked nationality wording
+    - body_metrics: weight or height with unit labels
 
     Risk score:
     - Base: 0

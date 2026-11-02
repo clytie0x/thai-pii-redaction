@@ -1,7 +1,7 @@
 """Hosted projection for legally cautious PDPA report recommendations.
 
-The vendored detector remains byte-for-byte aligned with its recorded upstream
-slice.  This adapter changes only user-facing recommendation language: a
+The detector is supplied by the canonical first-party core wheel.
+This adapter changes only user-facing recommendation language: a
 keyword-based Section 26 signal is not a legal conclusion and must not project
 one mandatory legal basis as universally applicable.
 """

@@ -10,15 +10,15 @@ import pytest
 
 pytest.importorskip("fastapi")
 
+import pii_redactor.stateless as stateless_module
 from fastapi.testclient import TestClient
+from pii_redactor.detectors.ner_failure import NERFailureError
+from pii_redactor.models import Entity
+from pii_redactor.session_service import RestoreOutcome, SessionService
+from pii_redactor.session_vault import SessionVault
 from pydantic import ValidationError
 
-import amphrang.engine.stateless as stateless_module
 import amphrang.server.server as server
-from amphrang.engine.detectors.ner_failure import NERFailureError
-from amphrang.engine.models import Entity
-from amphrang.engine.session_service import RestoreOutcome, SessionService
-from amphrang.engine.session_vault import SessionVault
 from amphrang.server.http_v2 import (
     AnalyzeResponse,
     HealthResponse,
@@ -45,7 +45,7 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_BOOT_TOKEN", None)
     monkeypatch.setattr(server, "_authorization_now", lambda: AUTH_NOW)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
-    monkeypatch.setattr(server, "SERVICE", SessionService())
+    monkeypatch.setattr(server, "SERVICE", SessionService(config=server._CORE_CONFIG))
     return _client()
 
 
@@ -1515,7 +1515,13 @@ def test_tner_error_projection_uses_only_locked_metadata(
 def test_http_detect_translates_tner_failure_without_exposing_cause(client, monkeypatch):
     retained = NERFailureError("ner_unavailable", category="network", count=1)
     retained.provider_body = SYNTHETIC_TEXT
-    monkeypatch.setattr(server, "detect_all", lambda _text: (_ for _ in ()).throw(retained))
+    scans = []
+
+    def fail_detect(_text, *, config):
+        scans.append(config)
+        raise retained
+
+    monkeypatch.setattr(server, "detect_all", fail_detect)
 
     response = client.post(
         "/api/detect",
@@ -1524,6 +1530,7 @@ def test_http_detect_translates_tner_failure_without_exposing_cause(client, monk
     )
 
     assert response.status_code == 503
+    assert scans == [server._CORE_CONFIG]
     assert response.json() == {
         "error": {
             "code": "ner_unavailable",
@@ -1542,10 +1549,16 @@ def test_http_detect_translates_tner_failure_without_exposing_cause(client, monk
 
 def test_http_sanitize_tner_failure_publishes_no_session(client, monkeypatch):
     failure = NERFailureError("ner_incomplete", category="upstream", count=1)
+    scans = []
+
+    def fail_detect(_text, *, config):
+        scans.append(config)
+        raise failure
+
     monkeypatch.setattr(
         stateless_module,
         "detect_all",
-        lambda _text: (_ for _ in ()).throw(failure),
+        fail_detect,
     )
 
     response = client.post(
@@ -1555,6 +1568,7 @@ def test_http_sanitize_tner_failure_publishes_no_session(client, monkeypatch):
     )
 
     assert response.status_code == 502
+    assert scans == [server._CORE_CONFIG]
     assert response.json()["error"] == {
         "code": "ner_incomplete",
         "category": "upstream",
@@ -1567,6 +1581,11 @@ def test_http_sanitize_tner_failure_publishes_no_session(client, monkeypatch):
 
 def test_http_roundtrip_tner_failure_never_invokes_provider(client, monkeypatch):
     calls = []
+    scans = []
+
+    def fail_detect(_text, *, config):
+        scans.append(config)
+        raise NERFailureError("ner_unavailable", category="upstream", count=1)
 
     class SpyProvider:
         def complete(self, _system, _user, *, timeout=30.0):
@@ -1577,9 +1596,7 @@ def test_http_roundtrip_tner_failure_never_invokes_provider(client, monkeypatch)
     monkeypatch.setattr(
         stateless_module,
         "detect_all",
-        lambda _text: (_ for _ in ()).throw(
-            NERFailureError("ner_unavailable", category="upstream", count=1)
-        ),
+        fail_detect,
     )
 
     response = client.post(
@@ -1589,13 +1606,17 @@ def test_http_roundtrip_tner_failure_never_invokes_provider(client, monkeypatch)
     )
 
     assert response.status_code == 503
+    assert scans == [server._CORE_CONFIG]
     assert response.json()["error"]["code"] == "ner_unavailable"
     assert calls == []
 
 
 @pytest.mark.parametrize("path", ["/api/analyze"])
 def test_http_analysis_paths_translate_ner_failure(client, monkeypatch, path):
-    def fail_analysis(_text):
+    scans = []
+
+    def fail_analysis(_text, *, config):
+        scans.append(config)
         raise NERFailureError("ner_incomplete", category="upstream", count=1)
 
     monkeypatch.setattr(server, "analyze_text", fail_analysis)
@@ -1607,6 +1628,7 @@ def test_http_analysis_paths_translate_ner_failure(client, monkeypatch, path):
     )
 
     assert response.status_code == 502
+    assert scans == [server._CORE_CONFIG]
     assert response.json()["error"]["code"] == "ner_incomplete"
     assert "result" not in response.json()
 
@@ -1621,7 +1643,13 @@ def test_consistency_replacements_have_authoritative_sanitized_offsets(monkeypat
         score=1.0,
         original_text="AA",
     )
-    monkeypatch.setattr(stateless_module, "detect_all", lambda _text: [entity])
+    scans = []
+
+    def fake_detect(_text, *, config):
+        scans.append(config)
+        return [entity]
+
+    monkeypatch.setattr(stateless_module, "detect_all", fake_detect)
     monkeypatch.setattr(stateless_module, "enforce_outbound_policy", lambda *_args, **_kwargs: None)
 
     vault = SessionVault()
@@ -1630,8 +1658,10 @@ def test_consistency_replacements_have_authoritative_sanitized_offsets(monkeypat
         vault,
         mode="token",
         salt="synthetic-salt",
+        config=server._CORE_CONFIG,
     )
 
+    assert scans == [server._CORE_CONFIG]
     token = next(iter(vault.export_mapping()))
     assert result.sanitized_text == f"{token} xx {token}"
     assert [

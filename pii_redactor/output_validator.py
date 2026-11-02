@@ -30,9 +30,35 @@ class ValidationResult:
 class PIILeakError(Exception):
     """Layer 1: Unexpected PII found in final output. Pipeline must halt immediately."""
 
-    def __init__(self, *_discarded: object, count: int = 1):
+    def __init__(
+        self, *_discarded: object, count: int = 1, spans: object = (), spans_complete: bool = False
+    ):
         self.count = count if type(count) is int and count > 0 else 1
+        # Offsets allow an adapter to mask findings without retaining values.
+        self.spans = _clean_spans(spans)
+        self.spans_complete = (
+            spans_complete is True
+            and type(count) is int
+            and count > 0
+            and isinstance(spans, (tuple, list))
+            and bool(self.spans)
+            and len(self.spans) == len(spans)
+        )
         super().__init__("Unexpected PII detected in output")
+
+
+def _clean_spans(spans: object) -> tuple[tuple[int, int], ...]:
+    if not isinstance(spans, (tuple, list)):
+        return ()
+    return tuple(
+        (item[0], item[1])
+        for item in spans
+        if isinstance(item, tuple)
+        and len(item) == 2
+        and type(item[0]) is int
+        and type(item[1]) is int
+        and 0 <= item[0] < item[1]
+    )
 
 
 def _layer1_pii_scan(
@@ -40,7 +66,18 @@ def _layer1_pii_scan(
     vault: SessionVault,
     *,
     config: CoreConfig | None = None,
-) -> tuple[bool, list[str]]:
+) -> tuple[bool, list[str], tuple[tuple[int, int], ...]]:
+    """Keep the existing internal three-value scanner contract."""
+    clean, flags, spans, _complete = _layer1_pii_scan_detailed(reverse_result, vault, config=config)
+    return clean, flags, spans
+
+
+def _layer1_pii_scan_detailed(
+    reverse_result: ReverseResult,
+    vault: SessionVault,
+    *,
+    config: CoreConfig | None = None,
+) -> tuple[bool, list[str], tuple[tuple[int, int], ...], bool]:
     """
     Run the shared structured and text-based detector on restored text.
 
@@ -48,16 +85,15 @@ def _layer1_pii_scan(
     if the PII found is EXPECTED (was in the original document) by
     cross-referencing with vault records.
 
-    Approach: a detected span wholly inside an interval produced by the reverse
-    mapper is EXPECTED. A matching original elsewhere is not expected merely
-    because the same value exists in the vault.
+    A detected span covered by the union of authoritative restored intervals is
+    expected. A matching value elsewhere is not trusted by vault membership.
 
     Args:
         reverse_result: Re-identified text plus authoritative inserted ranges
         vault: SessionVault containing expected originals
 
     Returns:
-        (pii_clean, flags) where pii_clean=True if all detected PII is expected
+        Clean verdict, flags, offsets, and proof every finding had valid offsets.
     """
     flags = []
     text = reverse_result.text
@@ -92,20 +128,44 @@ def _layer1_pii_scan(
         ):
             continue
         detected.append(candidate)
-    unexpected = [
-        entity
-        for entity in detected
-        if not any(
-            expected_start <= entity.span[0] and entity.span[1] <= expected_end
-            for expected_start, expected_end in expected_ranges
-        )
-    ]
+    unexpected_count = 0
+    spans: list[tuple[int, int]] = []
+    complete = True
+    for entity in detected:
+        valid = _clean_spans((entity.span,))
+        if not valid or valid[0][1] > len(text):
+            unexpected_count += 1
+            complete = False
+            continue
+        start, end = valid[0]
+        untrusted = _subtract_ranges(start, end, expected_ranges)
+        if untrusted:
+            unexpected_count += 1
+            spans.extend(untrusted)
+    if unexpected_count:
+        flags.append(f"unexpected_pii_count:{unexpected_count}")
+        return False, flags, tuple(spans), complete
 
-    if unexpected:
-        flags.append(f"unexpected_pii_count:{len(unexpected)}")
-        return False, flags
+    return True, flags, (), True
 
-    return True, flags
+
+def _subtract_ranges(start: int, end: int, ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Return the parts of a detected interval outside trusted ranges."""
+    remaining = [(start, end)]
+    for covered_start, covered_end in ranges:
+        next_remaining = []
+        for piece_start, piece_end in remaining:
+            if covered_end <= piece_start or covered_start >= piece_end:
+                next_remaining.append((piece_start, piece_end))
+                continue
+            if piece_start < covered_start:
+                next_remaining.append((piece_start, covered_start))
+            if covered_end < piece_end:
+                next_remaining.append((covered_end, piece_end))
+        remaining = next_remaining
+        if not remaining:
+            break
+    return remaining
 
 
 def _layer2_completeness(
@@ -218,7 +278,9 @@ def validate_output(
     all_flags = []
 
     # Layer 1: PII scan
-    l1_ok, l1_flags = _layer1_pii_scan(reverse_result, vault, config=resolve_config(config))
+    l1_ok, l1_flags, l1_spans, l1_complete = _layer1_pii_scan_detailed(
+        reverse_result, vault, config=resolve_config(config)
+    )
     all_flags.extend(l1_flags)
 
     if not l1_ok:
@@ -231,7 +293,7 @@ def validate_output(
                     unexpected_count += int(flag[len(prefix) :])
                 except ValueError:
                     unexpected_count += 1
-        raise PIILeakError(count=unexpected_count)
+        raise PIILeakError(count=unexpected_count, spans=l1_spans, spans_complete=l1_complete)
 
     # Layer 2: Completeness
     l2_ok, l2_flags = _layer2_completeness(reverse_result, entity_registry, vault)

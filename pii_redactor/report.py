@@ -49,6 +49,34 @@ def scan_section26(text: str) -> list[dict]:
     return hits
 
 
+def section26_warnings(text: str) -> list[str]:
+    """Expose category signals without returning matched text."""
+    return [f"section26:{hit['category']}" for hit in scan_section26(text)]
+
+
+def project_analysis(result: dict) -> dict:
+    """Keep the SDK analysis summary free of matched sensitive values."""
+    keys = {
+        "overall_score",
+        "overall_grade",
+        "risk_label",
+        "direct_pii_count",
+        "fp_count",
+        "tb_count",
+        "section26",
+        "reid",
+        "breakdown",
+        "recommendations",
+    }
+    projected = {key: value for key, value in result.items() if key in keys}
+    if "section26" in projected:
+        projected["section26"] = [
+            {key: hit[key] for key in ("category", "start", "end", "source") if key in hit}
+            for hit in result["section26"]
+        ]
+    return projected
+
+
 def _generate_report(text: str, entities: list[Entity]) -> PDPAReport:
     """Build the report from the canonical detector output."""
     fp_count = sum(entity.redact_type == "FP" for entity in entities)

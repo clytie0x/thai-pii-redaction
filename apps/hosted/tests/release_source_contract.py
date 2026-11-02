@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import os
 from pathlib import Path
+from pathlib import PurePosixPath
 import re
 import runpy
 import subprocess
@@ -25,30 +28,67 @@ SECURITY_SOURCE = (
     "https://github.com/clytie0x/thai-pii-redaction/blob/main/"
     "SECURITY.md#local-desktop-and-extension"
 )
-SECRET_PATTERNS = {
-    "private-key": re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-    "gitlab-token": re.compile(rb"glpat-[A-Za-z0-9_-]{20,}"),
-    "github-token": re.compile(rb"gh[pousr]_[A-Za-z0-9]{30,}"),
-    "aws-access-key": re.compile(rb"AKIA[0-9A-Z]{16}"),
-    "openai-key": re.compile(rb"sk-[A-Za-z0-9]{32,}"),
-    "google-api-key": re.compile(rb"AIza[0-9A-Za-z_-]{30,}"),
-}
+SOURCE_INTEGRITY = runpy.run_path(str(ROOT / "sync" / "source_integrity.py"))
+SECRET_PATTERNS = SOURCE_INTEGRITY["SECRET_PATTERNS"]
+
+
+def canonical_source_root() -> Path:
+    mounted = Path("/canonical-core")
+    return mounted if (mounted / "pii_redactor" / "__init__.py").is_file() else ROOT.parent.parent
+
+
+def verified_inventory(path: Path, expected_digest: str, revision: str, *, canonical_root: Path | None = None) -> list[Path]:
+    raw = path.read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == expected_digest, "source inventory digest mismatch"
+    inventory = json.loads(raw)
+    assert inventory.get("schema_version") == 2, "source inventory schema mismatch"
+    assert inventory.get("revision") == revision and re.fullmatch(r"[0-9a-f]{40}", revision), "source inventory revision mismatch"
+    files = inventory.get("files")
+    assert isinstance(files, dict) and files, "source inventory is empty"
+    verified = []
+    for relative, digest in sorted(files.items()):
+        name = PurePosixPath(relative)
+        assert not name.is_absolute() and ".." not in name.parts and "\\" not in relative, "source inventory path escape"
+        candidate = ROOT / relative
+        assert candidate.resolve().is_relative_to(ROOT.resolve()) and not candidate.is_symlink(), "source inventory path escape"
+        assert candidate.is_file() and hashlib.sha256(candidate.read_bytes()).hexdigest() == digest, "source inventory file mismatch"
+        verified.append(candidate)
+    canonical = inventory.get("canonical_source")
+    assert isinstance(canonical, dict) and isinstance(canonical.get("files"), dict), "canonical source inventory is missing"
+    canonical_root = canonical_source_root() if canonical_root is None else canonical_root
+    snapshot = SOURCE_INTEGRITY["source_snapshot"](canonical_root)
+    declared = canonical["files"]
+    assert declared == {relative: hashlib.sha256(payload).hexdigest() for relative, payload in snapshot.items()}, "canonical source inventory file mismatch"
+    assert canonical.get("source_tree_sha256") == SOURCE_INTEGRITY["snapshot_sha256"](snapshot), "canonical source inventory tree mismatch"
+    SOURCE_INTEGRITY["assert_secret_free"](snapshot)
+    verified.extend(canonical_root / relative for relative in sorted(snapshot))
+    return verified
 
 
 def tracked_files() -> list[Path]:
+    inventory = os.environ.get("AIFT_TRACKED_SOURCE_MANIFEST")
+    if inventory:
+        revision = os.environ.get("AIFT_TRACKED_SOURCE_REVISION", "")
+        expected_revision = os.environ.get("CI_COMMIT_SHA", "")
+        if re.fullmatch(r"[0-9a-f]{40}", expected_revision):
+            assert revision == expected_revision, "source inventory does not match CI revision"
+        return verified_inventory(Path(inventory), os.environ.get("AIFT_TRACKED_SOURCE_SHA256", ""), revision)
     raw = subprocess.run(
         ["git", "ls-files", "-z"],
         cwd=ROOT,
         capture_output=True,
         check=True,
     ).stdout
-    return [ROOT / item.decode("utf-8") for item in raw.split(b"\0") if item]
+    canonical = canonical_source_root()
+    snapshot = SOURCE_INTEGRITY["source_snapshot"](canonical)
+    SOURCE_INTEGRITY["assert_secret_free"](snapshot)
+    return [ROOT / item.decode("utf-8") for item in raw.split(b"\0") if item] + [canonical / relative for relative in sorted(snapshot)]
 
 
 def main() -> int:
     findings: list[str] = []
     for path in tracked_files():
-        relative = path.relative_to(ROOT).as_posix()
+        relative = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else "canonical/" + path.relative_to(canonical_source_root()).as_posix()
         if path.name == ".env" or path.name.startswith(".env."):
             findings.append(f"{relative}:tracked-env-file")
             continue
@@ -183,14 +223,12 @@ def main() -> int:
     assert len(re.findall(r'href="/downloads(?:#[^"]+)?"', frontend)) >= 4
     assert "Hosted 0.1.0" in current
 
-    vendored = b"\n".join(
-        path.read_bytes()
-        for base in (ROOT / "core" / "app", ROOT / "core" / "pii_redactor")
-        for path in base.rglob("*")
-        if path.is_file() and "__pycache__" not in path.parts
-    ).lower()
-    for contamination in (b"native broker", b"native messaging", b"named pipe"):
-        assert contamination not in vendored, contamination.decode("ascii")
+    # The canonical package contains other storefront adapters. It is installed
+    # outside /app and cannot enter the public surface through a blanket copy.
+    dockerfile = (ROOT / "core" / "Dockerfile").read_text(encoding="utf-8")
+    assert "COPY app " not in dockerfile and "COPY pii_redactor " not in dockerfile
+    assert not (ROOT / "core" / "app").exists()
+    assert not (ROOT / "core" / "pii_redactor").exists()
     public_surface_paths = [
         *(
             path

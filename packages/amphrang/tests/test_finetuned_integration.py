@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pytest
 
+from amphrang._core_config import sdk_core_config
 from amphrang.engine.detectors import tb_detector
 from amphrang.engine.detectors.aggregate import detect_all
 from amphrang.engine.models import Entity
@@ -18,20 +19,28 @@ class _FakeEngine:
     def __init__(self, spans, thresholds=None):
         self._spans = spans
         self.thresholds = thresholds or {}
+        self.calls = 0
 
     def spans(self, text):
+        self.calls += 1
         return self._spans
 
 
 @pytest.fixture()
-def finetuned_env(monkeypatch):
+def finetuned_env(monkeypatch, tmp_path):
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
+    directory = tmp_path / "synthetic-model"
+    directory.mkdir()
+    monkeypatch.setenv("AMPHRANG_FINETUNED_MODEL_DIR", str(directory))
+    engines = []
 
     def install(spans):
-        monkeypatch.setitem(tb_detector._finetuned_cache, "engine", _FakeEngine(spans))
+        engine = _FakeEngine(spans)
+        engines.append(engine)
+        monkeypatch.setitem(tb_detector._finetuned_cache, (str(directory.resolve()), None), engine)
 
     yield install
-    tb_detector._finetuned_cache.pop("engine", None)
+    assert engines and all(engine.calls > 0 for engine in engines)
 
 
 def test_selected_but_absent_engine_fails_loud(monkeypatch):
@@ -41,7 +50,7 @@ def test_selected_but_absent_engine_fails_loud(monkeypatch):
     from amphrang.engine.detectors.finetuned_engine import FinetunedEngineUnavailableError
 
     with pytest.raises(FinetunedEngineUnavailableError):
-        tb_detector.detect_tb("นายสมชาย ใจดี")
+        tb_detector.detect_tb("นายสมชาย ใจดี", config=sdk_core_config())
 
 
 def test_model_spans_map_with_hygiene_and_upgrades(finetuned_env):
@@ -56,7 +65,7 @@ def test_model_spans_map_with_hygiene_and_upgrades(finetuned_env):
             (loc_lo, loc_lo + len("บางพระ"), "LOCATION", 0.9),
         ]
     )
-    ents = {e.data_type: e for e in tb_detector.detect_tb(text)}
+    ents = {e.data_type: e for e in tb_detector.detect_tb(text, config=sdk_core_config())}
     assert ents["NAME"].original_text == "สมบูรณ์ ทรงศิริ"
     assert "DATE" in ents
     # ตำบล cue upgrades the LOCATION span to ADDRESS
@@ -67,20 +76,30 @@ def test_extended_cue_needs_model_agreement(finetuned_env):
     # Role cue with NO model PERSON span -> the extended pass is dropped.
     text = "ผู้ติดต่อสำนักงาน ประสานจัดส่ง เอกสารทั่วไป"
     finetuned_env([])
-    assert not [e for e in tb_detector.detect_tb(text) if e.data_type == "NAME"]
+    assert not [
+        e for e in tb_detector.detect_tb(text, config=sdk_core_config()) if e.data_type == "NAME"
+    ]
 
     # Same cue WITH a model span overlapping -> the fuller cue span survives.
     text2 = "ผู้ติดต่อ มานพ ดีเลิศ เบอร์ภายใน 1234"
     lo = text2.index("มานพ")
     finetuned_env([(lo, lo + len("มานพ"), "PERSON", 0.9)])
-    names = [e.original_text for e in tb_detector.detect_tb(text2) if e.data_type == "NAME"]
+    names = [
+        e.original_text
+        for e in tb_detector.detect_tb(text2, config=sdk_core_config())
+        if e.data_type == "NAME"
+    ]
     assert any("ดีเลิศ" in n for n in names), names
 
 
 def test_strong_cues_survive_without_model(finetuned_env):
     finetuned_env([])
     text = "ผมชื่อ บุญชัย รักเรียน ครับ"
-    names = [e.original_text for e in tb_detector.detect_tb(text) if e.data_type == "NAME"]
+    names = [
+        e.original_text
+        for e in tb_detector.detect_tb(text, config=sdk_core_config())
+        if e.data_type == "NAME"
+    ]
     assert any("บุญชัย" in n for n in names), names
 
 
@@ -89,7 +108,7 @@ def test_student_id_relabel_past_fp_dedupe(finetuned_env):
     text = "อ้างอิง 66019901 ตามระบบ"
     lo = text.index("66019901")
     finetuned_env([(lo, lo + 8, "STUDENT_ID", 0.96)])
-    ents = detect_all(text)
+    ents = detect_all(text, config=sdk_core_config())
     types = {e.data_type for e in ents if e.span == (lo, lo + 8)}
     assert types == {"STUDENT_ID"}, types
 
@@ -97,14 +116,17 @@ def test_student_id_relabel_past_fp_dedupe(finetuned_env):
 def test_relabel_is_noop_for_crf(monkeypatch):
     monkeypatch.delenv("AMPHRANG_NER_ENGINE", raising=False)
     text = "อ้างอิง 66019901 ตามระบบ"
-    ents = detect_all(text)
+    ents = detect_all(text, config=sdk_core_config())
     assert not [e for e in ents if e.data_type == "STUDENT_ID"]
 
 
-def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
+def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch, tmp_path):
     # Calibrated floors (part of the model artifact) drop the low-confidence
     # tail per label without touching other labels.
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "finetuned")
+    directory = tmp_path / "synthetic-model"
+    directory.mkdir()
+    monkeypatch.setenv("AMPHRANG_FINETUNED_MODEL_DIR", str(directory))
     text = "พบ สมชาย ทดสอบ วันที่ 12 มีนาคม 2569"
     name_lo = text.index("สมชาย")
     date_lo = text.index("12 มีนาคม")
@@ -114,13 +136,13 @@ def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
     ]
     monkeypatch.setitem(
         tb_detector._finetuned_cache,
-        "engine",
+        (str(directory.resolve()), None),
         _FakeEngine(spans, thresholds={"PERSON": 0.92}),
     )
     try:
-        types = {e.data_type for e in tb_detector.detect_tb(text)}
+        types = {e.data_type for e in tb_detector.detect_tb(text, config=sdk_core_config())}
     finally:
-        tb_detector._finetuned_cache.pop("engine", None)
+        tb_detector._finetuned_cache.pop((str(directory.resolve()), None), None)
     assert "NAME" not in types
     assert "DATE" in types
 

@@ -184,7 +184,12 @@ def assess_text(
     if modality == "text":
         raw = []
         if strategy == "keyword":
-            aliases = {"RELIGION": "BELIEF", "RACE_ETHNICITY": "RACE"}
+            aliases = {
+                "RELIGION": "BELIEF",
+                "RACE_ETHNICITY": "RACE",
+                "GENETIC": "GENETIC_DATA",
+                "BIOMETRIC": "BIOMETRIC_IDENTITY",
+            }
             for hit in scan_section26(text):
                 category = aliases.get(hit["category"], hit["category"])
                 if category == "RACE" and any(v in hit["text"] for v in ("เผ่าพันธุ์", "ชาติพันธุ์")):

@@ -15,6 +15,8 @@ SECTION26_CATEGORIES = (
     "CRIMINAL_RECORD",
     "DISABILITY",
     "LABOR_UNION",
+    "GENETIC",
+    "BIOMETRIC",
 )
 
 SECTION26_PATTERNS = {
@@ -26,6 +28,8 @@ SECTION26_PATTERNS = {
     "CRIMINAL_RECORD": r"(?:คดี|ต้องโทษ|จำคุก|ประวัติอาชญากรรม|ถูกฟ้อง)",
     "DISABILITY": r"(?:ทุพพลภาพ|ความพิการ|คนพิการ)",
     "LABOR_UNION": r"(?:สหภาพแรงงาน|สมาคมลูกจ้าง)",
+    "GENETIC": r"(?:พันธุกรรม|ดีเอ็นเอ|ข้อมูลยีน|จีโนม|โครโมโซม|ยีน(?!ส์)|(?i:\bDNA\b))",
+    "BIOMETRIC": r"(?:ข้อมูลชีวภาพ|ชีวมิติ|ไบโอเมตริก|ลายนิ้วมือ|ม่านตา|สแกน(?:ใบหน้า|นิ้ว)|จดจำใบหน้า)",
 }
 
 # Labels that predate the single list. They are accepted and stored canonically.
@@ -33,6 +37,8 @@ SECTION26_ALIASES = {
     "ETHNICITY": "RACE_ETHNICITY",
     "CRIMINAL": "CRIMINAL_RECORD",
     "UNION": "LABOR_UNION",
+    "GENETIC_DATA": "GENETIC",
+    "BIOMETRIC_IDENTITY": "BIOMETRIC",
 }
 
 

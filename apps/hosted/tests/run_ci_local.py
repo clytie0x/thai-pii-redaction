@@ -43,7 +43,9 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 import json
+import hashlib
 import os
+import runpy
 import subprocess
 import sys
 import tempfile
@@ -54,6 +56,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 CI_FILE = REPO / ".gitlab-ci.yml"
 OUT_DIR = REPO / "tests" / "out"
+SOURCE_INTEGRITY = runpy.run_path(str(REPO / "sync" / "source_integrity.py"))
 
 # Kept in step with `default.image` in .gitlab-ci.yml. Read from the file
 # rather than hardcoded, so the two cannot drift.
@@ -186,7 +189,8 @@ def private_env_file(environment: dict[str, str]):
 
 
 def docker_command(
-    pipeline: dict, env_file: Path, *, gitlab_network: bool = False
+    pipeline: dict, env_file: Path, *, gitlab_network: bool = False,
+    source_inventory: Path | None = None,
 ) -> list[str]:
     image = pipeline.get("default", {}).get("image", "docker:27.3.1")
     network_args = [] if gitlab_network else ["--network", "host"]
@@ -202,6 +206,20 @@ def docker_command(
     elif sys.platform == "win32":
         network_args += ["--add-host", "host.docker.internal:host-gateway"]
         contract_env = ["-e", "AIFT_CONTRACT_CONNECT_HOST=host.docker.internal"]
+    source_mounts = []
+    if source_inventory is not None:
+        inventory = json.loads(source_inventory.read_text(encoding="utf-8"))
+        source_mounts = [
+            "-v", f"{source_inventory}:/source-inventory/tracked.json:ro",
+            "-e", "AIFT_TRACKED_SOURCE_MANIFEST=/source-inventory/tracked.json",
+            "-e", f"AIFT_TRACKED_SOURCE_SHA256={hashlib.sha256(source_inventory.read_bytes()).hexdigest()}",
+            "-e", f"AIFT_TRACKED_SOURCE_REVISION={inventory['revision']}",
+        ]
+    canonical = REPO.parents[1]
+    if (canonical / "pyproject.toml").is_file() and (canonical / "pii_redactor").is_dir():
+        for name in ("app", "pii_redactor", "VERSION", "pyproject.toml"):
+            source_mounts.extend(["-v", f"{canonical / name}:/canonical-core/{name}:ro"])
+        contract_env.extend(["-e", "PYTHONPATH=/canonical-core"])
     return [
         "docker",
         "run",
@@ -214,6 +232,7 @@ def docker_command(
         "/var/run/docker.sock:/var/run/docker.sock",
         "-v",
         f"{REPO}:/w",
+        *source_mounts,
         "-w",
         "/w",
         *contract_env,
@@ -222,6 +241,32 @@ def docker_command(
         "-e",
         "-s",
     ]
+
+
+@contextmanager
+def tracked_source_manifest():
+    """Transfer the host Git inventory, never a permissive filesystem glob."""
+    files = subprocess.run(["git", "ls-files", "-z"], cwd=REPO, env=value_free_child_environment(), check=True, capture_output=True).stdout
+    revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, env=value_free_child_environment(), check=True, capture_output=True, text=True).stdout.strip()
+    inventory = {}
+    for raw in files.split(b"\0"):
+        if not raw:
+            continue
+        relative = raw.decode("utf-8")
+        path = REPO / relative
+        if path.is_symlink() or not path.resolve().is_relative_to(REPO.resolve()):
+            raise ValueError("tracked source inventory path escape")
+        inventory[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+    canonical = SOURCE_INTEGRITY["source_snapshot"](REPO.parent.parent)
+    SOURCE_INTEGRITY["assert_secret_free"](canonical)
+    canonical_inventory = {
+        "source_tree_sha256": SOURCE_INTEGRITY["snapshot_sha256"](canonical),
+        "files": {relative: hashlib.sha256(payload).hexdigest() for relative, payload in canonical.items()},
+    }
+    with tempfile.TemporaryDirectory(prefix="aiguard-tracked-source-") as temporary:
+        path = Path(temporary) / "tracked.json"
+        path.write_text(json.dumps({"schema_version": 2, "revision": revision, "files": inventory, "canonical_source": canonical_inventory}, sort_keys=True), encoding="utf-8")
+        yield path
 
 
 def run_job(
@@ -236,8 +281,8 @@ def run_job(
     # for a flag that plainly exists. That was a defect in this simulator
     # masquerading as a defect in the pipeline, which is the exact failure
     # mode a simulator has to be trusted not to invent.
-    with private_env_file(docker_environment(pipeline)) as env_file:
-        command = docker_command(pipeline, env_file, gitlab_network=gitlab_network)
+    with private_env_file(docker_environment(pipeline)) as env_file, tracked_source_manifest() as inventory:
+        command = docker_command(pipeline, env_file, gitlab_network=gitlab_network, source_inventory=inventory)
         result = subprocess.run(
             command,
             input=script.encode("utf-8"),

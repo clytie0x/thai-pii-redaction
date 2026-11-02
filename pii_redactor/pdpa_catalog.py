@@ -45,8 +45,6 @@ def coverage_catalog(strategy: str = "contextual") -> list[dict]:
         capability = "partial_text_assessment"
         if category == "MEDIA":
             capability = "text_claims_only"
-        if strategy == "keyword" and category in {"GENETIC_DATA", "BIOMETRIC_IDENTITY"}:
-            capability = "unsupported_legacy"
         rows.append(
             {
                 "category": category,

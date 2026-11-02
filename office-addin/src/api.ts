@@ -22,6 +22,8 @@ const SECTION26_CATEGORIES = [
   "CRIMINAL_RECORD",
   "DISABILITY",
   "LABOR_UNION",
+  "GENETIC",
+  "BIOMETRIC",
 ] as const;
 const GUARD_CATEGORIES = [
   "instruction_override",
@@ -39,6 +41,8 @@ const QI_CATEGORIES = [
   "province",
   "occupation",
   "religion",
+  "nationality",
+  "body_metrics",
 ] as const;
 const RESTORE_WARNING_CODES = ["generated_pii", "foreign_replacement"] as const;
 const RECOMMENDATION_TEMPLATES = [

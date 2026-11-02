@@ -37,7 +37,7 @@ from pii_redactor.models import AIResponse, Entity, EntityRegistry, ReplacementH
 from pii_redactor.native_broker_context import NativeBrokerOperationError
 from pii_redactor.output_validator import PIILeakError as OutputPIILeakError
 from pii_redactor.output_validator import validate_output
-from pii_redactor.report import scan_section26
+from pii_redactor.report import scan_section26, section26_warnings
 from pii_redactor.reverse_mapper import reverse_map
 from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
 from pii_redactor.session_vault import SessionVault, VaultTimeoutError
@@ -63,6 +63,8 @@ class StatelessRestoreResult:
     warnings: list[str]
     generated_pii_count: int = 0
     foreign_replacement_count: int = 0
+    generated_pii_spans: tuple[tuple[int, int], ...] = ()
+    generated_pii_spans_complete: bool = False
 
 
 @dataclass
@@ -254,7 +256,7 @@ def _sanitize_into_vault_impl(
     )
     anonymize_failure = False
     try:
-        pseudo = anonymize(text, registry, vault, salt=salt, mode=mode)
+        pseudo = anonymize(text, registry, vault, salt=salt, mode=mode, config=config)
     except (PIILeakError, ValueError) as error:
         discard_exception_graph(error)
         anonymize_failure = True
@@ -342,7 +344,7 @@ def _sanitize_into_vault_impl(
         detected=detected,
         entities=out_entities,
         entity_type_counts=type_counts,
-        warnings=[],
+        warnings=section26_warnings(text),
         replacement_highlights=pseudo.replacement_highlights,
     )
 
@@ -437,6 +439,8 @@ def _restore_stateless_impl(
         restored = result.text
         flags = list(result.flags)
         generated_pii_count = 0
+        generated_pii_spans: tuple[tuple[int, int], ...] = ()
+        generated_pii_spans_complete = False
         try:
             validate_output(
                 result,
@@ -446,6 +450,16 @@ def _restore_stateless_impl(
             )
         except OutputPIILeakError as error:
             generated_pii_count = error.count
+            generated_pii_spans = tuple(
+                (start, end) for start, end in error.spans if end <= len(restored)
+            )
+            generated_pii_spans_complete = (
+                error.spans_complete is True
+                and bool(generated_pii_spans)
+                and len(generated_pii_spans) == len(error.spans)
+            )
+            if not generated_pii_spans_complete:
+                generated_pii_spans = ()
             discard_exception_graph(error)
 
         # Counted here rather than taken from the audit summary: the caller's
@@ -467,6 +481,8 @@ def _restore_stateless_impl(
             warnings=flags,
             generated_pii_count=generated_pii_count,
             foreign_replacement_count=int(result.audit_summary.get("foreign_token_count", 0)),
+            generated_pii_spans=generated_pii_spans,
+            generated_pii_spans_complete=generated_pii_spans_complete,
         )
     finally:
         cleanup_ok = _clear_throwaway_vault(vault)
@@ -483,6 +499,8 @@ def _restore_stateless_impl(
         leftover = []
         unused = []
         generated_pii_count = 0
+        generated_pii_spans = ()
+        generated_pii_spans_complete = False
         pseudonym = None
         original = None
         raise StatelessProcessingError(_RESTORE_FAILURE_CODE)

@@ -9,8 +9,25 @@ application now has real synthetic IdP/browser/database, installed-wheel and
 restart evidence; [M3 acceptance](docs/acceptance/enterprise/M03-authority-progress.md)
 is held until controlled-environment performance measurement and executing CI.
 The owner approved SDK warn/report, direct first-party core consumption and
-fixed proxy errors. Implement that reviewed migration while preserving the
-remaining adapter contracts. The owner selected distribution name
+fixed proxy errors. The parallel S2-S6 wave implements that migration in source,
+including 29 SDK canonical module aliases and removal of Hosted engine copies.
+The parallel M4-M6 wave implements subject consent, encrypted managed execution
+and reviewed retention/holds through domain/API/Thai UI paths. These are
+**implemented locally; qualification pending**. After the retained 286-pass/
+11-fail retry, the corrected complete enterprise gate passes 298 tests without
+failures or skips. The first full SDK run remains negative at 2,088 passed/
+52 failed/10 skipped. See the
+[local-wave record](docs/acceptance/enterprise/M04-M06-local-wave.md).
+
+Next, close remaining SDK failures, freeze both source workers' changes, independently review the integration,
+and qualify complete root/SDK/enterprise/JS/Office checks, paired artifacts,
+outside-source installs and exact Hosted/SDK images/CI. Rebind real browser,
+IdP, restricted-role and restart evidence to the new candidate; older M3 runs do
+not qualify it. The controlled-performance hold remains. Then complete absent
+M7 rights/secure delivery, M8 organization records and the unfinished M10
+whole-database recovery/checkpoint/rotation/operator paths. M9 keeps every
+declared storefront and its host/OS gates; M11/M12 keep their human/owner gates.
+The owner selected distribution name
 `thai-pii-redaction-core`, preserving imports and caller entry paths; qualify its
 installation/migration before any separately authorized publication. Do not
 promote the held candidate.

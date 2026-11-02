@@ -9,7 +9,7 @@ opening before a real token does not hide it: on a mismatch only the single
 
 from __future__ import annotations
 
-from amphrang.engine.anonymizer.token_generator import _TOKEN_MAX_LENGTH
+from pii_redactor.anonymizer.token_generator import _TOKEN_MAX_LENGTH
 
 
 class StreamRestorer:

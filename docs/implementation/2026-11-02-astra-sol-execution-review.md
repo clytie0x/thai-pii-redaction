@@ -1,7 +1,8 @@
 # Astra Review and Sol 6.1 Execution Plan
 
-> **For agentic workers:** Use `superpowers:executing-plans`. Sol 6.1 owns one
-> bounded implementation unit at a time. Every unit has a fresh independent
+> **For agentic workers:** Use `superpowers:executing-plans`. The owner subsequently
+> requested parallel S and M units with disjoint file ownership, then integration.
+> Every unit has a fresh independent
 > adversarial subagent review. Reuse the accepted master plan and current code;
 > this addendum does not authorize deployment, publication or real-data actions.
 
@@ -42,18 +43,19 @@ The accepted direction is coherent and should continue:
 1. Deliver the complete organizational workflow: authoritative staff and subject
    identity, activities/notices, actual consent/withdrawal, managed collection,
    reviewed execution/holds/retention, rights fulfilment, governance and recovery.
-2. Make the protection core genuinely common before extending its consumers.
-   SDK/Hosted source copies are an integration obligation, not evidence of one
-   core merely because their modules have similar names.
+2. Keep one authored protection core. SDK/Hosted canonical consumers are now
+   implemented in source; shared module names alone do not prove installed
+   identity or exact-image acceptance.
 3. Keep each delivery boundary explicit. Local broker clients, Python callers,
    MCP hosts, Hosted requests and the enterprise database have different data
    lifecycles and authority. A result from one does not qualify another.
 4. Preserve the finished frozen YRSS research/presentation lane. Current product
    changes do not inherit that study's score, nor require late changes to it.
 
-The immediate priority is to turn the substantial current M1 work into a
-reviewable, reproducible checkpoint, finish actual canonical consumption, and
-close the named M3/CI gates. Then build M4-M8 through complete user workflows.
+The current parallel S2-S6/M4-M6 source wave needs a freeze, independent
+integration review and reproducible combined qualification. Preserve the now-green
+enterprise source gate, close remaining SDK and artifact/image/M3/CI gates, then complete absent
+M7/M8 and unfinished operational recovery through complete user workflows.
 Additional model training or detector expansion is not the next dependency.
 
 ### Owner decisions already settled
@@ -71,8 +73,9 @@ Do not ask these again:
   disabled.
 - M3 stays held until controlled-environment performance measurement. No timing
   exception or baseline update was approved.
-- Screenshot-only history cleanup and eventual public visibility were approved.
-  GitHub's retained PR/cache objects still gate that visibility change.
+- Screenshot-only history cleanup and public visibility were approved. The owner
+  accepted disclosed retained-image risk and the repository is public.
+  Server-side purge remains unconfirmed; do not reintroduce a visibility hold.
 - Anti-jobs means a fresh independent adversarial subagent at each reviewable
   stage. AI review is engineering evidence, not independent human/legal review.
 
@@ -80,10 +83,9 @@ Do not ask these again:
 
 Use **`C:/Users/teera/dev/thai-pii-redaction/.worktrees/pdpa-enterprise-clean`**.
 Its implementation branch is `feat/pdpa-enterprise`, observed HEAD
-`6f1e63f6032f4a3cb5d3509345a1a3eab761e9ce`. `origin/main` was
-`38b235ffb5cede349e51362049a03666b8637dc6`; this clone has no local `main`
-branch yet. Revalidate refs before commands; do not substitute an old clone's
-local `main`.
+`85f1c32ecd565973fce99e753299f5d459b0c19a` before the uncommitted parallel wave.
+The plan-review refs `6f1e63f`/`38b235f` above are historical. Revalidate current
+refs before commands; do not substitute an old clone's local `main`.
 
 The original canonical/design checkout and old implementation checkout retain
 private old history and owner work. Their normal push URL is deliberately
@@ -96,14 +98,25 @@ must explicitly select the clean checkout above.
 | Area | Current evidence | Remaining gate |
 | --- | --- | --- |
 | M0 | Checkpoint reconciliation and privacy rewrite preserved; clean refs verified | Every required CI job must execute green |
-| M1 prerequisites | Uncommitted eight-type/config/error-containment work; root 3,297 passed/34 skipped; enterprise 156 passed/0 skipped | Source-bound checkpoint, fresh artifacts, actual SDK/Hosted consumption |
-| SDK proxy | Uncommitted fixed-error/cancellation candidate; SDK full 2,038 passed/10 skipped | Artifact/runtime qualification and full shared-core migration |
+| M1 prerequisites | S0/S1 Windows/Python 3.13 artifacts qualified for their exact earlier candidate | Rebuild/rebind artifacts after the current wave freezes |
+| S2-S5.1 | Nine text profiles; SDK facade/Session/batch/CLI/HTTP/MCP/proxy canonical; exact dependency pin and 29 internal aliases; sensitive-span copy removed | Final full SDK/root gates, paired wheels/sdists, outside-source installs and exact image/CI qualification |
+| S6 | Hosted copies removed; offline supplied-wheel/dependency/model preparation and source identities; review safety/scanner fixes have focused follow-up evidence | Independent integration review, complete artifact/image/no-egress/CI/platform qualification |
 | Proxy dependency floor | 143 focused tests passed with locked AnyIO 4.14.2 and isolated 4.4.0 | Declared Python/platform/host matrix still requires qualification |
 | Development regression | Gold-v4: 252 synthetic documents/648 annotations; control/candidate metrics unchanged, all 313 NER chunks executed | Not fresh blind/generalization evidence; new types lack labelled gold coverage |
-| M3 | Real synthetic PostgreSQL/IdP/browser, installed-wheel and restart evidence | Controlled performance and executing CI; production environment remains later work |
-| M4-M8 | Accepted workflow design; relevant new domain/portal modules absent | Implement and qualify each complete domain/API/UI path |
-| M9-M12 | Historical surface evidence and release/pilot plans | Exact new artifacts, real hosts, staging, people and action-specific authority |
+| M3 | Earlier real synthetic PostgreSQL/IdP/browser, installed-wheel and restart evidence | Controlled performance, executing CI and rebinding to the new candidate |
+| M4-M6 | Subject consent, protected managed execution, retention/holds and Thai caller paths implemented/local; corrected mandatory enterprise gate 298 passed/0 failed/0 skipped | Final global gate and fresh real IdP/browser/runtime-role/restart/artifact evidence pending |
+| M7/M8 | Accepted design; rights/case/delivery and organization control-record implementations absent | Implement and qualify complete workflows with qualified organization inputs |
+| M9-M12 | Historical surface evidence; partial M10 collection quarantine/reconciliation | Every declared storefront's exact artifacts/hosts; whole-DB recovery/checkpoints/rotation/operator/drills; real people and action-specific authority |
 | YRSS | Reviewed 28-file packet, poster/slides/scripts/40 evidence-linked answers | Presenter approval, rehearsal, paper/phone proof, printing and event actions |
+
+The [local-wave record](../acceptance/enterprise/M04-M06-local-wave.md) binds
+the focused source results and retained failures. The complete mandatory
+enterprise retry executed 286 passed/11 failed/0 skipped; after corrections the
+complete gate passes 298/0 failed/0 skipped (2 warnings). Retain both runs and
+the first full SDK negative result, 2,088 passed/52 failed/10 skipped. Root JS
+178 and Office Node 22 manifest/type/129-test/build checks pass, without real
+Office host acceptance. Final global qualification awaits both source workers'
+freeze. Individual GREEN counts overlap and are not combined production proof.
 
 At planning review the runtime patch was not committed. S0/S1 subsequently
 qualified its Windows/Python 3.13 artifacts and preserved the source-bound
@@ -154,7 +167,11 @@ evidence; it must not bypass the owner's hold on the affected candidate.
 
 ## 4. Immediate Sol 6.1 work packages
 
-Run these in order. Each unit follows RED -> implementation -> focused GREEN ->
+The owner subsequently authorized parallel S/M source implementation. The
+original work-package checklists below retain their full qualification exits;
+unchecked items do not mean their source path is absent. Use the current-state
+table and local-wave record before repeating work. Each unit follows
+RED -> implementation -> focused GREEN ->
 complete affected gate -> independent adversarial review -> source-bound record.
 Do not reopen an owner decision to avoid implementing its consequences.
 
@@ -257,8 +274,8 @@ def _analyze_with_config(text: str, *, config: CoreConfig) -> dict: ...
 ```
 
 The first two definitions belong to `_core_config.py`; the other four belong
-to the facade and return its existing public result types. These are planned
-private interfaces; their appearance here does not mean they exist yet.
+to the facade and return its existing public result types. These private
+interfaces are now implemented in source; final installed qualification is open.
 
 - [ ] Write canonical-identity tests before changing imports. Verify the public
   Entity and core operations come from the supplied `pii_redactor` distribution.
@@ -472,7 +489,7 @@ is inferred from a menu, schema, successful queue submission or old test count.
 
 | Input/action | Agent prepares | Owner/participant supplies | First hard gate |
 | --- | --- | --- | --- |
-| GitHub privacy purge | Reviewed rewrite, backups, object/ref checks and ready Support request | Sends Support request and provides purge confirmation | Public visibility and public CI |
+| GitHub privacy purge | Preserve reviewed rewrite, backups and retained-object disclosure | Sends Support request and provides purge confirmation | Purge remains unconfirmed; public visibility already accepted with disclosed risk |
 | Controlled performance host/window | Frozen protocol, source/model/dependency hashes, sampler and retained results | Agrees/permits actual controlled environment where necessary | M3 and affected common runtime acceptance |
 | Organization and identities | Synthetic realm/configuration and enrollment/check commands | Actual organization, departments, two approved staff, customer issuer/client | M4 real identity and M11 pilot |
 | Storage/keys/backups/checkpoint | Concrete interfaces, dev fixtures, failure/recovery drills and reviewed candidate | Custodians, real key/sink/infrastructure policy and required decisions | M5/M10 real readiness |
@@ -493,8 +510,9 @@ Codex provider. Preserve inherited reasoning/service options and permission mode
 do not create a new top-level thread or silently switch providers.
 
 Sol completed the bounded S0/S1 unit in the clean checkout with local artifact
-qualification and a clear independent review. Continue from S2 and the actual
-canonical-consumer tasks. The old cancelled proxy reviewer is not a live handle;
+qualification and a clear independent review. S2-S6 and M4-M6 now have local
+implementations; continue from remaining SDK corrections, source freeze and
+qualification, then the remaining M7-M12 work. The old cancelled proxy reviewer is not a live handle;
 its completed fresh replacement report remains distinct. Current artifact
 qualification is limited to the exact Windows/Python 3.13 prerequisite candidate.
 

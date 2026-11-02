@@ -498,7 +498,9 @@ def test_provider_cancellation_drops_original_graph_and_credentials():
         traceback = error.__traceback__
         product_frames = 0
         while traceback is not None:
-            if "/amphrang/proxy/" in traceback.tb_frame.f_code.co_filename.replace("\\", "/"):
+            if traceback.tb_frame.f_globals.get("__name__", "").startswith(
+                ("amphrang.", "pii_redactor.")
+            ):
                 product_frames += 1
                 values = list(traceback.tb_frame.f_locals.values())
                 assert CANARY not in values and synthetic_key not in values

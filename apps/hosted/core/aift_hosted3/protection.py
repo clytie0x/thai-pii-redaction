@@ -1,4 +1,4 @@
-"""Deterministic Hosted 3.0 protection over the manifest-pinned sanitizer."""
+"""Deterministic Hosted protection over the installed canonical sanitizer."""
 
 from __future__ import annotations
 
@@ -13,6 +13,11 @@ TOKEN_NONCE_ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 TOKEN_NAMESPACE_LENGTH = 25
 TOKEN_NONCE_LENGTH = 20
 PROTECTION_GENERATION_REVISION = "pg-v1"
+# The legacy Hosted wire projection remains eight categories.
+LEGACY_HOSTED_SECTION26_CATEGORIES = (
+    "RACE_ETHNICITY", "POLITICAL_OPINION", "RELIGION", "HEALTH",
+    "SEXUAL_BEHAVIOR", "CRIMINAL_RECORD", "DISABILITY", "LABOR_UNION",
+)
 
 
 @dataclass(slots=True)
@@ -122,22 +127,12 @@ def _token_seed_mapping(
 def _section26_categories(findings: object) -> list[str]:
     if not isinstance(findings, list):
         return []
-    order = (
-        "RACE_ETHNICITY",
-        "POLITICAL_OPINION",
-        "RELIGION",
-        "HEALTH",
-        "SEXUAL_BEHAVIOR",
-        "CRIMINAL_RECORD",
-        "DISABILITY",
-        "LABOR_UNION",
-    )
     observed = {
         finding.get("category")
         for finding in findings
         if isinstance(finding, dict)
     }
-    return [category for category in order if category in observed]
+    return [category for category in LEGACY_HOSTED_SECTION26_CATEGORIES if category in observed]
 
 
 def _guard_findings(
