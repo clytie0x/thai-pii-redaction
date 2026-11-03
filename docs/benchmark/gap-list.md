@@ -1,8 +1,9 @@
 # What is still missing for a best-in-Thailand claim
 
 This list is the gap between the 2026-11-01 re-run and a claim that AI Guard
-is the strongest Thai PII redactor. The numbers are from
-[blind-v2-results.md](blind-v2-results.md). The sealed protocol corpus was
+is the strongest Thai PII redactor. The numbers on this page are from
+[blind-v2-results.md](blind-v2-results.md). A later per-entity measurement is
+in [per-entity-results.md](per-entity-results.md). The sealed protocol corpus was
 not opened. Nothing here was fixed by weakening detection.
 
 The original freeze moved from AI Guard micro F2 0.920 to 0.964 because

@@ -1,0 +1,2147 @@
+{
+  "ablations": {
+    "full_by_type": {
+      "THAI_ID": {
+        "n": 35,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 35
+      },
+      "PHONE": {
+        "n": 44,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 44
+      },
+      "EMAIL": {
+        "n": 28,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 28
+      },
+      "BANK_ACCOUNT": {
+        "n": 8,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      },
+      "CREDIT_CARD": {
+        "n": 8,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      },
+      "PASSPORT": {
+        "n": 8,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      },
+      "VEHICLE_PLATE": {
+        "n": 8,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      },
+      "STUDENT_ID": {
+        "n": 8,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      },
+      "DATE_OF_BIRTH": {
+        "n": 22,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 22
+      },
+      "NAME": {
+        "n": 70,
+        "f1": 0.9014084507042254,
+        "fn": 6,
+        "f2": 0.9090909090909091,
+        "fp": 8,
+        "precision": 0.8888888888888888,
+        "recall": 0.9142857142857143,
+        "tp": 64
+      },
+      "ADDRESS": {
+        "n": 15,
+        "f1": 0.8823529411764706,
+        "fn": 0,
+        "f2": 0.949367088607595,
+        "fp": 4,
+        "precision": 0.7894736842105263,
+        "recall": 1.0,
+        "tp": 15
+      },
+      "IBAN": {
+        "n": 8,
+        "f1": 1.0,
+        "fn": 0,
+        "f2": 1.0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "tp": 8
+      }
+    },
+    "full_macro": {
+      "f1": 0.981980115990058,
+      "f2": 0.9882048331415421,
+      "precision": 0.973196881091618,
+      "recall": 0.9928571428571429,
+      "types": 12
+    },
+    "full_micro": {
+      "f1": 0.9446494464944649,
+      "fn": 6,
+      "f2": 0.9638554216867468,
+      "fp": 24,
+      "precision": 0.9142857142857143,
+      "recall": 0.9770992366412213,
+      "tp": 256
+    },
+    "full_micro_f2": 0.9638554216867468,
+    "layers": [
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 0.870967741935484,
+            "fn": 8,
+            "f2": 0.8083832335329342,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 0.7714285714285715,
+            "tp": 27
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 0.0,
+            "fn": 44,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 0.0,
+            "fn": 8,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 0.0,
+            "fn": 8,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 0.0,
+            "fn": 8,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 0.0,
+            "fn": 8,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 0.0,
+            "fn": 8,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 0.16666666666666669,
+            "fn": 20,
+            "f2": 0.11111111111111112,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 0.09090909090909091,
+            "tp": 2
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.8767123287671234,
+            "fn": 6,
+            "f2": 0.898876404494382,
+            "fp": 12,
+            "precision": 0.8421052631578947,
+            "recall": 0.9142857142857143,
+            "tp": 64
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.8571428571428571,
+            "fn": 0,
+            "f2": 0.9375,
+            "fp": 5,
+            "precision": 0.75,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 0.0,
+            "fn": 8,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": -0.22857142857142854,
+          "PHONE": -1.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": -1.0,
+          "CREDIT_CARD": -1.0,
+          "PASSPORT": -1.0,
+          "VEHICLE_PLATE": -1.0,
+          "STUDENT_ID": -1.0,
+          "DATE_OF_BIRTH": -0.9090909090909091,
+          "NAME": 0.0,
+          "ADDRESS": 0.0,
+          "IBAN": -1.0
+        },
+        "delta_micro_f1": -0.34154523363415445,
+        "delta_micro_f2": -0.41413836428981876,
+        "delta_micro_recall": -0.4580152671755725,
+        "disabled": "fp",
+        "macro": {
+          "f1": 0.3142907995426776,
+          "f2": 0.3129892290948689,
+          "precision": 0.3826754385964912,
+          "recall": 0.31471861471861473,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.6031042128603105,
+          "fn": 126,
+          "f2": 0.549717057396928,
+          "fp": 53,
+          "precision": 0.7195767195767195,
+          "recall": 0.5190839694656488,
+          "tp": 136
+        },
+        "micro_f2": 0.549717057396928,
+        "micro_recall": 0.5190839694656488
+      },
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 35
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 44
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 22
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.0,
+            "fn": 70,
+            "f2": 0.0,
+            "fp": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "tp": 0
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.8823529411764706,
+            "fn": 0,
+            "f2": 0.949367088607595,
+            "fp": 4,
+            "precision": 0.7894736842105263,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": 0.0,
+          "PHONE": 0.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": 0.0,
+          "CREDIT_CARD": 0.0,
+          "PASSPORT": 0.0,
+          "VEHICLE_PLATE": 0.0,
+          "STUDENT_ID": 0.0,
+          "DATE_OF_BIRTH": 0.0,
+          "NAME": -0.9142857142857143,
+          "ADDRESS": 0.0,
+          "IBAN": 0.0
+        },
+        "delta_micro_f1": -0.10986683779881279,
+        "delta_micro_f2": -0.19338993212013356,
+        "delta_micro_recall": -0.2442748091603053,
+        "disabled": "tb",
+        "macro": {
+          "f1": 0.9068627450980392,
+          "f2": 0.9124472573839663,
+          "precision": 0.8991228070175438,
+          "recall": 0.9166666666666666,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.8347826086956521,
+          "fn": 70,
+          "f2": 0.7704654895666132,
+          "fp": 6,
+          "precision": 0.9696969696969697,
+          "recall": 0.732824427480916,
+          "tp": 192
+        },
+        "micro_f2": 0.7704654895666132,
+        "micro_recall": 0.732824427480916
+      },
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 35
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 44
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 22
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.9014084507042254,
+            "fn": 6,
+            "f2": 0.9090909090909091,
+            "fp": 8,
+            "precision": 0.8888888888888888,
+            "recall": 0.9142857142857143,
+            "tp": 64
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.8823529411764706,
+            "fn": 0,
+            "f2": 0.949367088607595,
+            "fp": 4,
+            "precision": 0.7894736842105263,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": 0.0,
+          "PHONE": 0.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": 0.0,
+          "CREDIT_CARD": 0.0,
+          "PASSPORT": 0.0,
+          "VEHICLE_PLATE": 0.0,
+          "STUDENT_ID": 0.0,
+          "DATE_OF_BIRTH": 0.0,
+          "NAME": 0.0,
+          "ADDRESS": 0.0,
+          "IBAN": 0.0
+        },
+        "delta_micro_f1": 0.0,
+        "delta_micro_f2": 0.0,
+        "delta_micro_recall": 0.0,
+        "disabled": "fn",
+        "macro": {
+          "f1": 0.981980115990058,
+          "f2": 0.9882048331415421,
+          "precision": 0.973196881091618,
+          "recall": 0.9928571428571429,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.9446494464944649,
+          "fn": 6,
+          "f2": 0.9638554216867468,
+          "fp": 24,
+          "precision": 0.9142857142857143,
+          "recall": 0.9770992366412213,
+          "tp": 256
+        },
+        "micro_f2": 0.9638554216867468,
+        "micro_recall": 0.9770992366412213
+      },
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 35
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 44
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 22
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.9014084507042254,
+            "fn": 6,
+            "f2": 0.9090909090909091,
+            "fp": 8,
+            "precision": 0.8888888888888888,
+            "recall": 0.9142857142857143,
+            "tp": 64
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.8823529411764706,
+            "fn": 0,
+            "f2": 0.949367088607595,
+            "fp": 4,
+            "precision": 0.7894736842105263,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": 0.0,
+          "PHONE": 0.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": 0.0,
+          "CREDIT_CARD": 0.0,
+          "PASSPORT": 0.0,
+          "VEHICLE_PLATE": 0.0,
+          "STUDENT_ID": 0.0,
+          "DATE_OF_BIRTH": 0.0,
+          "NAME": 0.0,
+          "ADDRESS": 0.0,
+          "IBAN": 0.0
+        },
+        "delta_micro_f1": 0.0,
+        "delta_micro_f2": 0.0,
+        "delta_micro_recall": 0.0,
+        "disabled": "record_names",
+        "macro": {
+          "f1": 0.981980115990058,
+          "f2": 0.9882048331415421,
+          "precision": 0.973196881091618,
+          "recall": 0.9928571428571429,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.9446494464944649,
+          "fn": 6,
+          "f2": 0.9638554216867468,
+          "fp": 24,
+          "precision": 0.9142857142857143,
+          "recall": 0.9770992366412213,
+          "tp": 256
+        },
+        "micro_f2": 0.9638554216867468,
+        "micro_recall": 0.9770992366412213
+      },
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 35
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 44
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 22
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.9014084507042254,
+            "fn": 6,
+            "f2": 0.9090909090909091,
+            "fp": 8,
+            "precision": 0.8888888888888888,
+            "recall": 0.9142857142857143,
+            "tp": 64
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.30612244897959184,
+            "fn": 0,
+            "f2": 0.5244755244755245,
+            "fp": 68,
+            "precision": 0.18072289156626506,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": 0.0,
+          "PHONE": 0.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": 0.0,
+          "CREDIT_CARD": 0.0,
+          "PASSPORT": 0.0,
+          "VEHICLE_PLATE": 0.0,
+          "STUDENT_ID": 0.0,
+          "DATE_OF_BIRTH": 0.0,
+          "NAME": 0.0,
+          "ADDRESS": 0.0,
+          "IBAN": 0.0
+        },
+        "delta_micro_f1": -0.12017279593085783,
+        "delta_micro_f2": -0.05411839254673256,
+        "delta_micro_recall": 0.0,
+        "disabled": "address_merge",
+        "macro": {
+          "f1": 0.9339609083069847,
+          "f2": 0.9527972027972028,
+          "precision": 0.9224676483712627,
+          "recall": 0.9928571428571429,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.8244766505636071,
+          "fn": 6,
+          "f2": 0.9097370291400142,
+          "fp": 103,
+          "precision": 0.713091922005571,
+          "recall": 0.9770992366412213,
+          "tp": 256
+        },
+        "micro_f2": 0.9097370291400142,
+        "micro_recall": 0.9770992366412213
+      },
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 35
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 44
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 22
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.9014084507042254,
+            "fn": 6,
+            "f2": 0.9090909090909091,
+            "fp": 8,
+            "precision": 0.8888888888888888,
+            "recall": 0.9142857142857143,
+            "tp": 64
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.8823529411764706,
+            "fn": 0,
+            "f2": 0.949367088607595,
+            "fp": 4,
+            "precision": 0.7894736842105263,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": 0.0,
+          "PHONE": 0.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": 0.0,
+          "CREDIT_CARD": 0.0,
+          "PASSPORT": 0.0,
+          "VEHICLE_PLATE": 0.0,
+          "STUDENT_ID": 0.0,
+          "DATE_OF_BIRTH": 0.0,
+          "NAME": 0.0,
+          "ADDRESS": 0.0,
+          "IBAN": 0.0
+        },
+        "delta_micro_f1": 0.0,
+        "delta_micro_f2": 0.0,
+        "delta_micro_recall": 0.0,
+        "disabled": "facility_filter",
+        "macro": {
+          "f1": 0.981980115990058,
+          "f2": 0.9882048331415421,
+          "precision": 0.973196881091618,
+          "recall": 0.9928571428571429,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.9446494464944649,
+          "fn": 6,
+          "f2": 0.9638554216867468,
+          "fp": 24,
+          "precision": 0.9142857142857143,
+          "recall": 0.9770992366412213,
+          "tp": 256
+        },
+        "micro_f2": 0.9638554216867468,
+        "micro_recall": 0.9770992366412213
+      },
+      {
+        "by_type": {
+          "THAI_ID": {
+            "n": 35,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 35
+          },
+          "PHONE": {
+            "n": 44,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 44
+          },
+          "EMAIL": {
+            "n": 28,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 28
+          },
+          "BANK_ACCOUNT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "CREDIT_CARD": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "PASSPORT": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "VEHICLE_PLATE": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "STUDENT_ID": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          },
+          "DATE_OF_BIRTH": {
+            "n": 22,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 22
+          },
+          "NAME": {
+            "n": 70,
+            "f1": 0.9014084507042254,
+            "fn": 6,
+            "f2": 0.9090909090909091,
+            "fp": 8,
+            "precision": 0.8888888888888888,
+            "recall": 0.9142857142857143,
+            "tp": 64
+          },
+          "ADDRESS": {
+            "n": 15,
+            "f1": 0.8823529411764706,
+            "fn": 0,
+            "f2": 0.949367088607595,
+            "fp": 4,
+            "precision": 0.7894736842105263,
+            "recall": 1.0,
+            "tp": 15
+          },
+          "IBAN": {
+            "n": 8,
+            "f1": 1.0,
+            "fn": 0,
+            "f2": 1.0,
+            "fp": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "tp": 8
+          }
+        },
+        "delta_by_type_recall": {
+          "THAI_ID": 0.0,
+          "PHONE": 0.0,
+          "EMAIL": 0.0,
+          "BANK_ACCOUNT": 0.0,
+          "CREDIT_CARD": 0.0,
+          "PASSPORT": 0.0,
+          "VEHICLE_PLATE": 0.0,
+          "STUDENT_ID": 0.0,
+          "DATE_OF_BIRTH": 0.0,
+          "NAME": 0.0,
+          "ADDRESS": 0.0,
+          "IBAN": 0.0
+        },
+        "delta_micro_f1": 0.0,
+        "delta_micro_f2": 0.0,
+        "delta_micro_recall": 0.0,
+        "disabled": "student_relabel",
+        "macro": {
+          "f1": 0.981980115990058,
+          "f2": 0.9882048331415421,
+          "precision": 0.973196881091618,
+          "recall": 0.9928571428571429,
+          "types": 12
+        },
+        "micro": {
+          "f1": 0.9446494464944649,
+          "fn": 6,
+          "f2": 0.9638554216867468,
+          "fp": 24,
+          "precision": 0.9142857142857143,
+          "recall": 0.9770992366412213,
+          "tp": 256
+        },
+        "micro_f2": 0.9638554216867468,
+        "micro_recall": 0.9770992366412213
+      }
+    ],
+    "status": "ok"
+  },
+  "dataset": {
+    "documents": 82,
+    "limited": false,
+    "official": true,
+    "plaintext_sha256": "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624",
+    "seed": 20261101,
+    "version": "blind-v2-repro"
+  },
+  "section26": {
+    "by_category": {
+      "HEALTH": {
+        "flagged": 4,
+        "n": 4,
+        "recall": 1.0
+      },
+      "RELIGION": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "RACE_ETHNICITY": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "POLITICAL_OPINION": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "SEXUAL_BEHAVIOR": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "CRIMINAL_RECORD": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "DISABILITY": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "LABOR_UNION": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      }
+    },
+    "micro_recall": 1.0,
+    "n": 11,
+    "status": "ok"
+  },
+  "systems": [
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 35
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 44
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 28
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 22
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.9014084507042254,
+          "fn": 6,
+          "f2": 0.9090909090909091,
+          "fp": 8,
+          "precision": 0.8888888888888888,
+          "recall": 0.9142857142857143,
+          "tp": 64
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 0.8823529411764706,
+          "fn": 0,
+          "f2": 0.949367088607595,
+          "fp": 4,
+          "precision": 0.7894736842105263,
+          "recall": 1.0,
+          "tp": 15
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 23.30344300003162,
+        "p95": 34.00762199999008
+      },
+      "macro": {
+        "f1": 0.981980115990058,
+        "f2": 0.9882048331415421,
+        "precision": 0.973196881091618,
+        "recall": 0.9928571428571429,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.9446494464944649,
+        "fn": 6,
+        "f2": 0.9638554216867468,
+        "fp": 24,
+        "precision": 0.9142857142857143,
+        "recall": 0.9770992366412213,
+        "tp": 256
+      },
+      "name": "aiguard",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 0,
+        "false_negatives_without_prefix_cue": 6,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 7,
+        "clean_doc_rate": 0.5833333333333334,
+        "documents": 12,
+        "false_positives": 5
+      },
+      "other_false_positives": 12,
+      "peak_memory_bytes": {
+        "p50": 89293960.0,
+        "p95": 89365177.0
+      },
+      "reason": "",
+      "status": "ok"
+    },
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 0.8333333333333333,
+          "fn": 10,
+          "f2": 0.7575757575757576,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.7142857142857143,
+          "tp": 25
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 0.9268292682926829,
+          "fn": 6,
+          "f2": 0.8878504672897197,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.8636363636363636,
+          "tp": 38
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 28
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 22
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.9705882352941176,
+          "fn": 4,
+          "f2": 0.953757225433526,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.9428571428571428,
+          "tp": 66
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 15
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 0.0861629999917568,
+        "p95": 0.12268099999346305
+      },
+      "macro": {
+        "f1": 0.9775625697433444,
+        "f2": 0.9665986208582503,
+        "precision": 1.0,
+        "recall": 0.9600649350649352,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.9603174603174602,
+        "fn": 20,
+        "f2": 0.9379844961240309,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 0.9236641221374046,
+        "tp": 242
+      },
+      "name": "regex",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 4,
+        "false_negatives_without_prefix_cue": 0,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 12,
+        "clean_doc_rate": 1.0,
+        "documents": 12,
+        "false_positives": 0
+      },
+      "other_false_positives": 0,
+      "peak_memory_bytes": {
+        "p50": 10377.0,
+        "p95": 18121.0
+      },
+      "reason": "",
+      "status": "ok"
+    },
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 0.8135593220338984,
+          "fn": 11,
+          "f2": 0.7317073170731707,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.6857142857142857,
+          "tp": 24
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 0.8888888888888891,
+          "fn": 8,
+          "f2": 0.8450704225352113,
+          "fp": 1,
+          "precision": 0.972972972972973,
+          "recall": 0.8181818181818182,
+          "tp": 36
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 0.962962962962963,
+          "fn": 2,
+          "f2": 0.9420289855072465,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.9285714285714286,
+          "tp": 26
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 0.9333333333333333,
+          "fn": 1,
+          "f2": 0.8974358974358975,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.875,
+          "tp": 7
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 0.9333333333333333,
+          "fn": 1,
+          "f2": 0.8974358974358975,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.875,
+          "tp": 7
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 0.9523809523809523,
+          "fn": 2,
+          "f2": 0.9259259259259258,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.9090909090909091,
+          "tp": 20
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.8979591836734694,
+          "fn": 4,
+          "f2": 0.9243697478991597,
+          "fp": 11,
+          "precision": 0.8571428571428571,
+          "recall": 0.9428571428571428,
+          "tp": 66
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 0.9285714285714286,
+          "fn": 2,
+          "f2": 0.8904109589041096,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "tp": 13
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 1.0,
+          "fn": 0,
+          "f2": 1.0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 8
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 14.0003080000497,
+        "p95": 22.015381999949568
+      },
+      "macro": {
+        "f1": 0.9425824504315222,
+        "f2": 0.9211987627263848,
+        "precision": 0.9858429858429858,
+        "recall": 0.9084235209235209,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.8867562380038387,
+        "fn": 31,
+        "f2": 0.8837031369548584,
+        "fp": 28,
+        "precision": 0.8918918918918919,
+        "recall": 0.8816793893129771,
+        "tp": 231
+      },
+      "name": "presidio",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 4,
+        "false_negatives_without_prefix_cue": 0,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 11,
+        "clean_doc_rate": 0.9166666666666666,
+        "documents": 12,
+        "false_positives": 1
+      },
+      "other_false_positives": 16,
+      "peak_memory_bytes": {
+        "p50": 11516693.0,
+        "p95": 11736687.0
+      },
+      "reason": "",
+      "status": "ok"
+    },
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 0.0,
+          "fn": 35,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 0.0,
+          "fn": 44,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 0.0,
+          "fn": 28,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 0.0,
+          "fn": 22,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.7796610169491525,
+          "fn": 24,
+          "f2": 0.701219512195122,
+          "fp": 2,
+          "precision": 0.9583333333333334,
+          "recall": 0.6571428571428571,
+          "tp": 46
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 0.0,
+          "fn": 15,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 7.1158679999143715,
+        "p95": 11.756020000007084
+      },
+      "macro": {
+        "f1": 0.06497175141242938,
+        "f2": 0.0584349593495935,
+        "precision": 0.07986111111111112,
+        "recall": 0.05476190476190476,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.23772609819121446,
+        "fn": 216,
+        "f2": 0.19607843137254902,
+        "fp": 79,
+        "precision": 0.368,
+        "recall": 0.17557251908396945,
+        "tp": 46
+      },
+      "name": "pythainlp-ner",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 16,
+        "false_negatives_without_prefix_cue": 8,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 8,
+        "clean_doc_rate": 0.6666666666666666,
+        "documents": 12,
+        "false_positives": 4
+      },
+      "other_false_positives": 77,
+      "peak_memory_bytes": {
+        "p50": 59881.0,
+        "p95": 80425.0
+      },
+      "reason": "",
+      "status": "ok"
+    },
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 0.0,
+          "fn": 35,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 0.48554913294797686,
+          "fn": 2,
+          "f2": 0.6885245901639345,
+          "fp": 87,
+          "precision": 0.32558139534883723,
+          "recall": 0.9545454545454546,
+          "tp": 42
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 0.6153846153846153,
+          "fn": 0,
+          "f2": 0.8,
+          "fp": 35,
+          "precision": 0.4444444444444444,
+          "recall": 1.0,
+          "tp": 28
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 0.0,
+          "fn": 22,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.7071823204419889,
+          "fn": 6,
+          "f2": 0.8184143222506394,
+          "fp": 47,
+          "precision": 0.5765765765765766,
+          "recall": 0.9142857142857143,
+          "tp": 64
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 0.0,
+          "fn": 15,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 44.281672000010985,
+        "p95": 59.410254999988865
+      },
+      "macro": {
+        "f1": 0.15067633906454844,
+        "f2": 0.19224490936788116,
+        "precision": 0.11221686803082152,
+        "recall": 0.23906926406926407,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.37377963737796377,
+        "fn": 128,
+        "f2": 0.4457751164337991,
+        "fp": 321,
+        "precision": 0.2945054945054945,
+        "recall": 0.5114503816793893,
+        "tp": 134
+      },
+      "name": "wangchanberta-ner",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 4,
+        "false_negatives_without_prefix_cue": 2,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 10,
+        "clean_doc_rate": 0.8333333333333334,
+        "documents": 12,
+        "false_positives": 2
+      },
+      "other_false_positives": 152,
+      "peak_memory_bytes": {
+        "p50": 96537.0,
+        "p95": 135277.0
+      },
+      "reason": "",
+      "status": "ok"
+    }
+  ],
+  "utility": {
+    "status": "skipped",
+    "reason": "disabled"
+  }
+}

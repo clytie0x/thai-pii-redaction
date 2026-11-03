@@ -1,0 +1,27 @@
+{
+  "freeze": {
+    "negative": {
+      "LOCATION": 2,
+      "NAME": 2,
+      "ORGANIZATION": 1
+    },
+    "other": {
+      "DATE": 5,
+      "LOCATION": 6,
+      "ORGANIZATION": 1
+    }
+  },
+  "hard-dev": {
+    "negative": {},
+    "other": {
+      "LOCATION": 6
+    }
+  },
+  "hard-test": {
+    "negative": {},
+    "other": {
+      "LOCATION": 2
+    }
+  },
+  "source": "predict_ablated(text, None) label counts only; same process as the 2026-11-03 run"
+}
