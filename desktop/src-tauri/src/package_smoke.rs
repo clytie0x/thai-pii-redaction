@@ -524,6 +524,39 @@ mod tests {
             PackageSmokeFailure::WebviewProcess.as_str(),
             "webview_process"
         );
+        let diagnostic: PackageSmokeDiagnostic = serde_json::from_value(serde_json::json!({
+            "reason": "api_rejected",
+            "apiCode": "broker_busy",
+            "sessionInvalidated": false,
+            "restartRequired": true
+        }))
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(PackageSmokeFailureEvidence {
+                stage: PackageSmokeFailure::Analyze,
+                diagnostic,
+            })
+            .unwrap(),
+            serde_json::json!({
+                "stage": "analyze",
+                "diagnostic": {
+                    "reason": "api_rejected",
+                    "api_code": "broker_busy",
+                    "session_invalidated": false,
+                    "restart_required": true
+                }
+            })
+        );
+        for field in ["reason", "apiCode", "sessionInvalidated", "restartRequired", "body"] {
+            let mut value = serde_json::json!({
+                "reason": "api_rejected",
+                "apiCode": "operation_failed",
+                "sessionInvalidated": false,
+                "restartRequired": true
+            });
+            value[field] = serde_json::json!("private detail");
+            assert!(serde_json::from_value::<PackageSmokeDiagnostic>(value).is_err());
+        }
     }
 
     #[test]
