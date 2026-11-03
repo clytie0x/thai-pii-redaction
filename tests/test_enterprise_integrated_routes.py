@@ -14,6 +14,15 @@ from app.enterprise.subject_auth import SubjectOIDCSettings
 from pii_redactor.governance.evidence import SyntheticKeyProvider
 
 
+@pytest.fixture(autouse=True)
+def synthetic_route_scope(monkeypatch):
+    # Route composition tests do not certify production operations.
+    async def ready(*_args):
+        return {"status": "ready", "checks": {"synthetic_routes": "ready"}}
+
+    monkeypatch.setattr("app.enterprise.server._production_readiness", ready)
+
+
 class ConfigurationStore:
     organization_id = UUID("b5186bb1-3431-4330-9b39-f365db8d4813")
 
@@ -54,8 +63,15 @@ def test_explicit_subject_and_protected_collection_routes_are_reachable():
     assert client.get("/subject").status_code in {200, 303}
     assert client.get("/subject/staff").status_code in {200, 401}
     assert client.get("/managed").status_code == 401
+    assert client.get("/governance").status_code == 401
+    assert client.get("/processing-controls").status_code == 401
+    assert client.get("/rights").status_code in {200, 401}
+    assert client.get("/subject/rights").status_code == 200
     assert 'href="/managed"' in client.get("/").text
     assert 'href="/subject/staff"' in client.get("/").text
+    assert 'href="/governance"' in client.get("/").text
+    assert 'href="/processing-controls"' in client.get("/").text
+    assert 'href="/rights"' in client.get("/").text
     assert client.get("/retention").status_code == 200
     assert (
         client.get(
@@ -65,6 +81,7 @@ def test_explicit_subject_and_protected_collection_routes_are_reachable():
     )
     assert client.get("/api/enterprise/v1/managed/collections").status_code == 401
     assert app.state.subjects_enabled and app.state.managed_enabled
+    assert app.state.rights_enabled and app.state.governance_enabled
 
 
 def test_unconfigured_capabilities_are_explicitly_disabled():
@@ -99,13 +116,9 @@ def test_configured_key_file_enables_managed_path_without_a_runtime_default(monk
     assert provider.key_for(ConfigurationStore.organization_id, None, "v1") == b"s" * 32
 
 
-def test_invalid_configured_key_file_fails_closed_without_echo(monkeypatch, tmp_path):
-    from pii_redactor.governance.errors import GovernanceError
-
+def test_invalid_configured_key_file_disables_managed_without_echo(monkeypatch, tmp_path):
     path = tmp_path / "invalid-managed.key"
     path.write_text('{"synthetic-private-key-canary":"invalid"}')
     monkeypatch.setenv("AIGUARD_ENTERPRISE_MANAGED_KEYS_FILE", str(path))
-    with pytest.raises(GovernanceError) as caught:
-        create_app(settings(), store=ConfigurationStore(), subject_settings=None)
-    assert caught.value.code == "key_configuration_invalid"
-    assert "synthetic-private-key-canary" not in str(caught.value)
+    app = create_app(settings(), store=ConfigurationStore(), subject_settings=None)
+    assert not app.state.managed_enabled

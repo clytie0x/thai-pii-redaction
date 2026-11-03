@@ -42,6 +42,7 @@ optional-dependencies.ocr = { file = "requirements-ocr.txt" }
 optional-dependencies.enterprise = { file = ["requirements-web.txt", "requirements-enterprise.txt"] }
 
 [tool.setuptools]
+cmdclass = { build_py = "_aiguard_build.ArtifactBuildPy" }
 # Explicit over auto-discovery: the repo root also holds tests/, scripts/,
 # benchmark/ and examples/, which are not part of the installable package.
 packages = [
@@ -65,6 +66,10 @@ packages = [
 pii_redactor = ["fonts/*.ttf"]
 "pii_redactor.governance" = ["migrations/*.sql"]
 "app.enterprise" = ["static/*.html", "static/*.js", "static/*.css", "static/*.png", "static/fonts/*"]
+
+[tool.aiguard.artifact]
+locks = ["requirements.lock", "requirements-build.lock", "requirements-enterprise.lock"]
+build-inputs = ["_aiguard_build.py", "MANIFEST.in"]
 
 # ---------------------------------------------------------------------------
 # pytest (moved here from pytest.ini so tool config lives in one file)

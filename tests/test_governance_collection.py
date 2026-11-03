@@ -39,7 +39,10 @@ def test_tampering_and_key_service_failure_have_value_free_errors():
         crypto.SyntheticKeyProvider({(organization, collection, "v1"): b"k" * 32})
     )
     envelope = cipher.seal(organization, collection, "v1", b"Synthetic secret", {})
-    broken = {**envelope, "ciphertext": envelope["ciphertext"][:-1] + b"\x00"}
+    broken = {
+        **envelope,
+        "ciphertext": envelope["ciphertext"][:-1] + bytes([envelope["ciphertext"][-1] ^ 1]),
+    }
     with pytest.raises(Exception, match="^protected_content_invalid$"):
         cipher.open(organization, collection, broken, {})
     missing = crypto.ProtectedStorage(None)
@@ -117,7 +120,11 @@ def test_evidence_size_limit_is_utf8_bytes_and_json_is_passive_data():
 
 def test_missing_consent_checker_fails_closed_without_database(monkeypatch):
     storage = module("collections")
-    collection = storage.Collection(type("Store", (), {"organization_id": uuid4()})(), None)
+    # Isolate consent checks from the production processing-control fence.
+    store = type(
+        "Store", (), {"organization_id": uuid4(), "production_operations_required": False}
+    )()
+    collection = storage.Collection(store, None)
     fenced = []
     monkeypatch.setattr(
         collection, "_hold_fence", lambda _tx, _row, _doc, action: fenced.append(action)
@@ -131,8 +138,12 @@ def test_missing_consent_checker_fails_closed_without_database(monkeypatch):
 @pytest.mark.parametrize("result", [False, None, 1, "allow", {"allowed": True}])
 def test_consent_callback_requires_literal_true(result, monkeypatch):
     storage = module("collections")
+    # Isolate consent checks from the production processing-control fence.
+    store = type(
+        "Store", (), {"organization_id": uuid4(), "production_operations_required": False}
+    )()
     collection = storage.Collection(
-        type("Store", (), {"organization_id": uuid4()})(),
+        store,
         None,
         consent_check=lambda *args, **kwargs: result,
     )

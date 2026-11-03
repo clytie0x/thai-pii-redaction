@@ -60,15 +60,32 @@ def main(argv=None):
             )
         elif args.command == "work-once":
             from app.enterprise.capabilities import ConfiguredKeyProvider, managed_services
+            from app.enterprise.worker_runtime import require_loopback, run_qualified_once
 
+            mode = os.environ.get("AIGUARD_ENTERPRISE_MODE", "production")
+            if mode not in {"production", "development"}:
+                raise GovernanceError("configuration_invalid")
             key_file = os.environ.get("AIGUARD_ENTERPRISE_MANAGED_KEYS_FILE")
             if not key_file:
                 raise GovernanceError("key_service_unavailable")
+            if mode == "production":
+                from pii_redactor.governance.operator_files import require_private
+
+                require_private(os.environ["AIGUARD_ENTERPRISE_DB_FILE"])
+                require_private(key_file)
             store = _store()
-            store.check_ready()
+            if mode == "development":
+                require_loopback(store)
+                store.check_ready()
             keys = ConfiguredKeyProvider(key_file, store.organization_id)
-            _collection, _evidence, _execution, worker = managed_services(store, keys)
-            print(json.dumps(worker.run_once(args.worker_id), sort_keys=True))
+            if mode == "production":
+                result = run_qualified_once(store, keys, args.worker_id)
+            else:
+                store.production_operations_required = False
+                store.runtime_key_version = keys.active_version
+                _collection, _evidence, _execution, worker = managed_services(store, keys)
+                result = worker.run_once(args.worker_id)
+            print(json.dumps(result, sort_keys=True))
         elif args.command == "migrate":
             _store().migrate()
             print(

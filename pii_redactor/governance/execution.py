@@ -101,8 +101,18 @@ def emit(store, tx, event_code, instruction, actor_id=None):
 
 class Execution:
     def __init__(self, store, collection, evidence):
+        from pii_redactor.governance.processing_controls import ProcessingControls
+
         self.store, self.collection, self.evidence = store, collection, evidence
         self.connector = ManagedDocuments(collection, evidence)
+        self.processing_controls = ProcessingControls(store)
+
+    def _view(self, tx, row):
+        result = instruction_view(row)
+        result["processing_controls"] = self.processing_controls.instruction_snapshot(
+            tx, row["instruction_id"]
+        )
+        return result
 
     def _instruction(self, tx, member, instruction_id, *, allow_quarantine=False):
         row = tx.execute(
@@ -137,8 +147,11 @@ class Execution:
 
     def _recheck(self, tx, instruction, *, approved, read_only=False):
         from pii_redactor.governance.retention import Retention
+        from pii_redactor.governance.rights import Rights
 
         Retention(self.store).fence_instruction(tx, instruction)
+        Rights(self.store, self.collection, self.evidence, self).fence_instruction(tx, instruction)
+        self.processing_controls.fence_instruction(tx, instruction)
         now = tx.execute("SELECT clock_timestamp() AS now").fetchone()["now"]
         if instruction["expires_at"] <= now:
             raise GovernanceError("approval_expired")
@@ -243,7 +256,8 @@ class Execution:
                     member["revision"],
                 ),
             ).fetchone()
-            return instruction_view(row)
+            self.processing_controls.attach_instruction(tx, row)
+            return self._view(tx, row)
 
         return run_command(
             self.store,
@@ -275,7 +289,7 @@ class Execution:
                 "INSERT INTO governance_execution_tasks(instruction_id) VALUES (%s)",
                 (instruction_id,),
             )
-            return instruction_view(updated)
+            return self._view(tx, updated)
 
         return run_command(
             self.store,
@@ -297,14 +311,14 @@ class Execution:
                 ORDER BY i.created_at DESC,i.instruction_id LIMIT 100""",
                 (self.store.organization_id,),
             ).fetchall()
-            return [instruction_view(row) for row in rows if in_scope(member, row["department_id"])]
+            return [self._view(tx, row) for row in rows if in_scope(member, row["department_id"])]
 
     def get(self, principal, instruction_id):
         with self.store.transaction() as tx:
             self.store.lock(tx)
             member = require_member(tx, self.store.organization_id, principal, "execution.read")
-            return instruction_view(
-                self._instruction(tx, member, instruction_id, allow_quarantine=True)
+            return self._view(
+                tx, self._instruction(tx, member, instruction_id, allow_quarantine=True)
             )
 
     def preview_evidence(self, principal, instruction_id, expected_revision):
@@ -404,7 +418,7 @@ class Execution:
                 (instruction_id,),
             )
             emit(self.store, tx, "execution.primary_verified", updated)
-            return instruction_view(updated)
+            return self._view(tx, updated)
 
     def reconcile(self, principal, command_key, instruction_id, expected_revision):
         instruction_id = identifier(instruction_id)
@@ -427,6 +441,12 @@ class Execution:
 
             Retention(self.store).fence_instruction(tx, row, allow_committed=bool(proof))
             if proof:
+                self.processing_controls.fence_instruction(tx, row, allow_committed=True)
+                from pii_redactor.governance.rights import Rights
+
+                Rights(self.store, self.collection, self.evidence, self).fence_instruction(
+                    tx, row, allow_committed=True
+                )
                 collection = self.collection._scope(tx, member, row["collection_id"])
                 self._current_actor(
                     tx,
@@ -488,7 +508,7 @@ class Execution:
                 "UPDATE governance_execution_instructions SET state=%s,revision=revision+1 WHERE instruction_id=%s RETURNING *",
                 (state, instruction_id),
             ).fetchone()
-            return instruction_view(updated)
+            return self._view(tx, updated)
 
         return run_command(
             self.store,

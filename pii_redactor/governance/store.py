@@ -39,12 +39,93 @@ def _event_digest(event: dict) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _audit_rows(tx, organization_id, *, metadata_checked=False):
+    from pii_redactor.governance.operations import check_audit_metadata
+
+    if not metadata_checked:
+        check_audit_metadata(None, tx=tx)
+    previous, count = _ZERO_HASH, 0
+    with tx.cursor(name="audit_verifier") as events:
+        events.execute("SELECT * FROM governance_audit ORDER BY sequence")
+        for event in events:
+            count += 1
+            if (
+                event["sequence"] != count
+                or event["organization_id"] != organization_id
+                or event["previous_hash"] != previous
+                or event["event_hash"] != _event_digest(event)
+            ):
+                raise GovernanceError("audit_integrity_failure")
+            previous = event["event_hash"]
+    enrolled = tx.execute("SELECT enrolled_at FROM governance_organization").fetchone()
+    if enrolled["enrolled_at"] is not None and count == 0:
+        raise GovernanceError("audit_integrity_failure")
+    return {"events": count, "tail_hash": previous}
+
+
+def verifier_identity(tx):
+    """Identify the authenticated database boundary without returning a DSN."""
+    return dict(
+        tx.execute(
+            "SELECT current_user AS runtime_role,session_user AS login_role,current_database() AS database_name,"
+            "(SELECT oid FROM pg_database WHERE datname=current_database()) AS database_oid,"
+            "current_schema() AS schema_name,(SELECT oid FROM pg_namespace WHERE nspname=current_schema()) AS schema_oid,"
+            "(SELECT oid FROM pg_roles WHERE rolname=current_user) AS role_oid,"
+            "inet_server_addr()::text AS server_address,inet_server_port() AS server_port"
+        ).fetchone()
+    )
+
+
+class _VerifierSnapshot:
+    """Private verification only. Normal API transactions never receive this view."""
+
+    __slots__ = (
+        "_audit",
+        "_closed",
+        "_connection",
+        "_metadata_checked",
+        "identity",
+        "organization_id",
+        "runtime_key_version",
+    )
+    _verifier_snapshot = True
+
+    def __init__(self, connection, organization_id, key_version):
+        self._connection, self.organization_id = connection, organization_id
+        self.runtime_key_version, self._audit, self._closed = key_version, None, False
+        self._metadata_checked = False
+        self.identity = verifier_identity(connection)
+
+    def _require_open(self):
+        if self._closed:
+            raise GovernanceError("verifier_snapshot_closed")
+
+    @contextmanager
+    def transaction(self):
+        self._require_open()
+        yield self._connection
+
+    def lock(self, _tx):
+        raise GovernanceError("verifier_snapshot_only")
+
+    def verify_audit(self):
+        from pii_redactor.governance.operations import check_audit_metadata
+
+        self._require_open()
+        if self._audit is None:
+            check_audit_metadata(self)
+            self._audit = _audit_rows(self._connection, self.organization_id, metadata_checked=True)
+        return dict(self._audit)
+
+
 class Store:
     def __init__(self, dsn: str, organization_id: UUID):
         if not isinstance(dsn, str) or not dsn or not isinstance(organization_id, UUID):
             raise GovernanceError("configuration_invalid")
         self._dsn = dsn
         self.organization_id = organization_id
+        self.production_operations_required = False
+        self.runtime_key_version = ""
 
     @contextmanager
     def _transaction(self, *, check_organization=True):
@@ -64,12 +145,48 @@ class Store:
                             or organization["organization_id"] != self.organization_id
                         ):
                             raise GovernanceError("organization_mismatch")
+                    if self.production_operations_required:
+                        connection.execute("SET LOCAL aiguard.production_operations = 'on'")
+                        connection.execute(
+                            "SELECT set_config('aiguard.key_version',%s,true)",
+                            (self.runtime_key_version,),
+                        )
+                        self.lock(connection)
+                        # Fence disclosure reads as well as database writes.
+                        connection.execute("SELECT governance_runtime_guard()")
                     yield connection
         except psycopg.Error:
             raise GovernanceError("storage_failure") from None
 
     def transaction(self):
         return self._transaction()
+
+    @contextmanager
+    def private_snapshot(self):
+        """One repeatable read-only verifier snapshot, without runtime/advisory locks."""
+        view = None
+        try:
+            with psycopg.connect(
+                self._dsn, autocommit=True, row_factory=dict_row, connect_timeout=5
+            ) as connection:
+                with connection.transaction():
+                    connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                    connection.execute("SET LOCAL statement_timeout='10s'")
+                    connection.execute("SET LOCAL lock_timeout='5s'")
+                    organization = connection.execute(
+                        "SELECT organization_id FROM governance_organization"
+                    ).fetchone()
+                    if not organization or organization["organization_id"] != self.organization_id:
+                        raise GovernanceError("organization_mismatch")
+                    view = _VerifierSnapshot(
+                        connection, self.organization_id, self.runtime_key_version
+                    )
+                    yield view
+        except psycopg.Error:
+            raise GovernanceError("storage_failure") from None
+        finally:
+            if view is not None:
+                view._closed = True
 
     def check_ready(self):
         """Check schema and enrollment without running privileged DDL."""
@@ -235,21 +352,9 @@ class Store:
             return ids
 
     def verify_audit(self):
+        if self.production_operations_required:
+            with self.private_snapshot() as snapshot:
+                return snapshot.verify_audit()
         with self.transaction() as tx:
             self.lock(tx)
-            previous = _ZERO_HASH
-            count = 0
-            for event in tx.execute("SELECT * FROM governance_audit ORDER BY sequence"):
-                count += 1
-                if (
-                    event["sequence"] != count
-                    or event["organization_id"] != self.organization_id
-                    or event["previous_hash"] != previous
-                    or event["event_hash"] != _event_digest(event)
-                ):
-                    raise GovernanceError("audit_integrity_failure")
-                previous = event["event_hash"]
-            enrolled = tx.execute("SELECT enrolled_at FROM governance_organization").fetchone()
-            if enrolled["enrolled_at"] is not None and count == 0:
-                raise GovernanceError("audit_integrity_failure")
-            return {"events": count, "tail_hash": previous}
+            return _audit_rows(tx, self.organization_id)

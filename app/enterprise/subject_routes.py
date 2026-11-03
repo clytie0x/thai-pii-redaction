@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from app.enterprise.subject_auth import SubjectOIDCClient, SubjectOIDCSettings, SubjectSessions
@@ -86,6 +86,9 @@ def create_subject_router(
             sessions.check_csrf(cookie, values[0])
         return actor
 
+    router.subject_identity = identity
+    router.rights_enabled = False
+
     def cookie(response, name, value, *, httponly, samesite="strict", max_age=28800):
         response.set_cookie(
             prefix + name,
@@ -100,7 +103,15 @@ def create_subject_router(
     @router.get("/subject")
     @router.get("/subject/")
     def home():
-        return FileResponse(Path(__file__).with_name("static") / "subject_index.html")
+        path = Path(__file__).with_name("static") / "subject_index.html"
+        if router.rights_enabled:
+            return HTMLResponse(
+                path.read_text(encoding="utf-8").replace(
+                    "<!-- enterprise-rights-link -->",
+                    '<a class="secondary" href="/subject/rights">คำขอและการส่งมอบของฉัน</a>',
+                )
+            )
+        return FileResponse(path)
 
     @router.get("/subject/staff")
     def staff_home():

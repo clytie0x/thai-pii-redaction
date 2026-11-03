@@ -13,23 +13,36 @@ fixed proxy errors. The parallel S2-S6 wave implements that migration in source,
 including 29 SDK canonical module aliases and removal of Hosted engine copies.
 The parallel M4-M6 wave implements subject consent, encrypted managed execution
 and reviewed retention/holds through domain/API/Thai UI paths. These are
-**implemented locally; qualification pending**. Complete source results now
+**implemented locally; qualification pending**. Earlier complete source results
 include root 3,549 passed/34 explicit skips, SDK 2,141 passed/10 explicit skips
-and the later consent-fix enterprise gate 322 passed without skips. Earlier
-failed enterprise/SDK runs remain negative evidence. See the
-[local-wave record](docs/acceptance/enterprise/M04-M06-local-wave.md).
+and the consent-fix enterprise gate 322 passed without skips. Those results
+remain bound to their older candidates, alongside failed enterprise/SDK runs.
+See the [local-wave record](docs/acceptance/enterprise/M04-M06-local-wave.md).
 
-The [frozen combined artifacts](docs/acceptance/enterprise/M01-combined-artifacts.md)
-now pass three Windows/Python 3.13 fresh-install profiles and 214 installed tests
-without skips. SDK CI on `b468592` passes seven profiles and the isolated image
+The earlier [frozen combined artifacts](docs/acceptance/enterprise/M01-combined-artifacts.md)
+passed three Windows/Python 3.13 fresh-install profiles and 214 installed tests
+without skips, bound to `b4a8897` with packaged inputs unchanged through
+`b468592`. SDK CI on `b468592` passes seven profiles and the isolated image
 smoke; [its evidence](docs/acceptance/enterprise/M09-sdk-ci.md) is bounded.
-Next, close the actual Hosted runner, root core-only collection and macOS
-readiness-test CI failures, then qualify the complete exact-candidate CI and
-Hosted image. Local Rust execution lacks the MSVC linker; new CI must exercise
-the bounded health helper, deadline and terminal-error assertions. Rebind real browser,
+The [M7-M10 integration](docs/acceptance/enterprise/M07-M10-integration-progress.md)
+now has local rights/organization/processing/operations callers and scoped
+independent reviews. Recorded source gates pass root core+web V2 3,352 tests/80
+skips, SDK 2,145/10 skips and root JavaScript 199 tests. The first complete
+52-suite enterprise run records 651 passed/26 fixture-scope failures/0 skipped;
+test-only fixture alignment passes both owning files (45 passed/0 skipped)
+without weakening runtime guards. The headless-worker freshness fixes pass
+scoped tests and review; the re-frozen complete enterprise gate passes 686 tests
+across all 52 suites without skips.
+The [new paired artifacts](docs/acceptance/enterprise/M01-integrated-artifacts.md)
+pass three fresh profiles and 214 installed tests without skips, with a CLEAR
+independent review.
+CI on `05d5d77` passes 24/26 jobs including exact Windows/macOS package smoke;
+the two remaining test-harness failures have local corrections. Qualify affected
+source deltas and Office gates, remaining artifact profiles and all exact-candidate
+CI/Hosted image checks. Rebind real browser,
 IdP, restricted-role and restart evidence to the new candidate; older M3 runs do
 not qualify it. The controlled-performance hold remains. In parallel, integrate
-and independently review M7 rights/secure delivery, M8 organization records and M10
+and qualify M7 rights/secure delivery, M8 organization records and M10
 whole-database recovery/checkpoint/rotation/operator paths. M9 keeps every
 declared storefront and its host/OS gates; M11/M12 keep their human/owner gates.
 The owner selected distribution name

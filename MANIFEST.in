@@ -1,0 +1,2 @@
+include VERSION _aiguard_build.py
+include requirements*.txt requirements*.lock

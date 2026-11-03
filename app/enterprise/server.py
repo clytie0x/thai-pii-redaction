@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import secrets
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import get_args
 from urllib.parse import urlsplit
@@ -131,6 +132,53 @@ class _RequestBoundary:
 _FROM_ENV = object()
 
 
+class _IdentityFlight:
+    def __init__(self):
+        self.pending = None
+
+    async def check(self, operation):
+        if self.pending is None or self.pending.done():
+            self.pending = asyncio.create_task(operation())
+        await asyncio.shield(self.pending)
+
+
+async def _production_readiness(
+    settings, store, key_provider, oidc, subject_router, runtime_gate=None, identity_flight=None
+):
+    from app.enterprise.operations import runtime_request_report
+
+    report = (
+        await run_in_threadpool(runtime_gate.request_report)
+        if runtime_gate
+        else await run_in_threadpool(runtime_request_report, settings, store, key_provider)
+    )
+    if report["status"] != "ready":
+        report["checks"]["idp"] = "unverified_prerequisites"
+        return report
+
+    async def identities():
+        await oidc.check_ready(refresh=True)
+        if subject_router is None:
+            raise GovernanceError("identity_unavailable")
+        await subject_router.subject_oidc.check_ready(refresh=True)
+
+    try:
+        if identity_flight is None:
+            await identities()
+        else:
+            await identity_flight.check(identities)
+        if runtime_gate is not None:
+            # Identity I/O may outlive the local proof or a quarantine transition.
+            report = await run_in_threadpool(runtime_gate.request_report)
+        report["checks"]["idp"] = "ready"
+    except Exception:
+        report["checks"]["idp"] = "blocked"
+    report["status"] = (
+        "ready" if all(v == "ready" for v in report["checks"].values()) else "blocked"
+    )
+    return report
+
+
 def create_app(
     settings: Settings,
     *,
@@ -146,7 +194,9 @@ def create_app(
     store = store or Store(settings.database_dsn, settings.organization_id)
     if store.organization_id != settings.organization_id:
         raise GovernanceError("configuration_invalid")
-    store.check_ready()
+    store.production_operations_required = not settings.development
+    if settings.development:
+        store.check_ready()
     sessions, registry, authority = StaffSessions(store), Registry(store), Authority(store)
     oidc = OIDCClient(settings, transport=oidc_transport)
     from app.enterprise.capabilities import managed_keys_from_env, subject_from_env
@@ -154,22 +204,67 @@ def create_app(
     if subject_settings is _FROM_ENV:
         subject_settings = subject_from_env(settings)
     if managed_key_provider is _FROM_ENV:
-        managed_key_provider = managed_keys_from_env(settings)
+        try:
+            managed_key_provider = managed_keys_from_env(settings)
+        except GovernanceError:
+            if settings.development:
+                raise
+            managed_key_provider = None
+    store.runtime_key_version = getattr(managed_key_provider, "active_version", "")
     subject_router = None
     managed_collection = None
+    managed_rights = None
+    from app.enterprise.operations import RuntimeGate
+
+    runtime_gate = (
+        RuntimeGate(settings, store, managed_key_provider) if not settings.development else None
+    )
+    identity_flight = _IdentityFlight()
 
     @asynccontextmanager
     async def lifespan(_app):
-        await oidc.check_ready()
-        if subject_router is not None:
-            await subject_router.subject_oidc.check_ready()
-        yield
+        if settings.development:
+            await oidc.check_ready()
+            if subject_router is not None:
+                await subject_router.subject_oidc.check_ready()
+        task = asyncio.create_task(runtime_gate.run()) if runtime_gate else None
+        try:
+            yield
+        finally:
+            if runtime_gate:
+                runtime_gate.close()
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+    app.state.production_gate = runtime_gate
+    prefix = settings.cookie_prefix
+
+    async def production_readiness():
+        return await _production_readiness(
+            settings,
+            store,
+            managed_key_provider,
+            oidc,
+            subject_router,
+            runtime_gate,
+            identity_flight,
+        )
+
+    @app.middleware("http")
+    async def production_barrier(request, call_next):
+        if not settings.development and request.url.path != "/health/live":
+            report = await production_readiness()
+            if request.url.path == "/health/ready":
+                return JSONResponse(report, status_code=200 if report["status"] == "ready" else 503)
+            if report["status"] != "ready":
+                return _error("production_prerequisites_unverified", 503)
+        return await call_next(request)
+
     app.add_middleware(
         _RequestBoundary, origin=settings.public_origin, secure=not settings.development
     )
-    prefix = settings.cookie_prefix
 
     @app.exception_handler(GovernanceError)
     async def governance_error(_request, error):
@@ -488,6 +583,8 @@ def create_app(
             staff_identity=identity,
             oidc_transport=subject_oidc_transport,
         )
+        if runtime_gate is not None:
+            runtime_gate.subject_settings = subject_router.subject_oidc.settings
         app.include_router(subject_router)
     if managed_key_provider is not None:
         from app.enterprise.capabilities import managed_services
@@ -508,6 +605,10 @@ def create_app(
                 identity,
             )
         )
+        from app.enterprise.processing_control_routes import build_processing_router
+
+        app.include_router(build_processing_router(managed_execution.processing_controls, identity))
+        app.state.processing_controls = managed_execution.processing_controls
         from app.enterprise.retention_routes import build_retention_router
         from pii_redactor.governance.holds import Holds
         from pii_redactor.governance.retention import Retention
@@ -520,19 +621,50 @@ def create_app(
             )
         )
 
+        if subject_router is not None:
+            from app.enterprise.rights_routes import build_rights_router
+            from pii_redactor.governance.rights import Rights
+
+            managed_rights = Rights(store, managed_collection, managed_evidence, managed_execution)
+            app.include_router(
+                build_rights_router(
+                    managed_rights,
+                    staff_identity=identity,
+                    subject_identity=subject_router.subject_identity,
+                )
+            )
+            subject_router.rights_enabled = True
+            app.state.managed_rights = managed_rights
+
+    from app.enterprise.capabilities import rights_case_checker
+    from app.enterprise.governance_routes import build_governance_router
+
+    app.include_router(
+        build_governance_router(
+            store,
+            identity,
+            case_checker=rights_case_checker(managed_rights) if managed_rights else None,
+        )
+    )
+    app.state.governance_enabled = True
+    app.state.rights_enabled = managed_rights is not None
+
     static = Path(__file__).with_name("static")
     if static.is_dir():
         app.mount("/static", StaticFiles(directory=static), name="static")
 
         @app.get("/")
         def home():
-            links = []
+            links = ['<a class="secondary" href="/governance">ทะเบียนและข้อควบคุมขององค์กร</a>']
+            if managed_rights is not None:
+                links.append('<a class="secondary" href="/rights">คำขอใช้สิทธิและการส่งมอบ</a>')
             if subject_settings is not None:
                 links.append('<a class="secondary" href="/subject/staff">ตัวตนและความยินยอม</a>')
             if managed_collection is not None:
                 links.extend(
                     [
                         '<a class="secondary" href="/managed">เอกสารและคำสั่งที่อนุมัติ</a>',
+                        '<a class="secondary" href="/processing-controls">อนุมัติข้อควบคุมก่อนประมวลผล</a>',
                         '<a class="secondary" href="/retention">การเก็บรักษาและระงับการดำเนินการ</a>',
                     ]
                 )

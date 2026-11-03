@@ -2,7 +2,23 @@
 
 Updated: 2026-11-03
 
-Production-goal checkpoint: the complete source profiles reached root 3,549 passed/
+Current local integration includes M7 rights/delivery, M8 organization and
+processing controls, and M10 runtime/backup/restore/initial-activation paths.
+The [combined progress record](acceptance/enterprise/M07-M10-integration-progress.md)
+separates implemented callers, independent review fixes, retained negatives and
+overlapping focused results. The recorded root core+web source gate passes
+3,352 tests with 80 explicit skips on Python 3.13 after the final V2 fixes;
+SDK source passes 2,145 with
+10 skips, and root JavaScript passes 199 tests. The final mandatory enterprise
+gate passes 686 tests across all 52 suites without skips, with both source
+freezes unchanged. Its earlier 651-pass/26-failure run and test-only fixture
+corrections remain retained. The headless-worker freshness fixes pass tests
+and independent review. The [new paired artifacts](acceptance/enterprise/M01-integrated-artifacts.md)
+pass three fresh profiles and 214 installed tests without skips, with a CLEAR
+independent review. Remaining artifact/host profiles, CI, controlled performance and
+actual-host/pilot acceptance remain open.
+
+Earlier protection checkpoint: the complete source profiles reached root 3,549 passed/
 34 optional/platform/live skips, SDK 2,141 passed/10 such skips, JavaScript 178,
 and Office Node 22 manifest/type checks, 129 tests and build. A subsequent real
 production-composition test exposed queued approval resurrection after consent
@@ -15,36 +31,43 @@ installed mapping-reuse probe selected root TNER despite the SDK local snapshot.
 No live provider call occurred. The config path through anonymization candidate
 validation and the standalone pipeline is now fixed (root 200 and SDK 191 focused
 tests, no skips); the preceding broad-suite totals are not new runs of this delta.
-The [frozen combined pair](acceptance/enterprise/M01-combined-artifacts.md)
-is now built and qualified outside source on Windows/Python 3.13: six artifacts,
+The earlier [frozen combined pair](acceptance/enterprise/M01-combined-artifacts.md)
+was built and qualified outside source on Windows/Python 3.13: six artifacts,
 three fresh profiles, 214 installed adapter tests without skips and six artifact
 negatives. This evidence is bound to `b4a8897`; packaged runtime/config/locks
 are unchanged through `b468592`. It does not qualify images or actual hosts.
 
-The local five-iteration budget run measures detect 5.75 ms, sanitize 15.65 ms,
-restore 0.37 ms, PDF 73.77 ms and peak RSS 151.4 MiB. Sanitization and restoration
+The V2 local five-iteration budget run measures detect 5.65 ms, sanitize 15.33 ms,
+restore 0.36 ms, PDF 70.24 ms and peak RSS 151.9 MiB. Sanitization and restoration
 exceed the unchanged baseline budgets. This is a held feature checkpoint, not a
 performance waiver, controlled-environment M3 acceptance, main integration or
-production release. M7/M8 and operational M10 engineering are running in separate
-managed checkouts and are not integrated or accepted.
+production release. The later M7-M10 integration is implemented locally and
+under combined qualification, not accepted.
 
-Public CI on `b468592` passes all seven SDK profile jobs and the actual SDK
+Public CI on `05d5d77` passes 24 of 26 jobs, including actual Windows/macOS
+package smoke, all SDK profiles and the isolated SDK image. The remaining
+Windows Python-to-Node test timeout and Hosted nginx harness failures have local
+test corrections pending a new exact-candidate run. Root/Hosted production
+limits and assertions were retained. No all-green integrated CI is claimed.
+Earlier CI on `b468592` passes all seven SDK profile jobs and the actual SDK
 offline-image smoke. The downloaded image/API reports are bound in the
-[SDK CI record](acceptance/enterprise/M09-sdk-ci.md). Imported checks still fail
-in the Hosted runner's shallow-path test before its image build. Root CI exposes
-a separate QI test collection error in the bare profile. The macOS cross-platform
-smoke also fails before package build: an immediate health assertion receives a
-valid nonterminal `broker_busy`. The test now uses the existing bounded readiness
-helper and checks retry, deadline and terminal-error behavior. Local Rust
+[SDK CI record](acceptance/enterprise/M09-sdk-ci.md). At that older checkpoint,
+imported checks failed in the Hosted runner's shallow-path test before its image
+build. Root CI exposed a separate QI test collection error in the bare profile.
+The macOS cross-platform smoke also failed before package build: an immediate
+health assertion received a valid nonterminal `broker_busy`. The test now uses
+the existing bounded readiness helper and checks retry, deadline and
+terminal-error behavior. Local Rust
 execution is blocked by missing MSVC `link.exe`; formatting alone does not prove
-the fix. These test-harness corrections require a new committed CI run; no
-all-green result is claimed.
+the fix. The 24 passing jobs on `05d5d77` supersede the older pending statements
+for their exact scopes. Its two remaining failures and subsequent integration
+deltas still require a new exact-candidate CI run; no all-green result is claimed.
 
 | Storefront | Current candidate evidence | Remaining gate |
 | --- | --- | --- |
-| Enterprise application | M4–M6 source, 322 mandatory local PostgreSQL/controlled-auth tests and frozen installed pair | New-candidate browser/IdP/restart, operational recovery and organization pilot |
+| Enterprise application | M4-M8 and M10 local callers; complete V2 52-suite run 686 passed/0 skipped and integrated installed pair | New-candidate browser/IdP/restart, whole-environment recovery, performance and organization pilot |
 | Hosted application | Canonical wheel source/build path, 16 execute contracts and source-bound safety checks | Exact offline image, complete CI and platform acceptance |
-| Python SDK | Complete source profile 2,141 passed/10 explicit skips; frozen installed pair; seven CI profiles and isolated image smoke on `b468592` | External hosts/live providers and remaining exact release/OS profiles; complete product CI |
+| Python SDK | Recorded source profile 2,145 passed/10 explicit skips; integrated V2 installed pair; all SDK CI profiles and isolated image smoke on `05d5d77` | External hosts/live providers and remaining exact release/OS profiles; complete product CI |
 
 Current parallel wave: SDK and Hosted source consumers now use the canonical
 core, and M4 subject consent, M5 managed execution and M6 retention/holds have
@@ -62,9 +85,16 @@ SDK retains 29 internal canonical module aliases rather than maintained engine
 copies; its sensitive-span implementation is removed. Hosted copies are removed
 and its build prepares a supplied, source-bound first-party wheel/dependency/model
 context offline. Source checks and build preparation do not qualify those images.
-M7 rights/delivery and M8 organization records are not yet integrated. M10 has collection
-quarantine/reconciliation only; whole-database recovery, independent checkpoints,
-rotation, operator workflows and drills remain incomplete. All declared
+M7 rights/delivery and M8 organization records are in combined local integration,
+including review corrections; combined qualification is pending.
+The M10 [operations candidate](enterprise/operations.md) extends existing collection
+recovery with encrypted whole-DB backup/isolated quarantine, a signed HTTP witness
+adapter, production request/DB fences, additive key operations and operator assets.
+The later controlled replay/cutover now includes current M3-M8 authority,
+registry, consent, holds, outcomes, cases and processing controls. Initial
+activation remains separate from restore; both require their exact proofs.
+Whole-environment recovery acceptance, custody, load, RPO/RTO and Docker/TLS/IdP
+qualification remain open. All declared
 storefronts remain in scope, with their own exact-artifact and host gates.
 
 The accepted single-organization self-hosted design remains in force. The

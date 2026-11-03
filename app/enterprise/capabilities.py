@@ -87,7 +87,7 @@ def consent_gate(store, consent):
     def check(tx, *, collection, document, action):
         store.lock(tx)
         purpose = tx.execute(
-            "SELECT * FROM governance_consent_purposes WHERE purpose_version=%s AND organization_id=%s FOR SHARE",
+            "SELECT * FROM governance_consent_purposes WHERE purpose_version=%s AND organization_id=%s",
             (collection["purpose_version"], store.organization_id),
         ).fetchone()
         activity = tx.execute(
@@ -121,16 +121,69 @@ def managed_services(store, key_provider):
     from pii_redactor.governance.evidence import Evidence
     from pii_redactor.governance.execution import Execution
     from pii_redactor.governance.outbox import Outbox
+    from pii_redactor.governance.processing_controls import ProcessingControls
 
     version = getattr(key_provider, "active_version", "v1")
+    processing = ProcessingControls(store)
     collection = Collection(
         store,
         key_provider,
         consent_check=consent_gate(store, Consent(store)),
         key_version=version,
+        processing_check=processing.require_activity,
     )
     # New collections use opaque IDs, so startup must prove the configured root key.
     collection.protection.require_key(store.organization_id, None, version)
     evidence = Evidence(store, key_provider, collection=collection)
     execution = Execution(store, collection, evidence)
+    from pii_redactor.governance.rights import Rights
+
+    processing.case_checker = rights_case_checker(Rights(store, collection, evidence, execution))
+    execution.processing_controls = processing
     return collection, evidence, execution, Worker(execution, Outbox(store))
+
+
+def rights_case_checker(rights):
+    """Bind register evidence to a current case, without granting execution."""
+    from pii_redactor.governance.commands import identifier
+    from pii_redactor.governance.rights import RIGHTS_ACTION_MAP
+
+    def check(tx, organization_id, department_id, case_id, revision):
+        if organization_id != rights.store.organization_id:
+            return False
+        rights.store.lock(tx)
+        row = tx.execute(
+            "SELECT * FROM governance_rights_cases WHERE case_id=%s AND organization_id=%s FOR UPDATE",
+            (identifier(case_id), organization_id),
+        ).fetchone()
+        if not row or row["department_id"] != department_id or row["revision"] != revision:
+            return False
+        try:
+            if row["state"] in {"approved", "partial"}:
+                rights._authority(tx, row, exact=False)
+                return True
+            if row["state"] not in {"closed", "refused"} or not row["closure_ref"]:
+                return False
+            rights._legal(row)
+            rights._identity(tx, row)
+            for member, version, action in (
+                ("verified_by", "verifier_revision", "rights.verify"),
+                ("proposed_by", "proposer_revision", "rights.plan"),
+                ("approved_by", "approver_revision", "rights.review"),
+            ):
+                rights._actor(
+                    tx, row[member], row[version], RIGHTS_ACTION_MAP[action], department_id
+                )
+            history = tx.execute(
+                "SELECT data FROM governance_rights_history WHERE case_id=%s AND revision=%s AND kind='closure_reviewed'",
+                (row["case_id"], row["revision"]),
+            ).fetchone()
+            return bool(
+                history
+                and str(history["data"].get("closure_ref")) == str(row["closure_ref"])
+                and history["data"].get("closure_proof") == rights._closure_proof(tx, row)
+            )
+        except GovernanceError:
+            return False
+
+    return check

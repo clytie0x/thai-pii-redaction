@@ -1,4 +1,7 @@
-"""Staff caller path uses real PostgreSQL and a controlled signed OIDC provider."""
+"""Synthetic BFF auth scope with real PostgreSQL and a controlled signed OIDC provider.
+
+Production operations and restricted-role readiness use separate mandatory suites.
+"""
 
 import base64
 import hashlib
@@ -26,7 +29,24 @@ database = governance_helpers.database
 
 
 @pytest.fixture
-def web(context):
+def web(context, monkeypatch):
+    # These contracts isolate BFF auth. Real operations gates have dedicated suites.
+    async def ready(_settings, store, *_args):
+        from pii_redactor.governance.errors import GovernanceError
+
+        try:
+            store.check_ready()
+        except GovernanceError as error:
+            return {
+                "status": "blocked",
+                "checks": {"schema_audit": "blocked"},
+                "error": {"code": error.code},
+            }
+        return {"status": "ready", "checks": {"synthetic_auth_scope": "ready"}}
+
+    monkeypatch.setattr("app.enterprise.server._production_readiness", ready)
+    with context.store.transaction() as tx:
+        tx.execute("UPDATE governance_operations SET state='reconciled'")
     settings = Settings(
         organization_id=context.store.organization_id,
         database_dsn=context.store._dsn,
@@ -83,6 +103,9 @@ def web(context):
         )
 
     app = create_app(settings, store=context.store, oidc_transport=httpx.MockTransport(provider))
+    # Keep the operator-backed fixture in the schema/audit scope mocked above.
+    # Production settings still exercise secure cookies, origin and BFF auth.
+    monkeypatch.setattr(context.store, "production_operations_required", False)
     with TestClient(
         app, base_url=settings.public_origin, follow_redirects=False, raise_server_exceptions=False
     ) as client:

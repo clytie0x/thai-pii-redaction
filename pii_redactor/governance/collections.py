@@ -56,10 +56,13 @@ def document_view(row):
 
 
 class Collection:
-    def __init__(self, store, key_provider, *, consent_check=None, key_version="v1"):
+    def __init__(
+        self, store, key_provider, *, consent_check=None, key_version="v1", processing_check=None
+    ):
         if not isinstance(key_version, str) or not 1 <= len(key_version) <= 64:
             raise GovernanceError("key_configuration_invalid")
         self.store, self.consent_check = store, consent_check
+        self.processing_check = processing_check
         self.protection = ProtectedStorage(key_provider)
         self.key_version = key_version
 
@@ -75,6 +78,12 @@ class Collection:
 
     def check_consent(self, tx, collection, document, action):
         self._hold_fence(tx, collection, document, action)
+        if self.processing_check is not None:
+            self.processing_check(tx, collection)
+        elif self.store.production_operations_required:
+            from pii_redactor.governance.processing_controls import ProcessingControls
+
+            ProcessingControls(self.store).require_activity(tx, collection, required=True)
         if not collection["consent_bound"]:
             return
         if self.consent_check is None:

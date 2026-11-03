@@ -18,5 +18,8 @@ docs/research/pdpa-coverage-plan.md -text
 # Migration fingerprints must survive checkout on every supported platform.
 pii_redactor/governance/migrations/*.sql text eol=lf
 
+# Preserve the copied qualification manifest's recorded byte digest.
+docs/acceptance/enterprise/M01-integrated-artifact*.json text eol=lf
+
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary

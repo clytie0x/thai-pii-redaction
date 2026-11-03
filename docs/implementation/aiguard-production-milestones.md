@@ -30,8 +30,12 @@ and enterprise 322 passed without skips after consent invalidation. The
 three fresh Windows/Python 3.13 profiles and 214 installed tests without skips.
 [SDK CI](../acceptance/enterprise/M09-sdk-ci.md) on `b468592` passes seven profiles
 and the isolated image smoke; complete CI, Hosted image and actual-host rebinding
-remain pending. M7/M8/M10 implementations run in isolated managed checkouts;
-they are not yet integrated or accepted. M3's controlled performance hold is
+remain pending. M7/M8/M10 are now locally integrated with review corrections;
+the [combined record](../acceptance/enterprise/M07-M10-integration-progress.md)
+retains bounded evidence. The final V2 52-suite global enterprise gate passes
+686 tests without skips, and the [new integrated pair](../acceptance/enterprise/M01-integrated-artifacts.md)
+passes three fresh profiles and 214 installed tests with independent review;
+none of these milestones is accepted yet. M3's controlled performance hold is
 unchanged. The historical starting snapshot below remains
 historical; it is not a statement that those implemented paths are still absent.
 
@@ -141,10 +145,10 @@ live-provider scripts merely to verify this document.
 | M4 | Verified subject linkage and actual consent/withdrawal | M3 | Stage 2 | Implemented/local; combined and actual IdP/browser/artifact qualification pending |
 | M5 | Protected collection, execution boundary and recoverable worker | M3 | Stage 3 foundation | Implemented/local; combined/runtime-role/recovery/artifact qualification pending |
 | M6 | Retention, holds and evidence-backed disposal/restriction | M4, M5 | Stage 3 completion | Restriction/suppression and holds implemented/local; combined qualification pending; physical erasure absent |
-| M7 | Rights cases, secure delivery and evidence-based closure | M4, M5, M6 | Stage 4 | Domain/case/delivery implementation absent |
-| M8 | Organization governance and reviewed legal applicability | M3; M6/M7 for integrated gate | Stage 5 | Design only; organization control-record implementation absent |
+| M7 | Rights cases, secure delivery and evidence-based closure | M4, M5, M6 | Stage 4 | Domain/API/Thai UI implemented locally; combined artifact/browser qualification pending |
+| M8 | Organization governance and reviewed legal applicability | M3; M6/M7 for integrated gate | Stage 5 | Registers and authoritative processing bindings implemented locally; current legal/human/combined qualification pending |
 | M9 | Exact-candidate acceptance per supported client/delivery surface | M1, M2; M3 for enterprise console | Client qualification | Historical evidence; every declared storefront still needs exact-candidate gates |
-| M10 | Hardened deployment candidate and rehearsed recovery | M3-M8; M9 for every included surface | Stage 6 foundation | Partial collection quarantine/reconciliation; whole-DB/checkpoint/rotation/operator/drill work incomplete |
+| M10 | Hardened deployment candidate and rehearsed recovery | M3-M8; M9 for every included surface | Stage 6 foundation | Runtime, witness, key, whole-DB recovery and initial activation implemented locally; combined/profile/artifact/load/host qualification pending |
 | M11 | Supervised pilot on named organization infrastructure | M10, applicable M9 gates | Stage 6 pilot | Pending implementation gates and real organization/people inputs |
 | M12 | Authorized production launch and repeatable operations | M11 | Stage 6 release/maintenance | Pending qualification and exact owner action approval |
 

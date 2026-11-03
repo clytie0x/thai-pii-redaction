@@ -5,7 +5,8 @@ canonical root core. SDK retains 29 thin internal module aliases and its
 adapter-owned public contracts/configuration; Hosted builds from a supplied
 canonical wheel instead of maintained `core/app/`/`core/pii_redactor/` copies.
 The separate enterprise adapter/domain implements subject consent, encrypted
-managed execution and retention/holds under the accepted single-organization
+managed execution, retention/holds, rights delivery, reviewed organization controls
+and operational recovery under the accepted single-organization
 design. It persists protected governance/managed records, never the local
 reversible vault. Source implementation is not artifact or production acceptance.
 See [current release scope](enterprise/release-scope.md) for implemented versus
@@ -550,6 +551,24 @@ checkpoints, rotation or completed operational recovery. Current evidence and
 remaining workflow/host/operator gates live in the
 [local-wave record](acceptance/enterprise/M04-M06-local-wave.md).
 
+The later combined paths add rights cases, exact reviewed outcome chains,
+encrypted subject delivery and explicit receipts. Historical closed-case checks
+use immutable metadata proofs rather than decrypting old exports or granting new
+processing authority. Reviewed organization registers and processing bindings
+apply to both consent and non-consent work; supersession invalidates unexecuted
+instructions without relabelling committed outcomes.
+
+Operational controls separate runtime, migration, key, backup and witness
+authority. Database guards fence normal transactions. Full historical
+qualification uses a private read-only MVCC snapshot, while HTTP and headless
+worker admission recheck current authority and bounded signed extensions.
+Whole-database recovery freezes the source before replay and target release;
+fresh organization activation is a distinct protected procedure. Neither path
+can revive old sessions or execution approvals. Migrations 007-013 implement
+these additive records and fences. The [combined record](acceptance/enterprise/M07-M10-integration-progress.md)
+and [operator runbook](enterprise/operations.md) separate source/installed proof
+from unaccepted production custody, hosts, performance and human decisions.
+
 ## Core processing layers
 
 1. Ingest and normalize text or PDF content while preserving coordinates where
@@ -721,7 +740,7 @@ signals into automatic blocking or redaction.
 | `app/http_v2.py` | Strict HTTP-v2 response and error DTOs shared by the main adapters. |
 | `app/hosted.py` | Generic main-repository hosted candidate with required API-key/provider configuration and a fixed seven-route allowlist; not an official-platform acceptance claim. |
 | `app/enterprise/` | Separate staff/subject OIDC/session boundaries, scoped routers/Thai pages, optional file-key capability wiring and explicit managed outbox worker. |
-| `pii_redactor/governance/` | PostgreSQL authority, registry/notices, subject linkage/consent, protected collection/evidence, exact execution/outbox, holds/retention and collection-level quarantine; migrations 004-006 extend the existing schema. |
+| `pii_redactor/governance/` | PostgreSQL authority, registry/notices, subjects/consent, protected collection/evidence, execution/outbox, holds/retention, rights/delivery, reviewed processing controls and operational recovery; additive migrations through 013. |
 | `packages/amphrang/` | SDK public adapters and immutable local-only configuration over the exact first-party core dependency; 29 thin internal aliases replace maintained engine code. |
 | `apps/hosted/` | Imported gateway/auth/protected-Markdown adapters and checks; offline supplied canonical wheel/dependency/model build, installed identities and source-bound approval/scanning. |
 | `app/worker/` | Stateless job operations plus a provisional transport used for local pre-platform acceptance; not the official HTTP delivery path. |
