@@ -2,12 +2,25 @@
 
 Updated: 2026-11-03
 
-Owner-stop checkpoint: local engineering and test execution stopped at the
-owner's request. Incomplete package-smoke diagnostic tests are preserved as
-separate WIP: Python/JavaScript RED results and Rust tests referring to types
-not yet implemented. The passing receipt/governance evidence below predates
-that WIP and does not qualify the stopped diagnostic unit. No main merge or
-production acceptance is authorized by this checkpoint.
+The owner resumed engineering toward consolidating retained work into one main
+branch. The stopped diagnostic WIP is now implemented: fixed, closed smoke
+diagnostics preserve private errors, native marker compatibility and existing
+feature admission. Hosted parity now verifies the declared generated resources
+and license copies against the trusted source manifest. Enterprise test fixtures
+create protected files before use and prove an actual ACL transition.
+
+The resumed complete core/web run passes 3,429 tests with 80 explicit skips and
+one warning; all 267 bound files and the 255 artifact inputs are unchanged
+before/after. Root JavaScript passes 206 tests across 24 files. Native-package
+Python tests pass 127 with one platform skip; Hosted owning checks pass 104
+without skips; three enterprise owning suites pass 57 without skips on actual
+Windows/PostgreSQL 18. Separate adversarial reviews are CLEAR for all three
+units. These results overlap and are not added into one acceptance total.
+
+Exact-candidate Linux/Hosted image, Rust compile and package CI remain required.
+The current core artifact payload is unchanged from receipt V3. The stopped
+WIP, all prior failures and the older results below remain retained. No main
+merge, performance waiver or production acceptance is claimed.
 
 Current local integration includes M7 rights/delivery, M8 organization and
 processing controls, and M10 runtime/backup/restore/initial-activation paths.
@@ -62,11 +75,13 @@ performance waiver, controlled-environment M3 acceptance, main integration or
 production release. The later M7-M10 integration is implemented locally and
 under combined qualification, not accepted.
 
-CI checkpoint `20a9a45` is pushed remotely. At the last observed snapshot its
-Imported checks passed 9/9 and root checks passed 16/16. macOS packaged smoke
-failed at the fixed `analyze` stage; its discarded inner exception prevents
-attribution. This is not all-green CI; the exact current
-governance/receipt source candidate has not yet executed CI.
+Completed CI on `2c132f6` passed 15/26 jobs. Nine failures concern the stopped
+diagnostic WIP/style; Hosted rejected generated wheel resources, and enterprise
+reported private-file/ACL fixture failures. These three failure groups have the
+local corrections and reviews above, pending the next exact-candidate CI run.
+Windows and macOS packaged smoke passed on `2c132f6`. Earlier `20a9a45` passed
+Imported 9/9 and root 16/16 but failed macOS smoke at `analyze` without inner
+diagnostics. A later passing run does not establish that older failure's cause.
 Historical public CI on `05d5d77` passed 24 of 26 jobs, including actual Windows/macOS
 package smoke, all SDK profiles and the isolated SDK image. Its remaining
 Windows Python-to-Node test timeout and Hosted nginx harness failures have local

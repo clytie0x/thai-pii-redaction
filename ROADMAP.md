@@ -2,6 +2,15 @@
 
 ## Current execution sequence
 
+The owner resumed branch consolidation after the stop checkpoint. Three CI
+closure units now pass their local owning gates and independent reviews:
+closed smoke diagnostics, exact Hosted generated-resource parity, and protected
+cross-platform enterprise fixtures. The resumed core/web gate passes 3,429 tests
+with 80 explicit skips; root JavaScript passes 206. Publish and qualify the exact
+combined CI head next, then reconcile remaining net branch work and preserve raw
+study/worker heads before branch removal. The controlled-performance hold remains;
+one main branch does not imply production or pilot acceptance.
+
 The owner authorized the [M0-M12 program](docs/implementation/aiguard-production-milestones.md)
 and YRSS completion on 2026-11-02, with independent adversarial subagent checks
 at every stage. M0 preserved and reconciled the checkpoint. The Stage 1 staff
@@ -42,9 +51,11 @@ with CLEAR independent review. The
 [installed PDF follow-up](docs/acceptance/enterprise/M02-receipt-installed-pdf.md)
 proves receipt version/recompute and installed API/source-CLI guidance in seven
 groups in each of two profiles, with all ten rendered PNGs inspected.
-Pushed CI checkpoint `20a9a45` passed Imported 9/9 and root 16/16. macOS packaged
-smoke failed at `analyze` without retained inner diagnostics. Exact current
-governance/receipt source CI has not executed; no all-green result is claimed.
+Completed CI on `2c132f6` passed 15/26 jobs; its diagnostic WIP, Hosted resource
+parity and enterprise file-protection failures now have local corrections and
+independent reviews. The next exact-candidate CI remains required. Earlier
+`20a9a45` passed Imported 9/9 and root 16/16 but failed macOS at `analyze`
+without retained inner diagnostics; its cause is not inferred from later passes.
 Historical `05d5d77` CI remains 24/26, with both harness failures retained and
 local corrections recorded; earlier `b468592` failures are retained too. Qualify affected
 source deltas and Office gates, remaining artifact profiles and all exact-candidate

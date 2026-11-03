@@ -1,5 +1,14 @@
 # M7-M10 combined integration checkpoint
 
+Resumed CI closure: the owner requested continuing toward one main branch.
+The diagnostic WIP below is now implemented and its earlier RED results remain
+historical. Current owning gates pass JS 206, native-package Python 127/one skip,
+Hosted checks 104/no skips and enterprise fixture suites 57/no skips on Windows.
+The complete core/web gate passes 3,429/80 explicit skips with 267 source files
+and 255 artifact inputs unchanged. Independent reviews are CLEAR. Exact Linux
+enterprise, Hosted image, Rust/package CI and the performance gate remain open.
+No new core artifact build is claimed because the core payload is unchanged.
+
 Observed 2026-11-03. Governance V2 is committed locally as `2dec40d`,
 with migrations 007 rights, 008 organization controls, 009 operations,
 010 processing controls, 011 runtime security, 012 restore cutover and
@@ -151,16 +160,17 @@ the original root CLI source-checkout only. The old V2 `unknown` proof and
 outputs remain unchanged under ignored `m2-pdf-v2` evidence. The separate older
 b4 PDF record is committed locally in `4c9d4a1`.
 
-CI checkpoint `20a9a45` is pushed remotely. Its last observed snapshot is
-Imported 9/9 success and root 16/16 success. macOS packaged smoke failed at
-`analyze`; the inner cause was not recorded. Exact current governance/receipt
-source CI has not executed.
+Completed CI on `2c132f6` passed 15/26 jobs; its WIP/style, Hosted generated
+resource and enterprise protected-file fixture failures have the resumed local
+corrections above. Exact new-candidate CI remains required. Earlier `20a9a45`
+passed Imported 9/9 and root 16/16 but failed macOS at `analyze` without inner
+diagnostics; the older cause remains unproven despite the later package pass.
 Historical `05d5d77` 24/26 and earlier `b468592` failures remain retained; no
 all-green CI is claimed.
 
 ## Remaining acceptance
 
-The owner stopped local engineering and tests and requested commit/push plus
+Historical stop at `2c132f6`: the owner stopped engineering/tests for commit/push plus
 branch cleanup. Unfinished diagnostics are preserved in a separate WIP commit:
 three test files, Python 7 failed/9 passed, JavaScript 14 failed/1 passed
 (including cascading mock-cleanup timeouts), and Rust tests for unimplemented

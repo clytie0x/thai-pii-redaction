@@ -2,6 +2,7 @@
 
 import json
 import os
+import runpy
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from uuid import uuid4
@@ -29,13 +30,20 @@ witness = independent_witness
 def qualified(context, witness, tmp_path, monkeypatch):
     from app.enterprise.operations import RuntimeGate
     from pii_redactor.governance import operations
+    from pii_redactor.governance.operator_files import create_private
     from tests.test_enterprise_key_fences import keys
     from tests.test_enterprise_runtime_role import runtime
     from tests.test_governance_collection import runtime as managed_fixture
 
     c = context
     managed_fixture(c)
-    provider = keys(c, tmp_path, "v1", {"v1": b"k" * 32})
+    private = tmp_path / "private-request"
+    runpy.run_path(str(Path.cwd() / "scripts/run_operations_drill.py"))["private_directory"](
+        private
+    )
+    with create_private(private / "v1.key"):
+        pass
+    provider = keys(c, private, "v1", {"v1": b"k" * 32})
     with runtime(c) as (store, role):
         with c.store.transaction() as tx:
             tx.execute(
@@ -69,10 +77,12 @@ def qualified(context, witness, tmp_path, monkeypatch):
             "MANAGED_KEYS",
             "SUBJECT_OIDC_SECRET",
         ):
-            filename = tmp_path / (name + ".json")
-            filename.write_text("{}")
+            filename = private / (name + ".json")
             if name == "MANAGED_KEYS":
-                filename = tmp_path / "v1.key"
+                filename = private / "v1.key"
+            else:
+                with create_private(filename) as stream:
+                    stream.write(b"{}")
             monkeypatch.setenv("AIGUARD_ENTERPRISE_" + name + "_FILE", str(filename))
             filenames.append(filename)
         settings = Settings(
@@ -356,6 +366,13 @@ def test_qualified_request_proof_is_invalidated_by_current_boundary_changes(qual
     elif change == "expiry":
         gate._proof["until"] = 0
     elif change == "acl":
+        from pii_redactor.governance.operator_files import (
+            file_authority_binding,
+            require_private,
+        )
+
+        require_private(filenames[4])
+        before = file_authority_binding(filenames[4])
         if os.name == "nt":
             import subprocess
 
@@ -367,6 +384,7 @@ def test_qualified_request_proof_is_invalidated_by_current_boundary_changes(qual
             )
         else:
             filenames[4].chmod(0o644)
+        assert file_authority_binding(filenames[4]) != before
     else:
         with c.store.transaction() as tx:
             if change == "schema":

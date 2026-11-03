@@ -58,7 +58,7 @@ def live_worker(integrated, witness, tmp_path, monkeypatch):
 
     from app.enterprise.capabilities import ConfiguredKeyProvider
     from pii_redactor.governance import operations
-    from pii_redactor.governance.operator_files import read_private
+    from pii_redactor.governance.operator_files import create_private, read_private
     from tests.test_enterprise_runtime_role import runtime as runtime_role
     from tests.test_governance_processing_controls import controls, enabled, production_mode
 
@@ -72,6 +72,9 @@ def live_worker(integrated, witness, tmp_path, monkeypatch):
     runpy.run_path(str(Path.cwd() / "scripts/run_operations_drill.py"))["private_directory"](
         private
     )
+    for name in ("keys.json", "database.json", "profile.json", "checkpoint.json"):
+        with create_private(private / name):
+            pass
     provider = c.collection.protection.key_provider
     keyfile = private / "keys.json"
     keyfile.write_text(

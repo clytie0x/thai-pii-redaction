@@ -2,6 +2,7 @@
 
 import json
 import os
+import runpy
 from pathlib import Path
 from uuid import uuid4
 
@@ -31,10 +32,21 @@ def test_witness_operator_error_never_echoes_private_file(capsys):
 
 
 def test_private_files_reject_broad_acl(tmp_path):
-    from pii_redactor.governance.operator_files import require_private
+    from pii_redactor.governance.operator_files import (
+        create_private,
+        file_authority_binding,
+        require_private,
+    )
 
-    file = tmp_path / "synthetic.json"
-    file.write_text("{}")
+    private = tmp_path / "private-operator"
+    runpy.run_path(str(Path.cwd() / "scripts/run_operations_drill.py"))["private_directory"](
+        private
+    )
+    file = private / "synthetic.json"
+    with create_private(file) as stream:
+        stream.write(b"{}")
+    require_private(file)
+    before = file_authority_binding(file)
     if os.name == "nt":
         import subprocess
 
@@ -43,6 +55,7 @@ def test_private_files_reject_broad_acl(tmp_path):
         )
     else:
         file.chmod(0o644)
+    assert file_authority_binding(file) != before
     with pytest.raises(Exception, match="operator_file_unprotected"):
         require_private(file)
 
@@ -56,6 +69,7 @@ def test_versioned_key_rotation_loss_recovery_preserves_history_and_snapshots(co
         verify_keys,
     )
     from pii_redactor.governance.operations import Operations
+    from pii_redactor.governance.operator_files import create_private
     from tests.test_governance_collection import runtime
 
     collection, _, _, bucket, _ = runtime(context)
@@ -66,6 +80,8 @@ def test_versioned_key_rotation_loss_recovery_preserves_history_and_snapshots(co
 
     root = Path(os.environ["AIGUARD_OPERATIONS_PRIVATE_DIR"])
     old_file, new_file = (root / (uuid4().hex + ".json") for _ in range(2))
+    with create_private(old_file):
+        pass
     old_file.write_text(
         json.dumps(
             {
@@ -148,6 +164,7 @@ def test_real_application_and_worker_process_kill_before_and_after_commit(contex
     import sys
     import time
 
+    from pii_redactor.governance.operator_files import create_private
     from pii_redactor.governance.outbox import Outbox
     from tests.test_governance_execution import proposed
 
@@ -156,6 +173,8 @@ def test_real_application_and_worker_process_kill_before_and_after_commit(contex
     root = Path(os.environ["AIGUARD_OPERATIONS_PRIVATE_DIR"])
     config = root / (uuid4().hex + ".json")
     marker = root / (uuid4().hex + ".signal")
+    with create_private(config):
+        pass
     config.write_text(
         json.dumps({"dsn": context.store._dsn, "organization": str(context.store.organization_id)})
     )
