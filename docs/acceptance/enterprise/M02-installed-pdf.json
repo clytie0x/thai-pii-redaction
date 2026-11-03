@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "qualification": "passed_bounded_installed_pdf_sdk_cli",
+  "evidence_date": "2026-11-03",
+  "independent_review": "clear_readonly_evidence_and_visual_review_no_rerun",
+  "source_base_commit": "b4a8897edc277fcf6eb7f4e988b4bad83c5d6c55",
+  "runtime_impact_checked_through_commit": "05d5d77f87afeb6b5d3d0d04b6a1737ae7166f8f",
+  "runtime_config_lock_delta_in_that_range": false,
+  "new_integrated_enterprise_artifact_qualification": false,
+  "environment": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "architecture": "AMD64",
+    "python": "3.13.12",
+    "read_only_installed_profile": "C:/Users/teera/AppData/Local/Temp/aiguard-combined-final-b8hsc1p7/enterprise-environment",
+    "model_provisioning": "preprovisioned_frozen_pair_assets_no_download"
+  },
+  "command": {
+    "driver": ".superpowers/sdd/parallel-s-m/m2-pdf/proof.py",
+    "driver_sha256": "7865becaa691b29c16e8e38573b97a56015972a9b40eea4949341ad140f410c8",
+    "expanded_child_argv": [
+      "C:/Users/teera/AppData/Local/Temp/aiguard-combined-final-b8hsc1p7/enterprise-environment/Scripts/python.exe",
+      "-I",
+      "-B",
+      "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\.superpowers\\sdd\\parallel-s-m\\m2-pdf\\proof.py",
+      "--inside",
+      "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-8dbrww0d"
+    ],
+    "child_cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-8dbrww0d",
+    "exit_code": 0,
+    "command_record": ".superpowers/sdd/parallel-s-m/m2-pdf/launcher-command-result.json",
+    "command_record_sha256": "d04eff2e7b2b62e568dbe11d5210c0bd42d31a34ca015aa19e8a56774b77d485"
+  },
+  "result": {
+    "passed": true,
+    "checks": [
+      "installed_wheel_payload_and_origins",
+      "real_core_repeated_occurrence_multipage_bbox_and_flattening",
+      "invalid_provenance_fixed_error_no_output",
+      "installed_thai_font_combining_source_spans",
+      "installed_http_text_pdf_detection_redaction_six_boxes_and_flattening",
+      "http_malformed_encrypted_non_pdf_ocr_absence_work_cap_and_cleanup",
+      "installed_sdk_cli_report_counts_no_raw_value"
+    ],
+    "limits": [
+      "root_ai_guard_cli_not_in_wheel_source_only_unqualified",
+      "ocr_inference_not_installed_not_qualified",
+      "root_cli_source_path_not_installed_or_executed",
+      "asgi_in_process_not_external_http_browser_or_office",
+      "no_provider_or_production_or_performance_acceptance"
+    ],
+    "installed_payload_files_verified": 198,
+    "artifact_sha256": {
+      "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "ab4b7ef08c2c53d7beac38e2275853aa77ff3bd6e89f5148d74375dd52da886e",
+      "sdk-direct/amphrang-0.1.0-py3-none-any.whl": "f75cd8d1540555603f0301e425c628b3f27c27170f33d9ae3e51e693e956b9ed"
+    },
+    "origins": {
+      "pii_redactor": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-combined-final-b8hsc1p7\\enterprise-environment\\Lib\\site-packages\\pii_redactor\\__init__.py",
+      "amphrang_cli": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-combined-final-b8hsc1p7\\enterprise-environment\\Lib\\site-packages\\amphrang\\cli.py"
+    },
+    "cwd_outside_source": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-8dbrww0d",
+    "python": "3.13.12",
+    "geometry": {
+      "pages": 2,
+      "identical_occurrences": 3,
+      "selected_black": 2,
+      "unselected_preserved": 1,
+      "all_source_spans_exact": true
+    },
+    "http": {
+      "pages": 2,
+      "phone_count": 4,
+      "email_count": 2,
+      "solid_black_source_boxes": 6,
+      "no_mapping_or_before_preview": true,
+      "no_output_pii_metadata": true,
+      "errors": {
+        "non_pdf": {
+          "status": 422,
+          "code": "document_invalid"
+        },
+        "malformed": {
+          "status": 422,
+          "code": "document_invalid"
+        },
+        "encrypted": {
+          "status": 422,
+          "code": "document_invalid"
+        },
+        "ocr_absent": {
+          "status": 503,
+          "code": "ocr_unavailable"
+        },
+        "page_work_cap": {
+          "status": 413,
+          "code": "payload_too_large"
+        }
+      },
+      "temporary_cleanup": true
+    },
+    "cli": {
+      "generated_installed_launcher_help": true,
+      "report_dispatch_in_process": true,
+      "raw_value_absent_from_captured_report": true
+    },
+    "network_attempts": 0,
+    "stdlib_internal_socketpairs": 1,
+    "models_unchanged": true,
+    "versions": {
+      "thai-pii-redaction-core": "0.1.0",
+      "amphrang": "0.1.0",
+      "pypdfium2": "5.12.1",
+      "pdfplumber": "0.11.10",
+      "Pillow": "12.3.0",
+      "reportlab": "5.0.0",
+      "pythainlp": "5.3.4"
+    },
+    "captured_output_bytes": 312
+  },
+  "retained_evidence": {
+    "workspace": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-8dbrww0d",
+    "files_sha256": {
+      "result.json": "ac5dea5d8778406b326da70d752fcea7a9a54bea524b790c614871294c1c94e2",
+      "geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+      "geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+      "http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+      "geometry-output.pdf": "42849f122de71039fc20a20fab3e95ab5b8e39b99e4167995bb9c71eef6164bc",
+      "http-output.pdf": "919a3b6257112ed15e596449dd726a0187fbb8fe3025d9199855c8c28e346f05"
+    }
+  },
+  "visual_inspection": {
+    "inspected_workspace": "C:/Users/teera/AppData/Local/Temp/aiguard-installed-pdf-brvoyc4g",
+    "png_files": [
+      "geometry-page-1.png",
+      "geometry-page-2.png",
+      "http-page-1.png"
+    ],
+    "final_png_bytes_identical_to_inspected_run": true,
+    "observed": "selected opaque regions, readable safe control and unselected occurrence, covered HTTP values"
+  },
+  "retained_harness_failures": [
+    {
+      "workspace": "C:/Users/teera/AppData/Local/Temp/aiguard-installed-pdf-n_z1ssdj",
+      "phase": "installed_http_pdf",
+      "type": "RuntimeError",
+      "connection_denial": "CPython Windows Proactor stdlib internal socketpair, before ASGI requests",
+      "result_sha256": "46e3e11b034625c677ca32fa34c7c7acdadf9681626bafc85604c793ec50e1c3"
+    },
+    {
+      "workspace": "C:/Users/teera/AppData/Local/Temp/aiguard-installed-pdf-88ohm8xf",
+      "phase": "installed_http_pdf",
+      "type": "RuntimeError",
+      "connection_denial": "CPython Windows Proactor stdlib internal socketpair, before ASGI requests",
+      "result_sha256": "dc19131a5b111b89a14092bfe74a0bbe598d33c0b1709e50cdc17169fcfe2cfd"
+    }
+  ],
+  "scope_limits": [
+    "seven proof groups, not full suite count",
+    "in-process ASGI, not external server/browser",
+    "SDK generated launcher help plus in-process report, not external report execution",
+    "root source CLI intentionally not packaged and not exercised",
+    "OCR absent explicit503, inference unqualified",
+    "no live provider, real data, DB, production or performance acceptance",
+    "not a new M7/M8/M10 artifact qualification"
+  ]
+}
