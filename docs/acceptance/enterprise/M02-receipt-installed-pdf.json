@@ -1,0 +1,164 @@
+{
+  "audit_driver_sha256": "c350a383cb384100914a2c373c41db6a115a01dadd50d62f0bff738950927add",
+  "audit_invocation": {
+    "argv": [
+      ".superpowers/sdd/parallel-s-m/m2-pdf-v3/post_audit.py"
+    ],
+    "cwd": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean"
+  },
+  "audit_type": "read_only_no_product_rerun",
+  "command_record_sha256": "ff39853aafdf2284d4aa4bb08fed86fa7faa5c0ec0b0bfa4032eb0f8dd7e25dd",
+  "driver_sha256": "42641966855ef8dc44777d02e261540e721e3254bf5c3513037d9eb4dcd8d504",
+  "installed_payload_before_after": {
+    "enterprise": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    },
+    "sdk-core": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    },
+    "sdk-server-mcp-proxy": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    }
+  },
+  "limits": [
+    "Seven bounded groups per each of two profiles, not fourteen distinct suites.",
+    "SDK-core has payload binding only; PDF/API paths not executed there.",
+    "Installed receipt version and Python API guidance are verified; root CLI remains source-only and unqualified.",
+    "Successful MCP plaintext-preserve behavior was not changed or rerun.",
+    "No OCR inference, external HTTP/browser/Office/host/provider/production or new performance acceptance.",
+    "Socket guard is process instrumentation with the Windows CPython internal wakeup socketpair exception, not an OS firewall."
+  ],
+  "old_pdf_driver_sha256_unchanged": "7865becaa691b29c16e8e38573b97a56015972a9b40eea4949341ad140f410c8",
+  "outer_invocation": {
+    "argv": [
+      "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\enterprise-environment\\Scripts\\python.exe",
+      "-I",
+      "-B",
+      "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\.superpowers\\sdd\\parallel-s-m\\m2-pdf-v3\\proof.py"
+    ],
+    "cwd": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean",
+    "exit_code_observed": 0
+  },
+  "passed": true,
+  "prior_v2_evidence_sha256": {
+    "command-result.json": "7cd042ba7e91fec15ef9177bd1dbdd2c9c5db2dfed035216f981edb39ffcff34",
+    "post-audit.json": "a6f787d9433057812654b1c57c2c111ca6a2f778f2a2beac6f81a7753fcca1a4",
+    "post_audit.py": "e7af5c79d58031a3e7fd368bd2cf4e4816a5255aff95bf35f8e158a417e88025",
+    "proof.py": "19e6455b2fae04fabb1bab66d39a30d5043e7a72ab0615dc189da9e54bca07c1"
+  },
+  "prior_v2_outputs_unchanged": true,
+  "profiles": {
+    "enterprise": {
+      "groups": 7,
+      "installed_payload_files": 260,
+      "network_attempts": 0,
+      "report_receipt": {
+        "installed_api_and_source_cli_guidance": true,
+        "pdpa_report_api": true,
+        "product_version": "0.1.0",
+        "receipt_issue_recompute_verify": true,
+        "receipt_operator_fields_omitted": true,
+        "receipt_pages": 1,
+        "report_pages": 1,
+        "source_values_absent_in_retained_pdf_text_and_metadata": true
+      },
+      "runtime_identity": "7e0777205b60c3b1d9d892b487810e093985ba3813a24031068c61175e65a623",
+      "stdlib_internal_socketpairs": 1,
+      "versions": {
+        "Pillow": "12.3.0",
+        "amphrang": "0.1.0",
+        "pdfplumber": "0.11.10",
+        "pypdfium2": "5.12.1",
+        "pythainlp": "5.3.4",
+        "reportlab": "5.0.0",
+        "thai-pii-redaction-core": "0.1.0"
+      }
+    },
+    "sdk-server-mcp-proxy": {
+      "groups": 7,
+      "installed_payload_files": 260,
+      "network_attempts": 0,
+      "report_receipt": {
+        "installed_api_and_source_cli_guidance": true,
+        "pdpa_report_api": true,
+        "product_version": "0.1.0",
+        "receipt_issue_recompute_verify": true,
+        "receipt_operator_fields_omitted": true,
+        "receipt_pages": 1,
+        "report_pages": 1,
+        "source_values_absent_in_retained_pdf_text_and_metadata": true
+      },
+      "runtime_identity": "7e0777205b60c3b1d9d892b487810e093985ba3813a24031068c61175e65a623",
+      "stdlib_internal_socketpairs": 1,
+      "versions": {
+        "Pillow": "13.0.0",
+        "amphrang": "0.1.0",
+        "pdfplumber": "0.11.10",
+        "pypdfium2": "5.14.0",
+        "pythainlp": "5.3.7",
+        "reportlab": "5.1.0",
+        "thai-pii-redaction-core": "0.1.0"
+      }
+    }
+  },
+  "retained_output_files": 20,
+  "retained_outputs_sha256": {
+    "enterprise/geometry-output.pdf": "d23fb0414bfcb37a52f1881df54408e0c7d53b75d4d660316ca3d1a366b28894",
+    "enterprise/geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+    "enterprise/geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+    "enterprise/http-output.pdf": "4628e775ffdae6310d724cf8c631639d8081fca93467c8e76ed333e20cc27e98",
+    "enterprise/http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+    "enterprise/pdpa-report.pdf": "7be88ddc1e306abaa855b82839637f917cd1863d5f1647fb7e91b62f13f4d0d0",
+    "enterprise/pdpa-report.png": "b6a37a80c3e429d85dc44ddf082a597afe695a6f45bce85b34b2cef618d73d77",
+    "enterprise/processing-receipt.pdf": "1e2cf4a8a7f9eb7917318fe8db7834588bd7d725f2529b1ff50c6824723cd384",
+    "enterprise/processing-receipt.png": "5e314ba9b9a56145c4e32785186adf84171c1d46afa9fc81667dba03f3acea9d",
+    "enterprise/result.json": "4dcd70e653e8eafdac21cd98a9f20a74a0e961d5458f0c58494262dcefdd8b70",
+    "sdk-server-mcp-proxy/geometry-output.pdf": "49be24c9829bff5569bd0129e55aaea35a5d26892e2f064836c7d29bd8991ddf",
+    "sdk-server-mcp-proxy/geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+    "sdk-server-mcp-proxy/geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+    "sdk-server-mcp-proxy/http-output.pdf": "5cea7e2e1f4e7885c06e6a84dbb775c4b859a7aeaba163056bf58dee23649dec",
+    "sdk-server-mcp-proxy/http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+    "sdk-server-mcp-proxy/pdpa-report.pdf": "ef45afab80900d22b481d3b9d1839666b88025e3f9dcaea84dae81e5364f59a7",
+    "sdk-server-mcp-proxy/pdpa-report.png": "b6a37a80c3e429d85dc44ddf082a597afe695a6f45bce85b34b2cef618d73d77",
+    "sdk-server-mcp-proxy/processing-receipt.pdf": "c6e303080921aed30b799fbccd874f6655e02434c16cefa7ba780139b0e1d6fb",
+    "sdk-server-mcp-proxy/processing-receipt.png": "941e9a7ce8260c472315d1991d22054d1a16aec10ae3ea04b8def3879f65ead7",
+    "sdk-server-mcp-proxy/result.json": "4757d0fbfa9274c08b09faaf0ea6ec0f5ef40a5369469d2172251e8f69f9bcac"
+  },
+  "six_artifact_files_sha256": {
+    "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "d6fc52cac577cc493e9daf9adf0089d8e67caa46e54ea2a46455e0bf5dbe4daf",
+    "core-direct/thai_pii_redaction_core-0.1.0.tar.gz": "81a737ad82e395b0907e0b4ed4d47bafd00382b8564c68c6933e786064dc32dd",
+    "core-rebuilt/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "d6fc52cac577cc493e9daf9adf0089d8e67caa46e54ea2a46455e0bf5dbe4daf",
+    "sdk-direct/amphrang-0.1.0-py3-none-any.whl": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7",
+    "sdk-direct/amphrang-0.1.0.tar.gz": "50c158a9cb755d2a7ec12cdc373a7f5febf486144a88a7c5133bff3424f9726e",
+    "sdk-rebuilt/amphrang-0.1.0-py3-none-any.whl": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+  },
+  "source_full_inventory": {
+    "binding_sha256": "c200a85dac93be8d28f6b8956b294405a760d759108b007e13b950ec7e5a8f12",
+    "files": 255,
+    "matches_frozen_input_set_and_bytes": true
+  },
+  "visual_inspection": {
+    "images": {
+      "enterprise/geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+      "enterprise/geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+      "enterprise/http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+      "enterprise/pdpa-report.png": "b6a37a80c3e429d85dc44ddf082a597afe695a6f45bce85b34b2cef618d73d77",
+      "enterprise/processing-receipt.png": "5e314ba9b9a56145c4e32785186adf84171c1d46afa9fc81667dba03f3acea9d",
+      "sdk-server-mcp-proxy/geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+      "sdk-server-mcp-proxy/geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+      "sdk-server-mcp-proxy/http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+      "sdk-server-mcp-proxy/pdpa-report.png": "b6a37a80c3e429d85dc44ddf082a597afe695a6f45bce85b34b2cef618d73d77",
+      "sdk-server-mcp-proxy/processing-receipt.png": "941e9a7ce8260c472315d1991d22054d1a16aec10ae3ea04b8def3879f65ead7"
+    },
+    "observed": "Inspected all ten rendered PNGs. Opaque redaction boxes keep safe controls visible; Thai report/receipt text, version 0.1.0 and installed Python API/source-only CLI guidance are readable. Automatic proof checks exclude source values from retained PDF text and metadata.",
+    "observer": "parent_actual_PNG_inspection",
+    "scope": "Rendered synthetic output only; not OCR, Office, browser or production acceptance."
+  },
+  "workspace": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01"
+}

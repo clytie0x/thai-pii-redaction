@@ -28,9 +28,9 @@ deletion, external notification, public submission or production promotion.
 | Area | Source/evidence | Current allowed claim |
 |---|---|---|
 | Root protection | `pii_redactor/`, HTTP contract 2, native protocol 1 | Source implementation with candidate-specific tests; no automatic package/live acceptance |
-| Enterprise | [M3 evidence](../acceptance/enterprise/M03-authority-progress.md), [M4-M6 local wave](../acceptance/enterprise/M04-M06-local-wave.md) and [M7-M10 integration](../acceptance/enterprise/M07-M10-integration-progress.md) | Local callers through M7/M8/M10; final V2 52-suite run 686 passed/0 skipped and three fresh installed profiles pass. Earlier failures remain retained; performance, new exact-candidate CI and actual-host qualification remain open |
+| Enterprise | [M3 evidence](../acceptance/enterprise/M03-authority-progress.md), [M4-M6 local wave](../acceptance/enterprise/M04-M06-local-wave.md) and [M7-M10 integration](../acceptance/enterprise/M07-M10-integration-progress.md) | Local callers through M7/M8/M10; prior V2 52-suite run 686 passed/0 skipped, with governance modules unchanged in the two-core-file receipt delta; receipt V3 installed pair/PDF follow-up passes. Earlier failures remain retained; performance, exact-source CI and actual-host qualification remain open |
 | Hosted | `apps/hosted/STATE.md`, source `core/VERSION` 0.1.0; canonical wheel consumer/build preparation | Source copies removed; offline supplied-wheel/dependency/model context and source identity implemented. Exact image/CI/platform acceptance pending; historical 3.0.2 deployment was not rechecked |
-| SDK | `packages/amphrang/`, canonical operations/config, exact first-party pin, 29 internal aliases | Recorded complete source profile passes 2,145/10 skipped; no maintained sensitive-span copy. Integrated V2 paired artifacts pass bounded installed tests; images, complete matrix and publication remain open |
+| SDK | `packages/amphrang/`, canonical operations/config, exact first-party pin, 29 internal aliases | Recorded complete source profile passes 2,145/10 skipped; no maintained sensitive-span copy. Receipt V3 paired artifacts pass bounded installed tests; images, complete matrix and publication remain open |
 | Desktop/Extension | Source 0.1.0, broker boundary | Earlier 3.0.0 package records are archived evidence, not a new 0.x installer or Store publication |
 | Office | Existing task pane and fixed-port contract 2 | Real-host gates remain open; Word-only release manifest until other hosts qualify |
 | Release platforms | Current release workflow matrix | Windows/macOS only; retained Linux helpers need fresh qualification if re-enabled |
@@ -43,8 +43,9 @@ their own corpus/source identities.
 The failed enterprise retry (286 passed/11 failed/0 skipped) is retained alongside
 its corrected complete 298-pass run. The first full SDK result remains negative
 at 2,088 passed/52 failed/10 skipped. These are historical candidate results.
-The current recorded root core+web profile passes 3,351 tests/80 explicit skips
-on Python 3.13 with 184 unchanged source hashes; SDK source passes 2,145/10
+The current receipt V3 root core+web profile passes 3,356 tests/80 explicit skips
+and one warning in 214.40 seconds on Python 3.13 with 184 unchanged source hashes;
+43 receipt tests pass without skips. SDK source passes 2,145/10
 skips, and root JavaScript passes 199 tests across 24 files on Node 22.23.2.
 Earlier Office Node 22 manifest/type/129-test/build evidence remains bounded to
 that older candidate and does not establish real Office host acceptance.
@@ -58,14 +59,33 @@ retains their focused evidence and reviews. The first 52-suite combined run
 passes 651 cases and fails 26 auth/collection fixture cases, with no skips;
 fixture-only corrections pass all 45 cases in those two owning suites without
 changing assertions or runtime guards, with an independent review CLEAR.
-A headless-worker freshness fix is in progress; source re-freeze and a fresh
-complete enterprise run remain required. Public CI on committed `05d5d77`
-passes 24/26 jobs; it does not qualify the uncommitted integration or establish
-all-green CI. New paired artifacts/images and complete exact-candidate CI remain
-open, alongside controlled performance and actual-host/human/legal/pilot gates.
+The headless-worker freshness fixes passed scoped tests and review; the complete
+V2 enterprise rerun passed 686 tests across all 52 suites without skips, with
+193 source and 255 artifact-input hashes unchanged. That is prior governance
+evidence, not a new enterprise rerun for the receipt delta. The
+[receipt V3 pair](../acceptance/enterprise/M01-receipt-artifacts.md) passes three
+fresh Python 3.13 profiles and 214 installed tests without skips. The
+[installed PDF follow-up](../acceptance/enterprise/M02-receipt-installed-pdf.md)
+verifies receipt version 0.1.0/recompute and installed API/source-CLI guidance
+in seven groups in each of two profiles; all ten rendered PNGs were inspected.
+Independent source and artifact/PDF reviews are CLEAR; older V2 evidence remains
+unchanged. Pushed CI checkpoint `20a9a45` passed Imported 9/9 and root 16/16;
+macOS packaged smoke failed at `analyze` with the inner cause unrecorded;
+the exact current governance/receipt source candidate has not executed CI.
+Historical `05d5d77` 24/26 and earlier `b468592` failures remain retained.
+Current V3 local performance exits 1: detect 5.90 ms, sanitize 15.46 ms (+53%),
+restore 0.36 ms (+29%), PDF 75.53 ms and RSS 151.8 MiB. The baseline and 20% time/
+15% RSS budgets are unchanged; M3 is held. Remaining artifact profiles/images
+and complete exact-source CI remain open, alongside actual-host/human/legal/pilot gates.
 No storefront is removed from the release by this wave.
 
 ## Inputs that only the organization/owner can settle
+
+On 2026-11-03 the owner stated that the pilot information has not yet been
+provided. Organization/departments, target host, login, two testers and the
+privacy-responsible person are all **not provided by the owner**. This records
+missing inputs, not an inferred selection or rejection. Synthetic engineering
+continues while the pilot, legal and actual-host gates remain open.
 
 | Required input or action | Responsible role | Blocks |
 |---|---|---|
@@ -90,10 +110,12 @@ that provenance; do not repeat the old merge or push preserved old-history clone
 Current engineering uses `.worktrees/pdpa-enterprise-clean/`, branch
 `feat/pdpa-enterprise`, with the S0/S1 prerequisite checkpoint based on `6f1e63f`.
 Its local artifact evidence does not clear the held main-integration gates.
-The current S/M wave is an uncommitted candidate based on `05d5d77`; the
-final source freeze includes the reviewed worker freshness corrections. Complete
-enterprise qualification and source/artifact rebinding are running and remain
-unaccepted until their exact reports pass.
+The reviewed governance V2 wave is committed locally as `2dec40d`, and its old
+installed-PDF record is committed locally as `4c9d4a1`. CI checkpoint `20a9a45`
+is pushed remotely; it does not establish exact current governance/receipt CI.
+The receipt-only follow-up has separate new source/installed evidence linked
+above. The prior V2 enterprise gate and current V3 receipt
+qualification remain bounded local evidence, not main-integration acceptance.
 `origin/main` is the clean main reference; the clone currently has no local main.
 
 The owner approved warn/report, direct first-party core consumption, distribution

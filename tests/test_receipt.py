@@ -30,6 +30,34 @@ from pii_redactor.thai_pdf_text import register_thai_font
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
+@pytest.mark.parametrize(
+    ("source_version", "packaged_version", "expected"),
+    [
+        (None, "9.8.7", "9.8.7"),
+        ("8.7.6", "9.8.7", "9.8.7"),
+        ("8.7.6", None, "8.7.6"),
+        (None, None, "unknown"),
+    ],
+)
+def test_receipt_version_uses_the_installed_resource_without_guessing(
+    tmp_path, monkeypatch, source_version, packaged_version, expected
+):
+    from pii_redactor import receipt as receipt_module
+
+    package = tmp_path / "site-packages" / "pii_redactor"
+    package.mkdir(parents=True)
+    monkeypatch.delattr("sys._MEIPASS", raising=False)
+    monkeypatch.setattr(receipt_module, "__file__", str(package / "receipt.py"))
+    if source_version is not None:
+        (package.parent / "VERSION").write_text(source_version + "\n", encoding="utf-8")
+    if packaged_version is not None:
+        resources = package / "_artifact"
+        resources.mkdir()
+        (resources / "VERSION").write_text(packaged_version + "\n", encoding="utf-8")
+    assert receipt_module._read_version() == expected
+
+
 requires_thai_font = pytest.mark.skipif(
     register_thai_font() == "Helvetica",
     reason="no Thai-capable font on this machine — Thai text cannot render or extract",
@@ -383,6 +411,8 @@ def test_receipt_pdf_shows_the_fields_a_reader_needs(tmp_path):
     assert "ตรวจก่อนส่งให้ AI" in text
     assert "ฝ่ายทะเบียน" in text
     assert receipt["environment"]["product_version"] in text
+    assert "pii_redactor.receipt.verify_receipt" in text
+    assert "source checkout" in text
 
 
 @requires_thai_font

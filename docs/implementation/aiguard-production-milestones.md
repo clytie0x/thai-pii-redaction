@@ -32,12 +32,28 @@ three fresh Windows/Python 3.13 profiles and 214 installed tests without skips.
 and the isolated image smoke; complete CI, Hosted image and actual-host rebinding
 remain pending. M7/M8/M10 are now locally integrated with review corrections;
 the [combined record](../acceptance/enterprise/M07-M10-integration-progress.md)
-retains bounded evidence. The final V2 52-suite global enterprise gate passes
-686 tests without skips, and the [new integrated pair](../acceptance/enterprise/M01-integrated-artifacts.md)
-passes three fresh profiles and 214 installed tests with independent review;
-none of these milestones is accepted yet. M3's controlled performance hold is
-unchanged. The historical starting snapshot below remains
-historical; it is not a statement that those implemented paths are still absent.
+retains bounded evidence. Governance V2 is committed locally as `2dec40d`;
+its complete 52-suite enterprise gate passed 686 tests without skips with
+193 source and 255 artifact-input hashes unchanged. That gate was not rerun
+for the later two-core-file receipt follow-up; governance modules remain
+unchanged. The receipt V3 root core+web gate passes 3,356 tests with 80 explicit
+skips, one warning and 184 stable source hashes. Its
+[new pair](../acceptance/enterprise/M01-receipt-artifacts.md) passes three fresh
+Python 3.13 profiles and 214 installed tests without skips; the
+[PDF follow-up](../acceptance/enterprise/M02-receipt-installed-pdf.md) proves
+installed receipt version/recompute and API/source-CLI guidance, with ten
+rendered PNGs inspected. Source and artifact/PDF independent reviews are CLEAR.
+Pushed CI checkpoint `20a9a45` passed Imported 9/9 and root 16/16. macOS packaged
+smoke failed at `analyze` without retained inner diagnostics. Exact current
+governance/receipt source CI has not executed; historical `05d5d77` 24/26 and
+`b468592` failures remain retained. No milestone is accepted yet.
+The current five-iteration local V3 performance run exits 1: detect 5.90 ms,
+sanitize 15.46 ms (+53%), restore 0.36 ms (+29%), PDF 75.53 ms and RSS 151.8 MiB.
+Baseline and 20% time/15% RSS budgets are unchanged; M3's controlled performance
+hold remains. The owner has not provided the organization/departments, target
+host, login, two testers or privacy-responsible person. Synthetic engineering
+continues while pilot/legal/actual-host gates stay open. The starting snapshot
+below remains historical; it is not a statement that those implemented paths are still absent.
 
 ## 1. Historical starting position and scope
 

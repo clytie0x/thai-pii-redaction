@@ -2,20 +2,36 @@
 
 Updated: 2026-11-03
 
+Owner-stop checkpoint: local engineering and test execution stopped at the
+owner's request. Incomplete package-smoke diagnostic tests are preserved as
+separate WIP: Python/JavaScript RED results and Rust tests referring to types
+not yet implemented. The passing receipt/governance evidence below predates
+that WIP and does not qualify the stopped diagnostic unit. No main merge or
+production acceptance is authorized by this checkpoint.
+
 Current local integration includes M7 rights/delivery, M8 organization and
 processing controls, and M10 runtime/backup/restore/initial-activation paths.
 The [combined progress record](acceptance/enterprise/M07-M10-integration-progress.md)
 separates implemented callers, independent review fixes, retained negatives and
-overlapping focused results. The recorded root core+web source gate passes
-3,352 tests with 80 explicit skips on Python 3.13 after the final V2 fixes;
-SDK source passes 2,145 with
+overlapping focused results. Governance V2 is committed locally as `2dec40d`;
+the current receipt-only follow-up has separate source/artifact evidence. Its complete root
+core+web V3 source gate passes 3,356 tests with 80 explicit optional/platform/live
+skips and one warning in 214.40 seconds on Python 3.13, with all 184 source
+hashes unchanged. SDK source passes 2,145 with
 10 skips, and root JavaScript passes 199 tests. The final mandatory enterprise
-gate passes 686 tests across all 52 suites without skips, with both source
-freezes unchanged. Its earlier 651-pass/26-failure run and test-only fixture
-corrections remain retained. The headless-worker freshness fixes pass tests
-and independent review. The [new paired artifacts](acceptance/enterprise/M01-integrated-artifacts.md)
-pass three fresh profiles and 214 installed tests without skips, with a CLEAR
-independent review. Remaining artifact/host profiles, CI, controlled performance and
+V2 gate passed 686 tests across all 52 suites without skips, with the 193-file
+source and 255-input artifact freezes unchanged. It was not rerun for the
+receipt follow-up: only `receipt.py` and `receipt_pdf.py` change among artifact
+inputs; governance modules remain unchanged. Its earlier 651-pass/26-failure run
+and test-only fixture corrections remain retained. The headless-worker freshness fixes pass tests
+and independent review. The [receipt V3 paired artifacts](acceptance/enterprise/M01-receipt-artifacts.md)
+pass three fresh Python 3.13 profiles and 214 installed tests without skips,
+with CLEAR source and exact-artifact reviews. The
+[installed PDF follow-up](acceptance/enterprise/M02-receipt-installed-pdf.md)
+verifies installed receipt version 0.1.0, recomputation and Python API/source-CLI
+guidance in seven proof groups in each of two profiles; all ten rendered PNGs
+were inspected. Earlier V2 artifacts and their `unknown` receipt-version proof
+remain unchanged. Remaining artifact/host profiles, CI, controlled performance and
 actual-host/pilot acceptance remain open.
 
 Earlier protection checkpoint: the complete source profiles reached root 3,549 passed/
@@ -37,17 +53,24 @@ three fresh profiles, 214 installed adapter tests without skips and six artifact
 negatives. This evidence is bound to `b4a8897`; packaged runtime/config/locks
 are unchanged through `b468592`. It does not qualify images or actual hosts.
 
-The V2 local five-iteration budget run measures detect 5.65 ms, sanitize 15.33 ms,
-restore 0.36 ms, PDF 70.24 ms and peak RSS 151.9 MiB. Sanitization and restoration
-exceed the unchanged baseline budgets. This is a held feature checkpoint, not a
+The current V3 local five-iteration run after quiescence measures detect 5.90 ms,
+sanitize 15.46 ms, restore 0.36 ms, PDF 75.53 ms and peak RSS 151.8 MiB. It exits
+1: sanitization +53% and restoration +29% exceed the unchanged 20% time budget;
+the 15% RSS budget and baseline are unchanged. The older V2 run remains retained.
+This is a held feature checkpoint, not a
 performance waiver, controlled-environment M3 acceptance, main integration or
 production release. The later M7-M10 integration is implemented locally and
 under combined qualification, not accepted.
 
-Public CI on `05d5d77` passes 24 of 26 jobs, including actual Windows/macOS
-package smoke, all SDK profiles and the isolated SDK image. The remaining
+CI checkpoint `20a9a45` is pushed remotely. At the last observed snapshot its
+Imported checks passed 9/9 and root checks passed 16/16. macOS packaged smoke
+failed at the fixed `analyze` stage; its discarded inner exception prevents
+attribution. This is not all-green CI; the exact current
+governance/receipt source candidate has not yet executed CI.
+Historical public CI on `05d5d77` passed 24 of 26 jobs, including actual Windows/macOS
+package smoke, all SDK profiles and the isolated SDK image. Its remaining
 Windows Python-to-Node test timeout and Hosted nginx harness failures have local
-test corrections pending a new exact-candidate run. Root/Hosted production
+test corrections awaiting a new exact-candidate run. Root/Hosted production
 limits and assertions were retained. No all-green integrated CI is claimed.
 Earlier CI on `b468592` passes all seven SDK profile jobs and the actual SDK
 offline-image smoke. The downloaded image/API reports are bound in the
@@ -65,9 +88,9 @@ deltas still require a new exact-candidate CI run; no all-green result is claime
 
 | Storefront | Current candidate evidence | Remaining gate |
 | --- | --- | --- |
-| Enterprise application | M4-M8 and M10 local callers; complete V2 52-suite run 686 passed/0 skipped and integrated installed pair | New-candidate browser/IdP/restart, whole-environment recovery, performance and organization pilot |
+| Enterprise application | M4-M8 and M10 local callers; prior complete V2 52-suite run 686 passed/0 skipped; receipt V3 installed pair and PDF follow-up | Exact-source CI, new-candidate browser/IdP/restart, whole-environment recovery, performance and organization pilot |
 | Hosted application | Canonical wheel source/build path, 16 execute contracts and source-bound safety checks | Exact offline image, complete CI and platform acceptance |
-| Python SDK | Recorded source profile 2,145 passed/10 explicit skips; integrated V2 installed pair; all SDK CI profiles and isolated image smoke on `05d5d77` | External hosts/live providers and remaining exact release/OS profiles; complete product CI |
+| Python SDK | Recorded source profile 2,145 passed/10 explicit skips; receipt V3 installed pair; historical SDK CI profiles and isolated image smoke on `05d5d77` | External hosts/live providers and remaining exact release/OS profiles; complete exact-source product CI |
 
 Current parallel wave: SDK and Hosted source consumers now use the canonical
 core, and M4 subject consent, M5 managed execution and M6 retention/holds have
@@ -96,6 +119,11 @@ activation remains separate from restore; both require their exact proofs.
 Whole-environment recovery acceptance, custody, load, RPO/RTO and Docker/TLS/IdP
 qualification remain open. All declared
 storefronts remain in scope, with their own exact-artifact and host gates.
+
+The owner has not provided the pilot organization/departments, target host,
+login, two testers or privacy-responsible person. These are owner inputs still
+not provided, not inferred product choices. Synthetic engineering continues;
+pilot, legal and actual-host gates remain open.
 
 The accepted single-organization self-hosted design remains in force. The
 [execution addendum](implementation/2026-11-02-astra-sol-execution-review.md)

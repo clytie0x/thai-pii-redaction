@@ -18,8 +18,10 @@ docs/research/pdpa-coverage-plan.md -text
 # Migration fingerprints must survive checkout on every supported platform.
 pii_redactor/governance/migrations/*.sql text eol=lf
 
-# Preserve the copied qualification manifest's recorded byte digest.
-docs/acceptance/enterprise/M01-integrated-artifact*.json text eol=lf
+# Preserve copied qualification records and accept their observed CRLF bytes.
+docs/acceptance/enterprise/M01-integrated-artifact*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/acceptance/enterprise/M01-receipt-artifact*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/acceptance/enterprise/M02-receipt-installed-pdf*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary

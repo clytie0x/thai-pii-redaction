@@ -26,25 +26,40 @@ without skips, bound to `b4a8897` with packaged inputs unchanged through
 smoke; [its evidence](docs/acceptance/enterprise/M09-sdk-ci.md) is bounded.
 The [M7-M10 integration](docs/acceptance/enterprise/M07-M10-integration-progress.md)
 now has local rights/organization/processing/operations callers and scoped
-independent reviews. Recorded source gates pass root core+web V2 3,352 tests/80
-skips, SDK 2,145/10 skips and root JavaScript 199 tests. The first complete
+independent reviews. Governance V2 is committed locally as `2dec40d`; the
+receipt-only follow-up has separate evidence. Its complete root core+web V3 gate
+passes 3,356 tests/80 explicit skips with 184 stable source hashes; recorded SDK
+source is 2,145/10 skips and root JavaScript is 199 tests. The first complete
 52-suite enterprise run records 651 passed/26 fixture-scope failures/0 skipped;
 test-only fixture alignment passes both owning files (45 passed/0 skipped)
 without weakening runtime guards. The headless-worker freshness fixes pass
-scoped tests and review; the re-frozen complete enterprise gate passes 686 tests
-across all 52 suites without skips.
-The [new paired artifacts](docs/acceptance/enterprise/M01-integrated-artifacts.md)
-pass three fresh profiles and 214 installed tests without skips, with a CLEAR
-independent review.
-CI on `05d5d77` passes 24/26 jobs including exact Windows/macOS package smoke;
-the two remaining test-harness failures have local corrections. Qualify affected
+scoped tests and review; the V2 complete enterprise gate passed 686 tests
+across all 52 suites without skips, with its 193/255 input hashes unchanged.
+That gate was not rerun for the two-core-file receipt delta; governance modules
+remain unchanged. The [receipt V3 paired artifacts](docs/acceptance/enterprise/M01-receipt-artifacts.md)
+pass three fresh Python 3.13 profiles and 214 installed tests without skips,
+with CLEAR independent review. The
+[installed PDF follow-up](docs/acceptance/enterprise/M02-receipt-installed-pdf.md)
+proves receipt version/recompute and installed API/source-CLI guidance in seven
+groups in each of two profiles, with all ten rendered PNGs inspected.
+Pushed CI checkpoint `20a9a45` passed Imported 9/9 and root 16/16. macOS packaged
+smoke failed at `analyze` without retained inner diagnostics. Exact current
+governance/receipt source CI has not executed; no all-green result is claimed.
+Historical `05d5d77` CI remains 24/26, with both harness failures retained and
+local corrections recorded; earlier `b468592` failures are retained too. Qualify affected
 source deltas and Office gates, remaining artifact profiles and all exact-candidate
 CI/Hosted image checks. Rebind real browser,
 IdP, restricted-role and restart evidence to the new candidate; older M3 runs do
-not qualify it. The controlled-performance hold remains. In parallel, integrate
-and qualify M7 rights/secure delivery, M8 organization records and M10
+not qualify it. The current local five-iteration V3 run exits 1 at sanitize
+15.46 ms (+53%) and restore 0.36 ms (+29%); detect is 5.90 ms, PDF 75.53 ms and
+RSS 151.8 MiB. Baseline and 20% time/15% RSS budgets are unchanged, and the
+controlled-performance M3 hold remains. Continue qualifying the integrated
+M7 rights/secure delivery, M8 organization records and M10
 whole-database recovery/checkpoint/rotation/operator paths. M9 keeps every
 declared storefront and its host/OS gates; M11/M12 keep their human/owner gates.
+The owner has not provided the organization/departments, target host, login,
+two testers or privacy-responsible person. Synthetic engineering continues;
+pilot/legal/actual-host gates remain open without inferring those choices.
 The owner selected distribution name
 `thai-pii-redaction-core`, preserving imports and caller entry paths; qualify its
 installation/migration before any separately authorized publication. Do not
