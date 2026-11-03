@@ -1,9 +1,6 @@
 """Preserve the SDK's existing quasi-identifier reports in the shared core."""
 
-import json
 import re
-import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -67,41 +64,3 @@ def test_office_qi_allowlist_keeps_canonical_order():
         "nationality",
         "body_metrics",
     ]
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node is needed for the desktop contract")
-def test_desktop_contract_projects_existing_sdk_qi_categories():
-    pytest.importorskip("fastapi")
-    from app.http_v2 import RECOMMENDATION_TEMPLATES
-
-    payload = {
-        "overall_score": 20.0,
-        "overall_grade": "A",
-        "risk_label": "Very Low Risk",
-        "direct_pii_count": 0,
-        "fp_count": 0,
-        "tb_count": 0,
-        "section26_categories": [],
-        "reidentification": {
-            "score": 20.0,
-            "grade": "A",
-            "quasi_identifier_categories": ["nationality", "body_metrics"],
-            "high_risk_combination": False,
-        },
-        "breakdown": [],
-        "recommendations": [RECOMMENDATION_TEMPLATES["clear"]],
-    }
-    program = (
-        "import {validateAnalyze} from './desktop/src/contract-v2.js';"
-        f"const result=validateAnalyze({json.dumps(payload, ensure_ascii=True)});"
-        "if (result.reidentification.quasi_identifier_categories.join(',') !=="
-        "'nationality,body_metrics') throw new Error('QI projection changed');"
-    )
-    result = subprocess.run(
-        [shutil.which("node"), "--input-type=module", "-e", program],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        timeout=15,
-    )
-    assert result.returncode == 0, result.stderr

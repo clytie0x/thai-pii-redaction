@@ -3,10 +3,28 @@ import { describe, expect, it } from "vitest";
 import {
   codePointRangeToUtf16,
   renderHighlightedText,
+  validateAnalyze,
   validateAuditLog,
   validateErrorEnvelope,
   validateRedactPdf,
 } from "../src/contract-v2.js";
+
+describe("canonical SDK quasi-identifier projection", () => {
+  it("accepts nationality and body metrics in canonical order", () => {
+    const payload = {
+      overall_score: 20, overall_grade: "A", risk_label: "Very Low Risk",
+      direct_pii_count: 0, fp_count: 0, tb_count: 0, section26_categories: [],
+      reidentification: { score: 20, grade: "A",
+        quasi_identifier_categories: ["nationality", "body_metrics"], high_risk_combination: false },
+      breakdown: [], recommendations: [{ level: "info", title: "No significant PDPA risk detected",
+        desc: "ไม่พบข้อมูลส่วนบุคคลที่มีความเสี่ยงสูงในข้อความนี้" }],
+    };
+    expect(validateAnalyze(payload).reidentification.quasi_identifier_categories)
+      .toEqual(["nationality", "body_metrics"]);
+    payload.reidentification.quasi_identifier_categories.reverse();
+    expect(() => validateAnalyze(payload)).toThrow();
+  });
+});
 
 describe("HTTP v2 Unicode offsets", () => {
   it("converts emoji, combining text, Thai text, and boundary positions", () => {

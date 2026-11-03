@@ -223,6 +223,21 @@ def call(
         return error.code, dict(error.headers), error.read().decode("utf-8", "replace")
 
 
+def reset_proxy_rate_state() -> None:
+    """Start an independent functional case with the same production limits."""
+    run("docker", "restart", PROXY)
+    # Wait only for startup. Never retry a document request or its assertion.
+    for _ in range(20):
+        probe = subprocess.run(
+            ["docker", "exec", PROXY, "wget", "-q", "-T", "2", "-t", "1", "-O", "/dev/null", "http://127.0.0.1:8001/internal-health"],
+            capture_output=True,
+        )
+        if probe.returncode == 0:
+            return
+        time.sleep(0.1)
+    raise ContractFailure("isolated proxy did not become ready")
+
+
 def web_response(path: str) -> tuple[int, dict[str, str], str]:
     request = urllib.request.Request(
         WEB_BASE + path,
@@ -586,7 +601,7 @@ def check_product_pages_and_https_enforcement(failures: list[str]) -> None:
     web_config = (REPO / "web" / "nginx.conf").read_text(encoding="utf-8")
     expected_pages = {
         "/": "ปกป้องข้อมูลก่อน",
-        "/app": "Hosted 3.0.2 Web App",
+        "/app": f"Hosted {HOSTED3_FIXTURE['current_hosted_version']} Web App",
         "/privacy": "ข้อมูลไปไหน",
         "/terms": "ใช้ได้เมื่อ",
         "/help": "แก้ปัญหา",
@@ -860,6 +875,8 @@ def check_hosted3_exact_routes_reach_only_approved_core_paths(failures: list[str
             + "s" * 43
         )
         for public_path in (path, "/v1" + path):
+            if path == "/document-preview":
+                reset_proxy_rate_state()
             status, _headers, body = call(
                 public_path, method=method, data=data, headers={"Cookie": cookie}
             )
@@ -904,6 +921,31 @@ def check_hosted3_exact_routes_reach_only_approved_core_paths(failures: list[str
     for path, operation in expected_operations.items():
         if f"  {path} {operation};" not in operation_map or f"  /v1{path} {operation};" not in operation_map:
             failures.append(f"stage5 logging: {path} does not have its value-free operation label")
+
+
+def check_document_aliases_share_rate_limit(failures: list[str]) -> None:
+    """Keep shared-alias pressure proof separate from functional routing."""
+    config = (REPO / "api" / "default.conf.template").read_text(encoding="utf-8")
+    for path in ("/document-preview", "/v1/document-preview"):
+        block = re.search(rf"location = {re.escape(path)} \{{(?P<body>.*?)\n  \}}", config, re.DOTALL)
+        for directive in (
+            "limit_req zone=document_global burst=1 nodelay;",
+            "limit_req zone=standard_document burst=1 nodelay;",
+            "limit_conn document_global_conn 1;",
+            "limit_conn standard_document_conn 1;",
+        ):
+            if block is None or directive not in block.group("body"):
+                failures.append(f"document rate: {path} lost its shared bound")
+    reset_proxy_rate_state()
+    cookie = "__Host-aift_guest=v1.1800001800." + "document-rate-bound".ljust(22, "x") + "." + "s" * 43
+    statuses = [
+        call(path, method="POST", data=b"%PDF-fixture", headers={"Cookie": cookie})[0]
+        for path in ("/document-preview", "/v1/document-preview", "/document-preview")
+    ]
+    if statuses[0] != 200 or any(status not in {200, 429} for status in statuses):
+        failures.append(f"document rate: independent first request/status failed: {statuses}")
+    if 429 not in statuses[1:] or statuses.count(200) > 2:
+        failures.append("document rate: canonical and alias requests did not share their bound")
 
 
 def check_allowlist_denies_at_the_proxy(failures: list[str]) -> None:
@@ -1047,6 +1089,7 @@ def main() -> int:
         check_prefix_is_re_added(failures)
         check_auth_paths_are_port_owned(failures)
         check_hosted3_exact_routes_reach_only_approved_core_paths(failures)
+        check_document_aliases_share_rate_limit(failures)
         check_allowlist_denies_at_the_proxy(failures)
         check_key_is_injected(failures)
         check_request_target_stays_out_of_the_log(failures)

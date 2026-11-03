@@ -157,6 +157,8 @@ jobs:
           cache: npm
       - name: Install the existing locked DOM test dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Use PostgreSQL tools from this job's pinned service for recovery drills
+        run: python scripts/prepare_enterprise_ci_tools.py --container '${{ job.services.postgres.id }}'
       - name: Execute every mandatory real-database enterprise suite
         env:
           PYTHONUTF8: "1"
