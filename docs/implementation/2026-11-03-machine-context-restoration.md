@@ -163,3 +163,14 @@ Hosted image; it does not qualify these later core bytes. The next pushed
 strict/keepalive candidate still needs every CI job to execute and pass. Legal,
 pilot, actual host and public-purge gates remain open. No production acceptance,
 deployment, baseline change or branch deletion follows from this record.
+
+## Subsequent engineering consolidation
+
+The exact `40cf18e` source subsequently passes all 26 CI jobs. The
+[controlled exact-main record](../acceptance/enterprise/M03-controlled-performance.md)
+now satisfies the narrow incremental-performance condition after independent
+review; its absolute-anchor negatives remain retained. The measured 256 runtime
+artifact inputs are unchanged. The [branch preservation record](2026-11-03-branch-consolidation.md)
+keeps raw studies/worker heads without merging unqualified detector experiments.
+Main promotion still requires the reviewed exact integration tree's own CI;
+whole M3/M11/M12 and production acceptance are not inferred.

@@ -19,7 +19,19 @@ Historical planning/pause statements below describe the planning snapshot;
 current execution evidence and owner-only gates live in
 [release scope](../enterprise/release-scope.md) and the milestone acceptance records.
 
-**Current execution update, 2026-11-03:** the owner requested parallel S and M
+**Latest engineering update, 2026-11-03:** exact `40cf18e` passes all 26 CI jobs,
+including mandatory PostgreSQL, Hosted/SDK images and packaged Windows/macOS
+lifecycles. Current source and 256-input installed/PDF evidence are recorded in
+[project status](../project-status.md). The
+[controlled exact-main comparison](../acceptance/enterprise/M03-controlled-performance.md)
+satisfies only the narrow incremental-performance condition after independent
+review; all old absolute-anchor negatives remain and baseline/budgets are
+unchanged. [Raw branch preservation](2026-11-03-branch-consolidation.md) keeps
+unqualified studies/proposals outside production runtime. The exact squash tree
+still requires its own integration review and complete CI. No whole milestone,
+production, actual-host, legal or pilot acceptance is inferred.
+
+**Earlier execution checkpoint, 2026-11-03, retained:** the owner requested parallel S and M
 implementation followed by integration. S2-S6 canonical consumers and M4-M6
 domain/API/Thai UI paths are implemented locally; qualification is pending.
 The [local-wave record](../acceptance/enterprise/M04-M06-local-wave.md) retains
@@ -157,7 +169,7 @@ live-provider scripts merely to verify this document.
 | M0 | Reconciled evidence, scope, environments and release decisions | None | Program foundation | Reconciled/local; exact combined CI pending |
 | M1 | Shared-core compatibility and complete cross-product CI | M0 | Cross-product foundation | S2-S6 source implemented/local; combined/artifact/image/CI qualification pending |
 | M2 | Qualified protection behavior and fresh evaluation protocol | M0; M1 for final cross-surface gate | Cross-product protection | Existing core; acceptance pending |
-| M3 | Authenticated staff, durable inventory/notices and usable console | M0 | Stage 1 | Implemented/local with earlier real-path evidence; controlled performance/CI and new-candidate rebinding pending |
+| M3 | Authenticated staff, durable inventory/notices and usable console | M0 | Stage 1 | Source/artifact/exact-CI and narrow controlled incremental-performance evidence; actual-host rebinding and whole-milestone acceptance pending |
 | M4 | Verified subject linkage and actual consent/withdrawal | M3 | Stage 2 | Implemented/local; combined and actual IdP/browser/artifact qualification pending |
 | M5 | Protected collection, execution boundary and recoverable worker | M3 | Stage 3 foundation | Implemented/local; combined/runtime-role/recovery/artifact qualification pending |
 | M6 | Retention, holds and evidence-backed disposal/restriction | M4, M5 | Stage 3 completion | Restriction/suppression and holds implemented/local; combined qualification pending; physical erasure absent |

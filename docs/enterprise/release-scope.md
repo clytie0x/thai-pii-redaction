@@ -8,6 +8,15 @@ as a fresh independent adversarial subagent review at every stage. This replaces
 the earlier implementation pause; it does not authorize an unspecified real-data
 deletion, external notification, public submission or production promotion.
 
+Engineering follow-up, 2026-11-03: exact `40cf18e` passes all 26 CI jobs, including
+Hosted/SDK images, mandatory PostgreSQL and packaged Windows/macOS lifecycles.
+The [new controlled comparison](../acceptance/enterprise/M03-controlled-performance.md)
+resolves only the incremental main-relative performance condition after
+independent review. Absolute-anchor negatives, baseline and budgets are unchanged.
+The [preservation map](../implementation/2026-11-03-branch-consolidation.md) retains
+unqualified studies/proposals separately. The exact integration tree still
+requires review and CI; whole M3 and production/host/human gates remain open.
+
 ## Engineering scope
 
 - Continue existing single-organization self-hosted governance, preserving the
@@ -28,17 +37,23 @@ deletion, external notification, public submission or production promotion.
 | Area | Source/evidence | Current allowed claim |
 |---|---|---|
 | Root protection | `pii_redactor/`, HTTP contract 2, native protocol 1 | Source implementation with candidate-specific tests; no automatic package/live acceptance |
-| Enterprise | [M3 evidence](../acceptance/enterprise/M03-authority-progress.md), [M4-M6 local wave](../acceptance/enterprise/M04-M06-local-wave.md) and [M7-M10 integration](../acceptance/enterprise/M07-M10-integration-progress.md) | Local callers through M7/M8/M10; prior V2 52-suite run 686 passed/0 skipped, with governance modules unchanged in the two-core-file receipt delta; receipt V3 installed pair/PDF follow-up passes. Earlier failures remain retained; performance, exact-source CI and actual-host qualification remain open |
-| Hosted | `apps/hosted/STATE.md`, source `core/VERSION` 0.1.0; canonical wheel consumer/build preparation | Source copies removed; offline supplied-wheel/dependency/model context and source identity implemented. Exact image/CI/platform acceptance pending; historical 3.0.2 deployment was not rechecked |
-| SDK | `packages/amphrang/`, canonical operations/config, exact first-party pin, 29 internal aliases | Recorded complete source profile passes 2,145/10 skipped; no maintained sensitive-span copy. Receipt V3 paired artifacts pass bounded installed tests; images, complete matrix and publication remain open |
-| Desktop/Extension | Source 0.1.0, broker boundary | Earlier 3.0.0 package records are archived evidence, not a new 0.x installer or Store publication |
-| Office | Existing task pane and fixed-port contract 2 | Real-host gates remain open; Word-only release manifest until other hosts qualify |
+| Enterprise | [M3 evidence](../acceptance/enterprise/M03-authority-progress.md), [M4-M6 local wave](../acceptance/enterprise/M04-M06-local-wave.md) and [M7-M10 integration](../acceptance/enterprise/M07-M10-integration-progress.md) | Local callers through M7/M8/M10; exact `40cf18e` mandatory PostgreSQL CI passes. New paired artifacts pass 956 installed tests/0 skipped and two-profile PDF checks; narrow main-relative performance condition is satisfied. Whole-application/actual-host acceptance remains open |
+| Hosted | `apps/hosted/STATE.md`, source `core/VERSION` 0.1.0; canonical wheel consumer | Exact `40cf18e` supplied-wheel offline image and CI pass. Platform/live deployment acceptance remains open; historical 3.0.2 deployment was not rechecked |
+| SDK | `packages/amphrang/`, canonical operations/config, exact first-party pin, 29 internal aliases | Source 2,205 passed/10 skipped; exact `40cf18e` profile matrix and isolated image pass. New pair has bounded installed qualification; optional/live providers, external hosts and publication remain separate |
+| Desktop/Extension | Source 0.1.0, broker boundary | Exact `40cf18e` Extension package and Windows/macOS packaged CI pass. Earlier 3.0.0 evidence stays historical; no Store publication or new release is claimed |
+| Office | Existing task pane and fixed-port contract 2 | Exact `40cf18e` manifest/type/unit/build CI passes; real-host gates remain open and release manifest stays Word-only |
 | Release platforms | Current release workflow matrix | Windows/macOS only; retained Linux helpers need fresh qualification if re-enabled |
 | YRSS | `research/yrss2026/RESULTS.md`, separate `ai-guard-docs/stt52-2026` | Synthetic research and prepared presentation evidence; owner prints/presents/submits |
 
 These are not interchangeable acceptance levels. Main's newer reproducible
 benchmark and the frozen YRSS experiment are separate studies and must retain
 their own corpus/source identities.
+
+## Historical candidate evidence
+
+The following checkpoint statements are retained at their original scope. The
+engineering follow-up and current allowed-claim table above supersede their
+pending-CI and incremental-performance statements for the later `40cf18e` source.
 
 The failed enterprise retry (286 passed/11 failed/0 skipped) is retained alongside
 its corrected complete 298-pass run. The first full SDK result remains negative

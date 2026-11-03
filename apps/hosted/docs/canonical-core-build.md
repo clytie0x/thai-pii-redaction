@@ -39,6 +39,9 @@ the earlier reconstructed checkpoint and unavailable historical identity.
 They are inactive provenance. `sync_from_upstream.py --from` refuses to copy
 source; `--check --verify-upstream` still verifies the historical Git object
 and retained support files while rejecting a new independent runtime copy.
+The exact historical SHA is retained by the non-release tag
+`archive/2026-11-03/remote/source/hosted-core-75-file-pin`; it does not require
+an active source branch or change any of the 75 recorded file hashes.
 
 ## Supplied inputs
 

@@ -160,13 +160,19 @@ was granted. A branch checkpoint is not performance acceptance or main promotion
 
 ## Open gates
 
-- A controlled-environment measurement that resolves the performance gate.
-  The owner selected continued hold; the gate is not green.
-- Every GitHub CI job must actually execute and pass. The account billing/
-  spending restriction currently prevents runner startup, as recorded in
-  [the CI blocker](M00-ci-blocker.md). No payment/workflow bypass is applied.
-- Local Windows Rust execution is blocked by missing MSVC `link.exe`; local
-  Python/JS checks cannot stand in for cross-platform/native CI.
+Update 2026-11-03: [the new exact-main comparison](M03-controlled-performance.md)
+passes all five controlled-process relative pairs, with an independent review
+clearing the narrow incremental-performance disposition. The historical outlier
+and absolute-anchor failures above are unchanged; they are not relabelled passes.
+This does not accept M3 as a whole or an exclusive/production host.
+
+- Main integration still needs its reviewed exact tree and complete CI. The
+  earlier billing restriction is historical, retained in
+  [the CI blocker](M00-ci-blocker.md); `40cf18e` now executes and passes all 26
+  jobs without a payment/workflow bypass.
+- Local Windows Rust execution remains unavailable; actual cross-platform Rust
+  and packaged Windows/macOS CI on `40cf18e` pass. Local Python/JS is not used
+  as native proof.
 - Actual production issuer policy/MFA, TLS, encrypted storage, independent audit
   checkpoints, backup recovery and named human pilot remain their later gates.
 - No release, deployment, real-data operation, public publication or main merge

@@ -21,10 +21,15 @@ follow-up passes seven proof groups in each of two profiles, and all ten PNGs
 were inspected. The [bound evidence](implementation/2026-11-03-machine-context-restoration.md#bound-local-evidence-2026-11-03)
 separates source, installed, Python-floor identity-only and host limitations.
 Current core bytes differ from receipt V3, whose results below remain historical.
-The latest single five-iteration checkpoint exits 1 at detect 5.42 ms, sanitize
-14.49 ms (+44%), restore 0.35 ms (+25%), PDF 68.70 ms and RSS 151.8 MiB. Baseline,
-budgets and M3's controlled-performance hold are unchanged. No main or production
-acceptance is claimed.
+The older single five-iteration checkpoint remains exit 1 at detect 5.42 ms,
+sanitize 14.49 ms (+44%), restore 0.35 ms (+25%), PDF 68.70 ms and RSS 151.8 MiB.
+The new [exact-main controlled comparison](acceptance/enterprise/M03-controlled-performance.md)
+passes all five relative pairs: worst time increase 16.406%, worst RSS 0.224%.
+An independent review clears closing only the incremental main-to-candidate
+performance condition under the existing explained-trade rule. Both arms still
+fail the older absolute anchor, whose pre-existing security cost was already
+present in main. Baseline and budgets are unchanged; this is not an absolute
+performance pass or acceptance of M3 as a whole. Production gates remain open.
 
 Before this contract change, the stopped diagnostic WIP was implemented: fixed,
 closed smoke diagnostics preserve private errors, native marker compatibility
@@ -41,17 +46,23 @@ units. These results overlap and are not added into one acceptance total.
 
 On `1a6add4`, root CI passed 15 of 16 jobs and macOS package smoke passed. Hosted
 image installation rejected generated resources; the installed verifier is
-corrected in `404f2a9`, whose three CI workflows all pass, including the actual
-Hosted image and installed Desktop lifecycle. That pre-strict source does not
-qualify the later strict-restoration/keepalive candidate.
+corrected in `404f2a9`. The later exact `40cf18e` strict-restoration/keepalive
+candidate passes all 26 jobs across three workflows, including actual Hosted
+and SDK images, mandatory PostgreSQL, Rust and Windows/macOS packaged lifecycles.
 Windows repair smoke on `1a6add4` returned nonterminal `broker_busy` during
 sanitize. A separately reviewed source fix removes background keepalive from
 foreground admission while retaining the single-operation bound and no replay.
-Local Rust execution is blocked by an incomplete offline dependency cache;
-exact-candidate compilation and packaged lifecycle evidence remain required.
+Local Rust execution remains blocked by an incomplete offline dependency cache;
+actual cross-platform CI on `40cf18e` supplies the compile/lifecycle evidence.
 The source-level contention mechanism is established, but the competing owner
 in that historical CI failure was not observed. All earlier failures remain
-retained. No main merge or performance waiver is claimed.
+retained. No absolute-anchor waiver or production acceptance is claimed.
+
+The [consolidation record](implementation/2026-11-03-branch-consolidation.md)
+preserves 21 exact raw heads as verified non-release archive tags. Unqualified
+studies and superseded proposals are preserved rather than merged as runtime.
+Main promotion requires the reviewed integration tree's own complete CI. Local
+worktree directories, ignored negative evidence and untracked `1` are retained.
 
 Current local integration includes M7 rights/delivery, M8 organization and
 processing controls, and M10 runtime/backup/restore/initial-activation paths.

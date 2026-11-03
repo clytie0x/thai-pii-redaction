@@ -1,0 +1,268 @@
+{
+  "acceptance": "relative comparison passed; integration disposition reviewed separately; absolute anchor not waived",
+  "arms": {
+    "A": {
+      "absolute_anchor_exits": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "cpu": [
+        18,
+        18,
+        18,
+        18,
+        18
+      ],
+      "dependency_modules": [
+        425,
+        425,
+        425,
+        425,
+        425
+      ],
+      "medians_ms": {
+        "detect": 8.263600000645965,
+        "pdf_redact": 100.73590000683907,
+        "restore": 0.44079999497625977,
+        "sanitize": 21.56700000341516
+      },
+      "product_modules": [
+        33,
+        33,
+        33,
+        33,
+        33
+      ],
+      "rss_median_mb": 155.8203125,
+      "structure": {
+        "entity_types": [
+          "ADDRESS",
+          "DATE",
+          "EMAIL",
+          "NAME",
+          "PHONE",
+          "THAI_ID"
+        ],
+        "input_characters": 339,
+        "masked_characters": 557,
+        "ner_calls": [
+          {
+            "characters": 339,
+            "tokens": 96
+          },
+          {
+            "characters": 557,
+            "tokens": 106
+          },
+          {
+            "characters": 491,
+            "tokens": 93
+          }
+        ]
+      }
+    },
+    "B": {
+      "absolute_anchor_exits": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "cpu": [
+        18,
+        18,
+        18,
+        18,
+        18
+      ],
+      "dependency_modules": [
+        425,
+        425,
+        425,
+        425,
+        425
+      ],
+      "medians_ms": {
+        "detect": 8.685699998750351,
+        "pdf_redact": 100.05140000430401,
+        "restore": 0.5058999959146604,
+        "sanitize": 21.58420000341721
+      },
+      "product_modules": [
+        37,
+        37,
+        37,
+        37,
+        37
+      ],
+      "rss_median_mb": 155.8203125,
+      "structure": {
+        "entity_types": [
+          "ADDRESS",
+          "DATE",
+          "EMAIL",
+          "NAME",
+          "PHONE",
+          "THAI_ID"
+        ],
+        "input_characters": 339,
+        "masked_characters": 557,
+        "ner_calls": [
+          {
+            "characters": 339,
+            "tokens": 96
+          },
+          {
+            "characters": 557,
+            "tokens": 106
+          },
+          {
+            "characters": 491,
+            "tokens": 93
+          }
+        ]
+      }
+    }
+  },
+  "bound_results_sha256": "e9f07c07bc436aa6038de6cf2556b7e1e78dce56bc4ae983daaa54e945bb0c00",
+  "candidate": "40cf18e5644b9edbdc2eff3e16e248663e48c1d9",
+  "environment": {
+    "dependencies": {
+      "Pillow": "12.3.0",
+      "pdfplumber": "0.11.10",
+      "psutil": "7.2.2",
+      "pydantic": "2.13.4",
+      "pypdfium2": "5.12.1",
+      "pythainlp": "5.3.4",
+      "python-crfsuite": "0.9.12"
+    },
+    "logical_cpu": 18,
+    "priority": "normal",
+    "python": "3.13.12"
+  },
+  "evidence_date": "2026-11-03",
+  "main": "38b235ffb5cede349e51362049a03666b8637dc6",
+  "prepared_sha256": "ae67f7a4a367a5485cd0edc0104eebf71d0d4b24c7a57685074221f969a48d24",
+  "protocol_sha256": "782dc9e5fd0b86d73313720865b6d00988daa5884e51bfb1ecbdc3867efa132f",
+  "raw_record_sha256": {
+    "01-A.json": "36802993b9e262a03f55a35bb1187e0abc07018f4b22b60470e6faae736f290e",
+    "01-B.json": "699475e4f08b78202ee27872fd4a2b7d5046c9eb4edfad1c625830d21379995e",
+    "02-A.json": "c36be983aca447aeb78b2fad2f02b7f5f006511aa9f1759350656844a13894de",
+    "02-B.json": "a9a7782f868d35689df3a6c7d17e21af3f8164aa5d3464e97a1f122a191ec5ef",
+    "03-A.json": "f478e5adc8cf5d77d33b4f230cad2a965940468b8538175757496fe9178ca498",
+    "03-B.json": "aeaa73693efa3ffcaea9ab742a7dddb71a6bfec5868eae9333c271b543454208",
+    "04-A.json": "8fb080b021251891221a6af2b81fd7df953802f0dc5d1943a8fff1233019bad5",
+    "04-B.json": "06091feabfe756b168ca735d2579f2dca2139cd40796c160f9dc1fcf34e963fa",
+    "05-A.json": "d59067fc78009cbdb62643a1a63b39933cfb1edabe844e296c2565c2a0868fc1",
+    "05-B.json": "b8d1b7df906017890701740abae019fd460bbe6d12bcb36bfd718724501ba2f2",
+    "series-go.json": "2864ab8f91ead741f19d3bf308faef8739ee13d5edd498b5ae8f82145410803a",
+    "summary.json": "13fdbad96ed0518a5036ecb711f7b2ef79fe62ad55df6a8efd833932b1fd0dda"
+  },
+  "retained_negatives": [
+    "previous M3 outlier",
+    "prior absolute-anchor failures",
+    "preparation newline mismatch before timing"
+  ],
+  "runner_sha256": "de33e525858717764c7b5926382951d241b706804984fc2922ef82d169eddeed",
+  "schema_version": 1,
+  "scope": "controlled process comparison on shared Windows host; not exclusive-host or production acceptance",
+  "source_inputs": {
+    "candidate_binding_sha256": "54340c0705fee0247c19904d6ef80e3ea54b774cd8754d19206b94750cd804d1",
+    "candidate_files": 256,
+    "dependency_files": 5943,
+    "dependency_inventory_sha256": "e876ae274645de01f4c41a1438e22c3f84934fdd5466af46149acfe5da04eb4c",
+    "main_git_files": 73,
+    "measurement_sha256": {
+      "examples/sample_document.pdf": "c2c96f75988eea1f9faa030007928cbadb22f95e1df9c609f00dfcdcd21a2633",
+      "perf/baseline.json": "e49717b3cc908ec32a108d66bf342675920267781b1768ae0c9190751168d976",
+      "scripts/measure_perf.py": "f770cae0ef4a0a3997d9bdf9d9b06d863bd3552da9d208dadd27a4dd6d486be2",
+      "tests/fixtures/demo_sample_th.txt": "904b656b497833ea2f4912963a26a31c9a6ac7f3a82a53890653e173c3413348"
+    },
+    "model_sha256": {
+      "db.json": "8bff37993324365f1f243cf983880915c908cf7ee14ef4013d3aad6c934f38c8",
+      "thai-ner-1-4.crfsuite": "8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38"
+    }
+  },
+  "summary": {
+    "absolute_anchor_waived": false,
+    "baseline_changed": false,
+    "completed": true,
+    "m3_accepted": false,
+    "maximum_ratios": {
+      "detect": 1.061356336194729,
+      "pdf_redact": 1.0026598855063897,
+      "restore": 1.1640588793384739,
+      "rss": 1.0022374176680577,
+      "sanitize": 1.0365233923319248
+    },
+    "median_ratios": {
+      "detect": 1.0264775633578338,
+      "pdf_redact": 0.9965716204291617,
+      "restore": 1.1481313775251651,
+      "rss": 1.0001002858145716,
+      "sanitize": 1.0086453707773297
+    },
+    "pairs": [
+      {
+        "pair": 1,
+        "passed": true,
+        "ratios": {
+          "detect": 0.9914608978616235,
+          "pdf_redact": 0.9959481186912056,
+          "restore": 1.1481313775251651,
+          "rss": 1.0022374176680577,
+          "sanitize": 1.0365233923319248
+        }
+      },
+      {
+        "pair": 2,
+        "passed": true,
+        "ratios": {
+          "detect": 1.0264775633578338,
+          "pdf_redact": 1.000460975586104,
+          "restore": 1.1640588793384739,
+          "rss": 1.0005515166708447,
+          "sanitize": 1.0086453707773297
+        }
+      },
+      {
+        "pair": 3,
+        "passed": true,
+        "ratios": {
+          "detect": 1.0511430337371337,
+          "pdf_redact": 0.9911789142292885,
+          "restore": 1.1495923716546905,
+          "rss": 0.9904379088230888,
+          "sanitize": 0.9979972846556621
+        }
+      },
+      {
+        "pair": 4,
+        "passed": true,
+        "ratios": {
+          "detect": 0.9475022180766484,
+          "pdf_redact": 0.9965716204291617,
+          "restore": 1.1386116488941056,
+          "rss": 1.0001002858145716,
+          "sanitize": 1.0128281621197195
+        }
+      },
+      {
+        "pair": 5,
+        "passed": true,
+        "ratios": {
+          "detect": 1.061356336194729,
+          "pdf_redact": 1.0026598855063897,
+          "restore": 1.1211363961301297,
+          "rss": 0.9886741016109046,
+          "sanitize": 0.9523645638123124
+        }
+      }
+    ],
+    "relative_passed": true
+  }
+}

@@ -5,6 +5,8 @@
   "upstream": "https://github.com/clytie0x/thai-pii-redaction",
   "source_checkpoint": "cf50512a043b54ca28f4264d8c103dcc25da1a6d",
   "retained_source_branch": "source/hosted-core-75-file-pin",
+  "retention_update_date": "2026-11-03",
+  "retained_source_archive_ref": "refs/tags/archive/2026-11-03/remote/source/hosted-core-75-file-pin",
   "historical_unavailable_commit": "436d9ab7880762513826cc204d6ff770faf0e193",
   "historical_commit_verified": false,
   "base_commit": "ea57c694f1be40d9db1f09e2dade42e361fae858",
@@ -22,6 +24,6 @@
     "This is a new reconstruction from existing source bytes, not recovery or authentication of the historical commit, its date or authorship.",
     "The unavailable historical commit is absent from both preserved and clean Git object stores and has no certified privacy-rewrite mapping.",
     "No Hosted runtime, policy, dependency, version, deployment or canonical-core migration is changed.",
-    "The source archive branch is retained for exact-SHA fetch and must not be integrated into main as a feature or release."
+    "The reconstructed checkpoint remains retained for exact-SHA fetch through the non-release archive ref and must not be integrated into main as a feature or release."
   ]
 }

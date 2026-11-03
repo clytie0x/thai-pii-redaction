@@ -1,5 +1,12 @@
 # M7-M10 combined integration checkpoint
 
+Update 2026-11-03: the later `40cf18e` strict-restoration candidate has complete
+26-job CI and separate 256-input installed/PDF qualification. The
+[new controlled comparison](M03-controlled-performance.md) resolves only the
+incremental main-relative performance condition. The older checkpoints and
+their held measurements below remain historical evidence, not new runs or
+whole-milestone/production acceptance. See [current status](../../project-status.md).
+
 Resumed CI closure: the owner requested continuing toward one main branch.
 The diagnostic WIP below is now implemented and its earlier RED results remain
 historical. Current owning gates pass JS 206, native-package Python 127/one skip,
