@@ -9,7 +9,9 @@ import json
 import re
 import runpy
 import shutil
+import stat
 import subprocess
+import tomllib
 import zipfile
 from email.parser import BytesParser
 from pathlib import Path, PurePosixPath
@@ -47,6 +49,58 @@ def source_tree_sha256(source: Path) -> str:
     return SOURCE_INTEGRITY["source_tree_sha256"](source)
 
 
+def _canonical_wheel_payload(
+    source: Path, runtime: dict[str, bytes]
+) -> tuple[dict[str, bytes], dict[str, bytes], str | None]:
+    try:
+        metadata_path = source / "pyproject.toml"
+        if metadata_path.is_symlink():
+            raise ValueError("unsafe source build metadata")
+        metadata = (
+            tomllib.loads(metadata_path.read_text(encoding="utf-8"))
+            if metadata_path.exists()
+            else {}
+        )
+        tools = metadata.get("tool", {})
+        build_hook = tools.get("setuptools", {}).get("cmdclass", {}).get("build_py")
+        artifact = tools.get("aiguard", {}).get("artifact")
+        current = (
+            build_hook == "_aiguard_build.ArtifactBuildPy"
+            or artifact is not None
+            or "pii_redactor/artifact_identity.py" in runtime
+            or (source / "_aiguard_build.py").exists()
+        )
+        if not current:
+            return runtime, {}, None
+        if build_hook != "_aiguard_build.ArtifactBuildPy" or artifact is None:
+            raise ValueError("missing artifact build declaration")
+        # Load the checked-out stdlib helper, without importing runtime engines.
+        identity = runpy.run_path(str(ROOT / "pii_redactor/artifact_identity.py"))
+        manifest = identity["source_manifest"](source)
+        if manifest["runtime"] != {
+            name: hashlib.sha256(payload).hexdigest() for name, payload in runtime.items()
+        }:
+            raise ValueError("canonical artifact runtime mismatch")
+        resources = {
+            identity["RESOURCE"] + "/" + name: identity["_path"](source, name).read_bytes()
+            for name in manifest["inputs"]
+        }
+        manifest_name = identity["RESOURCE"] + "/manifest.json"
+        resources[manifest_name] = (
+            json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n"
+        ).encode("utf-8")
+        licenses = {
+            "licenses/" + path.relative_to(source).as_posix(): identity["_path"](
+                source, path.relative_to(source).as_posix()
+            ).read_bytes()
+            for pattern in metadata["project"]["license-files"]
+            for path in source.glob(pattern)
+        }
+        return runtime | resources, licenses, manifest_name
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
+        raise ValueError("invalid canonical artifact build contract") from error
+
+
 def verify_core_wheel(
     wheel: Path, source: Path, *, expected_sha256: str, expected_source_sha256: str
 ) -> dict[str, str]:
@@ -63,11 +117,26 @@ def verify_core_wheel(
         f"{name}/__init__.py" in expected for name in ("app", "pii_redactor")
     ):
         raise ValueError("canonical source packages are missing")
+    expected, licenses, manifest_name = _canonical_wheel_payload(source, expected)
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
-        if len(names) != len(set(names)) or any(
-            PurePosixPath(name).is_absolute() or ".." in PurePosixPath(name).parts or "\\" in name
-            for name in names
+        if (
+            len(names) != len({name.casefold().rstrip("/") for name in names})
+            or any(
+                not PurePosixPath(name).parts
+                or PurePosixPath(name).is_absolute()
+                or ".." in PurePosixPath(name).parts
+                or PurePosixPath(name).as_posix() + ("/" if name.endswith("/") else "") != name
+                or "\\" in name
+                or ":" in name
+                or any(ord(char) < 32 for char in name)
+                for name in names
+            )
+            or any(
+                stat.S_IFMT(info.external_attr >> 16) not in {0, stat.S_IFREG, stat.S_IFDIR}
+                or (stat.S_ISDIR(info.external_attr >> 16) and not info.is_dir())
+                for info in archive.infolist()
+            )
         ):
             raise ValueError("unsafe core wheel inventory")
         metadata_paths = [name for name in names if name.endswith(".dist-info/METADATA")]
@@ -81,15 +150,41 @@ def verify_core_wheel(
             {name: archive.read(name) for name in names if not name.endswith("/")}
         )
         version = (source / "VERSION").read_text(encoding="utf-8").strip()
-        if metadata["Name"] != "thai-pii-redaction-core" or metadata["Version"] != version:
+        if (
+            metadata.get_all("Name") != ["thai-pii-redaction-core"]
+            or metadata.get_all("Version") != [version]
+            or metadata_prefix != f"thai_pii_redaction_core-{version}.dist-info/"
+        ):
             raise ValueError("invalid first-party core identity")
         actual = {
             name
             for name in names
             if name.startswith(("app/", "pii_redactor/")) and not name.endswith("/")
         }
-        if actual != set(expected) or any(archive.read(name) != expected[name] for name in actual):
+        if actual != set(expected):
             raise ValueError("wheel does not match canonical source")
+        for name in actual:
+            payload = archive.read(name)
+            if payload == expected[name]:
+                continue
+            # The builder's text write uses the build host's final newline.
+            if name == manifest_name and payload == expected[name][:-1] + b"\r\n":
+                continue
+            raise ValueError("wheel does not match canonical source")
+        if any(
+            name.startswith(("app/", "pii_redactor/"))
+            and name.endswith("/")
+            and not any(expected_name.startswith(name) for expected_name in expected)
+            for name in names
+        ):
+            raise ValueError("wheel does not match canonical source")
+        actual_licenses = {
+            name.removeprefix(metadata_prefix): archive.read(name)
+            for name in names
+            if name.startswith(metadata_prefix + "licenses/") and not name.endswith("/")
+        }
+        if licenses and actual_licenses != licenses:
+            raise ValueError("wheel licenses do not match canonical source")
         if any(name.endswith((".pth", ".data/scripts")) for name in names):
             raise ValueError("unexpected executable wheel member")
     return {
