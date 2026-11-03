@@ -18,7 +18,7 @@ ENV HOME=/tmp
 COPY requirements.lock requirements-aift-security.lock core-wheel.lock CORE_BUILD_IDENTITY.json ./
 COPY wheels ./wheels
 COPY wheelhouse ./wheelhouse
-COPY verify_core_install.py ./
+COPY verify_core_install.py verify_core_cache.py ./
 RUN python -m pip install --no-cache-dir --no-index --find-links=wheelhouse --require-hashes -r requirements.lock \
     && python -m pip install --no-cache-dir --no-index --find-links=wheelhouse --no-deps --require-hashes -r requirements-aift-security.lock \
     && python -m pip install --no-cache-dir --no-index --no-deps --require-hashes -r core-wheel.lock \

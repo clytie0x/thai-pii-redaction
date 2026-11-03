@@ -143,6 +143,48 @@ def test_generated_wheel_resources_match_the_canonical_build_contract(
     assert verify_fixture(source, wheel)["version"] == "0.1.0"
 
 
+def test_prepared_context_binds_runtime_generated_metadata_and_trusted_cache_helper(
+    tmp_path, monkeypatch
+):
+    prepare = load_script()
+    source, wheel, _ = generated_wheel_fixture(tmp_path)
+    models = tmp_path / "synthetic-models"
+    models.mkdir()
+    monkeypatch.setattr(prepare, "MODEL_SHA256", prepare.model_tree_sha256(models))
+    monkeypatch.setattr(prepare, "verify_wheelhouse", lambda _root, _locks: [])
+    monkeypatch.setattr(
+        prepare.subprocess, "run", lambda *_args, **_kwargs: SimpleNamespace(stdout="a" * 40)
+    )
+    output = tmp_path / "prepared-context"
+    identity = prepare.prepare_context(
+        SimpleNamespace(
+            source=source,
+            core_wheel=wheel,
+            core_wheel_sha256=hashlib.sha256(wheel.read_bytes()).hexdigest(),
+            source_tree_sha256=prepare.source_tree_sha256(source),
+            source_revision="a" * 40,
+            wheelhouse=tmp_path / "supplied-wheelhouse",
+            models=models,
+            output=output,
+        )
+    )
+    assert identity["schema_version"] == 2
+    assert identity["source_tree_sha256"] == prepare.source_tree_sha256(source)
+    inventory = identity["installed_core"]
+    assert "pii_redactor/data.bin" in inventory["runtime"]
+    assert "pii_redactor/_artifact/manifest.json" in inventory["generated"]
+    assert "thai_pii_redaction_core-0.1.0.dist-info/licenses/LICENSE" in inventory["metadata"]
+    assert not set(inventory["runtime"]) & set(inventory["generated"])
+    helper = output / "verify_core_cache.py"
+    assert helper.read_bytes() == (ROOT / "pii_redactor/_cache_identity.py").read_bytes()
+    assert identity["cache_verifier"] == {
+        "file": helper.name,
+        "sha256": hashlib.sha256(helper.read_bytes()).hexdigest(),
+    }
+    assert identity["files"][helper.name] == identity["cache_verifier"]["sha256"]
+    assert identity["files"]["wheels/" + wheel.name] == identity["wheel_sha256"]
+
+
 def test_generated_wheel_validation_loads_only_the_current_stdlib_identity_helper(tmp_path):
     source, wheel, _ = generated_wheel_fixture(tmp_path)
     program = """

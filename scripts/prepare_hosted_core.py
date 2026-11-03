@@ -103,7 +103,7 @@ def _canonical_wheel_payload(
 
 def verify_core_wheel(
     wheel: Path, source: Path, *, expected_sha256: str, expected_source_sha256: str
-) -> dict[str, str]:
+) -> dict:
     if wheel.is_symlink() or not re.fullmatch(r"[A-Za-z0-9_.+\-]+\.whl", wheel.name):
         raise ValueError("invalid first-party core wheel path")
     if sha256(wheel) != expected_sha256:
@@ -117,6 +117,7 @@ def verify_core_wheel(
         f"{name}/__init__.py" in expected for name in ("app", "pii_redactor")
     ):
         raise ValueError("canonical source packages are missing")
+    runtime = {name: hashlib.sha256(payload).hexdigest() for name, payload in expected.items()}
     expected, licenses, manifest_name = _canonical_wheel_payload(source, expected)
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
@@ -185,13 +186,46 @@ def verify_core_wheel(
         }
         if licenses and actual_licenses != licenses:
             raise ValueError("wheel licenses do not match canonical source")
+        allowed_metadata = {
+            metadata_prefix + name for name in ("METADATA", "WHEEL", "RECORD", "top_level.txt")
+        } | {metadata_prefix + name for name in licenses}
+        if manifest_name and any(
+            name.startswith(metadata_prefix)
+            and not name.endswith("/")
+            and name not in allowed_metadata
+            for name in names
+        ):
+            raise ValueError("unexpected executable wheel member")
         if any(name.endswith((".pth", ".data/scripts")) for name in names):
             raise ValueError("unexpected executable wheel member")
+        generated = {
+            name: hashlib.sha256(archive.read(name)).hexdigest()
+            for name in actual
+            if name not in runtime
+        }
+        build_metadata = {
+            name: hashlib.sha256(archive.read(name)).hexdigest()
+            for name in names
+            if name.startswith(metadata_prefix)
+            and not name.endswith("/")
+            and name != metadata_prefix + "RECORD"
+        }
     return {
         "distribution": "thai-pii-redaction-core",
         "version": version,
         "wheel_sha256": expected_sha256,
+        "wheel_filename": wheel.name,
         "source_tree_sha256": actual_source,
+        "installed_core": {
+            "format": 1,
+            "runtime": runtime,
+            "generated": generated,
+            "metadata": build_metadata,
+        },
+        "cache_verifier": {
+            "file": "verify_core_cache.py",
+            "sha256": sha256(ROOT / "pii_redactor/_cache_identity.py"),
+        },
     }
 
 
@@ -269,6 +303,7 @@ def prepare_context(args: argparse.Namespace) -> dict:
     output.mkdir(parents=True)
     for name in PORT_FILES:
         shutil.copy2(HOSTED / "core" / name, output / name)
+    shutil.copyfile(ROOT / "pii_redactor/_cache_identity.py", output / "verify_core_cache.py")
     for name in ("aift_hosted3", "licenses"):
         shutil.copytree(
             HOSTED / "core" / name,
@@ -285,7 +320,7 @@ def prepare_context(args: argparse.Namespace) -> dict:
     (output / "core-wheel.lock").write_text(requirement, encoding="utf-8")
     identity.update(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "source_revision": revision,
             "model_tree_sha256": MODEL_SHA256,
             "historical_port_manifest_active": False,
