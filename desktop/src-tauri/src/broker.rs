@@ -623,16 +623,69 @@ fn lock_recover<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     }
 }
 
-fn lock_manager_for_operation(
-    inner: &Mutex<BrokerManager>,
-) -> Result<MutexGuard<'_, BrokerManager>, DesktopCommandError> {
-    match inner.lock() {
-        Ok(manager) => Ok(manager),
+fn lock_manager_for_operation<'a>(
+    inner: &'a Mutex<BrokerManager>,
+    owner: &OperationOwner,
+) -> Result<MutexGuard<'a, BrokerManager>, DesktopCommandError> {
+    let manager = match inner.lock() {
+        Ok(manager) => manager,
         Err(poisoned) => {
             let mut manager = poisoned.into_inner();
+            manager.lifecycle.stop();
             manager.disconnect();
             inner.clear_poison();
-            Err(DesktopCommandError::fixed("operation_failed", true, true))
+            return Err(DesktopCommandError::fixed("operation_failed", true, true));
+        }
+    };
+    if manager.lifecycle.terminal.load(Ordering::Acquire) {
+        return Err(DesktopCommandError::fixed("broker_unavailable", true, true));
+    }
+    if let OperationOwner::Window { label, generation } = owner {
+        if !manager.lifecycle.window_is_current(label, *generation) {
+            return Err(DesktopCommandError::fixed(
+                "session_unavailable",
+                true,
+                false,
+            ));
+        }
+    }
+    Ok(manager)
+}
+
+fn keepalive_if_idle<F>(
+    inner: &Mutex<BrokerManager>,
+    lifecycle: &DesktopLifecycle,
+    operation: F,
+) -> bool
+where
+    F: FnOnce(&mut BrokerManager) -> bool,
+{
+    if lifecycle.terminal.load(Ordering::Acquire)
+        || lifecycle.operation_active.load(Ordering::Acquire)
+    {
+        return false;
+    }
+    match inner.try_lock() {
+        Ok(mut manager) => {
+            if lifecycle.terminal.load(Ordering::Acquire)
+                || lifecycle.operation_active.load(Ordering::Acquire)
+            {
+                return false;
+            }
+            let invalidated = operation(&mut manager);
+            if invalidated {
+                // Fence the one admitted waiter before releasing this lock.
+                lifecycle.stop();
+            }
+            invalidated
+        }
+        Err(TryLockError::WouldBlock) => false,
+        Err(TryLockError::Poisoned(poisoned)) => {
+            let mut manager = poisoned.into_inner();
+            lifecycle.stop();
+            manager.disconnect();
+            inner.clear_poison();
+            true
         }
     }
 }
@@ -695,20 +748,10 @@ where
     let lifecycle = Arc::clone(&state.lifecycle);
     let verify_owner = owner.clone();
     let permit = lifecycle.begin(owner)?;
-    let worker_lifecycle = Arc::clone(&lifecycle);
     let worker_permit = permit.clone();
     let joined = tauri::async_runtime::spawn_blocking(move || {
         let _permit = worker_permit;
-        if let OperationOwner::Window { label, generation } = &verify_owner {
-            if !worker_lifecycle.window_is_current(label, *generation) {
-                return Err(DesktopCommandError::fixed(
-                    "session_unavailable",
-                    true,
-                    false,
-                ));
-            }
-        }
-        let mut manager = lock_manager_for_operation(&inner)?;
+        let mut manager = lock_manager_for_operation(&inner, &verify_owner)?;
         operation(&mut manager)
     })
     .await;
@@ -937,7 +980,7 @@ where
     let state = app.state::<DesktopBrokerState>();
     let lifecycle = Arc::clone(&state.lifecycle);
     let _permit = lifecycle.begin(OperationOwner::Hotkey)?;
-    let mut manager = lock_manager_for_operation(&state.inner)?;
+    let mut manager = lock_manager_for_operation(&state.inner, &OperationOwner::Hotkey)?;
     let operation = manager
         .with_hotkey_scope(|client, scope| client.sanitize(scope, text, "token", session_id));
     let result = match operation {
@@ -965,7 +1008,7 @@ where
     let state = app.state::<DesktopBrokerState>();
     let lifecycle = Arc::clone(&state.lifecycle);
     let _permit = lifecycle.begin(OperationOwner::Hotkey)?;
-    let mut manager = lock_manager_for_operation(&state.inner)?;
+    let mut manager = lock_manager_for_operation(&state.inner, &OperationOwner::Hotkey)?;
     let operation =
         manager.with_hotkey_scope(|client, scope| client.reidentify(scope, session_id, text));
     let result = match operation {
@@ -1025,21 +1068,7 @@ pub fn start_keepalive(app: &AppHandle) {
                 if lifecycle.terminal.load(Ordering::Acquire) {
                     break;
                 }
-                let Ok(_permit) = lifecycle.begin(OperationOwner::Health) else {
-                    continue;
-                };
-                let mut invalidated = false;
-                match inner.try_lock() {
-                    Ok(mut manager) => invalidated = manager.keepalive(),
-                    Err(TryLockError::WouldBlock) => {}
-                    Err(TryLockError::Poisoned(poisoned)) => {
-                        let mut manager = poisoned.into_inner();
-                        manager.disconnect();
-                        inner.clear_poison();
-                        invalidated = true;
-                    }
-                }
-                if invalidated {
+                if keepalive_if_idle(&inner, &lifecycle, BrokerManager::keepalive) {
                     emit_authority_invalidated(&app);
                 }
             }
@@ -1112,6 +1141,215 @@ mod tests {
         assert!(!keepalive_requires_disconnect("broker_busy", false));
         assert!(keepalive_requires_disconnect("broker_busy", true));
         assert!(keepalive_requires_disconnect("broker_unavailable", false));
+    }
+
+    #[test]
+    fn background_keepalive_allows_one_foreground_waiter_without_replay() {
+        let lifecycle = Arc::new(DesktopLifecycle::default());
+        let inner = Arc::new(Mutex::new(BrokerManager::with_lifecycle(Arc::clone(
+            &lifecycle,
+        ))));
+        let (started, wait_for_start) = std::sync::mpsc::channel();
+        let (release, wait_for_release) = std::sync::mpsc::channel();
+        let health_lifecycle = Arc::clone(&lifecycle);
+        let health_inner = Arc::clone(&inner);
+        let health = std::thread::spawn(move || {
+            keepalive_if_idle(&health_inner, &health_lifecycle, |_| {
+                started.send(()).unwrap();
+                wait_for_release.recv().unwrap();
+                false
+            })
+        });
+        wait_for_start.recv().unwrap();
+
+        let permit = lifecycle.begin(OperationOwner::Hotkey).unwrap();
+        let second = lifecycle.begin(OperationOwner::Health).unwrap_err();
+        assert_eq!(second.code(), "broker_busy");
+        assert!(!second.session_invalidated());
+        assert!(!second.restart_required);
+        let (waiting, wait_for_waiter) = std::sync::mpsc::channel();
+        let (dispatched, wait_for_dispatch) = std::sync::mpsc::channel();
+        let command_inner = Arc::clone(&inner);
+        let command = std::thread::spawn(move || {
+            let _permit = permit;
+            waiting.send(()).unwrap();
+            let _manager =
+                lock_manager_for_operation(&command_inner, &OperationOwner::Hotkey).unwrap();
+            dispatched.send(()).unwrap();
+        });
+        wait_for_waiter.recv().unwrap();
+        assert!(matches!(
+            wait_for_dispatch.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        ));
+
+        release.send(()).unwrap();
+        assert!(!health.join().unwrap());
+        wait_for_dispatch
+            .recv_timeout(Duration::from_secs(1))
+            .unwrap();
+        command.join().unwrap();
+        assert!(matches!(
+            wait_for_dispatch.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Disconnected)
+        ));
+        assert!(!lifecycle.operation_active.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn background_keepalive_skips_foreground_admission() {
+        let lifecycle = Arc::new(DesktopLifecycle::default());
+        let inner = Mutex::new(BrokerManager::with_lifecycle(Arc::clone(&lifecycle)));
+        let _permit = lifecycle.begin(OperationOwner::Hotkey).unwrap();
+
+        assert!(!keepalive_if_idle(&inner, &lifecycle, |_| {
+            panic!("background health must yield to admitted work")
+        }));
+        assert!(inner.try_lock().is_ok());
+    }
+
+    #[test]
+    fn fatal_keepalive_fences_the_waiting_command_before_unlocking() {
+        let lifecycle = Arc::new(DesktopLifecycle::default());
+        let inner = Arc::new(Mutex::new(BrokerManager::with_lifecycle(Arc::clone(
+            &lifecycle,
+        ))));
+        let (started, wait_for_start) = std::sync::mpsc::channel();
+        let (release, wait_for_release) = std::sync::mpsc::channel();
+        let health_lifecycle = Arc::clone(&lifecycle);
+        let health_inner = Arc::clone(&inner);
+        let health = std::thread::spawn(move || {
+            keepalive_if_idle(&health_inner, &health_lifecycle, |manager| {
+                started.send(()).unwrap();
+                wait_for_release.recv().unwrap();
+                manager.disconnect();
+                true
+            })
+        });
+        wait_for_start.recv().unwrap();
+        let permit = lifecycle.begin(OperationOwner::Hotkey).unwrap();
+        let command_inner = Arc::clone(&inner);
+        let (waiting, wait_for_waiter) = std::sync::mpsc::channel();
+        let command = std::thread::spawn(move || {
+            let _permit = permit;
+            waiting.send(()).unwrap();
+            let result = match lock_manager_for_operation(&command_inner, &OperationOwner::Hotkey) {
+                Ok(_) => panic!("invalidated work must not dispatch"),
+                Err(error) => error,
+            };
+            result
+        });
+        wait_for_waiter.recv().unwrap();
+        release.send(()).unwrap();
+
+        assert!(health.join().unwrap());
+        let error = command.join().unwrap();
+        assert_eq!(error.code(), "broker_unavailable");
+        assert!(error.session_invalidated());
+        assert!(error.restart_required);
+        assert!(lifecycle.publish_if_running(|| true).is_none());
+        assert!(lifecycle.begin(OperationOwner::Health).is_err());
+    }
+
+    #[test]
+    fn poisoned_background_manager_cannot_dispatch_waiting_work() {
+        let lifecycle = Arc::new(DesktopLifecycle::default());
+        let inner = Arc::new(Mutex::new(BrokerManager::with_lifecycle(Arc::clone(
+            &lifecycle,
+        ))));
+        let manager = inner.lock().unwrap();
+        let permit = lifecycle.begin(OperationOwner::Hotkey).unwrap();
+        let command_inner = Arc::clone(&inner);
+        let (waiting, wait_for_waiter) = std::sync::mpsc::channel();
+        let command = std::thread::spawn(move || {
+            let _permit = permit;
+            waiting.send(()).unwrap();
+            let result = match lock_manager_for_operation(&command_inner, &OperationOwner::Hotkey) {
+                Ok(_) => panic!("poisoned work must not dispatch"),
+                Err(error) => error,
+            };
+            result
+        });
+        wait_for_waiter.recv().unwrap();
+        let _ = std::panic::catch_unwind(move || {
+            let _manager = manager;
+            panic!("synthetic background panic");
+        });
+
+        let error = command.join().unwrap();
+        assert_eq!(error.code(), "operation_failed");
+        assert!(error.session_invalidated());
+        assert!(error.restart_required);
+        assert!(lifecycle.begin(OperationOwner::Health).is_err());
+        assert!(lifecycle.publish_if_running(|| true).is_none());
+        assert!(!inner.is_poisoned());
+    }
+
+    #[test]
+    fn idle_poison_recovery_drops_authority_and_stops_admission() {
+        let lifecycle = Arc::new(DesktopLifecycle::default());
+        let inner = Mutex::new(BrokerManager::with_lifecycle(Arc::clone(&lifecycle)));
+        let _ = std::panic::catch_unwind(|| {
+            let mut manager = inner.lock().unwrap();
+            manager.hotkey_scope = Some("synthetic-scope".to_owned());
+            panic!("synthetic background panic");
+        });
+
+        assert!(keepalive_if_idle(&inner, &lifecycle, |_| {
+            panic!("poisoned health must not dispatch")
+        }));
+        let manager = inner.lock().unwrap();
+        assert!(manager.client.is_none());
+        assert!(manager.hotkey_scope.is_none());
+        assert!(manager.ui_scopes.is_empty());
+        assert!(lifecycle.begin(OperationOwner::Health).is_err());
+    }
+
+    #[test]
+    fn waiting_command_rechecks_window_generation_and_shutdown() {
+        for shutdown in [false, true] {
+            let lifecycle = Arc::new(DesktopLifecycle::default());
+            let inner = Arc::new(Mutex::new(BrokerManager::with_lifecycle(Arc::clone(
+                &lifecycle,
+            ))));
+            let generation = lifecycle.window_generation("main");
+            let owner = OperationOwner::Window {
+                label: "main".to_owned(),
+                generation,
+            };
+            let manager = inner.lock().unwrap();
+            let permit = lifecycle.begin(owner.clone()).unwrap();
+            let command_inner = Arc::clone(&inner);
+            let (waiting, wait_for_waiter) = std::sync::mpsc::channel();
+            let command = std::thread::spawn(move || {
+                let _permit = permit;
+                waiting.send(()).unwrap();
+                let result = match lock_manager_for_operation(&command_inner, &owner) {
+                    Ok(_) => panic!("stale window work must not dispatch"),
+                    Err(error) => error,
+                };
+                result
+            });
+            wait_for_waiter.recv().unwrap();
+            if shutdown {
+                lifecycle.stop();
+            } else {
+                lifecycle.invalidate_window("main");
+            }
+            drop(manager);
+
+            let error = command.join().unwrap();
+            assert_eq!(
+                error.code(),
+                if shutdown {
+                    "broker_unavailable"
+                } else {
+                    "session_unavailable"
+                }
+            );
+            assert!(error.session_invalidated());
+            assert_eq!(error.restart_required, shutdown);
+        }
     }
 
     #[test]
@@ -1372,7 +1610,7 @@ mod tests {
             panic!("synthetic manager panic");
         });
 
-        let error = match lock_manager_for_operation(&inner) {
+        let error = match lock_manager_for_operation(&inner, &OperationOwner::Hotkey) {
             Ok(_) => panic!("poisoned authority must not be reused"),
             Err(error) => error,
         };
