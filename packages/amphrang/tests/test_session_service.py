@@ -39,7 +39,7 @@ def _service_state(svc):
                 "created": session.created,
                 "last_access": session.last_access,
                 "entities": [asdict(entity) for entity in session.entities],
-                "trusted_sanitized_digests": session.trusted_sanitized_digests,
+                "trusted_source_rebuilds": session.trusted_source_rebuilds,
                 "vault": {
                     "table": {
                         entity_id: asdict(record)
@@ -1044,7 +1044,7 @@ def test_foreign_future_token_cannot_become_trusted_later_in_same_session(
     assert "foreign_tokens:1" in after.warnings
 
 
-def test_session_bounds_trusted_sanitized_digests():
+def test_session_bounds_trusted_source_rebuilds():
     svc, _ = _svc()
     out = None
     for index in range(svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT + 3):
@@ -1055,8 +1055,10 @@ def test_session_bounds_trusted_sanitized_digests():
 
     assert out is not None
     session = svc._sessions[out.session_id]
-    assert len(session.trusted_sanitized_digests) == svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT
-    assert len(set(session.trusted_sanitized_digests)) == len(session.trusted_sanitized_digests)
+    assert len(session.trusted_source_rebuilds) == svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT
+    assert len({item.digest for item in session.trusted_source_rebuilds}) == len(
+        session.trusted_source_rebuilds
+    )
 
 
 def test_restore_multi_turn_uses_accumulated_registry():

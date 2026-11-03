@@ -366,13 +366,18 @@ def restore_stateless(
     mapping: dict[str, str],
     mode: str | None = None,
     config: CoreConfig | None = None,
+    _source_rebuild_ranges: frozenset[tuple[int, int]] = frozenset(),
 ) -> StatelessRestoreResult:
-    """Restore from a caller mapping without retaining sensitive failures."""
+    """Restore strictly; private ranges are for core-owned same-call evidence."""
     failure_kind = None
     validation_kind = None
     try:
         return _restore_stateless_impl(
-            text, mapping=mapping, mode=mode, config=resolve_config(config)
+            text,
+            mapping=mapping,
+            mode=mode,
+            config=resolve_config(config),
+            _source_rebuild_ranges=_source_rebuild_ranges,
         )
     except _RestoreValidationError as error:
         validation_kind = error.kind
@@ -391,6 +396,7 @@ def restore_stateless(
     mapping = None
     mode = None
     config = None
+    _source_rebuild_ranges = frozenset()
     if failure_kind == "validation":
         if validation_kind == "empty_text":
             raise ValueError(_EMPTY_RESTORE_MESSAGE)
@@ -406,6 +412,7 @@ def _restore_stateless_impl(
     mapping: dict[str, str],
     mode: str | None,
     config: CoreConfig | None = None,
+    _source_rebuild_ranges: frozenset[tuple[int, int]] = frozenset(),
 ) -> StatelessRestoreResult:
     """Restore through a throwaway vault and clear it before any return."""
     if not isinstance(mapping, dict):
@@ -435,6 +442,7 @@ def _restore_stateless_impl(
             EntityRegistry(entities=[], fp_count=0, tb_count=0),
             vault,
             mode=mode,
+            _source_rebuild_ranges=_source_rebuild_ranges,
         )
         restored = result.text
         flags = list(result.flags)

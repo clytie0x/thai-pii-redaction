@@ -432,10 +432,13 @@ remains open. No JavaScript
 client receives the boot secret or a derived disposal authorization.
 
 The session resource graph is deliberately small: the service owns each
-in-memory vault/mapping namespace, entity list, trusted digest list, salt,
-lifecycle timer state, bounded authorization-replay fingerprints, and hashed
-tombstones. Cleanup clears those references on authenticated disposal, eager
-expiry, shutdown, eviction, and lifecycle failures. Current provider clients
+in-memory vault/mapping namespace, entity list, bounded immutable source-rebuild
+proof entries, salt, lifecycle timer state, bounded authorization-replay
+fingerprints, and hashed tombstones. Each proof entry binds a sanitized-text
+digest to the exact replacement occurrence ranges created by the core. It is
+published only after successful finalization. Cleanup clears those references
+on authenticated disposal, eager expiry, shutdown, eviction, and lifecycle
+failures. Current provider clients
 are per-call resources rather than session-owned handles, and `SessionService`
 owns no provider process, child process or handle, listener/port, temporary
 path, or delivery queue. Process-audit records use non-authorizing operation
@@ -581,10 +584,28 @@ from unaccepted production custody, hosts, performance and human decisions.
    structured FP and text-based TB findings, an otherwise undetected
    contiguous run of six or more digits, or a missing replacement record
    blocks the output.
-6. Restore from the in-memory mapping when the selected lifecycle supports it.
+6. Restore from the in-memory mapping when the selected lifecycle supports it,
+   while keeping machine-context occurrences masked unless source rebuilding
+   is proven.
 7. Validate restoration/output integrity and produce structural audit
    metadata.
 8. Return text, a report, or a flattened redacted PDF.
+
+Bulk and streaming restoration share the canonical context policy under
+`pii_redactor/restore_context.py`. Known pseudonyms stay masked in URLs,
+Markdown link/image destinations and reference definitions, and HTML/XML tags
+or attributes, including comments and raw script/style content. Mapping-only
+callers have no source proof. A session or same-call owner may reconstruct only
+the core-created replacement occurrences in an exactly matching sanitized text;
+a digest match alone does not authorize copied literal tokens. These proof
+ranges are private implementation state, not client-supplied wire authority.
+The SDK's thin `StreamRestorer` delegates to `GuardedStreamRestorer`. Streaming
+has no whole-message source proof and restores supported bracket tokens only
+outside protected contexts, using bounded state and lookahead. Ambiguous or
+incomplete contexts remain protected without buffering the whole response.
+Existing partial/leftover fields remain the completion signal. This policy is
+not an HTML sanitizer or network firewall; see the
+[restoration decision](decisions/2026-11-03-machine-context-restoration.md).
 
 Product-owned vault audit rows contain opaque identifiers and structural
 metadata. When a caller-held stateless mapping is re-admitted, `seed()` checks

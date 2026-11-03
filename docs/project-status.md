@@ -2,14 +2,36 @@
 
 Updated: 2026-11-03
 
-The owner resumed engineering toward consolidating retained work into one main
-branch. The stopped diagnostic WIP is now implemented: fixed, closed smoke
-diagnostics preserve private errors, native marker compatibility and existing
-feature admission. Hosted parity now verifies the declared generated resources
-and license copies against the trusted source manifest. Enterprise test fixtures
-create protected files before use and prove an actual ACL transition.
+The owner approved stricter restore and streaming behavior before branch
+consolidation. The [restoration decision](decisions/2026-11-03-machine-context-restoration.md)
+keeps known pseudonyms masked in machine contexts unless the core owns both
+exact sanitized-text identity and the replacement occurrence. Mapping-only and
+streaming callers have no such source proof. One canonical bounded scanner
+serves bulk restoration and the SDK stream adapter; ordinary text and legacy
+mapping restoration remain supported. Public response fields are unchanged.
 
-The resumed complete core/web run passes 3,429 tests with 80 explicit skips and
+The new core/web source run passes 3,813 tests with 80 explicit skips and one
+warning; SDK passes 2,205 with ten explicit optional/platform/live skips. Both
+runs keep all 280 bound files unchanged. Independent review found and verified
+fixes for multiline/reference parsing and MAC-versus-URI ambiguity; the final
+MAC delta is CLEAR in its reviewed scope. New paired artifacts pass three fresh
+installed profiles and 956 tests without skips, six checker negatives and 20
+identity negatives, with a CLEAR independent artifact review. Installed PDF
+follow-up passes seven proof groups in each of two profiles, and all ten PNGs
+were inspected. The [bound evidence](implementation/2026-11-03-machine-context-restoration.md#bound-local-evidence-2026-11-03)
+separates source, installed, Python-floor identity-only and host limitations.
+Current core bytes differ from receipt V3, whose results below remain historical.
+The latest single five-iteration checkpoint exits 1 at detect 5.42 ms, sanitize
+14.49 ms (+44%), restore 0.35 ms (+25%), PDF 68.70 ms and RSS 151.8 MiB. Baseline,
+budgets and M3's controlled-performance hold are unchanged. No main or production
+acceptance is claimed.
+
+Before this contract change, the stopped diagnostic WIP was implemented: fixed,
+closed smoke diagnostics preserve private errors, native marker compatibility
+and existing feature admission. Hosted parity verifies generated resources and
+license copies; protected enterprise fixtures prove an actual ACL transition.
+
+The pre-contract-change complete core/web run passed 3,429 tests with 80 explicit skips and
 one warning; all 267 bound files and the 255 artifact inputs are unchanged
 before/after. Root JavaScript passes 206 tests across 24 files. Native-package
 Python tests pass 127 with one platform skip; Hosted owning checks pass 104
@@ -17,10 +39,19 @@ without skips; three enterprise owning suites pass 57 without skips on actual
 Windows/PostgreSQL 18. Separate adversarial reviews are CLEAR for all three
 units. These results overlap and are not added into one acceptance total.
 
-Exact-candidate Linux/Hosted image, Rust compile and package CI remain required.
-The current core artifact payload is unchanged from receipt V3. The stopped
-WIP, all prior failures and the older results below remain retained. No main
-merge, performance waiver or production acceptance is claimed.
+On `1a6add4`, root CI passed 15 of 16 jobs and macOS package smoke passed. Hosted
+image installation rejected generated resources; the installed verifier is
+corrected in `404f2a9`, whose three CI workflows all pass, including the actual
+Hosted image and installed Desktop lifecycle. That pre-strict source does not
+qualify the later strict-restoration/keepalive candidate.
+Windows repair smoke on `1a6add4` returned nonterminal `broker_busy` during
+sanitize. A separately reviewed source fix removes background keepalive from
+foreground admission while retaining the single-operation bound and no replay.
+Local Rust execution is blocked by an incomplete offline dependency cache;
+exact-candidate compilation and packaged lifecycle evidence remain required.
+The source-level contention mechanism is established, but the competing owner
+in that historical CI failure was not observed. All earlier failures remain
+retained. No main merge or performance waiver is claimed.
 
 Current local integration includes M7 rights/delivery, M8 organization and
 processing controls, and M10 runtime/backup/restore/initial-activation paths.

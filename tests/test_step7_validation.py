@@ -48,6 +48,41 @@ def _make_reverse_result(
 class TestValidateOutput:
     """Tests for validate_output() function."""
 
+    def test_protected_known_surrogate_is_partial_not_an_original_leak(self):
+        vault = _make_vault("081-234-5678", "089-555-7777")
+        rr = _make_reverse_result(
+            "https://destination.invalid/?phone=089-555-7777",
+            flags=["pseudonym_residue:1"],
+        )
+        registry = EntityRegistry(entities=[], fp_count=0, tb_count=0)
+        result = validate_output(rr, registry, vault)
+        assert result.layer1_pii_clean
+        assert not result.layer2_completeness_ok
+        assert not result.passed and not result.halt
+
+    @pytest.mark.parametrize(
+        ("original", "pseudonym", "text"),
+        [
+            ("081-234-5678", "089-555-7777", "https://destination.invalid/081-234-5678"),
+            ("555", "089-555-7777", "https://destination.invalid/089-555-7777"),
+            ("081-234-5678", "0812345678", "https://destination.invalid/0812345678"),
+            (
+                "name@example.com",
+                "NAME@EXAMPLE.COM",
+                "https://destination.invalid/NAME@EXAMPLE.COM",
+            ),
+            ("081-234-5678", "089-555-7777", "Untrusted value 089-555-7777"),
+        ],
+    )
+    def test_residue_flag_does_not_authorize_originals_or_unprotected_values(
+        self, original, pseudonym, text
+    ):
+        vault = _make_vault(original, pseudonym)
+        rr = _make_reverse_result(text, flags=["pseudonym_residue:1"])
+        registry = EntityRegistry(entities=[], fp_count=0, tb_count=0)
+        with pytest.raises(PIILeakError):
+            validate_output(rr, registry, vault)
+
     def test_validate_output_returns_validation_result(self):
         """validate_output should return a ValidationResult instance."""
         vault = _make_vault()

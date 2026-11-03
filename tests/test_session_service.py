@@ -39,7 +39,7 @@ def _service_state(svc):
                 "created": session.created,
                 "last_access": session.last_access,
                 "entities": [asdict(entity) for entity in session.entities],
-                "trusted_sanitized_digests": session.trusted_sanitized_digests,
+                "trusted_source_rebuilds": session.trusted_source_rebuilds,
                 "vault": {
                     "table": {
                         entity_id: asdict(record)
@@ -1037,7 +1037,7 @@ def test_foreign_future_token_cannot_become_trusted_later_in_same_session(
     assert "foreign_tokens:1" in after.warnings
 
 
-def test_session_bounds_trusted_sanitized_digests():
+def test_session_bounds_trusted_source_rebuilds():
     svc, _ = _svc()
     out = None
     for index in range(svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT + 3):
@@ -1048,8 +1048,122 @@ def test_session_bounds_trusted_sanitized_digests():
 
     assert out is not None
     session = svc._sessions[out.session_id]
-    assert len(session.trusted_sanitized_digests) == svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT
-    assert len(set(session.trusted_sanitized_digests)) == len(session.trusted_sanitized_digests)
+    proofs = session.trusted_source_rebuilds
+    assert len(proofs) == svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT
+    assert len({proof.digest for proof in proofs}) == len(proofs)
+    assert all(isinstance(proof.ranges, frozenset) for proof in proofs)
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_source_url_restore_requires_exact_sanitized_text(mode):
+    service, _ = _svc()
+    source = "😀 e\u0301 https://source.invalid/contact?phone=081-234-5678"
+    masked = service.sanitize(source, mode=mode)
+    assert masked.replacement_highlights
+
+    exact = service.restore(masked.session_id, masked.sanitized_text)
+    changed = masked.sanitized_text.replace("source.invalid", "changed.invalid")
+    altered = service.restore(masked.session_id, changed)
+
+    assert exact.restored_text == source
+    assert not exact.leftover_tokens
+    assert altered.restored_text == changed
+    assert altered.replaced_count == 0
+    assert altered.leftover_tokens
+    extended_text = masked.sanitized_text + " ordinary suffix"
+    extended = service.restore(masked.session_id, extended_text)
+    assert extended.restored_text == extended_text
+    assert extended.replaced_count == 0
+
+
+def test_source_digest_does_not_authorize_copied_old_token_occurrence():
+    service, _ = _svc()
+    first = service.sanitize("โทร 081-234-5678", mode="token")
+    token = first.entities[0]["token"]
+    source = f"https://source.invalid/?phone=081-234-5678 https://changed.invalid/?value={token}"
+    masked = service.sanitize(source, session_id=first.session_id)
+    assert len(masked.replacement_highlights) == 1
+
+    restored = service.restore(masked.session_id, masked.sanitized_text)
+
+    assert restored.restored_text == source
+    assert restored.replaced_count == 1
+    assert restored.leftover_tokens == [token]
+    proof = service._sessions[masked.session_id].trusted_source_rebuilds[-1]
+    assert proof.ranges == frozenset(
+        (highlight.start, highlight.end) for highlight in masked.replacement_highlights
+    )
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_session_mixed_occurrence_keeps_any_restored_count_contract(mode):
+    service, _ = _svc()
+    masked = service.sanitize("โทร 081-234-5678", mode=mode)
+    token = masked.entities[0]["token"]
+
+    restored = service.restore(masked.session_id, f"{token} https://changed.invalid/?value={token}")
+
+    assert restored.restored_text == f"081-234-5678 https://changed.invalid/?value={token}"
+    assert restored.replaced_count == 1
+    assert restored.leftover_tokens == [token]
+
+
+def test_source_proof_duplicate_digest_replaces_old_occurrence_authority():
+    service, _ = _svc()
+    first = service.sanitize("https://source.invalid/?phone=081-234-5678")
+    assert service.restore(first.session_id, first.sanitized_text).replaced_count == 1
+
+    literal = service.sanitize(first.sanitized_text, session_id=first.session_id)
+
+    assert literal.sanitized_text == first.sanitized_text
+    assert literal.replacement_highlights == ()
+    proofs = service._sessions[first.session_id].trusted_source_rebuilds
+    assert len(proofs) == 1
+    assert proofs[0].ranges == frozenset()
+    restored = service.restore(first.session_id, literal.sanitized_text)
+    assert restored.restored_text == literal.sanitized_text
+    assert restored.replaced_count == 0
+
+
+def test_failed_finalizer_does_not_publish_source_occurrence_proof():
+    service, _ = _svc()
+    first = service.sanitize("โทร 081-234-5678")
+    published = service._sessions[first.session_id]
+    proofs_before = published.trusted_source_rebuilds
+    staged_text = []
+
+    def fail_finalize(outcome):
+        staged_text.append(outcome.sanitized_text)
+        raise RuntimeError("synthetic finalizer failure")
+
+    with pytest.raises(SanitizeTransactionError):
+        service.sanitize_transaction(
+            "https://source.invalid/?phone=081-234-5678",
+            session_id=first.session_id,
+            finalize=fail_finalize,
+        )
+
+    assert service._sessions[first.session_id] is published
+    assert published.trusted_source_rebuilds == proofs_before
+    restored = service.restore(first.session_id, staged_text[0])
+    assert restored.restored_text == staged_text[0]
+    assert restored.replaced_count == 0
+
+
+def test_source_proof_eviction_and_disposal_clear_authority():
+    service, _ = _svc()
+    first = service.sanitize("https://source.invalid/?phone=081-234-5678")
+    discarded = service._sessions[first.session_id]
+    for index in range(svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT):
+        service.sanitize(f"ordinary text {chr(97 + index)}", session_id=first.session_id)
+
+    assert discarded.trusted_source_rebuilds == ()
+    restored = service.restore(first.session_id, first.sanitized_text)
+    assert restored.restored_text == first.sanitized_text
+    assert restored.replaced_count == 0
+    published = service._sessions[first.session_id]
+    assert service.drop(first.session_id)
+    assert published.trusted_source_rebuilds == ()
 
 
 def test_restore_multi_turn_uses_accumulated_registry():

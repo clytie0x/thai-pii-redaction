@@ -46,6 +46,33 @@ choices and unknown envelope fields are outside that success schema. Supported
 metadata and numeric usage/logprob structures are validated before projection.
 This is a text proxy, not a generic passthrough for every provider response.
 
+## Partial restoration in machine contexts
+
+The owner-approved [restoration decision](../../../../docs/decisions/2026-11-03-machine-context-restoration.md)
+changes mapping-only `restore(text, mapping)`: known pseudonyms remain masked
+inside URLs, Markdown link/image destinations and reference definitions, and
+HTML/XML tags or attributes, including comments and raw script/style content.
+Ordinary text outside those contexts still restores, including supported legacy
+mappings. The public response shapes are unchanged. Check Python
+`leftover_pseudonyms`, HTTP reidentify `leftover_count`, or roundtrip
+`restoration.status` and `restoration.leftover_count` before treating restoration
+as complete.
+
+A session or same-call roundtrip may rebuild a protected source occurrence only
+when the reply exactly matches the owned sanitized text and the canonical core
+created that occurrence's replacement range. A whole-text digest alone does not
+authorize literal old tokens copied into a new destination. Session proof uses
+bounded immutable digest-and-range entries, published after successful
+finalization and cleared with the session lifecycle. Client-supplied proof
+fields do not grant this exception.
+
+Streaming has no whole-message source proof. It may keep tokens masked even in
+an echoed source URL. The SDK `StreamRestorer` delegates to the canonical core
+`GuardedStreamRestorer`, which applies the shared context policy with bounded
+state and lookahead, without buffering the whole response. Streaming restores
+supported bracket tokens in ordinary text; ambiguous or incomplete protected
+contexts remain masked.
+
 ## Streaming and cancellation
 
 The supported event profile uses `data` fields and optional `event: message`.

@@ -200,7 +200,11 @@ def restore(
     *,
     mode: str | None = None,
 ) -> RestoreResult:
-    """Restore originals into ``text`` using a mapping from ``anonymize``."""
+    """Restore ordinary text with an ``anonymize`` mapping.
+
+    Machine-context occurrences stay masked. Check ``leftover_pseudonyms``
+    for partial restoration; mapping-only calls cannot prove source URL identity.
+    """
     return _restore_with_config(text, mapping, mode=mode, config=sdk_core_config())
 
 

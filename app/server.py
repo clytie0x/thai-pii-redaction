@@ -1496,6 +1496,11 @@ def roundtrip(request: RoundtripRequest):
             ai_text,
             mapping=masked.mapping,
             mode=request.mode,
+            _source_rebuild_ranges=(
+                frozenset((item.start, item.end) for item in masked.replacement_highlights)
+                if ai_text == masked.sanitized_text
+                else frozenset()
+            ),
         )
     except NativeBrokerOperationError:
         raise

@@ -51,6 +51,12 @@ with amphrang.Session(mode="token") as session:
 amphrang.analyze(text)
 ```
 
+Restoration can be partial: mapping-only `restore()` keeps pseudonyms masked in
+URLs, Markdown destinations/reference definitions, and HTML/XML machine
+contexts. Check `restored.leftover_pseudonyms`. Plain-text restoration remains
+supported; see the [restoration migration contract](docs/migrations/shared-core.md#partial-restoration-in-machine-contexts)
+for source rebuilding and streaming behavior.
+
 ## What it detects
 
 Structured Thai identifiers with checksum validation (national ID mod-11,
@@ -224,9 +230,11 @@ for a text file.
 
 The source checkout's `[proxy]` extra adds `amphrang-proxy` — an
 OpenAI-compatible reverse proxy. Point any existing app's `base_url` at it
-and its chat traffic is masked on the way out and restored on the way back,
-streaming included; the token→original mapping lives only in request-scoped
-proxy memory.
+and its chat traffic is masked on the way out. Ordinary reply text is restored
+locally, including supported bracket tokens during streaming. Machine-context
+occurrences remain masked; mapping-only and streaming restoration cannot prove
+source URL identity. The token→original mapping lives only in request-scoped
+proxy memory. See the [restoration migration contract](docs/migrations/shared-core.md#partial-restoration-in-machine-contexts).
 
 ```
 AMPHRANG_PROXY_UPSTREAM=https://api.openai.com \

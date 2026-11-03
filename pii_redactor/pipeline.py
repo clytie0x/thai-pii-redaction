@@ -142,6 +142,11 @@ def run_pipeline(
         entity_registry,
         vault,
         mode="surrogate",
+        _source_rebuild_ranges=(
+            frozenset((item.start, item.end) for item in pseudo_doc.replacement_highlights)
+            if ai_response.text == pseudo_doc.text
+            else frozenset()
+        ),
     )
 
     # --- Step 7: Output validation ---

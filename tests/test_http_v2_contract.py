@@ -525,6 +525,85 @@ def test_fake_roundtrip_preserves_source_text_exactly(client, source):
     assert body["restoration"]["status"] == "complete"
 
 
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_http_owned_source_url_rebuilds_in_session_and_roundtrip(client, mode):
+    source = "https://source.invalid/?phone=081-234-5678"
+    masked = _assert_v2(
+        client.post("/api/sanitize", headers=V2_HEADERS, json={"text": source, "mode": mode}),
+        200,
+    )
+    restored = _assert_v2(
+        client.post(
+            "/api/reidentify",
+            headers=V2_HEADERS,
+            json={"session_id": masked["session_id"], "text": masked["sanitized_text"]},
+        ),
+        200,
+    )
+    assert restored["restored_text"] == source
+    assert restored["leftover_count"] == 0
+    roundtrip = _assert_v2(
+        client.post(
+            "/api/roundtrip",
+            headers=V2_HEADERS,
+            json={"text": source, "mode": mode, "provider": "fake"},
+        ),
+        200,
+    )
+    assert roundtrip["restored_text"] == source
+    assert roundtrip["restoration"]["status"] == "complete"
+    assert not {"mapping", "source_proof", "_source_rebuild_ranges"} & _nested_keys(roundtrip)
+
+
+def test_http_changed_destination_is_partial_and_client_proof_cannot_authorize(client):
+    masked = _assert_v2(
+        client.post("/api/sanitize", headers=V2_HEADERS, json={"text": "โทร 081-234-5678"}),
+        200,
+    )
+    token = masked["sanitized_text"].removeprefix("โทร ")
+    text = f"https://changed.invalid/?value={token}"
+    payload = {"session_id": masked["session_id"], "text": text}
+    restored = _assert_v2(client.post("/api/reidentify", headers=V2_HEADERS, json=payload), 200)
+    assert restored["restored_text"] == text
+    assert restored["replaced_count"] == 0
+    assert restored["leftover_count"] == 1
+
+    for key, value in {
+        "source_proof": {"trusted": True},
+        "_source_rebuild_ranges": [[text.index(token), len(text)]],
+        "trusted_sanitized_digest": "synthetic-digest",
+    }.items():
+        rejected = client.post("/api/reidentify", headers=V2_HEADERS, json={**payload, key: value})
+        assert rejected.status_code == 422
+        assert rejected.json()["error"]["code"] == "request_schema_invalid"
+
+
+def test_http_roundtrip_changed_destination_retains_partial_output(client, monkeypatch):
+    class ChangedDestination:
+        def complete(self, system, user, *, timeout=30.0):
+            return user.replace("source.invalid", "changed.invalid")
+
+    monkeypatch.setattr(server, "_PROVIDER_FACTORIES", {"fake": ChangedDestination})
+    body = _assert_v2(
+        client.post(
+            "/api/roundtrip",
+            headers=V2_HEADERS,
+            json={
+                "text": "https://source.invalid/?phone=081-234-5678",
+                "mode": "token",
+                "provider": "fake",
+            },
+        ),
+        200,
+    )
+    assert body["restored_text"] == body["ai_response_masked"]
+    assert body["restoration"] == {
+        "status": "incomplete",
+        "replaced_count": 0,
+        "leftover_count": 1,
+    }
+
+
 def test_restore_warning_projection_is_structured_and_count_only(client, monkeypatch):
     monkeypatch.setattr(
         server.SERVICE,

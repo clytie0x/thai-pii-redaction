@@ -523,6 +523,99 @@ def test_fake_roundtrip_preserves_source_text_exactly(client, source):
     assert body["restoration"]["status"] == "complete"
 
 
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_fake_roundtrip_rebuilds_only_owned_exact_source_url(client, mode):
+    source = "😀 Contact https://example.test/?phone=081-234-5678"
+    body = _assert_v2(
+        client.post(
+            "/api/roundtrip",
+            headers=V2_HEADERS,
+            json={"text": source, "mode": mode, "provider": "fake"},
+        ),
+        200,
+    )
+    assert body["restored_text"] == source
+    assert body["restoration"] == {"status": "complete", "replaced_count": 1, "leftover_count": 0}
+    assert not (
+        _nested_keys(body) & {"mapping", "replacement_highlights", "_source_rebuild_ranges"}
+    )
+
+
+def test_roundtrip_changed_destination_retains_token_and_partial_status(client, monkeypatch):
+    class ChangedDestinationProvider:
+        def complete(self, _system_prompt, user_prompt, *, timeout):
+            return user_prompt.replace("example.test", "changed.test")
+
+    monkeypatch.setitem(server._PROVIDER_FACTORIES, "fake", ChangedDestinationProvider)
+    body = _assert_v2(
+        client.post(
+            "/api/roundtrip",
+            headers=V2_HEADERS,
+            json={
+                "text": "https://example.test/?phone=081-234-5678",
+                "mode": "token",
+                "provider": "fake",
+            },
+        ),
+        200,
+    )
+    assert "081-234-5678" not in body["restored_text"]
+    assert body["restored_text"] == body["ai_response_masked"]
+    assert body["restoration"] == {"status": "incomplete", "replaced_count": 0, "leftover_count": 1}
+
+
+@pytest.mark.parametrize(
+    "field", ["_source_rebuild_ranges", "source_rebuild_ranges", "source_proof"]
+)
+def test_public_http_roundtrip_rejects_extra_source_proof(client, field):
+    response = client.post(
+        "/api/roundtrip",
+        headers=V2_HEADERS,
+        json={"text": "safe text", "mode": "token", "provider": "fake", field: [[0, 10]]},
+    )
+    _assert_error(response, status=422, code="request_schema_invalid", category="request", count=1)
+    assert field not in response.text
+
+
+def test_http_session_rebuilds_owned_url_but_not_a_copied_known_token(client):
+    source = "https://example.test/?phone=081-234-5678"
+    first = _assert_v2(
+        client.post("/api/sanitize", headers=V2_HEADERS, json={"text": source}),
+        200,
+    )
+    restored = _assert_v2(
+        client.post(
+            "/api/reidentify",
+            headers=V2_HEADERS,
+            json={"session_id": first["session_id"], "text": first["sanitized_text"]},
+        ),
+        200,
+    )
+    assert restored["restored_text"] == source
+    assert restored["leftover_count"] == 0
+    token = first["sanitized_text"].split("phone=", 1)[1]
+    copied = "https://changed.test/" + token + " Contact: 081-234-5678"
+    second = _assert_v2(
+        client.post(
+            "/api/sanitize",
+            headers=V2_HEADERS,
+            json={"session_id": first["session_id"], "text": copied},
+        ),
+        200,
+    )
+    partial = _assert_v2(
+        client.post(
+            "/api/reidentify",
+            headers=V2_HEADERS,
+            json={"session_id": second["session_id"], "text": second["sanitized_text"]},
+        ),
+        200,
+    )
+    assert partial["restored_text"] == copied
+    assert partial["replaced_count"] == 1 and partial["leftover_count"] == 1
+    assert set(partial) == {"restored_text", "replaced_count", "leftover_count", "warnings"}
+
+
 def test_restore_warning_projection_is_structured_and_count_only(client, monkeypatch):
     monkeypatch.setattr(
         server.SERVICE,

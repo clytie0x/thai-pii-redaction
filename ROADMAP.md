@@ -2,14 +2,24 @@
 
 ## Current execution sequence
 
-The owner resumed branch consolidation after the stop checkpoint. Three CI
-closure units now pass their local owning gates and independent reviews:
-closed smoke diagnostics, exact Hosted generated-resource parity, and protected
-cross-platform enterprise fixtures. The resumed core/web gate passes 3,429 tests
-with 80 explicit skips; root JavaScript passes 206. Publish and qualify the exact
-combined CI head next, then reconcile remaining net branch work and preserve raw
-study/worker heads before branch removal. The controlled-performance hold remains;
-one main branch does not imply production or pilot acceptance.
+The owner selected [strict restoration and streaming](docs/decisions/2026-11-03-machine-context-restoration.md)
+before consolidation. The canonical machine-context guard, core-owned occurrence
+proof and thin SDK streaming adapter now have local source, paired-artifact and
+installed-PDF evidence. Complete their exact-candidate CI and controlled
+performance gates before main integration. The new core/web source gate
+passes 3,813 tests with 80 explicit skips; SDK passes 2,205 with ten skips. Both
+keep 280 input hashes stable. The new pair passes 956 installed tests without
+skips in three fresh profiles; PDF passes seven groups in each of two profiles,
+with ten PNGs inspected. Earlier receipt V3 artifacts do not qualify these bytes.
+
+The earlier CI closure units retain their local results and reviews. Hosted
+installed-resource verification is corrected in `404f2a9`, whose three CI workflows
+pass. A separately reviewed background-keepalive admission fix awaits actual Rust
+and installed Desktop CI; it adds no data replay. Reconcile remaining net branch
+work and preserve raw study/worker heads before removal. The controlled-performance
+hold remains: the latest local checkpoint exits 1 at sanitize 14.49 ms (+44%) and
+restore 0.35 ms (+25%) against unchanged budgets/baseline. One main branch does
+not imply production or pilot acceptance.
 
 The owner authorized the [M0-M12 program](docs/implementation/aiguard-production-milestones.md)
 and YRSS completion on 2026-11-02, with independent adversarial subagent checks

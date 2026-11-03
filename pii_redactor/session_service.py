@@ -135,6 +135,14 @@ class RestoreOutcome:
     foreign_replacement_count: int = 0
 
 
+@dataclass(frozen=True)
+class _SourceRebuildProof:
+    """Bind exact core-created occurrences to one successful sanitized output."""
+
+    digest: bytes
+    ranges: frozenset[tuple[int, int]]
+
+
 @dataclass
 class _Session:
     vault: SessionVault
@@ -143,7 +151,7 @@ class _Session:
     created: float
     last_access: float
     entities: list[Entity] = field(default_factory=list)
-    trusted_sanitized_digests: tuple[bytes, ...] = ()
+    trusted_source_rebuilds: tuple[_SourceRebuildProof, ...] = ()
 
 
 def _sanitized_digest(text: str) -> bytes:
@@ -670,10 +678,16 @@ class SessionService:
                     )
                     prepared = finalize(outcome)
                     digest = _sanitized_digest(core.sanitized_text)
-                    prior_digests = tuple(
-                        item for item in staged.trusted_sanitized_digests if item != digest
+                    proof = _SourceRebuildProof(
+                        digest=digest,
+                        ranges=frozenset(
+                            (item.start, item.end) for item in core.replacement_highlights
+                        ),
                     )
-                    staged.trusted_sanitized_digests = (prior_digests + (digest,))[
+                    prior_proofs = tuple(
+                        item for item in staged.trusted_source_rebuilds if item.digest != digest
+                    )
+                    staged.trusted_source_rebuilds = (prior_proofs + (proof,))[
                         -_TRUSTED_SANITIZED_DIGEST_LIMIT:
                     ]
                     # A request that acquired the lifecycle lock before expiry
@@ -733,7 +747,7 @@ class SessionService:
                 # Entity is immutable, so a detached list can safely share
                 # prior records and append only this turn's detections.
                 entities=list(published.entities),
-                trusted_sanitized_digests=published.trusted_sanitized_digests,
+                trusted_source_rebuilds=published.trusted_source_rebuilds,
             )
             return session_id, staged, False
 
@@ -789,7 +803,7 @@ class SessionService:
             _LOG.error("Session vault cleanup did not complete")
         finally:
             session.entities.clear()
-            session.trusted_sanitized_digests = ()
+            session.trusted_source_rebuilds = ()
             session.salt = ""
 
     @minimize_failure_frames
@@ -866,17 +880,22 @@ class SessionService:
             tb_count=sum(1 for e in session.entities if e.redact_type == "TB"),
         )
         response = AIResponse(text=text, request_id=sid, latency=0.0)
-        trusted_sanitized_input = _sanitized_digest(text) in session.trusted_sanitized_digests
+        digest = _sanitized_digest(text)
+        source_proof = next(
+            (item for item in session.trusted_source_rebuilds if item.digest == digest),
+            None,
+        )
         reverse_result = reverse_map(
             response,
             registry,
             session.vault,
             mode=session.mode,
+            _source_rebuild_ranges=source_proof.ranges if source_proof else frozenset(),
         )
 
         warnings = [f for f in reverse_result.flags if not f.startswith(_NOISY_PREFIXES)]
         generated_pii_count = 0
-        if not trusted_sanitized_input:
+        if source_proof is None:
             try:
                 validation = validate_output(reverse_result, registry, session.vault, config=config)
                 warnings.extend(

@@ -1248,6 +1248,11 @@ def roundtrip(request: RoundtripRequest):
             mapping=masked.mapping,
             mode=request.mode,
             config=_CORE_CONFIG,
+            _source_rebuild_ranges=(
+                frozenset((item.start, item.end) for item in masked.replacement_highlights)
+                if ai_text == masked.sanitized_text
+                else frozenset()
+            ),
         )
     except Exception as error:
         restore_failed = True

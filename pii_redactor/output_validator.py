@@ -6,10 +6,12 @@ Security design:
 - Layer 3: Verify UTF-8 encoding and no abrupt truncation → halt
 """
 
+import unicodedata
 from dataclasses import dataclass
 
 from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.aggregate import detect_all
+from pii_redactor.detectors.surface_norm import normalize_surface
 from pii_redactor.leak_guard import scan_obfuscated_structured_entities
 from pii_redactor.models import EntityRegistry, ReverseResult
 from pii_redactor.session_vault import SessionVault
@@ -59,6 +61,39 @@ def _clean_spans(spans: object) -> tuple[tuple[int, int], ...]:
         and type(item[1]) is int
         and 0 <= item[0] < item[1]
     )
+
+
+def _protected_surrogate_ranges(
+    text: str, vault: SessionVault, originals: set[str]
+) -> list[tuple[int, int]]:
+    """Retained masked values are safe only in the contexts that withheld them."""
+    from pii_redactor.restore_context import machine_context_spans
+    from pii_redactor.reverse_mapper import _boundary_ok
+
+    def identity(value: str) -> str:
+        folded = normalize_surface(unicodedata.normalize("NFKC", value))[0].casefold()
+        return "".join(char for char in folded if char.isalnum())
+
+    original_identities = {key for value in originals if (key := identity(value))}
+    contexts = machine_context_spans(text)
+    result = []
+    for pseudonym in vault._reverse:
+        pseudonym_identity = identity(pseudonym)
+        if (
+            not pseudonym
+            or any(value and value in pseudonym for value in originals)
+            or any(value in pseudonym_identity for value in original_identities)
+        ):
+            continue
+        cursor = 0
+        while (start := text.find(pseudonym, cursor)) >= 0:
+            end = start + len(pseudonym)
+            if _boundary_ok(text, start, end, pseudonym) and any(
+                left <= start and end <= right for left, right in contexts
+            ):
+                result.append((start, end))
+            cursor = start + 1
+    return result
 
 
 def _layer1_pii_scan(
@@ -117,6 +152,10 @@ def _layer1_pii_scan_detailed(
             and text[item[0] : item[1]] in known_originals
         ):
             expected_ranges.append(item)
+
+    if any("pseudonym_residue" in flag for flag in reverse_result.flags):
+        # Keep intentional masked residue partial, without trusting originals by membership.
+        expected_ranges.extend(_protected_surrogate_ranges(text, vault, known_originals))
 
     detected = detect_all(text, config=resolve_config(config))
     for candidate in scan_obfuscated_structured_entities(text):

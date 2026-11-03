@@ -152,6 +152,73 @@ def test_roundtrip_fake_provider_restores_without_returning_mapping():
     assert "mapping" not in res
 
 
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_worker_roundtrip_rebuilds_owned_source_url(mode):
+    source = "https://source.invalid/?phone=081-234-5678"
+    output = handle_job(
+        {
+            "job_id": "source-url",
+            "operation": "roundtrip",
+            "payload": {"text": source, "mode": mode, "provider": "fake"},
+        }
+    )
+    assert output["status"] == "ok"
+    assert output["result"]["restored_text"] == source
+    assert "mapping" not in output["result"]
+    assert "source_proof" not in output["result"]
+
+
+def test_worker_mapping_only_restore_ignores_client_proof():
+    from pii_redactor.stateless import sanitize_stateless
+
+    masked = sanitize_stateless(
+        "https://source.invalid/?phone=081-234-5678", mode="token", salt="source-proof"
+    )
+    highlight = masked.replacement_highlights[0]
+    output = handle_job(
+        {
+            "job_id": "forged-source-proof",
+            "operation": "restore",
+            "payload": {
+                "text": masked.sanitized_text,
+                "mapping": masked.mapping,
+                "source_proof": {"trusted": True},
+                "_source_rebuild_ranges": [[highlight.start, highlight.end]],
+                "trusted_sanitized_digest": "synthetic-digest",
+            },
+        }
+    )
+    assert output["status"] == "ok"
+    result = output["result"]
+    assert result["restored_text"] == masked.sanitized_text
+    assert result["replaced_count"] == 0
+    assert result["leftover_pseudonyms"] == sorted(masked.mapping)
+
+
+def test_worker_roundtrip_changed_destination_does_not_rebuild_source(monkeypatch):
+    import app.worker.handler as handler
+
+    class ChangedDestination:
+        def complete(self, system, user, *, timeout=30.0):
+            return user.replace("source.invalid", "changed.invalid")
+
+    monkeypatch.setattr(handler, "_PROVIDER_FACTORIES", {"fake": ChangedDestination})
+    output = handle_job(
+        {
+            "job_id": "changed-destination",
+            "operation": "roundtrip",
+            "payload": {
+                "text": "https://source.invalid/?phone=081-234-5678",
+                "mode": "token",
+                "provider": "fake",
+            },
+        }
+    )
+    assert output["status"] == "ok"
+    assert output["result"]["restored_text"] == output["result"]["ai_response_masked"]
+    assert "pseudonym_not_substituted:1" in output["result"]["warnings"]
+
+
 def test_roundtrip_defaults_to_fake_provider():
     out = handle_job(
         {"job_id": "j-roundtrip-default", "operation": "roundtrip", "payload": {"text": THAI_TEXT}}

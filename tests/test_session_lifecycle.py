@@ -147,7 +147,7 @@ def test_timer_callback_clock_exception_closes_and_cleans_service(error_type):
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 
@@ -235,7 +235,7 @@ def test_timer_callback_nonfinite_clock_closes_and_cleans_service(invalid_now):
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 
@@ -566,13 +566,13 @@ def test_cleanup_drops_every_session_owned_reference():
     outcome = service.sanitize("โทร 081-234-5678")
     session = service._sessions[outcome.session_id]
     assert session.entities
-    assert session.trusted_sanitized_digests
+    assert session.trusted_source_rebuilds
     assert session.salt
 
     assert service.drop(outcome.session_id) is True
 
     assert session.entities == []
-    assert session.trusted_sanitized_digests == ()
+    assert session.trusted_source_rebuilds == ()
     assert session.salt == ""
     assert session.vault._table == {}
     assert session.vault._reverse == {}
@@ -659,7 +659,7 @@ def test_restore_scheduler_clock_failure_closes_and_cleans_service():
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 
@@ -695,7 +695,7 @@ def test_restore_nonfinite_commit_clock_closes_and_cleans_service(invalid_access
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 
@@ -734,7 +734,7 @@ def test_expiry_reschedule_failure_cleans_detached_and_remaining_sessions():
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 
@@ -771,7 +771,7 @@ def test_disposal_reschedule_failure_cleans_target_and_remaining_session():
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 
@@ -813,7 +813,7 @@ def test_sanitize_eviction_reschedule_failure_cleans_old_and_staged_sessions(
         assert session.vault._table == {}
         assert session.vault._reverse == {}
         assert session.entities == []
-        assert session.trusted_sanitized_digests == ()
+        assert session.trusted_source_rebuilds == ()
         assert session.salt == ""
 
 

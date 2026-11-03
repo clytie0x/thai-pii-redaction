@@ -248,6 +248,119 @@ def test_eof_without_done_is_failure_and_does_not_flush_pending_data():
     assert '"upstream_error"' in response.text and "[DONE]" not in response.text
 
 
+def _stream_contents(wire):
+    pieces = []
+    for line in wire.splitlines():
+        if line.startswith("data: ") and line != "data: [DONE]":
+            event = json.loads(line.removeprefix("data: "))
+            for choice in event.get("choices", []):
+                content = choice.get("delta", {}).get("content")
+                if content:
+                    pieces.append(content)
+    return pieces
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "https://example.test/{token}",
+        "[contact](https://example.test/{token})",
+        "[contact]: {token}\n",
+        "{token}: https://example.test/\n",
+        '<a href="{token}">',
+        "<!-- {token} -->",
+        "<script>{token}</script>",
+        "<style>{token}</style>",
+    ],
+    ids=[
+        "url",
+        "markdown",
+        "reference-value",
+        "reference-token-label",
+        "attribute",
+        "comment",
+        "script",
+        "style",
+    ],
+)
+def test_sse_each_event_stays_guarded_at_every_chunk_split(template):
+    from amphrang.proxy.server import _SSEProcessor
+
+    known = "[โทรศัพท์_1]"
+    text = template.format(token=known)
+    for split in range(len(text) + 1):
+        processor = _SSEProcessor({known: PHONE})
+        output = []
+        for piece in [text[:split], text[split:]]:
+            for line in chunk(piece).splitlines():
+                output.extend(processor.process_line(line))
+        processor.process_line("data: [DONE]")
+        processor.process_line("")
+        assert processor.done
+        output.extend(processor.finish())
+        assert all(PHONE not in event for event in output), split
+        assert "".join(_stream_contents("".join(output))) == text, split
+        processor.discard()
+
+
+@pytest.mark.parametrize("done", [False, True], ids=["failed-eof", "successful-eof"])
+@pytest.mark.parametrize(
+    "prefix",
+    ["https://example.test/", "[contact](", '<a href="', "<!-- ", "<script>"],
+    ids=["url", "markdown", "attribute", "comment", "script"],
+)
+def test_http_stream_incomplete_machine_context_never_flushes_original(prefix, done):
+    expected = []
+
+    def handler(request):
+        text = prefix + token(request)
+        expected.append(text)
+        wire = "".join(chunk(char) for char in text)
+        if done:
+            wire += "data: [DONE]\n\n"
+        return httpx.Response(200, content=wire, headers={"content-type": "text/event-stream"})
+
+    response = post(client(handler), stream=True)
+    assert response.status_code == 200
+    pieces = _stream_contents(response.text)
+    assert all(PHONE not in piece for piece in pieces)
+    assert PHONE not in response.text and CANARY not in response.text
+    if done:
+        assert "".join(pieces) == expected[0]
+        assert "[DONE]" in response.text and "upstream_error" not in response.text
+    else:
+        assert "upstream_error" in response.text and "[DONE]" not in response.text
+
+
+@pytest.mark.parametrize("done", [False, True], ids=["failed-eof", "successful-eof"])
+def test_http_stream_complete_line_start_token_requires_successful_eof(done):
+    def handler(request):
+        wire = chunk(token(request)) + ("data: [DONE]\n\n" if done else "")
+        return httpx.Response(200, content=wire, headers={"content-type": "text/event-stream"})
+
+    response = post(client(handler), stream=True)
+    if done:
+        assert "".join(_stream_contents(response.text)) == PHONE
+        assert "[DONE]" in response.text
+    else:
+        assert PHONE not in response.text and "[โทรศัพท์_" not in response.text
+        assert "upstream_error" in response.text and "[DONE]" not in response.text
+
+
+def test_nonstream_proxy_keeps_machine_token_without_source_proof():
+    expected = []
+
+    def handler(request):
+        text = "https://example.test/" + token(request)
+        expected.append(text)
+        return httpx.Response(200, json={"choices": [{"message": {"content": text}}]})
+
+    response = post(client(handler))
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == expected[0]
+    assert PHONE not in response.text
+
+
 def test_sse_comments_are_dropped_and_multiline_data_remains_supported():
     event = json.dumps({"choices": [{"index": 0, "delta": {"content": "Safe text"}}]}, indent=2)
     wire = ": " + CANARY + "\n\n" + "\n".join("data: " + line for line in event.splitlines())
@@ -548,7 +661,10 @@ def test_anyio_scope_cancellation_remains_owned_by_the_original_scope():
         ("2.3", "disconnect"),
     ],
 )
-def test_after_headers_failure_closes_resources_without_private_tail(monkeypatch, spec, mode):
+@pytest.mark.parametrize("pending", ["partial", "complete-reference"])
+def test_after_headers_failure_closes_resources_without_private_tail(
+    monkeypatch, spec, mode, pending
+):
     import amphrang.proxy.server as module
 
     mappings = []
@@ -569,7 +685,7 @@ def test_after_headers_failure_closes_resources_without_private_tail(monkeypatch
             closed = False
 
             async def __aiter__(self):
-                yield chunk("[โทรศัพท์_").encode()
+                yield chunk(self.content).encode()
                 if mode == "provider_cancel":
                     raise failure
                 await asyncio.Event().wait()
@@ -584,13 +700,16 @@ def test_after_headers_failure_closes_resources_without_private_tail(monkeypatch
                 self.closed = True
 
         body = Body()
-        transport = Transport(
-            lambda request: httpx.Response(
+
+        def handler(request):
+            body.content = token(request) if pending == "complete-reference" else "[โทรศัพท์_"
+            return httpx.Response(
                 200,
                 stream=body,
                 headers={"content-type": "text/event-stream"},
             )
-        )
+
+        transport = Transport(handler)
         app = app_for(None, transport=transport)
         delivered = False
         sent = []
