@@ -204,6 +204,7 @@ pub fn run() {
                     package_smoke::desktop_package_smoke_fail(
                         app,
                         package_smoke::PackageSmokeFailure::BootstrapEval,
+                        None,
                     )
                     .await;
                 });

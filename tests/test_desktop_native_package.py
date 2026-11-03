@@ -2546,6 +2546,13 @@ def test_packaged_smoke_projects_only_closed_failure_diagnostics(
         {"restart_required": 1},
         {"body": "private provider body"},
         {"reason": "assertion_failed", "api_code": "broker_busy"},
+        {"api_code": "not_applicable"},
+        {"reason": "assertion_failed", "api_code": "not_applicable", "restart_required": True},
+        {
+            "reason": "unexpected_error",
+            "api_code": "not_applicable",
+            "session_invalidated": True,
+        },
     ],
 )
 def test_packaged_smoke_rejects_untrusted_diagnostics_without_echoing_them(tmp_path, change):
@@ -2564,6 +2571,41 @@ def test_packaged_smoke_rejects_untrusted_diagnostics_without_echoing_them(tmp_p
 
     assert str(failure.value) == "packaged Desktop smoke failure evidence invalid"
     assert "private" not in str(failure.value)
+
+
+@pytest.mark.parametrize(
+    "encoded",
+    [
+        b'{"stage":"analyze","stage":"sanitize","diagnostic":{}}',
+        b'{"stage":"analyze","diagnostic":{"reason":"api_rejected","reason":"private"}}',
+        b'{"stage":"analyze","diagnostic":{},"body":"private"}',
+        b'{"stage":[],"diagnostic":{}}',
+        b'{"stage":"analyze","diagnostic":null}',
+        b'["private"]',
+        b"\xffprivate",
+        b"{" + b" " * 1024,
+        b"[" * 1000,
+    ],
+    ids=[
+        "duplicate_stage",
+        "duplicate_reason",
+        "extra_payload",
+        "nonstring_stage",
+        "null_diagnostic",
+        "nonobject_root",
+        "nonascii",
+        "oversized",
+        "deep_invalid_json",
+    ],
+)
+def test_packaged_smoke_rejects_malformed_diagnostics_without_echoing_bytes(tmp_path, encoded):
+    marker = tmp_path / smoke_package.SMOKE_FAILURE
+    marker.write_bytes(encoded)
+
+    with pytest.raises(RuntimeError) as failure:
+        smoke_package._raise_for_smoke_failure(marker)
+
+    assert str(failure.value) == "packaged Desktop smoke failure evidence invalid"
 
 
 @pytest.mark.parametrize(
@@ -2890,7 +2932,9 @@ def test_run_desktop_failure_reaps_process_and_removes_markers(tmp_path, monkeyp
                         "stage": "analyze",
                         "diagnostic": {
                             "reason": "api_rejected",
-                            "api_code": "broker_busy" if failure == "diagnostic" else "private body",
+                            "api_code": "broker_busy"
+                            if failure == "diagnostic"
+                            else "private body",
                             "session_invalidated": False,
                             "restart_required": False,
                         },

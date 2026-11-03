@@ -50,8 +50,60 @@ function samplePdf() {
   });
 }
 
+class PackageSmokeAssertionError extends Error {}
+
 function requireResult(condition) {
-  if (!condition) throw new Error("package smoke validation failed");
+  if (!condition) throw new PackageSmokeAssertionError();
+}
+
+const DIAGNOSTIC_API_CODES = new Set([
+  "broker_busy",
+  "broker_incompatible",
+  "broker_unauthorized",
+  "broker_unavailable",
+  "operation_timeout",
+  "session_unavailable",
+  "payload_too_large",
+  "document_invalid",
+  "residual_pii",
+  "provider_configuration",
+  "provider_unavailable",
+  "provider_rejected",
+  "provider_response_invalid",
+  "ner_unavailable",
+  "ner_incomplete",
+  "ocr_unavailable",
+  "dependency_unavailable",
+  "restore_failed",
+  "request_invalid",
+  "operation_failed",
+]);
+
+function failureDiagnostic(error) {
+  const diagnostic = {
+    reason: "unexpected_error",
+    apiCode: "not_applicable",
+    sessionInvalidated: false,
+    restartRequired: false,
+  };
+  try {
+    if (error instanceof PackageSmokeAssertionError) {
+      diagnostic.reason = "assertion_failed";
+    } else if (error instanceof ApiError) {
+      diagnostic.reason = "api_rejected";
+      diagnostic.apiCode = "unknown";
+      // Read only own data fields. Error accessors may contain private data.
+      const code = Object.getOwnPropertyDescriptor(error, "code")?.value;
+      if (DIAGNOSTIC_API_CODES.has(code)) diagnostic.apiCode = code;
+      diagnostic.sessionInvalidated =
+        Object.getOwnPropertyDescriptor(error, "sessionInvalidated")?.value === true;
+      diagnostic.restartRequired =
+        Object.getOwnPropertyDescriptor(error, "restartRequired")?.value === true;
+    }
+  } catch {
+    // A rejected proxy must not prevent the fixed failure signal.
+  }
+  return diagnostic;
 }
 
 const UPGRADE_CONNECTION_FAILURES = new Set([
@@ -165,8 +217,11 @@ export async function runPackageSmoke() {
       await resetScope();
     });
     evidence.workflowMs = Math.max(0, performance.now() - workflowStarted);
-  } catch {
-    await invoke("desktop_package_smoke_fail", { stage });
+  } catch (error) {
+    await invoke("desktop_package_smoke_fail", {
+      stage,
+      diagnostic: failureDiagnostic(error),
+    });
     return;
   }
   stage = "finish";

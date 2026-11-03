@@ -79,6 +79,34 @@ EXPECTED_FAILURE_STAGES = frozenset(
         "webview_process",
     }
 )
+EXPECTED_FAILURE_REASONS = frozenset({"api_rejected", "assertion_failed", "unexpected_error"})
+EXPECTED_FAILURE_API_CODES = frozenset(
+    {
+        "broker_busy",
+        "broker_incompatible",
+        "broker_unauthorized",
+        "broker_unavailable",
+        "operation_timeout",
+        "session_unavailable",
+        "payload_too_large",
+        "document_invalid",
+        "residual_pii",
+        "provider_configuration",
+        "provider_unavailable",
+        "provider_rejected",
+        "provider_response_invalid",
+        "ner_unavailable",
+        "ner_incomplete",
+        "ocr_unavailable",
+        "dependency_unavailable",
+        "restore_failed",
+        "request_invalid",
+        "operation_failed",
+        "unknown",
+        "not_applicable",
+    }
+)
+MAX_FAILURE_EVIDENCE_BYTES = 1024
 EXPECTED_RESOURCE_METRICS = frozenset(
     f"{component}_{metric}"
     for component in ("desktop", "broker", "backend")
@@ -189,10 +217,65 @@ def _fixed_failure_stage(path: Path) -> str | None:
     return stage if stage in EXPECTED_FAILURE_STAGES else None
 
 
+def _unique_failure_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    fields: dict[str, object] = {}
+    for key, value in pairs:
+        if key in fields:
+            raise ValueError("invalid failure evidence")
+        fields[key] = value
+    return fields
+
+
+def _failure_diagnostic(path: Path) -> str | None:
+    encoded = _read_regular_marker(path, MAX_FAILURE_EVIDENCE_BYTES)
+    if encoded is None or not encoded.isascii():
+        return None
+    try:
+        evidence = json.loads(encoded, object_pairs_hook=_unique_failure_fields)
+    except (ValueError, RecursionError):
+        return None
+    if not isinstance(evidence, dict) or evidence.keys() != {"stage", "diagnostic"}:
+        return None
+    stage = evidence["stage"]
+    diagnostic = evidence["diagnostic"]
+    if (
+        not isinstance(stage, str)
+        or stage not in EXPECTED_FAILURE_STAGES
+        or not isinstance(diagnostic, dict)
+        or diagnostic.keys() != {"reason", "api_code", "session_invalidated", "restart_required"}
+    ):
+        return None
+    reason = diagnostic["reason"]
+    api_code = diagnostic["api_code"]
+    invalidated = diagnostic["session_invalidated"]
+    restart = diagnostic["restart_required"]
+    if (
+        not isinstance(reason, str)
+        or reason not in EXPECTED_FAILURE_REASONS
+        or not isinstance(api_code, str)
+        or api_code not in EXPECTED_FAILURE_API_CODES
+        or type(invalidated) is not bool
+        or type(restart) is not bool
+    ):
+        return None
+    if reason == "api_rejected":
+        if api_code == "not_applicable":
+            return None
+    elif api_code != "not_applicable" or invalidated or restart:
+        return None
+    return (
+        f"{stage}; reason={reason}; api_code={api_code}; "
+        f"session_invalidated={str(invalidated).lower()}; restart_required={str(restart).lower()}"
+    )
+
+
 def _raise_for_smoke_failure(path: Path) -> None:
     failure_stage = _fixed_failure_stage(path)
     if failure_stage is not None:
         raise RuntimeError(f"packaged Desktop smoke failed at fixed stage: {failure_stage}")
+    diagnostic = _failure_diagnostic(path)
+    if diagnostic is not None:
+        raise RuntimeError(f"packaged Desktop smoke failed at fixed stage: {diagnostic}")
     if _path_exists(path):
         raise RuntimeError("packaged Desktop smoke failure evidence invalid")
 

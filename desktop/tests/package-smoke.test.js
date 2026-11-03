@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../src/errors.js";
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +19,7 @@ vi.mock("../src/api.js", () => mocks);
 const invoke = vi.fn();
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   window.__TAURI__ = { core: { invoke } };
   window.__AIGUARD_APP_READY__ = Promise.resolve(true);
   invoke.mockResolvedValue(undefined);
@@ -45,6 +45,12 @@ beforeEach(() => {
   mocks.auditLog.mockResolvedValue({ status: "ok" });
   mocks.disposeSession.mockResolvedValue({ disposed: true });
   mocks.resetScope.mockResolvedValue({ closed: true });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete window.__TAURI__;
+  delete window.__AIGUARD_APP_READY__;
 });
 
 describe("installed Desktop webview package smoke", () => {
