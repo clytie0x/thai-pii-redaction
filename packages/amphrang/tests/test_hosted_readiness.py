@@ -202,6 +202,7 @@ def test_hosted_adapter_refuses_effectively_empty_provider_policy(provider_polic
 
 # ── audit stdout mode ──────────────────────────────────────────────────
 def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path, capsys):
+    from amphrang._core_config import sdk_audit_config
     from amphrang.engine.audit import write_process_log
 
     monkeypatch.setenv("AMPHRANG_AUDIT_STDOUT", "1")
@@ -213,6 +214,7 @@ def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path,
         flags=["a"],
         latency_ms=1.0,
         output_dir=str(tmp_path),
+        audit_config=sdk_audit_config(),
     )
     out = capsys.readouterr().out.strip()
     entry = json.loads(out)
@@ -222,6 +224,7 @@ def test_audit_stdout_mode_prints_json_and_writes_no_file(monkeypatch, tmp_path,
 
 
 def test_audit_file_mode_unchanged_without_env(monkeypatch, tmp_path):
+    from amphrang._core_config import sdk_audit_config
     from amphrang.engine.audit import write_security_log
 
     monkeypatch.delenv("AMPHRANG_AUDIT_STDOUT", raising=False)
@@ -234,6 +237,7 @@ def test_audit_file_mode_unchanged_without_env(monkeypatch, tmp_path):
         error_type=None,
         rollback_occurred=False,
         output_dir=str(tmp_path),
+        audit_config=sdk_audit_config(),
     )
     assert path.exists()
     assert json.loads(path.read_text(encoding="utf-8"))["layer"] == "layer1"
@@ -246,6 +250,7 @@ def test_audit_dir_boot_check_fails_loudly_when_unwritable(monkeypatch, tmp_path
     # a probe write under a FILE path raises OSError on every platform
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(blocker / "logs"))
     monkeypatch.delenv("AMPHRANG_AUDIT_STDOUT", raising=False)
+    monkeypatch.setattr(server, "_AUDIT_CONFIG", server.sdk_audit_config())
     with pytest.raises(RuntimeError, match="not writable"):
         server._check_audit_dir_writable()
 
@@ -255,6 +260,7 @@ def test_audit_dir_boot_check_skipped_in_stdout_mode(monkeypatch, tmp_path):
     blocker.write_text("file, not dir", encoding="utf-8")
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(blocker / "logs"))
     monkeypatch.setenv("AMPHRANG_AUDIT_STDOUT", "1")
+    monkeypatch.setattr(server, "_AUDIT_CONFIG", server.sdk_audit_config())
     server._check_audit_dir_writable()  # no raise
 
 

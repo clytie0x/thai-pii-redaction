@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import json
-import hashlib
 import re
 import runpy
-import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -26,14 +23,8 @@ def verify_release_owned_version_survives_sync(sync_module: dict[str, object]) -
         upstream = root / "upstream"
         target_core = root / "core"
         target_manifest = root / "sync" / "PORT_MANIFEST.json"
-        shutil.copytree(ROOT / "core", upstream)
+        upstream.mkdir()
         (upstream / "VERSION").write_text("2.5.0\n", encoding="utf-8")
-        subprocess.run(["git", "init", "--quiet"], cwd=upstream, check=True)
-        subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=upstream, check=True)
-        subprocess.run(["git", "config", "user.email", "sync@example.invalid"], cwd=upstream, check=True)
-        subprocess.run(["git", "config", "user.name", "Hosted sync contract"], cwd=upstream, check=True)
-        subprocess.run(["git", "add", "."], cwd=upstream, check=True)
-        subprocess.run(["git", "commit", "--quiet", "-m", "fixture"], cwd=upstream, check=True)
 
         target_core.mkdir()
         (target_core / "VERSION").write_text("3.0.1\n", encoding="utf-8")
@@ -41,18 +32,20 @@ def verify_release_owned_version_survives_sync(sync_module: dict[str, object]) -
         do_sync = sync_module["do_sync"]
         do_sync.__globals__["CORE"] = target_core
         do_sync.__globals__["MANIFEST"] = target_manifest
-        do_sync(upstream)
+        try:
+            do_sync(upstream)
+        except SystemExit as error:
+            require("legacy source copying is disabled" in str(error), "unexpected sync refusal")
+        else:
+            raise AssertionError("legacy sync must not recreate an authored engine copy")
 
         require(
             (target_core / "VERSION").read_text("utf-8").strip() == "3.0.1",
             "vendored sync overwrote Hosted VERSION",
         )
-        manifest = json.loads(target_manifest.read_text("utf-8"))
-        require(
-            manifest["files"]["VERSION"]
-            == hashlib.sha256(b"2.5.0\n").hexdigest(),
-            "upstream VERSION provenance disappeared from manifest",
-        )
+        require(not target_manifest.exists(), "legacy sync unexpectedly wrote a manifest")
+        require(not (target_core / "app").exists(), "legacy sync recreated app source")
+        require(not (target_core / "pii_redactor").exists(), "legacy sync recreated engine source")
 
 
 def main() -> int:

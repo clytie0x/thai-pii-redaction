@@ -122,7 +122,7 @@ def _product_traceback_locals(error: BaseException) -> list[dict[str, object]]:
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("amphrang.engine.", "amphrang.server.")):
+        if module.startswith(("amphrang.engine.", "amphrang.server.", "pii_redactor.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -599,7 +599,7 @@ def test_send_to_ai_contains_post_provider_failure_and_rolls_back(monkeypatch):
             )
             return SYNTHETIC_PROVIDER_BODY
 
-    def fail_validation(response, received_registry, received_vault):
+    def fail_validation(response, received_registry, received_vault, *, config):
         assert response == SYNTHETIC_PROVIDER_BODY
         assert received_registry is registry
         assert received_vault is vault
@@ -763,7 +763,7 @@ def test_retry_validation_failure_survives_rollback_exception_group(monkeypatch)
             provider_errors.append(error)
             raise error
 
-    def fail_second_validation(text, received_vault):
+    def fail_second_validation(text, received_vault, *, config):
         nonlocal validation_calls
         validation_calls += 1
         assert text == SYNTHETIC_OUTBOUND_TEXT

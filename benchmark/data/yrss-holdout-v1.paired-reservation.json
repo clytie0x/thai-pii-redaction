@@ -1,0 +1,8 @@
+{
+  "status": "complete",
+  "created": "2026-10-31T08:48:37.367538+00:00",
+  "baseline_source_sha256": "4e95b640d77c441ceb11b8306112166769beb7e108c8619040d51bb4403863dc",
+  "candidate_source_sha256": "4e054ba842c63508fcc5e3acbe97a9ddec76425bf6770b3b88a82663337b5a37",
+  "scored_arms": 2,
+  "report_sha256": "d923e6af40b666724f077c787d00aae8ba300f6cf49b7a2427155507ee9df8c0"
+}

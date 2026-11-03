@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Guard | ความยินยอมของคุณ</title>
+  <link rel="icon" href="/static/logo.png" type="image/png">
+  <link rel="stylesheet" href="/static/tokens.css">
+  <link rel="stylesheet" href="/static/subject_style.css">
+  <script src="/static/subject_app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">ข้ามไปยังเนื้อหา</a>
+  <header><a class="brand" href="/subject"><img src="/static/logo.png" alt="" width="36" height="36">AI Guard</a><span>พื้นที่เจ้าของข้อมูล</span></header>
+  <main id="main">
+    <div id="message" role="status" aria-live="polite" tabindex="-1"></div>
+    <section id="login-panel" class="panel" hidden>
+      <p class="eyebrow">ประกาศและความยินยอม</p><h1>เลือกได้ ทบทวนได้ ถอนความยินยอมได้</h1>
+      <p>เข้าสู่ระบบด้วยบัญชีเจ้าของข้อมูลที่องค์กรยืนยันแล้ว เพื่ออ่านประกาศฉบับที่ตรงกับวัตถุประสงค์และจัดการตัวเลือกของคุณ</p>
+      <a class="button primary" href="/subject/auth/login">เข้าสู่ระบบเจ้าของข้อมูล</a>
+      <details><summary>เข้าสู่ระบบไม่ได้</summary><p>ติดต่อผู้รับผิดชอบขององค์กรเพื่อตรวจสอบบัญชีและหลักฐานเชื่อมโยงตัวตน หากต้องการถอนความยินยอมนอกระบบ ให้ยื่นคำขอพร้อมหลักฐานผ่านผู้จัดการคำขอขององค์กร</p></details>
+    </section>
+    <section id="workspace" hidden>
+      <!-- enterprise-rights-link -->
+      <div class="heading"><div><p class="eyebrow">การตัดสินใจของคุณ</p><h1>ประกาศและความยินยอม</h1></div><div class="actions"><button id="refresh" type="button">รีเฟรช</button><button id="logout" type="button">ออกจากระบบ</button></div></div>
+      <p>แต่ละประกาศมีวัตถุประสงค์แยกกัน ระบบจะไม่เลือกความยินยอมไว้ให้ การปฏิเสธและการถอนความยินยอมใช้ได้ในหน้านี้</p>
+      <div id="notice-list" class="notice-list" aria-label="ประกาศที่เกี่ยวข้องกับคุณ"></div>
+      <button id="load-more" type="button" hidden>โหลดประกาศเพิ่มเติม</button>
+      <section id="notice-panel" class="panel" hidden aria-labelledby="notice-title">
+        <button id="back" type="button">กลับไปยังรายการ</button>
+        <h2 id="notice-title" tabindex="-1"></h2><p id="purpose"></p>
+        <details><summary>ฉบับประกาศและหลักฐานเนื้อหา</summary><dl><dt>ฉบับ</dt><dd id="notice-version"></dd><dt>รหัสตรวจสอบเนื้อหา</dt><dd id="notice-digest" class="digest"></dd></dl></details>
+        <article id="notice-body" class="notice-body" aria-label="เนื้อหาประกาศฉบับเต็ม"></article>
+        <div id="authority" class="authority" role="status"></div>
+        <form id="choice-form">
+          <fieldset><legend>หมวดข้อมูลที่คุณเลือกให้ความยินยอม</legend><div id="category-options" class="choices"></div><p>เลือกเฉพาะหมวดที่ต้องการก่อนกดให้ความยินยอม การปฏิเสธหรือถอนจะหยุดอำนาจจากความยินยอมสำหรับวัตถุประสงค์นี้</p></fieldset>
+          <div class="actions equal-actions"><button type="submit" name="action" value="grant">ให้ความยินยอมตามที่เลือก</button><button type="submit" name="action" value="refuse">ไม่ให้ความยินยอม</button><button type="submit" name="action" value="withdraw">ถอนความยินยอม</button></div>
+          <p>การถอนมีผลต่ออำนาจประมวลผลในระบบนี้ทันที การแจ้งผู้รับข้อมูลอาจยังไม่เสร็จ และไม่ได้หมายความว่าข้อมูลทุกชุดถูกลบแล้ว การเก็บรักษาด้วยเหตุผลอื่นต้องได้รับการทบทวนแยกต่างหาก</p>
+        </form>
+        <button id="retry" type="button" hidden>ตรวจผลและลองส่งคำขอเดิมอีกครั้ง</button>
+        <section aria-labelledby="propagation-title"><h3 id="propagation-title">การแจ้งผู้รับข้อมูล</h3><ul id="propagation"></ul></section>
+        <section aria-labelledby="history-title"><h3 id="history-title">ประวัติการตัดสินใจ</h3><ol id="history"></ol></section>
+      </section>
+    </section>
+    <footer>AI Guard บันทึกการตัดสินใจและหลักฐาน ไม่ใช่ใบรับรองการปฏิบัติตามกฎหมาย <a href="/subject/staff">พื้นที่เจ้าหน้าที่</a></footer>
+  </main>
+</body>
+</html>

@@ -14,12 +14,15 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from pii_redactor.detectors.fp_detector import _iban_check, detect_fp
+from pii_redactor.config import CoreConfig, resolve_config
+from pii_redactor.detectors import scan_views as _shared_views
+from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_name_context
 from pii_redactor.detectors.tb_detector import detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
 from pii_redactor.pdpa_categories import canonical_section26
+from pii_redactor.safe_errors import minimize_failure_frames
 
 
 class _GuardContext(Protocol):
@@ -50,6 +53,8 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "DISABILITY",
         "EMAIL",
         "HEALTH",
+        "GENETIC",
+        "BIOMETRIC",
         "IBAN",
         "ID_NUMBER",
         "LABOR_UNION",
@@ -71,6 +76,14 @@ SAFE_OUTBOUND_LEAK_TYPES = frozenset(
         "THAI_ID",
         "UNCLASSIFIED_RESIDUAL",
         "VEHICLE_PLATE",
+        "JURISTIC_ID",
+        "DRIVER_LICENSE",
+        "LINE_ID",
+        "GPS_COORD",
+        "HOUSE_REG_ID",
+        "IP_ADDRESS",
+        "MAC_ADDRESS",
+        "LAND_DEED_ID",
     }
 )
 _POLICY_CATEGORIES = frozenset(
@@ -177,134 +190,29 @@ _SPACED_IBAN_START_RE = re.compile(r"(?<![A-Z0-9])([A-Z]{2}\d{2})(?= )")
 _SPACED_IBAN_GROUP_RE = re.compile(r"([A-Z0-9]{1,4})(?![A-Z0-9])")
 _MAX_IBAN_LENGTH = 34
 _MAX_IBAN_GROUPS = 9
-_OBFUSCATED_STRUCTURED_TYPES = frozenset(
-    {
-        "ADDRESS",
-        "BANK_ACCOUNT",
-        "CREDIT_CARD",
-        "DATE_OF_BIRTH",
-        "EMAIL",
-        "IBAN",
-        "MEDICAL_ID",
-        "PASSPORT",
-        "PHONE",
-        "POSTAL_CODE",
-        "STUDENT_ID",
-        "THAI_ID",
-        "VEHICLE_PLATE",
-    }
-)
+_OBFUSCATED_STRUCTURED_TYPES = _shared_views.OBFUSCATED_STRUCTURED_TYPES
 _OBFUSCATED_SIGNAL_PREFIX = "obfuscated_structured:"
 
 
 def _has_security_view_trigger(text: str) -> bool:
     return _REPEATED_WHITESPACE_RE.search(text) is not None or any(
-        unicodedata.category(character) == "Cf" for character in text
+        unicodedata.category(character) == "Cf" or 0xFF01 <= ord(character) <= 0xFF5E
+        for character in text
     )
 
 
 def _security_scan_view(text: str) -> tuple[str, list[int]]:
-    """Build a scan-only view without changing caller-visible text or spans."""
-    visible: list[str] = []
-    source_offsets: list[int] = []
-    for offset, character in enumerate(text):
-        if unicodedata.category(character) == "Cf":
-            continue
-        visible.append(character)
-        source_offsets.append(offset)
-
-    compact: list[str] = []
-    compact_offsets: list[int] = []
-    index = 0
-    while index < len(visible):
-        if not visible[index].isspace():
-            compact.append(visible[index])
-            compact_offsets.append(source_offsets[index])
-            index += 1
-            continue
-        end = index + 1
-        while end < len(visible) and visible[end].isspace():
-            end += 1
-        if end - index == 1:
-            compact.append(visible[index])
-            compact_offsets.append(source_offsets[index])
-        index = end
-    return "".join(compact), compact_offsets
+    return _shared_views._security_scan_view(text)
 
 
-def _map_security_view_entities(
-    text: str,
-    security_view: str,
-    source_offsets: list[int],
-    *,
-    allowed_types: frozenset[str],
-) -> list[Entity]:
-    mapped: list[Entity] = []
-    for entity in detect_fp(security_view):
-        if entity.data_type not in allowed_types:
-            continue
-        start, end = entity.span
-        if start < 0 or end <= start or end > len(source_offsets):
-            continue
-        source_start = source_offsets[start]
-        source_end = source_offsets[end - 1] + 1
-        mapped.append(
-            Entity(
-                entity_id=entity.entity_id,
-                redact_type=entity.redact_type,
-                data_type=entity.data_type,
-                span=(source_start, source_end),
-                score=entity.score,
-                original_text=text[source_start:source_end],
-            )
-        )
-    return mapped
+def _map_security_view_entities(text, security_view, source_offsets, *, allowed_types):
+    return _shared_views._map_security_view_entities(
+        text, security_view, source_offsets, allowed_types=allowed_types
+    )
 
 
 def _single_spaced_iban_views(text: str) -> list[tuple[str, list[int]]]:
-    """Return checksum-ready views for standard four-character IBAN groups."""
-    views: list[tuple[str, list[int]]] = []
-    for start_match in _SPACED_IBAN_START_RE.finditer(text):
-        groups = [
-            (
-                start_match.group(1),
-                start_match.start(1),
-                start_match.end(1),
-            )
-        ]
-        cursor = start_match.end(1)
-        compact_length = len(start_match.group(1))
-        while len(groups) < _MAX_IBAN_GROUPS and cursor < len(text) and text[cursor] == " ":
-            group_match = _SPACED_IBAN_GROUP_RE.match(text, cursor + 1)
-            if group_match is None:
-                break
-            group = group_match.group(1)
-            if compact_length + len(group) > _MAX_IBAN_LENGTH:
-                break
-            groups.append(
-                (
-                    group,
-                    group_match.start(1),
-                    group_match.end(1),
-                )
-            )
-            compact_length += len(group)
-            cursor = group_match.end(1)
-            if len(group) < 4:
-                break
-
-        for group_count in range(len(groups), 1, -1):
-            selected = groups[:group_count]
-            if any(len(group) != 4 for group, _start, _end in selected[1:-1]):
-                continue
-            compact = "".join(group for group, _start, _end in selected)
-            if not 15 <= len(compact) <= _MAX_IBAN_LENGTH:
-                continue
-            offsets = [offset for _group, start, end in selected for offset in range(start, end)]
-            if _iban_check(compact):
-                views.append((compact, offsets))
-                break
-    return views
+    return _shared_views._single_spaced_iban_views(text, group_pattern=_SPACED_IBAN_GROUP_RE)
 
 
 def scan_obfuscated_structured_entities(text: str) -> list[Entity]:
@@ -320,6 +228,15 @@ def scan_obfuscated_structured_entities(text: str) -> list[Entity]:
                 allowed_types=_OBFUSCATED_STRUCTURED_TYPES,
             )
         )
+        for compact, offsets in _single_spaced_iban_views(security_view):
+            mapped.extend(
+                _map_security_view_entities(
+                    text,
+                    compact,
+                    [source_offsets[i] for i in offsets],
+                    allowed_types=frozenset({"IBAN"}),
+                )
+            )
     for security_view, source_offsets in _single_spaced_iban_views(text):
         mapped.extend(
             _map_security_view_entities(
@@ -353,7 +270,9 @@ def _obfuscated_structured_signals(
     return [f"{_OBFUSCATED_SIGNAL_PREFIX}{data_type}" for data_type in sorted(found)]
 
 
-def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
+def scan_residual_signals(
+    text: str, guard_context: _GuardContext, *, config: CoreConfig | None = None
+) -> list[str]:
     """A second opinion over structural and obfuscated residuals.
 
     `scan_outbound_leaks` runs the same `detect_fp`/`detect_tb` that produced
@@ -379,18 +298,42 @@ def scan_residual_signals(text: str, guard_context: _GuardContext) -> list[str]:
     return signals
 
 
+def _is_field_label(candidate: str) -> bool:
+    """Use the detector's existing non-person rule for bare form labels."""
+    from pii_redactor.detectors.name_context import is_non_person_segment
+
+    return is_non_person_segment(candidate.strip())
+
+
+@minimize_failure_frames
+def _segment_leaks(segment: str, *, config: CoreConfig | None = None) -> list[Entity]:
+    """Recheck an uncovered segment while excluding known NAME field labels."""
+    config = resolve_config(config)
+    return [
+        entity
+        for entity in detect_fp(segment) + detect_tb(segment, config=config)
+        if not (entity.data_type == "NAME" and _is_field_label(entity.original_text))
+    ]
+
+
+@minimize_failure_frames
 @native_broker_detector_phase
-def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]:
+def scan_outbound_leaks(
+    text: str, guard_context: _GuardContext, *, config: CoreConfig | None = None
+) -> list[Entity]:
     """Return real leaks in pseudonymized text (empty list = safe to send)."""
     # Caller-seeded mappings are declarations, not proof. Only replacements
     # minted or actually reused by this processing turn may excuse any FP or TB
     # hit. A fuzzy TB span can cross a trusted replacement, so re-scan only its
     # uncovered segments and preserve cue-linked checks around the full span.
+    config = resolve_config(config)
     trusted = guard_context.trusted_pseudonyms()
     trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
     real_leaks = []
-    for entity in detect_fp(text) + detect_tb(text):
+    for entity in detect_fp(text) + detect_tb(text, config=config):
         if entity.original_text in trusted:
+            continue
+        if entity.data_type == "NAME" and _is_field_label(entity.original_text):
             continue
         start, end = entity.span
         overlapping = [
@@ -414,7 +357,7 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
                 if position < end:
                     segments.append(text[position:end])
                 segments_clean = all(
-                    not segment.strip() or (not detect_fp(segment) and not detect_tb(segment))
+                    not segment.strip() or not _segment_leaks(segment, config=config)
                     for segment in segments
                 )
                 if segments_clean and not _cue_leak_in_window(
@@ -428,18 +371,33 @@ def scan_outbound_leaks(text: str, guard_context: _GuardContext) -> list[Entity]
     return real_leaks
 
 
+_CONFIG_SCANNERS = (scan_outbound_leaks, scan_residual_signals)
+
+
+def bind_scanner(scanner: Callable, config: CoreConfig) -> Callable:
+    """Bind core settings without changing the two-argument callback protocol."""
+    if any(scanner is canonical for canonical in _CONFIG_SCANNERS):
+        return lambda text, context: scanner(text, context, config=config)
+    return scanner
+
+
+@minimize_failure_frames
 def enforce_outbound_policy(
     text: str,
     *,
     guard_context: _GuardContext,
     scan_leaks: Callable[[str, _GuardContext], list[Entity]] = scan_outbound_leaks,
     scan_residual: Callable[[str, _GuardContext], list[str]] = scan_residual_signals,
+    config: CoreConfig | None = None,
 ) -> None:
     """Fail closed on structured, text, or detector-independent residuals.
 
     The exception retains only bounded type labels and fixed policy categories.
     It never retains Entity objects, scanner signals, or source text.
     """
+    config = resolve_config(config)
+    scan_leaks = bind_scanner(scan_leaks, config)
+    scan_residual = bind_scanner(scan_residual, config)
     leak_types: set[str] = set()
     categories: set[str] = set()
     leaks = list(scan_leaks(text, guard_context))
@@ -476,6 +434,7 @@ def enforce_outbound_policy(
         guard_context = None
         scan_leaks = None
         scan_residual = None
+        config = None
         leaks.clear()
         leaks = []
         leak = None

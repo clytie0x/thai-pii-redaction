@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "qualification": "passed_bounded_windows_installed_artifacts",
+  "source_base_commit": "b4a8897edc277fcf6eb7f4e988b4bad83c5d6c55",
+  "evidence_date": "2026-11-03",
+  "paths": {
+    "ROOT": "C:\\Users\\teera\\.t3\\worktrees\\pdpa-enterprise-clean\\t3-6791df77",
+    "WORK": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-combined-final-b8hsc1p7",
+    "BUILDER": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe"
+  },
+  "source": {
+    "binding_sha256": "ff0bd06e983a8e0ffc2d7c78cb60463369a3654329df65a849a2ee540fd324b0",
+    "tracked_inputs": 206,
+    "crlf_only_files": 133,
+    "normalization": "Windows checkout bytes packaged; every differing tracked blob differs only by CRLF to LF",
+    "other_differences": 0,
+    "production_source_edits": false,
+    "metadata_source_dirty": false
+  },
+  "environment": {
+    "os": "Windows-11-10.0.26300-SP0",
+    "architecture": "AMD64",
+    "python": "3.13.12",
+    "uv": "0.10.4",
+    "setuptools": "83.0.0",
+    "build_requirements_sha256": "686f13365510f2ca07d27dd6159a7b4576ec9285b73fc123a1e2dbb0ad10993f",
+    "enterprise_lock_sha256": "ddb7640e1e11b6a6dace8a9b36c5db8535ab5f6b273f5fbbf935b79cbfb5d3c4",
+    "sdk_lock_sha256": "2da4ffe6a2d8b73965c4b3ce940c5f9366939cdd7e342fb8a5797478e313dca7",
+    "provisioning": "fresh venvs; copied existing hashlocked wheels only; no index, editable, ML weights or provider calls",
+    "test_harness": "six existing SDK uv.lock dev-tool pins, installed only after full-profile public runtime probe"
+  },
+  "artifacts": {
+    "core": {
+      "distribution": "thai-pii-redaction-core",
+      "members": 143,
+      "runtime_files": 136,
+      "unpacked_bytes_identical": true,
+      "version": "0.1.0",
+      "files": [
+        {
+          "path": "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+          "sha256": "ab4b7ef08c2c53d7beac38e2275853aa77ff3bd6e89f5148d74375dd52da886e",
+          "bytes": 796959
+        },
+        {
+          "path": "core-direct/thai_pii_redaction_core-0.1.0.tar.gz",
+          "sha256": "34b67ccfca3f87cff746c2913d51e85d3b369bb033f2114e93d188bd17f7187b",
+          "bytes": 751744
+        },
+        {
+          "path": "core-rebuilt/thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+          "sha256": "730c1f1cad5f254989a5202b0477796e852dc85839c82a7a5d65e5ec61571833",
+          "bytes": 796959
+        }
+      ]
+    },
+    "sdk": {
+      "distribution": "amphrang",
+      "members": 57,
+      "runtime_files": 50,
+      "unpacked_bytes_identical": true,
+      "version": "0.1.0",
+      "files": [
+        {
+          "path": "sdk-direct/amphrang-0.1.0-py3-none-any.whl",
+          "sha256": "f75cd8d1540555603f0301e425c628b3f27c27170f33d9ae3e51e693e956b9ed",
+          "bytes": 69215
+        },
+        {
+          "path": "sdk-direct/amphrang-0.1.0.tar.gz",
+          "sha256": "fea391117448d03b2685436b692b8b1559a68d9c924677f6f6f7ed78411985a2",
+          "bytes": 64071
+        },
+        {
+          "path": "sdk-rebuilt/amphrang-0.1.0-py3-none-any.whl",
+          "sha256": "5a5ee4888e9ad887d46e7ad47a115932c4fa3eb16ae124cbd2daefe1e0d918bf",
+          "bytes": 69215
+        }
+      ]
+    }
+  },
+  "profiles": {
+    "enterprise": {
+      "requirements_sha256": "ddb7640e1e11b6a6dace8a9b36c5db8535ab5f6b273f5fbbf935b79cbfb5d3c4",
+      "package_count": 46,
+      "inventory_sha256": "ef0fbdad3f8acf95d1056f113dd0a64b9b2871148d81961455581f44f3366016",
+      "result": {
+        "dependency_check": true,
+        "installed_pair_checker": true,
+        "public_runtime": {
+          "checks": [
+            "exact_dependency_inventory",
+            "canonical_identity",
+            "detect",
+            "token_surrogate_restore",
+            "prior_mapping",
+            "session",
+            "serial_spawn_batch",
+            "warn_report",
+            "fail_closed",
+            "pipeline_snapshot",
+            "warm_root_fake_tner_zero_calls",
+            "29_canonical_aliases",
+            "installed_origins"
+          ],
+          "enterprise_module_imports": 13,
+          "model_provisioning": "preprovisioned_thainer_reused_not_independent",
+          "passed": true,
+          "profile": "enterprise"
+        }
+      }
+    },
+    "sdk-core": {
+      "requirements_sha256": "c3a0a6de42367d57d928a8bcaed820fe80571fc4c95d0c99a5af6c41a7d83704",
+      "package_count": 26,
+      "inventory_sha256": "1d46f46d54082861e38afca7ac9780ef7b044c347d2f4f6949a90d78830c4561",
+      "result": {
+        "dependency_check": true,
+        "installed_pair_checker": true,
+        "public_runtime": {
+          "checks": [
+            "exact_dependency_inventory",
+            "canonical_identity",
+            "detect",
+            "token_surrogate_restore",
+            "prior_mapping",
+            "session",
+            "serial_spawn_batch",
+            "warn_report",
+            "fail_closed",
+            "pipeline_snapshot",
+            "warm_root_fake_tner_zero_calls",
+            "29_canonical_aliases",
+            "installed_origins"
+          ],
+          "enterprise_module_imports": 0,
+          "model_provisioning": "preprovisioned_thainer_reused_not_independent",
+          "passed": true,
+          "profile": "sdk-core"
+        }
+      }
+    },
+    "sdk-server-mcp-proxy": {
+      "requirements_sha256": "f953dcdfd78e0cdaa2ad410e2f27d7d9e23e9645ce996cf28beb37295c5d5e4d",
+      "package_count": 56,
+      "inventory_sha256": "b5520de43401e77edc07dfb3963d5a42ba3e32b0d30334f88711dccd169fe46b",
+      "result": {
+        "dependency_check": true,
+        "installed_pair_checker": true,
+        "packaged_adapters": {
+          "checks_passed": 214,
+          "collection_errors": 0,
+          "evidence": "packaged_in_process_mcp_asgi_mock_upstream",
+          "failed": 0,
+          "installed_origins": true,
+          "passed": true,
+          "skipped": 0
+        },
+        "public_runtime": {
+          "checks": [
+            "exact_dependency_inventory",
+            "canonical_identity",
+            "detect",
+            "token_surrogate_restore",
+            "prior_mapping",
+            "session",
+            "serial_spawn_batch",
+            "warn_report",
+            "fail_closed",
+            "pipeline_snapshot",
+            "warm_root_fake_tner_zero_calls",
+            "29_canonical_aliases",
+            "installed_origins"
+          ],
+          "enterprise_module_imports": 0,
+          "model_provisioning": "preprovisioned_thainer_reused_not_independent",
+          "passed": true,
+          "profile": "sdk-server-mcp-proxy"
+        }
+      }
+    },
+    "test-harness": {
+      "requirements_sha256": "724ea6a9eb3d2bfc3a4646f93f6f72913a0a3965d04b227be9e8ecf37effca21",
+      "package_count": 6,
+      "inventory_sha256": "862069b73c13da6c6571c57171432f4f42841f199f6cc847818be1c83e15eb37"
+    }
+  },
+  "model": {
+    "files_sha256": {
+      "db.json": "8bff37993324365f1f243cf983880915c908cf7ee14ef4013d3aad6c934f38c8",
+      "thai-ner-1-4.crfsuite": "8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38"
+    },
+    "source": "preprovisioned_thainer_reused_not_independent"
+  },
+  "artifact_audit": {
+    "all_unpacked_wheel_bytes_identical": true,
+    "metadata_and_record": true,
+    "runtime_and_resources_source_identical": true,
+    "sql_migrations": 6,
+    "sdk_module_aliases": 29,
+    "connectors_and_enterprise_assets": true,
+    "licenses_and_private_resource_paths": true,
+    "sdist_audit": {
+      "core": {
+        "paths_and_privacy_inventory": true,
+        "sdist_files": 154
+      },
+      "sdk": {
+        "paths_and_privacy_inventory": true,
+        "sdist_files": 64
+      }
+    }
+  },
+  "negative_artifacts": {
+    "ambient_fallback": false,
+    "checker_args": 3,
+    "passed": true,
+    "rejected": [
+      "wrong-core-artifact",
+      "wrong-sdk-artifact",
+      "missing-core-artifact",
+      "missing-sdk-artifact",
+      "missing-installed-core-no-ambient-fallback",
+      "colliding-namespace-owner"
+    ]
+  },
+  "previous_batch": {
+    "state": "immutable_negative_not_requalified",
+    "reexecuted": false,
+    "observed_phase": "prior_mapping",
+    "observed_error_type": "NERFailureError",
+    "six_artifacts_rehashed_unchanged": true,
+    "record_sha256": "62675a90e0b55210d28b7a1dc0018aca63c5aa0f0a4b86528843678489b1ee2f"
+  },
+  "test_inputs_sha256": {
+    "test_amprang_mcp.py": "5b40befd25dc062ba8a3357d0a2600a590cb2429d1c6b6c4b939aab30ccae935",
+    "test_anonymizer_config_closure.py": "7473dd01a08761c08af312604ad9dace84faaf0c8e5fc64517b4e2fede1d4ad3",
+    "test_canonical_batch.py": "2425f79f18af1f00f749800dc33f17f1d5d1efdc8a83425cd5eca4806f24927f",
+    "test_proxy_core.py": "8adbbfb4bb124ae70c09abc71e83a925631307b3835459b61ee15c61ec4a565d",
+    "test_proxy_failure_contract.py": "fb15b88ddfd938541478c2dea15d8f5306cff0ea14a64de8293fbd5050c1259f",
+    "test_proxy_stream_restore.py": "810c4f22da3e61bc475dd08f11c26d8bb8631ef3a3a50da78827c30a665eb76b",
+    "test_root_config_closure.py": "e66db1ae86f7160464a80a418d96f21d271c7a7a7c8a92fa7065d0f0a9e43393"
+  },
+  "drivers_sha256": {
+    "audit.py": "f3ce53f0c13b19cf461d6b159984ece8b4b9623a03a9e6ab1546b95925e17450",
+    "final_checks.py": "ec25c4fe9ad926d7c8ae0aebf0c576513c64f2cd6111482b2e7c78e7ed354012",
+    "probe_adapters.py": "ad97da0073fbcf8519c7a231c5196991ac7b79f7b6d9c7a11b67f32a742f55c4",
+    "probe_runtime.py": "2b29b684bf7d4eaa4c92f2e02e075ba37095ee24ce39e3aac96792876427eb4a",
+    "qualify.py": "c0afe304f2f1bf2732f3a935df3d1fed66ea2c979862ed2bc19e3c4ebe245843"
+  },
+  "retained_setup_failures": [
+    {
+      "phase": "orchestrator_start",
+      "exit": 1,
+      "reason": "pinned builder lacks packaging; read-only enterprise Python runs driver; builds still use pinned builder"
+    },
+    {
+      "step": "sdk-frozen-lock-check",
+      "exit": 2,
+      "reason": "automatic Python 3.14.9 and empty isolated metadata cache cannot resolve setuptools offline; pinned 3.13 builder/no-build-isolation retry passed"
+    }
+  ],
+  "performance": {
+    "state": "M3_held_unchanged_no_exception",
+    "measured_this_task": false,
+    "checkout_baseline_sha256": "e49717b3cc908ec32a108d66bf342675920267781b1768ae0c9190751168d976",
+    "git_blob_sha256": "cff2d8fd49ae4acb2857cfbe1376bc00ed3298dfdc613905e599af6ab22423e9",
+    "budgets": {
+      "time_percent": 20,
+      "resident_memory_percent": 15
+    }
+  },
+  "limits": [
+    "Windows x64/Python 3.13 only; no independent model provisioning",
+    "MCP in-process tools/ASGI and proxy fake transports; successful MCP detect/restore outputs can contain plaintext",
+    "no PostgreSQL, IdP, browser, restart, real host, image, live provider, legal or pilot acceptance in this task",
+    "Docker absent; no image or production readiness claim",
+    "no full source-suite reruns, scoring/corpus/provider changes, deployment, publication, external messages, push or main integration",
+    "no independent review in this worker; parent owns integration review and CI"
+  ],
+  "retained_evidence": {
+    "workspace": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-combined-final-b8hsc1p7",
+    "files_sha256": {
+      "source-inputs.json": "a1a5572a0d80c40c9ed2f7924ed9c3f79a2217aaf30763bec05b1845b955104c",
+      "git-checkout-binding.json": "188fc698f6b64e55d6668ee00c6346c3e1d3c8feb3314c2b60d98377c0a98d38",
+      "archive-audit.json": "eb25a5cca3b47902be2c7eb874e10f14d7ab90efd28809e1f415fbe1fb7fed5c",
+      "batch1-preservation.json": "d3c98413f46b49e82dc29abd88b4a9dda18baf345324d47d95495a583e9cb6c9",
+      "dependency-profiles.json": "5451793770fdf5e3107cc7c56e078c90511d64a5145bc03892c2d14cd14af287",
+      "model-profile.json": "19c0d60cf607a1dc96f99d8a3549bfa1e45f532a65d2b235c594cb94390e2e52",
+      "probe-source-hashes.json": "f79c1dbc27eec0205131ed3a469ec663e2766fe89aad2862a5046b67c7bca3b9",
+      "runtime-complete.json": "c112f7fe86d873adefe4fa9325759d25341530585da3b639a7f4c64b083d6815",
+      "negative-artifacts.json": "2f4192b10d3d8f4a9c1349d9c49be6dbd67778c2b83a39df3bb4039b41ed3f3a",
+      "audit-complete.json": "40f21682092c06d90d661effaf837e5565e327b5fe6a9b5b0c247f3ab8fc66b9",
+      "final-input-audit.json": "ec7c9019e64d8cfcde93def7e04c92f9535aec432a86488e0029306cd65bd737",
+      "commands.jsonl": "b64b4a066e8d9e5d2ecde241d6b19ae73586362641cabd304e746a8755f15ea9"
+    }
+  },
+  "commands": [
+    {"step": "core-direct","command": ["uv","build","${WORK}\\sources\\core","--python","${BUILDER}","--wheel","--sdist","--offline","--no-index","--no-build-isolation","--no-sources","--build-constraints","${ROOT}\\requirements-build.lock","--out-dir","${WORK}\\core-direct"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "61f3839599f819a68530bab5cfd0483a4f8fab0f61b8bdae51e77a7aa5195e4a"},
+    {"step": "core-sdist-rebuild","command": ["uv","build","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0.tar.gz","--python","${BUILDER}","--wheel","--offline","--no-index","--no-build-isolation","--no-sources","--build-constraints","${ROOT}\\requirements-build.lock","--out-dir","${WORK}\\core-rebuilt"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "f3626ee84012b357cbe9287a41c7643c17f468dd99c92a9715bc0c3b2d034ebe"},
+    {"step": "sdk-direct","command": ["uv","build","${WORK}\\sources\\sdk","--python","${BUILDER}","--wheel","--sdist","--offline","--no-index","--no-build-isolation","--no-sources","--build-constraints","${ROOT}\\requirements-build.lock","--out-dir","${WORK}\\sdk-direct"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "21c0c32f69a7aa1d6a1082f714cc51a9797545590a183f6522c9005135b55670"},
+    {"step": "sdk-sdist-rebuild","command": ["uv","build","${WORK}\\sdk-direct\\amphrang-0.1.0.tar.gz","--python","${BUILDER}","--wheel","--offline","--no-index","--no-build-isolation","--no-sources","--build-constraints","${ROOT}\\requirements-build.lock","--out-dir","${WORK}\\sdk-rebuilt"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "c37e5b1e46eedbd44634306bfdfbcb4c5aca6f55b15a6389bc60ac2655ec485a"},
+    {"step": "sdk-core-export","command": ["uv","export","--frozen","--no-dev","--no-emit-project","--no-emit-package","thai-pii-redaction-core","--output-file","${WORK}\\sdk-core.txt"],"cwd": "${ROOT}\\packages\\amphrang","exit": 0,"captured_output_sha256": "c3a0a6de42367d57d928a8bcaed820fe80571fc4c95d0c99a5af6c41a7d83704"},
+    {"step": "sdk-server-mcp-proxy-export","command": ["uv","export","--frozen","--no-dev","--no-emit-project","--no-emit-package","thai-pii-redaction-core","--output-file","${WORK}\\sdk-server-mcp-proxy.txt","--extra","server","--extra","mcp","--extra","proxy"],"cwd": "${ROOT}\\packages\\amphrang","exit": 0,"captured_output_sha256": "f953dcdfd78e0cdaa2ad410e2f27d7d9e23e9645ce996cf28beb37295c5d5e4d"},
+    {"step": "enterprise-venv","command": ["uv","venv","--python","${BUILDER}","--offline","--no-project","${WORK}\\enterprise-environment"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "e5ec0567b064385fbf558f2a3f342e88621ea3ada5a9beb1f00703d3cf20ce9a"},
+    {"step": "enterprise-dependencies","command": ["uv","pip","install","--python","${WORK}\\enterprise-environment\\Scripts\\python.exe","--offline","--no-index","--find-links","${WORK}\\enterprise-wheelhouse","--require-hashes","-r","${ROOT}\\requirements-enterprise.lock"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "6bb8b1fe5805d68b86ba843dacfc102bd6651fdd4dfdcdde11b976e8ee244c38"},
+    {"step": "enterprise-pair-install","command": ["uv","pip","install","--python","${WORK}\\enterprise-environment\\Scripts\\python.exe","--offline","--no-index","--no-deps","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl[enterprise]","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "b9a7b76a6cfc4f9b217d92704e1966f58d9628ea5d5ac3cc5c7ea08a6b13e161"},
+    {"step": "enterprise-dependency-check","command": ["uv","pip","check","--python","${WORK}\\enterprise-environment\\Scripts\\python.exe","--offline"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "45163a35e54e013b86db0ab8201a752f1b57d15446866b0ffd3393ea0309b31d"},
+    {"step": "enterprise-installed-checker","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\enterprise-environment\\Lib\\site-packages","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "f34098d981901eeea1d41c9116954825c31dcaafc86a7fd52eba6c636fa60922"},
+    {"step": "enterprise-public-runtime","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\probe_runtime.py","enterprise","${WORK}\\enterprise-expected.json"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "16c92232f9fbd6b3626fd79650ea2bba119b9d7588f0f95a35cccd99e8287203"},
+    {"step": "sdk-core-venv","command": ["uv","venv","--python","${BUILDER}","--offline","--no-project","${WORK}\\sdk-core-environment"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "285c7de5069c34ae12896f84e0bf8df5bc67a4754742af782c9671dfcd4a72be"},
+    {"step": "sdk-core-dependencies","command": ["uv","pip","install","--python","${WORK}\\sdk-core-environment\\Scripts\\python.exe","--offline","--no-index","--find-links","${WORK}\\sdk-core-wheelhouse","--require-hashes","-r","${WORK}\\sdk-core.txt"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "2d6a7b8636d4569b8d4653290df09f6776cbc594ebde26a14eb000316040c0d5"},
+    {"step": "sdk-core-pair-install","command": ["uv","pip","install","--python","${WORK}\\sdk-core-environment\\Scripts\\python.exe","--offline","--no-index","--no-deps","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "b51e14ea5d4b660b1f342f3a436d9096838a5cbf75480a37ecd98e114dc47da4"},
+    {"step": "sdk-core-dependency-check","command": ["uv","pip","check","--python","${WORK}\\sdk-core-environment\\Scripts\\python.exe","--offline"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "12d5a02386da25b3cf07e6cf44606b35a065c3d6af054cbb8425375ee6d3db00"},
+    {"step": "sdk-core-installed-checker","command": ["${WORK}\\sdk-core-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\sdk-core-environment\\Lib\\site-packages","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "f34098d981901eeea1d41c9116954825c31dcaafc86a7fd52eba6c636fa60922"},
+    {"step": "sdk-core-public-runtime","command": ["${WORK}\\sdk-core-environment\\Scripts\\python.exe","-I","${WORK}\\probe_runtime.py","sdk-core","${WORK}\\sdk-core-expected.json"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "da0c9dbb27ab4002d642126f7cbd476d840502dfd869debff7b70e475f6401fc"},
+    {"step": "sdk-server-mcp-proxy-venv","command": ["uv","venv","--python","${BUILDER}","--offline","--no-project","${WORK}\\sdk-server-mcp-proxy-environment"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "38660df692c42a189754300101a76f59e7212e814324c8f5c5ea4ba8c77f13d4"},
+    {"step": "sdk-server-mcp-proxy-dependencies","command": ["uv","pip","install","--python","${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","--offline","--no-index","--find-links","${WORK}\\sdk-server-mcp-proxy-wheelhouse","--require-hashes","-r","${WORK}\\sdk-server-mcp-proxy.txt"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "96742a72a06f2b57535d1b747febb158e02e4d7c7b4547e82458218827255d31"},
+    {"step": "sdk-server-mcp-proxy-pair-install","command": ["uv","pip","install","--python","${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","--offline","--no-index","--no-deps","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl[server,mcp,proxy]"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "0e6a8be93e8e35b3d8440a939edf5a32dc6f0bc08922ef1305bf30e828f32082"},
+    {"step": "sdk-server-mcp-proxy-dependency-check","command": ["uv","pip","check","--python","${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","--offline"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "f64421415198ead79b2fe5fc1317738c6084ce2443b1eeb17b08c15936ff88ea"},
+    {"step": "sdk-server-mcp-proxy-installed-checker","command": ["${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\sdk-server-mcp-proxy-environment\\Lib\\site-packages","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "f34098d981901eeea1d41c9116954825c31dcaafc86a7fd52eba6c636fa60922"},
+    {"step": "sdk-server-mcp-proxy-public-runtime","command": ["${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","-I","${WORK}\\probe_runtime.py","sdk-server-mcp-proxy","${WORK}\\sdk-server-mcp-proxy-expected.json"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "de9df7d07a50985091f126a5ea338569f8757918da55d5a63bfda8dadb08a603"},
+    {"step": "sdk-server-mcp-proxy-harness-dependencies","command": ["uv","pip","install","--python","${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","--offline","--no-index","--find-links","${WORK}\\test-harness-wheelhouse","--require-hashes","-r","${WORK}\\test-harness.txt"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "d04c9fd473bbc649f4919ff5825b2c1b99f561df57f1952a7d448b30273818a1"},
+    {"step": "sdk-server-mcp-proxy-harness-dependency-check","command": ["uv","pip","check","--python","${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","--offline"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "fef287800210ed3a92f4df4c40c1405a8205f18e1ff44ad8eb707e71172bf244"},
+    {"step": "sdk-server-mcp-proxy-packaged-adapters","command": ["${WORK}\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe","-I","${WORK}\\probe_adapters.py","${WORK}\\adapter-tests"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "603511761774d562fed194e7bb5e4b4e29266eb4c12c10f921e8ed99a5f07a0a"},
+    {"step": "negative-wrong-core-artifact","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\enterprise-environment\\Lib\\site-packages","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 1,"captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd"},
+    {"step": "negative-wrong-sdk-artifact","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\enterprise-environment\\Lib\\site-packages","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 1,"captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd"},
+    {"step": "negative-missing-core-artifact","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\enterprise-environment\\Lib\\site-packages","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\absent-core.whl"],"cwd": "${WORK}","exit": 1,"captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd"},
+    {"step": "negative-missing-sdk-artifact","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\enterprise-environment\\Lib\\site-packages","${WORK}\\absent-sdk.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 1,"captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd"},
+    {"step": "negative-missing-installed-core-no-ambient-fallback","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\negative-missing-installed-core","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 1,"captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd"},
+    {"step": "negative-colliding-namespace-owner","command": ["${WORK}\\enterprise-environment\\Scripts\\python.exe","-I","${WORK}\\check_sdk_installed.py","${WORK}\\negative-collision","${WORK}\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"],"cwd": "${WORK}","exit": 1,"captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd"},
+    {"step": "core-direct-enterprise-resource-check","command": ["C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe","-I","${ROOT}\\scripts\\check_enterprise_wheel.py","${WORK}\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl","--expect-version","0.1.0"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "69e9f3be1609209fb3b0ea7f46ce22d49c8c8259fddc2193742b256f4aff03e0"},
+    {"step": "core-rebuilt-enterprise-resource-check","command": ["C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe","-I","${ROOT}\\scripts\\check_enterprise_wheel.py","${WORK}\\core-rebuilt\\thai_pii_redaction_core-0.1.0-py3-none-any.whl","--expect-version","0.1.0"],"cwd": "${WORK}","exit": 0,"captured_output_sha256": "69e9f3be1609209fb3b0ea7f46ce22d49c8c8259fddc2193742b256f4aff03e0"},
+    {"step": "version-check","command": ["C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe","-I","${ROOT}\\scripts\\check_version.py"],"cwd": "${ROOT}","exit": 0,"captured_output_sha256": "ae59fa3cfcd5785cf4a58476ba586ec898c11e8cdf3b4804f9596802a7e544cc"},
+    {"step": "sdk-frozen-lock-check","command": ["uv","lock","--check","--offline"],"cwd": "${ROOT}\\packages\\amphrang","exit": 2,"captured_output_sha256": "52816e7830eae204a86ff4a98159696cc1d853625ab35bdad72248035c245d39"},
+    {"step": "sdk-frozen-lock-check-pinned-builder","command": ["uv","lock","--check","--offline","--python","${BUILDER}","--no-build-isolation"],"cwd": "${ROOT}\\packages\\amphrang","exit": 0,"captured_output_sha256": "61f58a2c86ed5039a3b338acfc57c405d4cbe65bfac67fdf186858fe73cba6cd"},
+    {"step": "diff-check","command": ["git","diff","--check"],"cwd": "${ROOT}","exit": 0,"captured_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+  ]
+}

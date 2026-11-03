@@ -99,7 +99,7 @@ def test_explicit_tner_failure_clears_throwaway_vault_and_retained_graph(monkeyp
     retained.provider_body = provider_body
     monkeypatch.setattr(stateless_module, "SessionVault", lambda: vault)
 
-    def fail_detection(_text):
+    def fail_detection(_text, *, config=None):
         raise retained
 
     monkeypatch.setattr(stateless_module, "detect_all", fail_detection)
@@ -386,7 +386,7 @@ def test_direct_sanitize_unexpected_error_graph_is_contained(monkeypatch):
     prior_mapping = {"[EMAIL_9]": SYNTHETIC_VAULT_ORIGINAL}
     vault = SessionVault()
 
-    def fail_detection(_text):
+    def fail_detection(_text, *, config=None):
         _raise_sensitive_failure(raw_text, prior_mapping, vault)
 
     monkeypatch.setattr(stateless_module, "detect_all", fail_detection)
@@ -436,7 +436,7 @@ def test_direct_sanitize_translates_timeout_to_a_fresh_fixed_error(monkeypatch):
     raw_text = "privacy-boundary.person@example.com"
     vault = SessionVault()
 
-    def fail_detection(_text):
+    def fail_detection(_text, *, config=None):
         raise VaultTimeoutError(raw_text) from RuntimeError(raw_text)
 
     monkeypatch.setattr(stateless_module, "detect_all", fail_detection)

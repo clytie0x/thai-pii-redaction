@@ -196,10 +196,12 @@ def test_full_birth_date_label_rejected_by_both_rules():
     assert is_glued_name_run("วันเดือนปีเกิด") is False
 
 
-def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkeypatch):
+def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkeypatch, tmp_path):
     """Same contract on the fine-tuned engine call site (`_detect_tb_finetuned`,
     'every neural engine' per its docstring)."""
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AIGUARD_FINETUNED_MODEL_DIR", str(tmp_path))
+    monkeypatch.setattr(tbd, "_finetuned_cache", {})
     prefix = "หัวข้อฟอร์ม\n"
     text = prefix + OCR_LABEL_FIRST_SPAN + "\nท้ายเอกสาร"
     start = len(prefix)
@@ -209,11 +211,8 @@ def test_detect_tb_finetuned_emits_two_name_entities_for_label_first_span(monkey
         def spans(self, _text):
             return [(start, end, "PERSON", 0.97)]
 
-    monkeypatch.setitem(tbd._finetuned_cache, "engine", _FakeEngine())
-    try:
-        entities = tbd.detect_tb(text)
-    finally:
-        tbd._finetuned_cache.pop("engine", None)
+    monkeypatch.setitem(tbd._finetuned_cache, (str(tmp_path.resolve()), None), _FakeEngine())
+    entities = tbd.detect_tb(text)
 
     names = {e.original_text for e in entities if e.data_type == "NAME"}
     assert names == {"กิตติ พรดี", "พิมพ์ใจ แสนดี"}

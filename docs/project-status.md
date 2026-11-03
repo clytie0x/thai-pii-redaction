@@ -1,6 +1,322 @@
 # Project status
 
-Updated: 2026-11-01
+Updated: 2026-11-03
+
+The owner approved stricter restore and streaming behavior before branch
+consolidation. The [restoration decision](decisions/2026-11-03-machine-context-restoration.md)
+keeps known pseudonyms masked in machine contexts unless the core owns both
+exact sanitized-text identity and the replacement occurrence. Mapping-only and
+streaming callers have no such source proof. One canonical bounded scanner
+serves bulk restoration and the SDK stream adapter; ordinary text and legacy
+mapping restoration remain supported. Public response fields are unchanged.
+
+The new core/web source run passes 3,813 tests with 80 explicit skips and one
+warning; SDK passes 2,205 with ten explicit optional/platform/live skips. Both
+runs keep all 280 bound files unchanged. Independent review found and verified
+fixes for multiline/reference parsing and MAC-versus-URI ambiguity; the final
+MAC delta is CLEAR in its reviewed scope. New paired artifacts pass three fresh
+installed profiles and 956 tests without skips, six checker negatives and 20
+identity negatives, with a CLEAR independent artifact review. Installed PDF
+follow-up passes seven proof groups in each of two profiles, and all ten PNGs
+were inspected. The [bound evidence](implementation/2026-11-03-machine-context-restoration.md#bound-local-evidence-2026-11-03)
+separates source, installed, Python-floor identity-only and host limitations.
+Current core bytes differ from receipt V3, whose results below remain historical.
+The older single five-iteration checkpoint remains exit 1 at detect 5.42 ms,
+sanitize 14.49 ms (+44%), restore 0.35 ms (+25%), PDF 68.70 ms and RSS 151.8 MiB.
+The new [exact-main controlled comparison](acceptance/enterprise/M03-controlled-performance.md)
+passes all five relative pairs: worst time increase 16.406%, worst RSS 0.224%.
+An independent review clears closing only the incremental main-to-candidate
+performance condition under the existing explained-trade rule. Both arms still
+fail the older absolute anchor, whose pre-existing security cost was already
+present in main. Baseline and budgets are unchanged; this is not an absolute
+performance pass or acceptance of M3 as a whole. Production gates remain open.
+
+Before this contract change, the stopped diagnostic WIP was implemented: fixed,
+closed smoke diagnostics preserve private errors, native marker compatibility
+and existing feature admission. Hosted parity verifies generated resources and
+license copies; protected enterprise fixtures prove an actual ACL transition.
+
+The pre-contract-change complete core/web run passed 3,429 tests with 80 explicit skips and
+one warning; all 267 bound files and the 255 artifact inputs are unchanged
+before/after. Root JavaScript passes 206 tests across 24 files. Native-package
+Python tests pass 127 with one platform skip; Hosted owning checks pass 104
+without skips; three enterprise owning suites pass 57 without skips on actual
+Windows/PostgreSQL 18. Separate adversarial reviews are CLEAR for all three
+units. These results overlap and are not added into one acceptance total.
+
+On `1a6add4`, root CI passed 15 of 16 jobs and macOS package smoke passed. Hosted
+image installation rejected generated resources; the installed verifier is
+corrected in `404f2a9`. The later exact `40cf18e` strict-restoration/keepalive
+candidate passes all 26 jobs across three workflows, including actual Hosted
+and SDK images, mandatory PostgreSQL, Rust and Windows/macOS packaged lifecycles.
+Windows repair smoke on `1a6add4` returned nonterminal `broker_busy` during
+sanitize. A separately reviewed source fix removes background keepalive from
+foreground admission while retaining the single-operation bound and no replay.
+Local Rust execution remains blocked by an incomplete offline dependency cache;
+actual cross-platform CI on `40cf18e` supplies the compile/lifecycle evidence.
+The source-level contention mechanism is established, but the competing owner
+in that historical CI failure was not observed. All earlier failures remain
+retained. No absolute-anchor waiver or production acceptance is claimed.
+
+The [consolidation record](implementation/2026-11-03-branch-consolidation.md)
+preserves 21 exact raw heads as verified non-release archive tags. Unqualified
+studies and superseded proposals are preserved rather than merged as runtime.
+Main promotion requires the reviewed integration tree's own complete CI. Local
+worktree directories, ignored negative evidence and untracked `1` are retained.
+
+Current local integration includes M7 rights/delivery, M8 organization and
+processing controls, and M10 runtime/backup/restore/initial-activation paths.
+The [combined progress record](acceptance/enterprise/M07-M10-integration-progress.md)
+separates implemented callers, independent review fixes, retained negatives and
+overlapping focused results. Governance V2 is committed locally as `2dec40d`;
+the current receipt-only follow-up has separate source/artifact evidence. Its complete root
+core+web V3 source gate passes 3,356 tests with 80 explicit optional/platform/live
+skips and one warning in 214.40 seconds on Python 3.13, with all 184 source
+hashes unchanged. SDK source passes 2,145 with
+10 skips, and root JavaScript passes 199 tests. The final mandatory enterprise
+V2 gate passed 686 tests across all 52 suites without skips, with the 193-file
+source and 255-input artifact freezes unchanged. It was not rerun for the
+receipt follow-up: only `receipt.py` and `receipt_pdf.py` change among artifact
+inputs; governance modules remain unchanged. Its earlier 651-pass/26-failure run
+and test-only fixture corrections remain retained. The headless-worker freshness fixes pass tests
+and independent review. The [receipt V3 paired artifacts](acceptance/enterprise/M01-receipt-artifacts.md)
+pass three fresh Python 3.13 profiles and 214 installed tests without skips,
+with CLEAR source and exact-artifact reviews. The
+[installed PDF follow-up](acceptance/enterprise/M02-receipt-installed-pdf.md)
+verifies installed receipt version 0.1.0, recomputation and Python API/source-CLI
+guidance in seven proof groups in each of two profiles; all ten rendered PNGs
+were inspected. Earlier V2 artifacts and their `unknown` receipt-version proof
+remain unchanged. Remaining artifact/host profiles, CI, controlled performance and
+actual-host/pilot acceptance remain open.
+
+Earlier protection checkpoint: the complete source profiles reached root 3,549 passed/
+34 optional/platform/live skips, SDK 2,141 passed/10 such skips, JavaScript 178,
+and Office Node 22 manifest/type checks, 129 tests and build. A subsequent real
+production-composition test exposed queued approval resurrection after consent
+withdrawal and genuine regrant. Atomic exact-scope invalidation now passes 27
+integration cases and all 322 mandatory enterprise tests without skips, with a
+clear independent review. It preserves immutable outcomes and non-consent work.
+
+The first newly built paired artifacts are retained as negative evidence: an
+installed mapping-reuse probe selected root TNER despite the SDK local snapshot.
+No live provider call occurred. The config path through anonymization candidate
+validation and the standalone pipeline is now fixed (root 200 and SDK 191 focused
+tests, no skips); the preceding broad-suite totals are not new runs of this delta.
+The earlier [frozen combined pair](acceptance/enterprise/M01-combined-artifacts.md)
+was built and qualified outside source on Windows/Python 3.13: six artifacts,
+three fresh profiles, 214 installed adapter tests without skips and six artifact
+negatives. This evidence is bound to `b4a8897`; packaged runtime/config/locks
+are unchanged through `b468592`. It does not qualify images or actual hosts.
+
+The current V3 local five-iteration run after quiescence measures detect 5.90 ms,
+sanitize 15.46 ms, restore 0.36 ms, PDF 75.53 ms and peak RSS 151.8 MiB. It exits
+1: sanitization +53% and restoration +29% exceed the unchanged 20% time budget;
+the 15% RSS budget and baseline are unchanged. The older V2 run remains retained.
+This is a held feature checkpoint, not a
+performance waiver, controlled-environment M3 acceptance, main integration or
+production release. The later M7-M10 integration is implemented locally and
+under combined qualification, not accepted.
+
+Completed CI on `2c132f6` passed 15/26 jobs. Nine failures concern the stopped
+diagnostic WIP/style; Hosted rejected generated wheel resources, and enterprise
+reported private-file/ACL fixture failures. These three failure groups have the
+local corrections and reviews above, pending the next exact-candidate CI run.
+Windows and macOS packaged smoke passed on `2c132f6`. Earlier `20a9a45` passed
+Imported 9/9 and root 16/16 but failed macOS smoke at `analyze` without inner
+diagnostics. A later passing run does not establish that older failure's cause.
+Historical public CI on `05d5d77` passed 24 of 26 jobs, including actual Windows/macOS
+package smoke, all SDK profiles and the isolated SDK image. Its remaining
+Windows Python-to-Node test timeout and Hosted nginx harness failures have local
+test corrections awaiting a new exact-candidate run. Root/Hosted production
+limits and assertions were retained. No all-green integrated CI is claimed.
+Earlier CI on `b468592` passes all seven SDK profile jobs and the actual SDK
+offline-image smoke. The downloaded image/API reports are bound in the
+[SDK CI record](acceptance/enterprise/M09-sdk-ci.md). At that older checkpoint,
+imported checks failed in the Hosted runner's shallow-path test before its image
+build. Root CI exposed a separate QI test collection error in the bare profile.
+The macOS cross-platform smoke also failed before package build: an immediate
+health assertion received a valid nonterminal `broker_busy`. The test now uses
+the existing bounded readiness helper and checks retry, deadline and
+terminal-error behavior. Local Rust
+execution is blocked by missing MSVC `link.exe`; formatting alone does not prove
+the fix. The 24 passing jobs on `05d5d77` supersede the older pending statements
+for their exact scopes. Its two remaining failures and subsequent integration
+deltas still require a new exact-candidate CI run; no all-green result is claimed.
+
+| Storefront | Current candidate evidence | Remaining gate |
+| --- | --- | --- |
+| Enterprise application | M4-M8 and M10 local callers; prior complete V2 52-suite run 686 passed/0 skipped; receipt V3 installed pair and PDF follow-up | Exact-source CI, new-candidate browser/IdP/restart, whole-environment recovery, performance and organization pilot |
+| Hosted application | Canonical wheel source/build path, 16 execute contracts and source-bound safety checks | Exact offline image, complete CI and platform acceptance |
+| Python SDK | Recorded source profile 2,145 passed/10 explicit skips; receipt V3 installed pair; historical SDK CI profiles and isolated image smoke on `05d5d77` | External hosts/live providers and remaining exact release/OS profiles; complete exact-source product CI |
+
+Current parallel wave: SDK and Hosted source consumers now use the canonical
+core, and M4 subject consent, M5 managed execution and M6 retention/holds have
+domain/API/Thai UI implementations. They are **implemented locally; qualification
+pending**, not accepted milestones. The
+[local-wave record](acceptance/enterprise/M04-M06-local-wave.md) separates focused
+candidate results, review fixes, retained failures and remaining gates. Its
+298-pass result and first failed SDK run are historical; the later complete
+source results and frozen artifact evidence above supersede their pending
+statements for those exact scopes. No complete green CI, new real-browser/IdP/
+restart acceptance or production readiness is claimed. M3's controlled-performance
+hold remains unchanged.
+
+SDK retains 29 internal canonical module aliases rather than maintained engine
+copies; its sensitive-span implementation is removed. Hosted copies are removed
+and its build prepares a supplied, source-bound first-party wheel/dependency/model
+context offline. Source checks and build preparation do not qualify those images.
+M7 rights/delivery and M8 organization records are in combined local integration,
+including review corrections; combined qualification is pending.
+The M10 [operations candidate](enterprise/operations.md) extends existing collection
+recovery with encrypted whole-DB backup/isolated quarantine, a signed HTTP witness
+adapter, production request/DB fences, additive key operations and operator assets.
+The later controlled replay/cutover now includes current M3-M8 authority,
+registry, consent, holds, outcomes, cases and processing controls. Initial
+activation remains separate from restore; both require their exact proofs.
+Whole-environment recovery acceptance, custody, load, RPO/RTO and Docker/TLS/IdP
+qualification remain open. All declared
+storefronts remain in scope, with their own exact-artifact and host gates.
+
+The owner has not provided the pilot organization/departments, target host,
+login, two testers or privacy-responsible person. These are owner inputs still
+not provided, not inferred product choices. Synthetic engineering continues;
+pilot, legal and actual-host gates remain open.
+
+The accepted single-organization self-hosted design remains in force. The
+[execution addendum](implementation/2026-11-02-astra-sol-execution-review.md)
+assigns the current checkpoint/artifact work and detailed Sol 6.1 sequence.
+Earlier candidate evidence is retained below; it does not supersede the current
+qualification limits or qualify the new source wave.
+Prerequisite source checks recorded before S0/S1 pass 3,297 root tests (34 skips), 156 mandatory
+enterprise tests (zero skips) and 2,038 SDK tests (10 skips). Proxy focused checks
+pass on locked AnyIO 4.14.2 and the declared 4.4.0 floor. These are local candidate
+results, not current-main, installed-artifact or production acceptance.
+Fresh S0/S1 root/SDK wheels and sdists are locally qualified on Windows/Python 3.13:
+offline archive rebuilds match direct-wheel bytes, fresh offline installs pass
+43 root configuration and 206 SDK proxy tests, and installed synthetic roundtrips
+and source origins pass. The [artifact manifest](acceptance/enterprise/M01-prerequisite-artifacts.json)
+binds these results to the unchanged candidate; its fresh S0/S1 adversarial review
+is CLEAR. The [prerequisite record](acceptance/enterprise/M01-prerequisites.md) retains
+consumer/host gaps and the restore performance budget miss. M1 is not complete;
+M3's controlled-environment performance hold and executing-green-CI gate remain.
+
+Repository privacy update: the owner approved screenshot-only history cleanup
+before making this repository public. A reviewed, backed-up rewrite now matches
+all 19 remote branches and one tag. Other file bytes are unchanged in every
+verified commit. The owner subsequently accepted the retained-image risk after
+explicit disclosure and instructed public visibility; GitHub now reports PUBLIC.
+Server-side purge remains unconfirmed. Public reruns now execute; the first
+actual attempt exposed Hosted provenance-fetch and core-only optional-import
+failures. Continue from the clean checkout, not the preserved old-history clone.
+See the [cleanup record](acceptance/enterprise/M00-public-visibility.md).
+
+Hosted provenance repair preserves all 75 manifest source hashes and every Hosted
+core byte. Its unavailable historical source commit has no certified rewrite
+mapping. A new explicitly reconstructed source checkpoint is recorded in
+`apps/hosted/sync/SOURCE_PROVENANCE.json`; it is not recovery of the original
+commit. Verification still fetches an exact public SHA and compares every hash.
+The corrected `--check --verify-upstream` passes anonymously with credential
+helpers disabled; 26 host-level Hosted contracts pass. Nginx/Compose checks are
+unavailable locally because Docker is absent, and remain actual CI requirements.
+The core-only test collection guard is locally verified with 2,770 passed/303
+optional skips; the same governance model tests pass 12/12 with Pydantic installed.
+CI on the corrected candidate remains a separate gate.
+
+Execution update (2026-11-02): the owner resumed M0-M12 and YRSS work and
+requires independent adversarial subagent review at every stage. The preserved
+implementation checkpoint was reconciled with main `2480757` in `9711d79`.
+That M0 baseline passed 2,922 Python tests with 34 skips. The subsequent M3
+candidate now passes 3,035 Python tests (34 optional/host/live skips), 156
+mandatory enterprise tests without skips and 178 JavaScript tests. Actual
+synthetic Chrome/Keycloak/PostgreSQL flows cover inventory/notices/review,
+independent membership approval, suspension/reactivation and session cleanup.
+Actual installed-wheel and graceful app/database restart checks also pass.
+M3 acceptance remains held for an unexplained performance outlier and CI;
+bounded diagnosis did not establish its cause. At that checkpoint GitHub jobs
+could not start because of the account billing restriction; public CI now
+executes, but the new combined candidate is not qualified. Local Windows Rust
+lacks its MSVC linker.
+See [M3 progress](acceptance/enterprise/M03-authority-progress.md),
+[M0 evidence](acceptance/enterprise/M00-baseline.md) and the
+[current release scope](enterprise/release-scope.md).
+
+M1 preparation now has a reviewed [compatibility inventory](enterprise/core-compatibility.md)
+and [owner-approved decision](decisions/2026-11-02-shared-core-compatibility.md).
+The owner selected SDK warn/report migration, a direct first-party root dependency
+with the broader footprint, and fixed proxy errors with qualified rollback.
+The runtime migration is implemented in the current local wave; M1 acceptance
+remains open. PyPI's existing `aiguard` is an
+unrelated project. The owner selected distribution name `thai-pii-redaction-core`,
+preserving existing imports and caller entry paths. The root metadata is renamed;
+local Windows/Python 3.13 artifact checks cover an offline sdist rebuild, clean
+installation and replacement of a verified old first-party core installation.
+See the [artifact manifest](acceptance/enterprise/M01-core-distribution-manifest.json)
+and [migration guide](enterprise/distribution-migration.md). The SDK now pins the
+first-party dependency; final paired-artifact and platform gates remain open.
+Public-index resolution
+is prohibited for local qualification; no package publication/release is authorized.
+
+The expanded CI candidate configures the existing Hosted checks, SDK Windows/
+Python floor and optional profiles, API collection, catastrophic performance
+guard and legacy Docker smoke. That CI-preparation checkpoint recorded 3,112 tests with
+34 skips; mandatory enterprise 156 with no skips. SDK server-only passes 1,963
+tests (11 skips); prior full/core profile counts remain 1,989/1,606. Actual owned
+loopback collection checks cover 8 requests, 9 assertions and 4 script tests,
+with fresh private audit storage. One prior CLI nonzero remains unexplained;
+three diagnostic plus twenty bounded reruns passed, which does not explain or
+erase that failure. Docker was unexecuted locally and Actions was billing-blocked
+at that checkpoint; current image/CI qualification remains separate. M3 remains
+held until controlled-environment performance measurement.
+
+At the earlier distribution-rename/code-map checkpoint, the qualified local root
+suite passes 3,118 tests with 34 skips. The earlier failed run is retained: it
+caught the missing `tools` map entry and lacked the existing enterprise test DB
+reference. The corrected run supplied that synthetic fixture; no integration
+tests were weakened or skipped to obtain the result.
+
+Current source versions are 0.1.0 under the accepted reset. Older 2.x/3.x
+package/certification rows below describe their named historical candidates,
+not a current 0.x release. `apps/hosted/STATE.md` records a 3.0.2 deployment;
+that record is not fresh live verification. Hosted resides in the imported
+subtree and now consumes the supplied canonical core wheel in source/build
+preparation; exact installed-image and platform gates remain open. The release matrix includes
+Windows/macOS only. These qualifications supersede conflicting older status
+wording below until each exact current path is requalified.
+
+Enterprise PDPA direction (2026-10-31): the owner requested work toward a full
+organization system. The [proposed control-plane architecture](decisions/2026-10-31-pdpa-enterprise-control-plane.md)
+has had an independent builder check; the owner confirmed a single self-hosted
+organization. Implementation is in the managed `feat/pdpa-enterprise` worktree
+originally at `.worktrees/pdpa-enterprise/`; that old-history checkout is now
+preserved privately and current work uses the clean checkout named above. The
+dedicated `app.enterprise` adapter now
+calls shared PostgreSQL authority/registry commands using verified staff sessions;
+it does not persist local reversible PII mappings. Synthetic real IdP/browser
+and restricted-runtime-role evidence is stronger than the earlier trusted-domain-
+principal checkpoint. Subject consent, protected managed execution and reviewed
+retention/holds now have local implementations and bounded evidence in the wave
+record. Combined qualification, rights fulfilment, wider governance, production
+TLS/storage/checkpoint/recovery and human pilot remain open. The local assessment prototype and legacy HTTP/native acceptance
+remain separate. Operational setup is in [the enterprise guide](enterprise/README.md).
+
+Historical owner-requested checkpoint: development was paused; see the
+[commit/evidence handoff](implementation/pdpa-enterprise-handoff.md). The latest
+domain-source full local Python gate is 2,884 passed / 34 skipped. Task-owned test
+services were stopped at that checkpoint. This is branch publication, not main/release promotion.
+
+PDPA design update (2026-10-31): local `ai_guard.py pdpa assess/coverage/lifecycle`
+adds category evidence and non-executing lifecycle plans. The
+[measured three-way comparison](../research/pdpa-coverage/RESULTS.md) explicitly
+reports partial coverage, unsupported modalities and remaining attribution
+gaps. It does not change HTTP/native/Hosted acceptance or establish complete
+legal compliance, consent/identity verification, deletion or rights fulfilment.
+
+YRSS research update (2026-10-31): see
+[the current campaign](../research/yrss2026/README.md) and
+[research plan](research/yrss-accuracy-plan.md) for the local baseline,
+structured input recovery and exact-version evidence. The source campaign is
+separate from the historical acceptance records below; it does not certify a
+new installer, Hosted deployment, live provider, or physical OCR pipeline.
 
 This is the acceptance ledger for the current roadmap. It distinguishes code
 existence from evidence on the real delivery path.
@@ -972,6 +1288,10 @@ applicable trade. The baseline was not moved.
 | Standards mapping (ISO/IEC 20889 + มรด. 6:2566) | Documented | [docs/standards-mapping.md](standards-mapping.md), delivered 2026-08-01: a correspondence document, explicitly not a conformance claim. Grounded in what was actually readable: a publicly served ISO/IEC 20889 preview covering the complete terms clause (3.1-3.39), Clauses 1 through the start of 7.2, and the full table of contents — clauses 8-12 and the annexes are cited by title only, and the document says so; and the full 103-page มรด. 6:2566 PDF from the DGA standards site, read end to end, which defines no de-identification technique and references neither ISO/IEC 20889 nor any de-identification standard (the only ISO citations are 27001 and 11179) — so the มรด. mapping is at governance-practice level (classification, security/privacy dimension, breach-as-risk, the Data Agents processing-record duty), each row naming what the tool supports rather than claiming the practice is thereby satisfied. Every technique family the tool does NOT implement is listed by clause title, and the re-identification risk score is explicitly disclaimed as a heuristic, not a Clause-10 formal model. An adversarial review checked every ISO term number, every มรด. page citation, the negative claims, and every code claim against the repository before this row was written. |
 
 ## Integrations and storefronts
+
+Enterprise staff application: local functional candidate with source, real
+PostgreSQL/Keycloak and synthetic Chrome evidence. This is not production or
+all-milestone acceptance; see the M3 progress and operator guide above.
 
 | Feature | Status | Evidence / remaining gate |
 |---|---|---|

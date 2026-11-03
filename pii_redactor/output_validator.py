@@ -6,9 +6,12 @@ Security design:
 - Layer 3: Verify UTF-8 encoding and no abrupt truncation → halt
 """
 
+import unicodedata
 from dataclasses import dataclass
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.aggregate import detect_all
+from pii_redactor.detectors.surface_norm import normalize_surface
 from pii_redactor.leak_guard import scan_obfuscated_structured_entities
 from pii_redactor.models import EntityRegistry, ReverseResult
 from pii_redactor.session_vault import SessionVault
@@ -29,15 +32,87 @@ class ValidationResult:
 class PIILeakError(Exception):
     """Layer 1: Unexpected PII found in final output. Pipeline must halt immediately."""
 
-    def __init__(self, *_discarded: object, count: int = 1):
+    def __init__(
+        self, *_discarded: object, count: int = 1, spans: object = (), spans_complete: bool = False
+    ):
         self.count = count if type(count) is int and count > 0 else 1
+        # Offsets allow an adapter to mask findings without retaining values.
+        self.spans = _clean_spans(spans)
+        self.spans_complete = (
+            spans_complete is True
+            and type(count) is int
+            and count > 0
+            and isinstance(spans, (tuple, list))
+            and bool(self.spans)
+            and len(self.spans) == len(spans)
+        )
         super().__init__("Unexpected PII detected in output")
+
+
+def _clean_spans(spans: object) -> tuple[tuple[int, int], ...]:
+    if not isinstance(spans, (tuple, list)):
+        return ()
+    return tuple(
+        (item[0], item[1])
+        for item in spans
+        if isinstance(item, tuple)
+        and len(item) == 2
+        and type(item[0]) is int
+        and type(item[1]) is int
+        and 0 <= item[0] < item[1]
+    )
+
+
+def _protected_surrogate_ranges(
+    text: str, vault: SessionVault, originals: set[str]
+) -> list[tuple[int, int]]:
+    """Retained masked values are safe only in the contexts that withheld them."""
+    from pii_redactor.restore_context import machine_context_spans
+    from pii_redactor.reverse_mapper import _boundary_ok
+
+    def identity(value: str) -> str:
+        folded = normalize_surface(unicodedata.normalize("NFKC", value))[0].casefold()
+        return "".join(char for char in folded if char.isalnum())
+
+    original_identities = {key for value in originals if (key := identity(value))}
+    contexts = machine_context_spans(text)
+    result = []
+    for pseudonym in vault._reverse:
+        pseudonym_identity = identity(pseudonym)
+        if (
+            not pseudonym
+            or any(value and value in pseudonym for value in originals)
+            or any(value in pseudonym_identity for value in original_identities)
+        ):
+            continue
+        cursor = 0
+        while (start := text.find(pseudonym, cursor)) >= 0:
+            end = start + len(pseudonym)
+            if _boundary_ok(text, start, end, pseudonym) and any(
+                left <= start and end <= right for left, right in contexts
+            ):
+                result.append((start, end))
+            cursor = start + 1
+    return result
 
 
 def _layer1_pii_scan(
     reverse_result: ReverseResult,
     vault: SessionVault,
-) -> tuple[bool, list[str]]:
+    *,
+    config: CoreConfig | None = None,
+) -> tuple[bool, list[str], tuple[tuple[int, int], ...]]:
+    """Keep the existing internal three-value scanner contract."""
+    clean, flags, spans, _complete = _layer1_pii_scan_detailed(reverse_result, vault, config=config)
+    return clean, flags, spans
+
+
+def _layer1_pii_scan_detailed(
+    reverse_result: ReverseResult,
+    vault: SessionVault,
+    *,
+    config: CoreConfig | None = None,
+) -> tuple[bool, list[str], tuple[tuple[int, int], ...], bool]:
     """
     Run the shared structured and text-based detector on restored text.
 
@@ -45,16 +120,15 @@ def _layer1_pii_scan(
     if the PII found is EXPECTED (was in the original document) by
     cross-referencing with vault records.
 
-    Approach: a detected span wholly inside an interval produced by the reverse
-    mapper is EXPECTED. A matching original elsewhere is not expected merely
-    because the same value exists in the vault.
+    A detected span covered by the union of authoritative restored intervals is
+    expected. A matching value elsewhere is not trusted by vault membership.
 
     Args:
         reverse_result: Re-identified text plus authoritative inserted ranges
         vault: SessionVault containing expected originals
 
     Returns:
-        (pii_clean, flags) where pii_clean=True if all detected PII is expected
+        Clean verdict, flags, offsets, and proof every finding had valid offsets.
     """
     flags = []
     text = reverse_result.text
@@ -79,7 +153,11 @@ def _layer1_pii_scan(
         ):
             expected_ranges.append(item)
 
-    detected = detect_all(text)
+    if any("pseudonym_residue" in flag for flag in reverse_result.flags):
+        # Keep intentional masked residue partial, without trusting originals by membership.
+        expected_ranges.extend(_protected_surrogate_ranges(text, vault, known_originals))
+
+    detected = detect_all(text, config=resolve_config(config))
     for candidate in scan_obfuscated_structured_entities(text):
         if any(
             existing.data_type == candidate.data_type
@@ -89,20 +167,44 @@ def _layer1_pii_scan(
         ):
             continue
         detected.append(candidate)
-    unexpected = [
-        entity
-        for entity in detected
-        if not any(
-            expected_start <= entity.span[0] and entity.span[1] <= expected_end
-            for expected_start, expected_end in expected_ranges
-        )
-    ]
+    unexpected_count = 0
+    spans: list[tuple[int, int]] = []
+    complete = True
+    for entity in detected:
+        valid = _clean_spans((entity.span,))
+        if not valid or valid[0][1] > len(text):
+            unexpected_count += 1
+            complete = False
+            continue
+        start, end = valid[0]
+        untrusted = _subtract_ranges(start, end, expected_ranges)
+        if untrusted:
+            unexpected_count += 1
+            spans.extend(untrusted)
+    if unexpected_count:
+        flags.append(f"unexpected_pii_count:{unexpected_count}")
+        return False, flags, tuple(spans), complete
 
-    if unexpected:
-        flags.append(f"unexpected_pii_count:{len(unexpected)}")
-        return False, flags
+    return True, flags, (), True
 
-    return True, flags
+
+def _subtract_ranges(start: int, end: int, ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Return the parts of a detected interval outside trusted ranges."""
+    remaining = [(start, end)]
+    for covered_start, covered_end in ranges:
+        next_remaining = []
+        for piece_start, piece_end in remaining:
+            if covered_end <= piece_start or covered_start >= piece_end:
+                next_remaining.append((piece_start, piece_end))
+                continue
+            if piece_start < covered_start:
+                next_remaining.append((piece_start, covered_start))
+            if covered_end < piece_end:
+                next_remaining.append((covered_end, piece_end))
+        remaining = next_remaining
+        if not remaining:
+            break
+    return remaining
 
 
 def _layer2_completeness(
@@ -190,6 +292,8 @@ def validate_output(
     reverse_result: ReverseResult,
     entity_registry: EntityRegistry,
     vault: SessionVault,
+    *,
+    config: CoreConfig | None = None,
 ) -> ValidationResult:
     """
     Run 3-layer output validation.
@@ -213,7 +317,9 @@ def validate_output(
     all_flags = []
 
     # Layer 1: PII scan
-    l1_ok, l1_flags = _layer1_pii_scan(reverse_result, vault)
+    l1_ok, l1_flags, l1_spans, l1_complete = _layer1_pii_scan_detailed(
+        reverse_result, vault, config=resolve_config(config)
+    )
     all_flags.extend(l1_flags)
 
     if not l1_ok:
@@ -226,7 +332,7 @@ def validate_output(
                     unexpected_count += int(flag[len(prefix) :])
                 except ValueError:
                     unexpected_count += 1
-        raise PIILeakError(count=unexpected_count)
+        raise PIILeakError(count=unexpected_count, spans=l1_spans, spans_complete=l1_complete)
 
     # Layer 2: Completeness
     l2_ok, l2_flags = _layer2_completeness(reverse_result, entity_registry, vault)

@@ -4,6 +4,24 @@
 
 <h1 align="center">AI Guard</h1>
 
+**Current source (2026-11-02):** product source is `0.1.0` under the accepted
+version reset. Earlier 2.x/3.x release and installed-runtime statements below
+refer to their archived candidates, not a new 0.x release. Hosted and SDK source
+now live in this monorepo but still have distinct engine copies and acceptance
+gates. Follow the [current release scope](docs/enterprise/release-scope.md) and
+[M0-M12 plan](docs/implementation/aiguard-production-milestones.md) for current
+engineering work, human prerequisites and per-surface release claims.
+
+The first-party Python distribution is now named `thai-pii-redaction-core`.
+Imports remain `pii_redactor` and `app`; this does not add a console command.
+PyPI's `aiguard` belongs to an unrelated project. This source candidate is not
+a published release: use verified first-party artifacts and follow the
+[distribution migration guide](docs/enterprise/distribution-migration.md).
+
+The current M1 candidate adds shared configuration/type prerequisites and corrects
+SDK proxy errors. SDK/Hosted core consumption, performance acceptance and CI remain
+open; see the [prerequisite evidence](docs/acceptance/enterprise/M01-prerequisites.md).
+
 <p align="center">
   Thai PII detection, anonymization, PDF redaction, and PDPA risk analysis<br />
   for local AI workflows and AI for Thai services.
@@ -28,6 +46,14 @@ mapping—the backend vault for session flows, or an explicit caller-supplied
 word boxes, and produce a PDPA-oriented risk report.
 
 ## What is included
+
+Working entry point: this repository root. Local lifecycle: `unconfirmed`.
+The local [PDPA category/lifecycle assessment](research/pdpa-coverage/README.md)
+adds `ai_guard.py pdpa assess`, `coverage` and `lifecycle` without modifying
+existing HTTP/native contracts. It produces evidence and non-executing review
+plans, not complete detection, consent proof or a compliance certificate.
+The YRSS accuracy campaign follows
+[the research plan](docs/research/yrss-accuracy-plan.md).
 
 | Capability | What it does |
 |---|---|

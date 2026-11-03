@@ -130,6 +130,8 @@ _TRACKED_FILES = [
     "native-broker/Cargo.lock",
     "desktop/package.json",
     "desktop/package-lock.json",
+    "packages/amphrang/VERSION",
+    "packages/amphrang/pyproject.toml",
 ]
 
 
@@ -202,6 +204,24 @@ def test_check_version_passes_when_all_files_match(tmp_path):
     repo = _copy_repo_slice(tmp_path)
     result = _run_check(repo)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("target", ["VERSION", "pyproject.toml"])
+def test_check_version_detects_sdk_version_and_exact_core_pin_drift(tmp_path, target):
+    repo = _copy_repo_slice(tmp_path)
+    path = repo / "packages/amphrang" / target
+    text = path.read_text(encoding="utf-8")
+    if target == "VERSION":
+        text = "9.9.9\n"
+    else:
+        text = text.replace(
+            f"thai-pii-redaction-core=={_version_file_contents()}",
+            "thai-pii-redaction-core==9.9.9",
+        )
+    path.write_text(text, encoding="utf-8")
+    result = _run_check(repo)
+    assert result.returncode == 1
+    assert "packages" in result.stdout and "amphrang" in result.stdout
 
 
 def test_check_version_detects_drift_via_cargo_toml_regex(tmp_path):
@@ -311,6 +331,10 @@ def test_bump_version_writes_every_tracked_file(tmp_path):
     assert bump.returncode == 0, bump.stdout + bump.stderr
 
     assert (repo / "VERSION").read_text(encoding="utf-8").strip() == "9.9.9"
+    assert (repo / "packages/amphrang/VERSION").read_text().strip() == "9.9.9"
+    assert (
+        "thai-pii-redaction-core==9.9.9" in (repo / "packages/amphrang/pyproject.toml").read_text()
+    )
 
     manifest = json.loads((repo / "extension" / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["version"] == "9.9.9"

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../src/errors.js";
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +19,7 @@ vi.mock("../src/api.js", () => mocks);
 const invoke = vi.fn();
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   window.__TAURI__ = { core: { invoke } };
   window.__AIGUARD_APP_READY__ = Promise.resolve(true);
   invoke.mockResolvedValue(undefined);
@@ -45,6 +45,12 @@ beforeEach(() => {
   mocks.auditLog.mockResolvedValue({ status: "ok" });
   mocks.disposeSession.mockResolvedValue({ disposed: true });
   mocks.resetScope.mockResolvedValue({ closed: true });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete window.__TAURI__;
+  delete window.__AIGUARD_APP_READY__;
 });
 
 describe("installed Desktop webview package smoke", () => {
@@ -99,6 +105,12 @@ describe("installed Desktop webview package smoke", () => {
       expect(invoke).toHaveBeenCalledOnce();
       expect(invoke).toHaveBeenCalledWith("desktop_package_smoke_fail", {
         stage: "app_ready",
+        diagnostic: {
+          reason: "assertion_failed",
+          apiCode: "not_applicable",
+          sessionInvalidated: false,
+          restartRequired: false,
+        },
       });
       readyState.mockRestore();
     }
@@ -115,6 +127,12 @@ describe("installed Desktop webview package smoke", () => {
     expect(invoke).toHaveBeenCalledOnce();
     expect(invoke).toHaveBeenCalledWith("desktop_package_smoke_fail", {
       stage: "health",
+      diagnostic: {
+        reason: "unexpected_error",
+        apiCode: "not_applicable",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
     });
     expect(JSON.stringify(invoke.mock.calls)).not.toContain("private broker detail");
   });
@@ -223,6 +241,12 @@ describe("installed Desktop webview package smoke", () => {
     expect(invoke).not.toHaveBeenCalledWith("desktop_package_smoke_upgrade_invalidated");
     expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
       stage: "reidentify",
+      diagnostic: {
+        reason: "assertion_failed",
+        apiCode: "not_applicable",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
     });
   });
 
@@ -249,6 +273,12 @@ describe("installed Desktop webview package smoke", () => {
     expect(invoke).not.toHaveBeenCalledWith("desktop_package_smoke_upgrade_invalidated");
     expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
       stage: "reidentify",
+      diagnostic: {
+        reason: "assertion_failed",
+        apiCode: "not_applicable",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
     });
   });
 
@@ -262,9 +292,134 @@ describe("installed Desktop webview package smoke", () => {
     expect(mocks.reidentify).not.toHaveBeenCalled();
     expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
       stage: "sanitize",
+      diagnostic: {
+        reason: "unexpected_error",
+        apiCode: "not_applicable",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
     });
     expect(JSON.stringify(invoke.mock.calls.at(-1))).not.toContain(
       "private provider body"
     );
+  });
+
+  it.each(["broker_busy", "ner_unavailable", "operation_failed"])(
+    "distinguishes an analyze API rejection with fixed code %s",
+    async (code) => {
+      const failure = new ApiError(code, {
+        sessionInvalidated: true,
+        restartRequired: true,
+      });
+      failure.message = "private provider body";
+      failure.body = { text: "private request text" };
+      mocks.analyze.mockRejectedValueOnce(failure);
+      const { runPackageSmoke } = await import("../src/package-smoke.js");
+
+      await runPackageSmoke();
+
+      expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
+        stage: "analyze",
+        diagnostic: {
+          reason: "api_rejected",
+          apiCode: code,
+          sessionInvalidated: true,
+          restartRequired: true,
+        },
+      });
+      const encoded = JSON.stringify(invoke.mock.calls.at(-1));
+      expect(encoded).not.toContain("private");
+      expect(mocks.copyMasked).not.toHaveBeenCalled();
+    }
+  );
+
+  it("distinguishes analyze zero-count validation without serializing the result", async () => {
+    mocks.analyze.mockResolvedValueOnce({
+      direct_pii_count: 0,
+      text: "private response text",
+    });
+    const { runPackageSmoke } = await import("../src/package-smoke.js");
+
+    await runPackageSmoke();
+
+    expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
+      stage: "analyze",
+      diagnostic: {
+        reason: "assertion_failed",
+        apiCode: "not_applicable",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
+    });
+    expect(JSON.stringify(invoke.mock.calls.at(-1))).not.toContain("private");
+    expect(mocks.copyMasked).not.toHaveBeenCalled();
+  });
+
+  it("withholds mutable unknown ApiError codes and nonboolean flags", async () => {
+    const failure = new ApiError("operation_failed");
+    failure.code = "private unknown code";
+    failure.sessionInvalidated = "private flag";
+    failure.restartRequired = { body: "private provider body" };
+    mocks.analyze.mockRejectedValueOnce(failure);
+    const { runPackageSmoke } = await import("../src/package-smoke.js");
+
+    await runPackageSmoke();
+
+    expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
+      stage: "analyze",
+      diagnostic: {
+        reason: "api_rejected",
+        apiCode: "unknown",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
+    });
+    expect(JSON.stringify(invoke.mock.calls.at(-1))).not.toContain("private");
+  });
+
+  it("does not treat arbitrary errors with codes as an API rejection", async () => {
+    mocks.analyze.mockRejectedValueOnce({
+      code: "broker_busy",
+      message: "private error message",
+      body: "private provider body",
+      toJSON: () => { throw new Error("private serialization"); },
+    });
+    const { runPackageSmoke } = await import("../src/package-smoke.js");
+
+    await runPackageSmoke();
+
+    expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
+      stage: "analyze",
+      diagnostic: {
+        reason: "unexpected_error",
+        apiCode: "not_applicable",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
+    });
+    expect(JSON.stringify(invoke.mock.calls.at(-1))).not.toContain("private");
+  });
+
+  it("does not call error getters while projecting a rejection", async () => {
+    const failure = new ApiError("operation_failed");
+    const readPrivateValue = vi.fn(() => { throw new Error("private getter"); });
+    for (const name of ["code", "sessionInvalidated", "restartRequired"]) {
+      Object.defineProperty(failure, name, { get: readPrivateValue });
+    }
+    mocks.analyze.mockRejectedValueOnce(failure);
+    const { runPackageSmoke } = await import("../src/package-smoke.js");
+
+    await runPackageSmoke();
+
+    expect(invoke).toHaveBeenLastCalledWith("desktop_package_smoke_fail", {
+      stage: "analyze",
+      diagnostic: {
+        reason: "api_rejected",
+        apiCode: "unknown",
+        sessionInvalidated: false,
+        restartRequired: false,
+      },
+    });
+    expect(readPrivateValue).not.toHaveBeenCalled();
   });
 });

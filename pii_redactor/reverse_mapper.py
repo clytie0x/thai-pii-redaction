@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from pii_redactor.anonymizer.token_generator import token_namespace_from_candidate
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.models import AIResponse, EntityRegistry, ReverseResult
+from pii_redactor.restore_context import machine_context_spans
 from pii_redactor.session_vault import SessionVault
 
 
@@ -119,6 +120,7 @@ def _pre_reverse_validate(ai_response: AIResponse, vault: SessionVault) -> None:
 def _do_reverse(
     text: str,
     vault: SessionVault,
+    source_rebuild_ranges: frozenset[tuple[int, int]],
 ) -> tuple[str, list[str], tuple[tuple[int, int], ...]]:
     """Replace pseudonyms with originals.
 
@@ -153,11 +155,13 @@ def _do_reverse(
             pseudo_to_original[pseudonym] = record.original
 
     claimed: list[tuple[int, int, str]] = []
+    restorable: list[tuple[int, int, str]] = []
 
     def _taken(start: int, end: int) -> bool:
         return any(start < ce and end > cs for cs, ce, _ in claimed)
 
     replaced: list[str] = []
+    machine_spans: list[tuple[int, int]] | None = None
     for pseudonym in sorted(pseudo_to_original, key=len, reverse=True):
         if not pseudonym:
             continue
@@ -167,7 +171,17 @@ def _do_reverse(
             j = i + len(pseudonym)
             if not _taken(i, j) and _boundary_ok(text, i, j, pseudonym):
                 claimed.append((i, j, pseudonym))
-                found = True
+                if (i, j) not in source_rebuild_ranges and machine_spans is None:
+                    machine_spans = machine_context_spans(
+                        text, _known_pseudonyms=pseudo_to_original
+                    )
+                if (i, j) in source_rebuild_ranges or not any(
+                    i < end and j > start for start, end in machine_spans or ()
+                ):
+                    restorable.append((i, j, pseudonym))
+                    found = True
+                # Withheld slices also claim their range, so a shorter
+                # mapping cannot restore inside a protected longer one.
             pos = i + 1
         if found:
             replaced.append(pseudonym)
@@ -176,7 +190,7 @@ def _do_reverse(
     restored_ranges: list[tuple[int, int]] = []
     source_cursor = 0
     restored_cursor = 0
-    for cs, ce, pseudonym in sorted(claimed, key=lambda item: item[0]):
+    for cs, ce, pseudonym in sorted(restorable, key=lambda item: item[0]):
         prefix = text[source_cursor:cs]
         parts.append(prefix)
         restored_cursor += len(prefix)
@@ -259,6 +273,7 @@ def reverse_map(
     vault: SessionVault,
     *,
     mode: str | None = None,
+    _source_rebuild_ranges: frozenset[tuple[int, int]] = frozenset(),
 ) -> ReverseResult:
     """Restore original PII values in AI response text.
 
@@ -288,7 +303,19 @@ def reverse_map(
     )
 
     # Core reverse
-    restored_text, replaced, restored_ranges = _do_reverse(ai_response.text, vault)
+    # Only internal source owners supply these exact replacement occurrences.
+    # Invalid shapes and bool/int equality must never grant an exemption.
+    source_rebuild_ranges = frozenset(
+        span
+        for span in _source_rebuild_ranges
+        if isinstance(span, tuple)
+        and len(span) == 2
+        and all(type(offset) is int for offset in span)
+        and 0 <= span[0] < span[1] <= len(ai_response.text)
+    )
+    restored_text, replaced, restored_ranges = _do_reverse(
+        ai_response.text, vault, source_rebuild_ranges
+    )
 
     # Post-validate
     flags, audit_summary = _post_reverse_validate(restored_text, replaced, entity_registry, vault)

@@ -24,6 +24,10 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+from pii_redactor.config import CoreConfig
+
+from amphrang._core_config import sdk_core_config
+
 from .corpus import build_corpus
 
 # Target document sizes in characters. XL stays well under the server's
@@ -100,10 +104,14 @@ def anonymize_outcome(text: str) -> bool:
     blocked. A fail-closed block still executed the full pipeline (detect,
     mask, outbound scans), so its duration is a legitimate sample — the flag
     is reported instead of aborting the run."""
+    return _anonymize_outcome_with_config(text, config=sdk_core_config())
+
+
+def _anonymize_outcome_with_config(text: str, *, config: CoreConfig) -> bool:
     import amphrang
 
     try:
-        amphrang.anonymize(text, mode="token")
+        amphrang._anonymize_with_config(text, mode="token", config=config)
         return False
     except amphrang.LeakBlockedError:
         return True
@@ -135,6 +143,16 @@ _COLD_START_CODE = (
 
 def measure_cold_start(samples: int = 3) -> list[float]:
     """Fresh-process import + first detect (model load), once per sample."""
+    return _measure_cold_start_with_config(samples, config=sdk_core_config())
+
+
+def _measure_cold_start_with_config(samples: int, *, config: CoreConfig) -> list[float]:
+    environment = dict(os.environ)
+    environment["AMPHRANG_NER_ENGINE"] = config.engine
+    if config.finetuned_model_dir is None:
+        environment.pop("AMPHRANG_FINETUNED_MODEL_DIR", None)
+    else:
+        environment["AMPHRANG_FINETUNED_MODEL_DIR"] = config.finetuned_model_dir
     durations: list[float] = []
     for _ in range(samples):
         proc = subprocess.run(
@@ -142,21 +160,23 @@ def measure_cold_start(samples: int = 3) -> list[float]:
             capture_output=True,
             text=True,
             check=True,
+            env=environment,
         )
         durations.append(float(proc.stdout.strip()))
     return durations
 
 
-def _worker_warmup() -> None:
+def _worker_warmup(config: CoreConfig) -> None:
     import amphrang
 
-    amphrang.detect(_HEADER)
+    amphrang._detect_with_config(_HEADER, config=config)
 
 
-def _worker_detect(text: str) -> int:
+def _worker_detect(job: tuple[str, CoreConfig]) -> int:
     import amphrang
 
-    return len(amphrang.detect(text))
+    text, config = job
+    return len(amphrang._detect_with_config(text, config=config))
 
 
 def measure_multi_worker(docs: list[str], workers: int) -> dict[str, float]:
@@ -165,12 +185,20 @@ def measure_multi_worker(docs: list[str], workers: int) -> dict[str, float]:
     The initializer warms every worker exactly once as it starts, and the
     pre-map forces all workers to start before the clock does.
     """
+    return _measure_multi_worker_with_config(docs, workers, config=sdk_core_config())
+
+
+def _measure_multi_worker_with_config(
+    docs: list[str], workers: int, *, config: CoreConfig
+) -> dict[str, float]:
     from concurrent.futures import ProcessPoolExecutor
 
-    with ProcessPoolExecutor(max_workers=workers, initializer=_worker_warmup) as pool:
+    with ProcessPoolExecutor(
+        max_workers=workers, initializer=_worker_warmup, initargs=(config,)
+    ) as pool:
         list(pool.map(_noop, range(workers)))  # force all workers to spawn now
         start = time.perf_counter()
-        list(pool.map(_worker_detect, docs))
+        list(pool.map(_worker_detect, [(text, config) for text in docs]))
         elapsed = time.perf_counter() - start
     return {
         "workers": workers,
@@ -218,6 +246,10 @@ def measure_peak_memory(fn: Callable[[], object]) -> dict[str, float] | None:
 
 
 def environment_info() -> dict[str, object]:
+    return _environment_info(sdk_core_config())
+
+
+def _environment_info(config: CoreConfig) -> dict[str, object]:
     import amphrang
 
     return {
@@ -226,7 +258,7 @@ def environment_info() -> dict[str, object]:
         "platform": platform.platform(),
         "cpu_count": os.cpu_count(),
         "amphrang": amphrang.__version__,
-        "ner_engine": os.environ.get("AMPHRANG_NER_ENGINE", "thainer"),
+        "ner_engine": config.engine,
     }
 
 
@@ -245,9 +277,12 @@ def run(
     """
     import amphrang
 
+    config = sdk_core_config()
     measure = measure or measure_callable
     if cold_start_fn is None:
-        cold_start_fn = lambda: measure_cold_start(3 if profile == "full" else 1)  # noqa: E731
+        cold_start_fn = lambda: _measure_cold_start_with_config(  # noqa: E731
+            3 if profile == "full" else 1, config=config
+        )
 
     docs = build_perf_documents(seed=seed)
     classes = _PROFILE_CLASSES[profile]
@@ -258,8 +293,10 @@ def run(
         text = docs[name]
         blocked: list[bool] = []
         ops = {
-            "detect": lambda t=text: amphrang.detect(t),
-            "anonymize": lambda t=text, b=blocked: b.append(anonymize_outcome(t)),
+            "detect": lambda t=text: amphrang._detect_with_config(t, config=config),
+            "anonymize": lambda t=text, b=blocked: b.append(
+                _anonymize_outcome_with_config(t, config=config)
+            ),
         }
         latency[name] = {
             op: summarize(measure(fn, iterations=iterations[name], warmup=1))
@@ -271,7 +308,10 @@ def run(
     # shape of interactive LLM traffic, not a synthetic best case.
     batch = [docs["S"]] * 20 + [docs["M"]] * 5
     batch_durations = [
-        measure(lambda t=t: amphrang.detect(t), iterations=1, warmup=0)[0] for t in batch
+        measure(lambda t=t: amphrang._detect_with_config(t, config=config), iterations=1, warmup=0)[
+            0
+        ]
+        for t in batch
     ]
     total = sum(batch_durations)
     throughput: dict[str, object] = {
@@ -282,17 +322,21 @@ def run(
         }
     }
     if workers > 0:
-        throughput["multi_worker"] = measure_multi_worker(batch, workers)
+        throughput["multi_worker"] = _measure_multi_worker_with_config(
+            batch, workers, config=config
+        )
 
     report: dict[str, object] = {
         "profile": profile,
-        "environment": environment_info(),
+        "environment": _environment_info(config),
         "cold_start": summarize(cold_start_fn()),
         "latency": latency,
         "throughput": throughput,
     }
     if memory:
-        rss = measure_peak_memory(lambda: amphrang.detect(docs[classes[-1]]))
+        rss = measure_peak_memory(
+            lambda: amphrang._detect_with_config(docs[classes[-1]], config=config)
+        )
         if rss is not None:
             report["memory"] = rss
     return report

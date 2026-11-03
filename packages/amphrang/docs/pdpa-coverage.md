@@ -1,9 +1,11 @@
 # PDPA Coverage Profile
 
-Profile version `pdpa-profile-v1`. Measured on gold `gold-v7` (dated
-2026-08-27, 332 documents, 1031 entities); numbers below are a live
-`python -m benchmark --source gold` run against that set, not a copy of an
-older report. This is the public conformance artifact for amphrang against
+Profile version `pdpa-profile-v1`. These tables preserve the historical SDK
+measurement on gold `gold-v7` (2026-08-27, 332 documents, 1031 entities) and its
+earlier automatic-sensitive-masking policy. No labels or figures were changed
+for the canonical migration. They do not qualify the current warn/report
+candidate; see [the migration guide](migrations/shared-core.md). This historical
+profile records coverage against
 พ.ร.บ.คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA); it is written from the canonical
 registry at `docs/decisions/2026-08-26-pdpa-data-ontology.md` (levels A-E,
 including the frozen verdicts section), which is the source of truth for **which
@@ -18,12 +20,14 @@ into this profile.
 
 `scripts/check_release.py`'s `check_profile()` gate enforces that every
 `data_type` this document backtick-references in a table row matches
-`TOKEN_LABEL` in `amphrang/engine/anonymizer/token_generator.py` exactly, in
-both directions. That is completeness of the type NAMES and nothing more: a
+canonical `pii_redactor/anonymizer/token_generator.py` identifier names plus
+`pii_redactor/pdpa_categories.py` reporting categories, in both directions.
+Sensitive categories are reporting signals, not masking types. The gate checks
+the completeness of the type NAMES and nothing more: a
 category the code can emit but this document omits fails CI, and so does a
-category documented here that the code no longer emits. The recall and
-precision figures are **not** gated — they are refreshed by hand from a
-benchmark run, so a number can go stale with CI green.
+category documented here that the canonical tables no longer include. The
+archived recall and precision figures are **not** current-core measurements
+and are not recomputed by this migration or the name-coverage gate.
 
 ## Level A — mask always (span entities)
 

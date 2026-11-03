@@ -1,5 +1,106 @@
 # Roadmap
 
+## Current execution sequence
+
+The owner selected [strict restoration and streaming](docs/decisions/2026-11-03-machine-context-restoration.md)
+before consolidation. The canonical machine-context guard, core-owned occurrence
+proof and thin SDK streaming adapter now have local source, paired-artifact and
+installed-PDF evidence. Exact `40cf18e` CI passes all 26 jobs. The
+[controlled exact-main comparison](docs/acceptance/enterprise/M03-controlled-performance.md)
+resolves the incremental performance condition, with every pair within the
+existing relative budgets. Main promotion still requires independent integration
+review and CI on the exact squash tree. The new core/web source gate
+passes 3,813 tests with 80 explicit skips; SDK passes 2,205 with ten skips. Both
+keep 280 input hashes stable. The new pair passes 956 installed tests without
+skips in three fresh profiles; PDF passes seven groups in each of two profiles,
+with ten PNGs inspected. Earlier receipt V3 artifacts do not qualify these bytes.
+
+The earlier CI closure units retain their local results and reviews. Hosted
+installed-resource verification is corrected in `404f2a9`, whose three CI workflows
+pass. The later keepalive fix also passes actual Rust and installed Desktop CI
+on `40cf18e`; it adds no data replay. The
+[preservation map](docs/implementation/2026-11-03-branch-consolidation.md) retains
+21 exact raw heads before removal. The old absolute-anchor failures remain,
+including the 14.49/0.35 ms checkpoint; neither baseline nor budgets moved.
+The new incremental condition is satisfied, while M3 whole-application and
+human/legal/host/pilot/public-purge gates remain separate and open. One main
+branch does not imply production or pilot acceptance.
+
+The owner authorized the [M0-M12 program](docs/implementation/aiguard-production-milestones.md)
+and YRSS completion on 2026-11-02, with independent adversarial subagent checks
+at every stage. M0 preserved and reconciled the checkpoint. The Stage 1 staff
+application now has real synthetic IdP/browser/database, installed-wheel and
+restart evidence; [M3 acceptance](docs/acceptance/enterprise/M03-authority-progress.md)
+is held until controlled-environment performance measurement and executing CI.
+The owner approved SDK warn/report, direct first-party core consumption and
+fixed proxy errors. The parallel S2-S6 wave implements that migration in source,
+including 29 SDK canonical module aliases and removal of Hosted engine copies.
+The parallel M4-M6 wave implements subject consent, encrypted managed execution
+and reviewed retention/holds through domain/API/Thai UI paths. These are
+**implemented locally; qualification pending**. Earlier complete source results
+include root 3,549 passed/34 explicit skips, SDK 2,141 passed/10 explicit skips
+and the consent-fix enterprise gate 322 passed without skips. Those results
+remain bound to their older candidates, alongside failed enterprise/SDK runs.
+See the [local-wave record](docs/acceptance/enterprise/M04-M06-local-wave.md).
+
+The earlier [frozen combined artifacts](docs/acceptance/enterprise/M01-combined-artifacts.md)
+passed three Windows/Python 3.13 fresh-install profiles and 214 installed tests
+without skips, bound to `b4a8897` with packaged inputs unchanged through
+`b468592`. SDK CI on `b468592` passes seven profiles and the isolated image
+smoke; [its evidence](docs/acceptance/enterprise/M09-sdk-ci.md) is bounded.
+The [M7-M10 integration](docs/acceptance/enterprise/M07-M10-integration-progress.md)
+now has local rights/organization/processing/operations callers and scoped
+independent reviews. Governance V2 is committed locally as `2dec40d`; the
+receipt-only follow-up has separate evidence. Its complete root core+web V3 gate
+passes 3,356 tests/80 explicit skips with 184 stable source hashes; recorded SDK
+source is 2,145/10 skips and root JavaScript is 199 tests. The first complete
+52-suite enterprise run records 651 passed/26 fixture-scope failures/0 skipped;
+test-only fixture alignment passes both owning files (45 passed/0 skipped)
+without weakening runtime guards. The headless-worker freshness fixes pass
+scoped tests and review; the V2 complete enterprise gate passed 686 tests
+across all 52 suites without skips, with its 193/255 input hashes unchanged.
+That gate was not rerun for the two-core-file receipt delta; governance modules
+remain unchanged. The [receipt V3 paired artifacts](docs/acceptance/enterprise/M01-receipt-artifacts.md)
+pass three fresh Python 3.13 profiles and 214 installed tests without skips,
+with CLEAR independent review. The
+[installed PDF follow-up](docs/acceptance/enterprise/M02-receipt-installed-pdf.md)
+proves receipt version/recompute and installed API/source-CLI guidance in seven
+groups in each of two profiles, with all ten rendered PNGs inspected.
+Completed CI on `2c132f6` passed 15/26 jobs; its diagnostic WIP, Hosted resource
+parity and enterprise file-protection failures now have local corrections and
+independent reviews. The next exact-candidate CI remains required. Earlier
+`20a9a45` passed Imported 9/9 and root 16/16 but failed macOS at `analyze`
+without retained inner diagnostics; its cause is not inferred from later passes.
+Historical `05d5d77` CI remains 24/26, with both harness failures retained and
+local corrections recorded; earlier `b468592` failures are retained too. Qualify affected
+source deltas and Office gates, remaining artifact profiles and all exact-candidate
+CI/Hosted image checks. Rebind real browser,
+IdP, restricted-role and restart evidence to the new candidate; older M3 runs do
+not qualify it. The current local five-iteration V3 run exits 1 at sanitize
+15.46 ms (+53%) and restore 0.36 ms (+29%); detect is 5.90 ms, PDF 75.53 ms and
+RSS 151.8 MiB. Baseline and 20% time/15% RSS budgets are unchanged, and the
+controlled-performance M3 hold remains. Continue qualifying the integrated
+M7 rights/secure delivery, M8 organization records and M10
+whole-database recovery/checkpoint/rotation/operator paths. M9 keeps every
+declared storefront and its host/OS gates; M11/M12 keep their human/owner gates.
+The owner has not provided the organization/departments, target host, login,
+two testers or privacy-responsible person. Synthetic engineering continues;
+pilot/legal/actual-host gates remain open without inferring those choices.
+The owner selected distribution name
+`thai-pii-redaction-core`, preserving imports and caller entry paths; qualify its
+installation/migration before any separately authorized publication. Do not
+promote the held candidate.
+The owner also approved screenshot-only history cleanup and public visibility.
+The remote rewrite is complete. After disclosure the owner accepted the retained
+image risk and instructed public visibility; public CI now executes. [GitHub
+PR/cache purge](docs/acceptance/enterprise/M00-public-visibility.md) remains
+unconfirmed. Do not push preserved old-history clones or backups back into the
+cleaned repository.
+See [release scope](docs/enterprise/release-scope.md) and
+[M0 evidence](docs/acceptance/enterprise/M00-baseline.md). Older release and
+sibling/platform descriptions below remain candidate-specific historical
+context; current source is 0.1.0 and the release matrix is Windows/macOS.
+
 AI Guard is an open-source (Apache-2.0) Thai PII detection, anonymization, and
 redaction toolkit. It has one product core and two delivery contexts:
 

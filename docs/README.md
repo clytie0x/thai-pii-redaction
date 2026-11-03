@@ -40,10 +40,17 @@ status page and does not silently override a newer current-state document.
   synthetic comparison and the command that reproduces it.
 - [Blind-v2 gap list](benchmark/gap-list.md) - what is still missing for a
   best-in-Thailand claim.
-- [Versioning advisory](versioning-proposal.md) - preserves the published
-  `v2.5.0` product line while any separate AI for Thai service version remains
-  provisional.
+- [Accepted version reset](decisions/2026-10-19-version-reset.md) - current
+  0.1.0 source policy; the older [versioning advisory](versioning-proposal.md)
+  remains historical and does not override that owner decision.
 - [Roadmap](../ROADMAP.md) - ordered delivery gates.
+- [Production milestone plan](implementation/aiguard-production-milestones.md) -
+  M0-M12 scope, tasks and evidence gates; execution is now owner-authorized.
+- [Current release scope](enterprise/release-scope.md) - capability boundaries,
+  independent-review requirement and owner-only inputs.
+- [Enterprise operator guide](enterprise/README.md) - separate database roles,
+  private OIDC configuration, offline enrollment, staff workflows and mandatory
+  real-PostgreSQL/package/real-path gates.
 - [Install from source](install-from-source.md) - local developer/runtime setup.
 
 ## Product and distribution

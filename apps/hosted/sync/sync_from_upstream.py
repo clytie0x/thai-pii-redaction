@@ -1,17 +1,8 @@
 #!/usr/bin/env python3
-"""Vendor the runtime slice of thai-pii-redaction into this port repo.
+"""Check Hosted ownership and inactive historical source provenance.
 
-    python sync/sync_from_upstream.py --from <upstream checkout> [--check]
-
-Copies exactly the entries in SLICE from a CLEAN upstream working tree into
-core/, then writes sync/PORT_MANIFEST.json recording the upstream commit and
-a SHA-256 per vendored file. `--check` verifies the current core/ against the
-manifest (used by CI) without copying anything.
-
-Fail-loud rules:
-- refuses to sync from a dirty or unborn upstream tree
-- refuses if any SLICE entry is missing upstream
-- --check fails on any hash mismatch, missing or extra file
+The runtime consumes a supplied canonical first-party wheel. This command
+cannot recreate an independently maintained engine under core/.
 """
 
 from __future__ import annotations
@@ -19,301 +10,104 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 PORT_ROOT = Path(__file__).resolve().parent.parent
 CORE = PORT_ROOT / "core"
 MANIFEST = Path(__file__).resolve().parent / "PORT_MANIFEST.json"
-UPSTREAM_URL = "https://github.com/Teerapat-Vatpitak/thai-pii-redaction"
-
-# Directories are copied recursively minus caches; files are copied as-is.
-SLICE = [
-    "pii_redactor",
-    "app",
-    "demo/playground.html",
-    "VERSION",
-    "requirements.txt",
-    "requirements-web.txt",
-    "requirements-ocr.txt",
-    "requirements.lock",
-    "pyproject.toml",
-    "LICENSE",
-    "NOTICE",
-    # NOTICE points at this file for the bundled Thai TTF; OFL-1.1 requires
-    # the license text to travel with the font, so it must ride the slice.
-    "licenses/OFL-1.1.txt",
-]
-
-_SKIP_DIRS = {"__pycache__", ".pytest_cache", ".ruff_cache"}
-
-# Everything in SLICE is text; normalize to LF at copy time so the manifest
-# hashes are identical between a Windows dev checkout (CRLF working tree) and
-# the Linux runner. .gitattributes pins `* -text` so git never converts back.
-_TEXT_SUFFIXES = {".py", ".txt", ".toml", ".lock", ".html", ".md", ""}
-
-
-def _normalized_bytes(src: Path) -> bytes:
-    data = src.read_bytes()
-    if src.suffix.lower() in _TEXT_SUFFIXES or src.name in (
-        "VERSION",
-        "LICENSE",
-        "NOTICE",
-    ):
-        data = data.replace(b"\r\n", b"\n")
-    return data
-
-
-def _copy_normalized(src: Path, dst: Path) -> None:
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    data = _normalized_bytes(src)
-    dst.write_bytes(data)
-
-
-def _die(msg: str) -> "NoReturn":  # noqa: F821 - py3.11+ typing note only
-    print(f"sync: {msg}", file=sys.stderr)
-    sys.exit(1)
-
-
-def _git(upstream: Path, *args: str) -> str:
-    out = subprocess.run(
-        ["git", "-C", str(upstream), *args], capture_output=True, text=True
-    )
-    if out.returncode != 0:
-        _die(f"git {' '.join(args)} failed: {out.stderr.strip()}")
-    return out.stdout.strip()
-
-
-def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 16), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def _sha256_bytes(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def _iter_files(base: Path):
-    for p in sorted(base.rglob("*")):
-        if p.is_file() and not (set(p.parts) & _SKIP_DIRS):
-            yield p
-
-
-def do_sync(upstream: Path) -> None:
-    if not (upstream / ".git").exists():
-        _die(f"{upstream} is not a git checkout")
-    if _git(upstream, "status", "--porcelain"):
-        _die("upstream working tree is dirty — sync only from a clean, reviewed commit")
-    commit = _git(upstream, "rev-parse", "HEAD")
-
-    for entry in SLICE:
-        if not (upstream / entry).exists():
-            _die(f"SLICE entry missing upstream: {entry}")
-
-    if CORE.exists():
-        shutil.rmtree(CORE / "pii_redactor", ignore_errors=True)
-        shutil.rmtree(CORE / "app", ignore_errors=True)
-        shutil.rmtree(CORE / "demo", ignore_errors=True)
-    CORE.mkdir(exist_ok=True)
-
-    files: dict[str, str] = {}
-    upstream_provenance: dict[str, str] = {}
-    for entry in SLICE:
-        src = upstream / entry
-        dst = CORE / entry
-        relative_entry = Path(entry).as_posix()
-        if _is_port_owned(relative_entry):
-            # Hosted VERSION is release-owned: never overwrite it during a
-            # vendored re-sync. Still pin the exact upstream byte in the
-            # manifest so provenance verification remains complete.
-            if src.is_file():
-                upstream_provenance[relative_entry] = _sha256_bytes(
-                    _normalized_bytes(src)
-                )
-            else:
-                for item in _iter_files(src):
-                    relative = (Path(entry) / item.relative_to(src)).as_posix()
-                    upstream_provenance[relative] = _sha256_bytes(
-                        _normalized_bytes(item)
-                    )
-            continue
-        if src.is_dir():
-            for f in _iter_files(src):
-                _copy_normalized(f, dst / f.relative_to(src))
-        else:
-            _copy_normalized(src, dst)
-
-    for p in _iter_files(CORE):
-        rel = p.relative_to(CORE).as_posix()
-        # Port-owned overlay files inside core/ are not vendored. Prefixes are
-        # deliberately narrow so an unrelated extra file still fails --check.
-        if _is_port_owned(rel):
-            continue
-        files[rel] = _sha256(p)
-    files.update(upstream_provenance)
-
-    manifest_text = json.dumps(
-        {
-            "upstream": UPSTREAM_URL,
-            "commit": commit,
-            "synced_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "files": files,
-        },
-        ensure_ascii=False,
-        indent=1,
-    )
-    with MANIFEST.open("w", encoding="utf-8", newline="\n") as handle:
-        handle.write(manifest_text + "\n")
-    print(f"synced {len(files)} files from {commit[:12]}")
-
-
-# Files living under core/ that belong to the PORT, not upstream.
+UPSTREAM_URL = "https://github.com/clytie0x/thai-pii-redaction"
 PORT_OWNED = {
-    ".dockerignore",
-    "Dockerfile",
-    "prewarm_ocr.py",
-    "aift_auth.py",
-    "aift_gateway.py",
-    "aift_report_policy.py",
-    "healthcheck.py",
-    "requirements-aift-ocr.in",
-    "requirements-aift.lock",
-    "requirements-aift-security.in",
-    "requirements-aift-security.lock",
-    "verify_thainer_assets.py",
-    # Hosted has its own release channel/version. The upstream VERSION remains
-    # recorded in PORT_MANIFEST.json for provenance, but the deployed Hosted
-    # value is intentionally release-owned and checked by Stage 7 contracts.
-    "VERSION",
+    ".dockerignore", "Dockerfile", "VERSION", "prewarm_ocr.py", "aift_auth.py",
+    "aift_gateway.py", "aift_report_policy.py", "healthcheck.py",
+    "requirements-aift-ocr.in", "requirements-aift.lock",
+    "requirements-aift-security.in", "requirements-aift-security.lock",
+    "verify_thainer_assets.py", "verify_core_install.py",
 }
-
-# Hosted-only code must live behind this one bounded package prefix. Vendored
-# app/ and pii_redactor/ remain hash-pinned to PORT_MANIFEST.json.
 PORT_OWNED_PREFIXES = ("aift_hosted3/",)
 
 
 def _is_port_owned(relative: str) -> bool:
-    return relative in PORT_OWNED or any(
-        relative.startswith(prefix) for prefix in PORT_OWNED_PREFIXES
-    )
+    return relative in PORT_OWNED or any(relative.startswith(prefix) for prefix in PORT_OWNED_PREFIXES)
 
 
-def _slice_hashes(upstream: Path) -> dict[str, str]:
-    files: dict[str, str] = {}
-    for entry in SLICE:
-        source = upstream / entry
-        if not source.exists():
-            _die(f"SLICE entry missing at recorded upstream commit: {entry}")
-        if source.is_dir():
-            for item in _iter_files(source):
-                relative = (Path(entry) / item.relative_to(source)).as_posix()
-                files[relative] = _sha256_bytes(_normalized_bytes(item))
-        else:
-            files[Path(entry).as_posix()] = _sha256_bytes(_normalized_bytes(source))
-    return files
+def _die(message: str) -> None:
+    raise SystemExit(f"sync: {message}")
 
 
-def _verify_recorded_upstream(manifest: dict, want: dict[str, str]) -> None:
-    commit = manifest.get("commit")
-    if (
-        manifest.get("upstream") != UPSTREAM_URL
-        or not isinstance(commit, str)
-        or len(commit) != 40
-        or any(char not in "0123456789abcdef" for char in commit)
-    ):
-        _die("manifest upstream identity is invalid")
-    with tempfile.TemporaryDirectory(prefix="aiguard_upstream_") as temp:
-        checkout = Path(temp) / "upstream"
-        result = subprocess.run(
-            ["git", "init", "--quiet", str(checkout)],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            _die(f"git init failed: {result.stderr.strip()}")
+def _git(checkout: Path, *args: str) -> bytes:
+    result = subprocess.run(["git", "-C", str(checkout), *args], capture_output=True)
+    if result.returncode:
+        _die("historical Git-object verification failed")
+    return result.stdout
+
+
+def do_sync(_upstream: Path) -> None:
+    _die("legacy source copying is disabled; prepare a supplied canonical wheel context")
+
+
+def _verify_recorded_upstream(manifest: dict) -> None:
+    commit = manifest.get("commit", "")
+    if len(commit) != 40 or any(char not in "0123456789abcdef" for char in commit):
+        _die("invalid historical source revision")
+    with tempfile.TemporaryDirectory(prefix="aiguard-historical-source-") as temporary:
+        checkout = Path(temporary)
+        subprocess.run(["git", "init", "--quiet", str(checkout)], check=True, capture_output=True)
         _git(checkout, "remote", "add", "origin", UPSTREAM_URL)
         _git(checkout, "fetch", "--quiet", "--depth", "1", "origin", commit)
-        fetched = _git(checkout, "rev-parse", "FETCH_HEAD")
-        if fetched != commit:
-            _die("fetched upstream commit does not match the manifest")
-        _git(checkout, "checkout", "--quiet", "--detach", "FETCH_HEAD")
-        actual = _slice_hashes(checkout)
-    if actual != want:
-        missing = sorted(set(want) - set(actual))
-        extra = sorted(set(actual) - set(want))
-        changed = sorted(
-            key for key in set(want) & set(actual) if want[key] != actual[key]
-        )
-        for key in missing:
-            print(f"UPSTREAM_MISSING  {key}", file=sys.stderr)
-        for key in extra:
-            print(f"UPSTREAM_EXTRA    {key}", file=sys.stderr)
-        for key in changed:
-            print(f"UPSTREAM_CHANGED  {key}", file=sys.stderr)
-        _die("manifest hashes do not match the recorded upstream Git object")
+        if _git(checkout, "rev-parse", "FETCH_HEAD").decode().strip() != commit:
+            _die("historical source revision mismatch")
+        for relative, expected in manifest["files"].items():
+            name = PurePosixPath(relative)
+            if name.is_absolute() or ".." in name.parts or "\\" in relative:
+                _die("unsafe historical source inventory")
+            payload = _git(checkout, "show", f"{commit}:{relative}")
+            if name.suffix.lower() in {".py", ".txt", ".toml", ".lock", ".html", ".md", ""}:
+                payload = payload.replace(b"\r\n", b"\n")
+            if hashlib.sha256(payload).hexdigest() != expected:
+                _die("historical source digest mismatch")
 
 
 def do_check(*, verify_upstream: bool = False) -> None:
-    if not MANIFEST.exists():
-        _die("no PORT_MANIFEST.json — run a sync first")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if manifest.get("upstream") != UPSTREAM_URL:
-        _die("manifest points at an unexpected upstream repository")
-    manifest_files: dict[str, str] = manifest["files"]
-    want: dict[str, str] = {
-        relative: digest
-        for relative, digest in manifest_files.items()
-        if not _is_port_owned(relative)
-    }
-    have = {
-        p.relative_to(CORE).as_posix(): _sha256(p)
-        for p in _iter_files(CORE)
-        if not _is_port_owned(p.relative_to(CORE).as_posix())
-    }
-    missing = sorted(set(want) - set(have))
-    extra = sorted(set(have) - set(want))
-    changed = sorted(k for k in set(want) & set(have) if want[k] != have[k])
-    if missing or extra or changed:
-        for k in missing:
-            print(f"MISSING  {k}", file=sys.stderr)
-        for k in extra:
-            print(f"EXTRA    {k}", file=sys.stderr)
-        for k in changed:
-            print(f"CHANGED  {k}", file=sys.stderr)
-        _die("core/ does not match PORT_MANIFEST.json")
+        _die("unexpected historical source repository")
+    if any((CORE / name).exists() for name in ("app", "pii_redactor")):
+        _die("an independent authored runtime core remains")
+    dockerfile = (CORE / "Dockerfile").read_text(encoding="utf-8")
+    if "COPY app " in dockerfile or "COPY pii_redactor " in dockerfile or "--no-index" not in dockerfile:
+        _die("runtime must consume the supplied offline canonical wheel")
+    retained = {relative: digest for relative, digest in manifest["files"].items() if not relative.startswith(("app/", "pii_redactor/")) and not _is_port_owned(relative)}
+    for relative, digest in retained.items():
+        path = CORE / relative
+        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            _die("retained historical support-file digest mismatch")
+    allowed = set(retained) | {relative for relative in manifest["files"] if _is_port_owned(relative)}
+    for path in CORE.rglob("*"):
+        if not path.is_file() or "__pycache__" in path.parts or path.suffix == ".pyc":
+            continue
+        relative = path.relative_to(CORE).as_posix()
+        if relative not in allowed and not _is_port_owned(relative):
+            _die("unclassified Hosted core source file")
     if verify_upstream:
-        _verify_recorded_upstream(manifest, manifest_files)
-    print(
-        f"check ok: {len(want)} vendored files match commit {manifest['commit'][:12]}; "
-        "Hosted VERSION is release-owned and its upstream provenance remains in the manifest"
-    )
+        _verify_recorded_upstream(manifest)
+    print("check ok: canonical-wheel runtime, no authored engine copy; historical manifest is inactive provenance")
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--from", dest="upstream", help="path to upstream checkout")
-    ap.add_argument(
-        "--check", action="store_true", help="verify core/ against manifest"
-    )
-    ap.add_argument(
-        "--verify-upstream",
-        action="store_true",
-        help="fetch the recorded Git object and verify every manifest hash",
-    )
-    args = ap.parse_args()
-    if args.check:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--from", dest="upstream")
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--verify-upstream", action="store_true")
+    args = parser.parse_args()
+    if args.upstream:
+        do_sync(Path(args.upstream))
+    elif args.check:
         do_check(verify_upstream=args.verify_upstream)
-    elif args.upstream:
-        do_sync(Path(args.upstream).resolve())
     else:
-        ap.error("need --from <upstream> or --check")
+        parser.error("need --check; legacy --from is intentionally disabled")
 
 
 if __name__ == "__main__":

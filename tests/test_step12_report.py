@@ -118,7 +118,7 @@ def test_analyze_text_runs_detection_once(monkeypatch):
 
     calls = []
 
-    def fake_detect(text):
+    def fake_detect(text, *, config=None):
         calls.append(text)
         return [
             Entity(

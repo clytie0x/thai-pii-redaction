@@ -53,6 +53,12 @@ def _date_sanity(day: int, month: int) -> bool:
     return 1 <= day <= 31 and 1 <= month <= 12
 
 
+def is_valid_juristic_id(value: str) -> bool:
+    """Validate a 0-leading registration number with the shared mod-11 check."""
+    raw = _SEP_RE.sub("", value)
+    return raw.startswith("0") and is_valid_thai_id(raw)
+
+
 # ---------------------------------------------------------------------------
 # Entity factory
 # ---------------------------------------------------------------------------
@@ -222,6 +228,44 @@ def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Enti
     return out
 
 
+def _disambiguate_thai_juristic(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Use a juristic cue to label a checksum-valid 0-leading identifier."""
+    result: list[Entity] = []
+    for entity in candidates:
+        if entity.data_type == "THAI_ID":
+            digits = re.sub(r"\D", "", entity.original_text.translate(_OCR_FOLD))
+            if (
+                digits
+                and int(digits[0]) == 0
+                and _cue_before(_JURISTIC_CUE_RE, text, entity.span[0])
+            ):
+                entity = _entity_at("JURISTIC_ID", text, *entity.span, score=entity.score)
+        result.append(entity)
+    return result
+
+
+def _disambiguate_driver_student(text: str, candidates: list[Entity]) -> list[Entity]:
+    """Keep the nearest cue; a tie favours the directly cued licence."""
+    types_by_span: dict[tuple[int, int], set[str]] = {}
+    for entity in candidates:
+        types_by_span.setdefault(entity.span, set()).add(entity.data_type)
+    dropped: set[tuple[tuple[int, int], str]] = set()
+    for span, types in types_by_span.items():
+        if not {"DRIVER_LICENSE", "STUDENT_ID"} <= types:
+            continue
+        context = text[max(0, span[0] - _CUE_WINDOW) : span[0]]
+        driver = _rightmost_cue(_DRIVER_CUE_RE, context)
+        driver_distance = len(context) - driver if driver >= 0 else None
+        student_distance = _student_evidence(text, *span)
+        if driver_distance is not None and (
+            student_distance is None or driver_distance <= student_distance
+        ):
+            dropped.add((span, "STUDENT_ID"))
+        else:
+            dropped.add((span, "DRIVER_LICENSE"))
+    return [entity for entity in candidates if (entity.span, entity.data_type) not in dropped]
+
+
 def _student_evidence(text: str, start: int, end: int) -> int | None:
     """Return the distance to a student cue, or ``None``.
 
@@ -280,7 +324,13 @@ def _student_evidence(text: str, start: int, end: int) -> int | None:
 # digit-boundary lookarounds still reject a value embedded in a longer number
 # while allowing letter/Thai adjacency (recall > precision).
 _RE_THAI_ID = re.compile(r"(?<!\d)(\d{1}[-\s]?\d{4}[-\s]?\d{5}[-\s]?\d{2}[-\s]?\d{1})(?!\d)")
-_RE_CREDIT_CARD = re.compile(r"(?<!\d)(\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4})(?!\d)")
+# Short cards need a card cue: checksum alone also admits corrupted OCR IDs.
+# Preserve the existing 16-digit forms beside row numbers or amounts. The
+# newly admitted short grouped forms must not be fragments of a longer code.
+_RE_CREDIT_CARD = re.compile(
+    r"(?<!\d)(\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}"
+    r"|(?<!\d[-\s])\d(?:[-\s]?\d){12,14}(?![-\s]?\d)|\d{13,15})(?!\d)"
+)
 # Total length is bounded 15-34 to match real IBANs (shortest is Norway at 15,
 # longest is 34) -- the old {4,30} lower bound made the total minimum 8, which
 # let a 9-char passport-length string ([A-Z]{2}\d{7}) both match the shape AND
@@ -299,7 +349,8 @@ _RE_EMAIL = re.compile(
     r"(?<![a-zA-Z0-9._%+\-])([a-zA-Z0-9][a-zA-Z0-9._%+\-]*@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})"
     r"(?![a-zA-Z0-9\-])"
 )
-_RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\d)")
+# Accept Thai prefix digits without normalizing away authoritative offsets.
+_RE_PHONE_MOBILE = re.compile(r"(?<!\d)([0๐][- ]?[6-9๖-๙]\d[-\s]?\d{3}[-\s]?\d{4})(?!\d)")
 # Thai landlines are 9 digits (not 10). Two written shapes, both 9 digits:
 #   Bangkok    02-XXX-XXXX  (2-digit area, then 3+4)
 #   provincial 0XX-XXX-XXX  (3-digit area, then 3+3)
@@ -318,13 +369,13 @@ _RE_PHONE_MOBILE = re.compile(r"(?<!\d)(0[- ]?[6-9]\d[-\s]?\d{3}[-\s]?\d{4})(?!\
 # a leading zero has no such excuse: a false entity spanning rows still causes
 # irreversible interval-based PDF masking across both rows.
 _RE_PHONE_LANDLINE = re.compile(
-    r"(?<!\d)(0[- ]?(?:2[-\s]?\d{3}[-\s]?\d{4}|[3-7]\d[-\s]?\d{3}[-\s]?\d{3}))(?!\d)"
+    r"(?<!\d)([0๐][- ]?(?:[2๒][-\s]?\d{3}[-\s]?\d{4}|[3-7๓-๗]\d[-\s]?\d{3}[-\s]?\d{3}))(?!\d)"
 )
 # +66 form drops the national leading 0, so a Thai number carries 8 (landline)
 # or 9 (mobile) digits after +66 -- e.g. +66 81 234 5678 is 9. The old pattern
 # only matched 8, missing every mobile and leaking it to the STUDENT_ID
 # catch-all. Allow an optional single separator between any two digits.
-_RE_PHONE_INTL = re.compile(r"(?<![a-zA-Z0-9_])(\+66[-\s]?\d(?:[-\s]?\d){7,8})(?!\d)")
+_RE_PHONE_INTL = re.compile(r"(?<![a-zA-Z0-9_])(\+[6๖]{2}[-\s]?\d(?:[-\s]?\d){7,8})(?!\d)")
 _RE_BANK_ACCOUNT_1 = re.compile(r"(?<!\d)(\d{3}[-\s]?\d{1}[-\s]?\d{5}[-\s]?\d{1})(?!\d)")
 _RE_BANK_ACCOUNT_2 = re.compile(r"(?<!\d)(\d{7}[-\s]?\d{3})(?!\d)")
 _RE_DATE = re.compile(
@@ -529,6 +580,48 @@ _RE_MEDICAL_ID = re.compile(
     r"(?<![A-Za-z])(?:HN|เวชระเบียน|ผู้ป่วยเลขที่)\s*[:：]?\s*(\d{4,9})(?!\d)", re.IGNORECASE
 )
 
+_RE_DRIVER_LICENSE = re.compile(r"(?<!\d)(\d{8})(?!\d)")
+_RE_HOUSE_REG = re.compile(r"(?<!\d)(\d{11})(?!\d)")
+_RE_LINE_ID = re.compile(
+    r"(?<![A-Za-z0-9_])(?:LINE|ไลน์)[ \t]*(?:ID|ไอดี)?[ \t:：=]{0,12}"
+    r"(@?[A-Za-z0-9][A-Za-z0-9._\-]{3,23})(?![A-Za-z0-9._\-])",
+    re.IGNORECASE,
+)
+_RE_GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{4,7},\s?-?\d{1,3}\.\d{4,7})(?![\d.])")
+_RE_IP_V4 = re.compile(r"(?<![\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?!\.?\d)")
+_RE_IP_V6 = re.compile(
+    r"(?<![0-9A-Za-z:])("
+    r"(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}"
+    r"|(?:[0-9A-Fa-f]{1,4}:){1,7}:(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,6})?"
+    r"|::(?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4}){0,7})?"
+    r")(?![0-9A-Za-z:])"
+)
+_RE_MAC = re.compile(
+    r"(?<![0-9A-Za-z:\-])((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}"
+    r"|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2})(?![0-9A-Za-z:\-])"
+)
+_RE_LAND_DEED = re.compile(
+    r"(?:โฉนด(?:ที่ดิน)?\s*เลขที่|เลขที่โฉนด|น\.ส\.\s*(?:3\s*[กข]?|4\s*[กขคงจ]?)\s*เลขที่)"
+    r"[ \t:：]{0,20}(?<!\d)(\d{1,6})(?!\d)"
+)
+_JURISTIC_CUE_RE = re.compile(
+    r"นิติบุคคล|ทะเบียนบริษัท|ทะเบียนพาณิชย์|เลข(?:ประจำตัว)?ผู้เสียภาษี|tax\s*id|juristic",
+    re.IGNORECASE,
+)
+_DRIVER_CUE_RE = re.compile(
+    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er'?s?|ing)\s*licen[cs]e", re.IGNORECASE
+)
+_HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
+_IP_CUE_RE = re.compile(
+    r"IP|ไอพี|address|แอดเดรส|server|เซิร์ฟเวอร์|host|โฮสต์|router|เราเตอร์|เชื่อมต่อ|log"
+)
+_IP_SUPPRESS_CUE_RE = re.compile(
+    r"version|เวอร์ชัน|รุ่น|build"
+    r"|(?:ข้อ|มาตรา|เอกสารหมายเลข)[ \t:：]*\Z"
+    r"|หนังสือที่[ \t:：]*(?:[ก-๙]{1,4}[ \t]*)?\Z",
+    re.IGNORECASE,
+)
+
 _SEP_RE = re.compile(r"[-\s]")
 _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 
@@ -538,6 +631,8 @@ _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 # substring, so the alternation stays minimal.
 _BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
 _PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|มือถือ|ติดต่อ")
+_CARD_CUE_RE = re.compile(r"บัตรเครดิต|บัตรเดบิต|credit\s*card|debit\s*card", re.IGNORECASE)
+_PERSON_ID_CUE_RE = re.compile(r"บัตรประชาชน|เลขประจำตัวประชาชน|เลขผู้เสียภาษี")
 
 # Honest-label cues (Horizon-2 #10). "เกิด" as substring covers วันเกิด /
 # เกิดวันที่ / เกิดเมื่อ — but NOT เกิดเหตุ/เหตุเกิด, which are incident
@@ -567,7 +662,10 @@ _POSTAL_GLUE_RE = re.compile(r"(?:\s|,|/|และ|หรือ)*")
 # also labels รหัสสินค้า / รหัสวิชา / รหัสหลักสูตร / รหัสไปรษณีย์, and those are
 # still masked as ID_NUMBER anyway, so admitting them would buy no redaction
 # safety and cost an honest label.
-_STUDENT_CUE_RE = re.compile(r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student", re.IGNORECASE)
+_STUDENT_CUE_RE = re.compile(
+    r"รหัสนักศึกษา|รหัสนิสิต|นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ผู้เข้าสอบ|อาจารย์ที่ปรึกษา",
+    re.IGNORECASE,
+)
 # Compound code words: "รหัสX" names a non-student code and blocks every
 # student tier, even with education words nearby (a course code in a syllabus
 # is still a course code). Kept literal and short on purpose — each entry is a
@@ -581,17 +679,18 @@ _STUDENT_BLOCKER_RE = re.compile(
 _STUDENT_INTRO_RE = re.compile(r"รหัสประจำตัว|เลขประจำตัว|รหัส|\bid\b", re.IGNORECASE)
 # Education-context tokens: deliberately the narrow list that survived the
 # adversarial review — no คณะ (คณะกรรมการ), no วิชา alone (วิชาชีพ/วิชาการ),
-# no สอบ family (civil-service exams), no มหาวิทยาลัย/โรงเรียน (ambient org
+# no bare สอบ (civil-service exams), no มหาวิทยาลัย/โรงเรียน (ambient org
 # context), no ทะเบียน (vehicle/civil registries), no คัดเลือก (hiring).
 _EDU_CONTEXT_RE = re.compile(
     r"นักศึกษา|นิสิต|นักเรียน|ผู้เรียน|student|ลงทะเบียนเรียน|ภาคเรียน|สหกิจศึกษา"
-    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย",
+    r"|หน่วยกิต|ขาดเรียน|ค่าเทอม|สำเร็จการศึกษา|อาจารย์ที่ปรึกษา|ชั้นปี|เกรดเฉลี่ย"
+    r"|ที่นั่งสอบ|สอบสัมภาษณ์|ทุนวิจัย",
     re.IGNORECASE,
 )
 _STUDENT_PERSON_WINDOW = 60  # tier 1: person cue before the digits
 _STUDENT_AFTER_WINDOW = 45  # tier 2: person cue after the digits
 _STUDENT_INTRO_WINDOW = 20  # tier 3: introducer must be this close, same line
-_EDU_WINDOW = 100  # tier 3: education token within this many chars either side
+_EDU_WINDOW = 120  # Keep all rows tied to the SDK's accepted interview heading.
 # Words that introduce a number which is not a student identifier. A bare
 # person-word is weak evidence: "นักเรียนสั่งซื้อสินค้ารหัส 88910423" is an
 # order number in a sentence about a pupil. Same nearest-cue-wins rule as the
@@ -764,7 +863,25 @@ def detect_fp(text: str) -> list[Entity]:
     # 2. CREDIT_CARD
     for m in _RE_CREDIT_CARD.finditer(text):
         raw = _SEP_RE.sub("", m.group(1))
-        if len(raw) == 16 and _luhn_check(raw):
+        if 13 <= len(raw) <= 16 and _luhn_check(raw):
+            start, end = m.span(1)
+            context = text[max(0, start - _CUE_WINDOW) : start]
+            card_cued = _rightmost_cue(_CARD_CUE_RE, context) > _rightmost_cue(
+                _PERSON_ID_CUE_RE, context
+            )
+            if len(raw) < 16 and not card_cued:
+                continue
+            # A shorter checksum-valid ID prefix must not uncover the card's
+            # suffix. Equal spans retain THAI_ID unless the nearer cue is card.
+            candidates = [
+                e
+                for e in candidates
+                if not (
+                    e.data_type == "THAI_ID"
+                    and e.span[0] == start
+                    and (e.span[1] < end or (e.span[1] == end and card_cued))
+                )
+            ]
             candidates.append(_make_entity("CREDIT_CARD", m, text, score=1.0))
 
     # 3. IBAN
@@ -1086,6 +1203,42 @@ def detect_fp(text: str) -> list[Entity]:
         candidates.append(_make_entity("MEDICAL_ID", m, text, score=0.9))
 
     _add_folded_digit_hits(text, candidates)
+    # Admit these after recovery, which removes fragments inside checksum hits.
+    # Juristic IDs share the Thai-ID checksum and span, so only their cue differs.
+    candidates = _disambiguate_thai_juristic(text, candidates)
+    for match in _RE_DRIVER_LICENSE.finditer(text):
+        if _cue_before(_DRIVER_CUE_RE, text, match.start(1)):
+            candidates.append(_make_entity("DRIVER_LICENSE", match, text, score=0.9))
+    for match in _RE_LINE_ID.finditer(text):
+        candidates.append(_make_entity("LINE_ID", match, text, score=0.9))
+    for match in _RE_GPS.finditer(text):
+        latitude, longitude = map(float, match.group(1).split(","))
+        if -90 <= latitude <= 90 and -180 <= longitude <= 180:
+            candidates.append(_make_entity("GPS_COORD", match, text, score=0.95))
+    for match in _RE_HOUSE_REG.finditer(text):
+        if _cue_before(_HOUSE_REG_CUE_RE, text, match.start(1)):
+            candidates.append(_make_entity("HOUSE_REG_ID", match, text, score=0.9))
+    for match in _RE_IP_V4.finditer(text):
+        if any(int(octet) > 255 for octet in match.group(1).split(".")):
+            continue
+        start = match.start(1)
+        if _cue_before(_IP_CUE_RE, text, start):
+            candidates.append(_make_entity("IP_ADDRESS", match, text, score=0.9))
+        elif not (start > 0 and text[start - 1] in "vV") and not _cue_before(
+            _IP_SUPPRESS_CUE_RE, text, start
+        ):
+            candidates.append(_make_entity("IP_ADDRESS", match, text, score=0.8))
+    for match in _RE_IP_V6.finditer(text):
+        if 2 <= len([group for group in match.group(1).split(":") if group]) <= 8:
+            candidates.append(_make_entity("IP_ADDRESS", match, text, score=0.9))
+    for match in _RE_MAC.finditer(text):
+        candidates.append(_make_entity("MAC_ADDRESS", match, text, score=0.9))
+    for match in _RE_LAND_DEED.finditer(text):
+        entity = _make_entity("LAND_DEED_ID", match, text, score=0.9)
+        candidates.append(entity)
+        if entity.span[1] - entity.span[0] < 2:
+            single_char_ok.add(entity.span)
+    candidates = _disambiguate_driver_student(text, candidates)
     candidates = _disambiguate_bank_student(text, candidates)
     candidates = _disambiguate_bank_phone(text, candidates)
     return _deduplicate(candidates, single_char_ok=frozenset(single_char_ok))

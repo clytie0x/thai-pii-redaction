@@ -329,3 +329,27 @@ def test_restore_text_round_trip():
     sanitized, mapping = sanitize_chat_request(payload, salt="s")
     masked = sanitized["messages"][0]["content"]
     assert restore_text(masked, mapping) == PII_TEXT
+
+
+def test_mapping_only_restore_withholds_url_token_and_preserves_partial_count():
+    token = "[Sensitive_1]"
+    original = "synthetic-sensitive"
+    text = f"Readable {token} https://example.test/{token}"
+    mapping = {token: original}
+    restored = amphrang.restore(text, mapping)
+    assert restored.text == f"Readable {original} https://example.test/{token}"
+    assert restored.replaced_count == 0
+    assert restored.leftover_pseudonyms == [token]
+    assert restore_text(text, mapping) == restored.text
+    assert mapping == {token: original}
+
+
+def test_legacy_sensitive_mapping_restores_plain_text_and_reuses_identity():
+    token = "[โทรศัพท์_1]"
+    mapping = {token: "081-234-5678"}
+    result = amphrang.anonymize("Synthetic contact: 081-234-5678", prior_mapping=mapping)
+    assert token in result.text
+    assert result.mapping == mapping
+    assert amphrang.restore("Readable [Sensitive_1]", {"[Sensitive_1]": "synthetic"}).text == (
+        "Readable synthetic"
+    )

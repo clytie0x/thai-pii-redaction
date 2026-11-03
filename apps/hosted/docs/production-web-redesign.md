@@ -1,5 +1,12 @@
 # AI Guard Production Web Redesign
 
+Current source build boundary (3 November 2026): the source candidate consumes
+the supplied canonical first-party core wheel. The authored `core/app` and
+`core/pii_redactor` copies are removed. Earlier stage entries describing those
+manifest-pinned copies are historical evidence. The new build identity is in
+[`canonical-core-build.md`](canonical-core-build.md). No UI, provider or
+production deployment acceptance is added by this source migration.
+
 Last updated: 2026-08-17 (Asia/Bangkok)
 
 ## Purpose

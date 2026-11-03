@@ -24,20 +24,23 @@ class _FakeEngine:
 
 
 @pytest.fixture()
-def finetuned_env(monkeypatch):
+def finetuned_env(monkeypatch, tmp_path):
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AIGUARD_FINETUNED_MODEL_DIR", str(tmp_path))
+    monkeypatch.setattr(tb_detector, "_finetuned_cache", {})
 
     def install(spans):
-        monkeypatch.setitem(tb_detector._finetuned_cache, "engine", _FakeEngine(spans))
+        monkeypatch.setitem(
+            tb_detector._finetuned_cache, (str(tmp_path.resolve()), None), _FakeEngine(spans)
+        )
 
     yield install
-    tb_detector._finetuned_cache.pop("engine", None)
 
 
 def test_selected_but_absent_engine_fails_loud(monkeypatch):
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
     monkeypatch.delenv("AIGUARD_FINETUNED_MODEL_DIR", raising=False)
-    tb_detector._finetuned_cache.pop("engine", None)
+    monkeypatch.setattr(tb_detector, "_finetuned_cache", {})
     from pii_redactor.detectors.finetuned_engine import FinetunedEngineUnavailableError
 
     with pytest.raises(FinetunedEngineUnavailableError):
@@ -101,10 +104,12 @@ def test_relabel_is_noop_for_crf(monkeypatch):
     assert not [e for e in ents if e.data_type == "STUDENT_ID"]
 
 
-def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
+def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch, tmp_path):
     # Calibrated floors (part of the model artifact) drop the low-confidence
     # tail per label without touching other labels.
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
+    monkeypatch.setenv("AIGUARD_FINETUNED_MODEL_DIR", str(tmp_path))
+    monkeypatch.setattr(tb_detector, "_finetuned_cache", {})
     text = "พบ สมชาย ทดสอบ วันที่ 12 มีนาคม 2569"
     name_lo = text.index("สมชาย")
     date_lo = text.index("12 มีนาคม")
@@ -114,13 +119,10 @@ def test_per_label_thresholds_filter_low_confidence_spans(monkeypatch):
     ]
     monkeypatch.setitem(
         tb_detector._finetuned_cache,
-        "engine",
+        (str(tmp_path.resolve()), None),
         _FakeEngine(spans, thresholds={"PERSON": 0.92}),
     )
-    try:
-        types = {e.data_type for e in tb_detector.detect_tb(text)}
-    finally:
-        tb_detector._finetuned_cache.pop("engine", None)
+    types = {e.data_type for e in tb_detector.detect_tb(text)}
     assert "NAME" not in types
     assert "DATE" in types
 

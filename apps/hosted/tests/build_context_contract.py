@@ -66,10 +66,13 @@ def main() -> int:
 
     core_dockerfile = (ROOT / "core" / "Dockerfile").read_text(encoding="utf-8")
     for required in (
-        "COPY requirements.lock requirements-aift-security.lock ./",
+        "COPY requirements.lock requirements-aift-security.lock core-wheel.lock CORE_BUILD_IDENTITY.json ./",
         "--no-deps --require-hashes -r requirements-aift-security.lock",
-        "COPY app ./app",
-        "COPY pii_redactor ./pii_redactor",
+        "--no-index --no-deps --require-hashes -r core-wheel.lock",
+        "COPY wheels ./wheels",
+        "COPY wheelhouse ./wheelhouse",
+        "COPY models /opt/pythainlp-data",
+        "python verify_core_install.py",
         "COPY aift_hosted3 ./aift_hosted3",
         "COPY verify_thainer_assets.py ./",
         "python verify_thainer_assets.py",
@@ -84,6 +87,9 @@ def main() -> int:
         "libgl1",
         "libglib2.0-0",
         "libgomp1",
+        "COPY app ./app",
+        "COPY pii_redactor ./pii_redactor",
+        "NER(engine='thainer')",
     ):
         if excluded in core_dockerfile:
             raise AssertionError(f"disabled OCR runtime leaked into hosted image: {excluded}")

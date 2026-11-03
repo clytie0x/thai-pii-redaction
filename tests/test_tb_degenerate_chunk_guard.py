@@ -227,7 +227,11 @@ def test_explicit_tner_degenerate_line_failure_aborts_the_request(monkeypatch):
                 return [(chunk, "B-LAW")]
             raise TnerUnavailableError("network")
 
-    monkeypatch.setitem(tbd._ner_cache, "tner", DegenerateThenUnavailable())
+    monkeypatch.setenv("AIFORTHAI_API_KEY", "synthetic-test-key")
+    monkeypatch.setattr(
+        "pii_redactor.detectors.tner_client.TnerEngine",
+        lambda *, api_key: DegenerateThenUnavailable(),
+    )
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "tner")
 
     with pytest.raises(tbd.NERFailureError) as excinfo:
@@ -245,7 +249,10 @@ def test_explicit_tner_never_logs_a_provider_supplied_label(monkeypatch, caplog)
         def tag(self, chunk):
             return [(chunk, f"B-{marker}")]
 
-    monkeypatch.setitem(tbd._ner_cache, "tner", UntrustedRemoteLabel())
+    monkeypatch.setenv("AIFORTHAI_API_KEY", "synthetic-test-key")
+    monkeypatch.setattr(
+        "pii_redactor.detectors.tner_client.TnerEngine", lambda *, api_key: UntrustedRemoteLabel()
+    )
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "tner")
 
     with caplog.at_level(logging.WARNING, logger="pii_redactor.detectors.tb_detector"):

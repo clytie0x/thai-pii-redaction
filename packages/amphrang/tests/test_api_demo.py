@@ -62,7 +62,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("amphrang.engine.", "amphrang.server.")):
+        if module.startswith(("amphrang.engine.", "amphrang.server.", "pii_redactor.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -266,7 +266,8 @@ class TestRoundtrip:
         monkeypatch,
         failure_kind,
     ):
-        import amphrang.engine.ai_client as client_module
+        import pii_redactor.ai_client as client_module
+
         import amphrang.server.server as server
 
         calls = []
@@ -320,7 +321,8 @@ class TestRoundtrip:
         monkeypatch,
         status_code,
     ):
-        import amphrang.engine.ai_client as client_module
+        import pii_redactor.ai_client as client_module
+
         import amphrang.server.server as server
 
         calls = []
@@ -363,7 +365,8 @@ class TestRoundtrip:
         client,
         monkeypatch,
     ):
-        import amphrang.engine.ai_client as client_module
+        import pii_redactor.ai_client as client_module
+
         import amphrang.server.server as server
 
         calls = []
@@ -403,9 +406,10 @@ class TestRoundtrip:
         client,
         monkeypatch,
     ):
-        import amphrang.engine.ai_client as client_module
+        import pii_redactor.ai_client as client_module
+        from pii_redactor.leak_guard import OutboundPolicyError
+
         import amphrang.server.server as server
-        from amphrang.engine.leak_guard import OutboundPolicyError
 
         provider_calls = []
         validation_calls = []
@@ -452,11 +456,11 @@ class TestRoundtrip:
         assert provider_calls == [60.0]
 
     def test_roundtrip_discards_retained_provider_call_error(self, monkeypatch):
+        import pii_redactor.ai_client as client_module
         from fastapi import HTTPException
+        from pii_redactor.ai_client import ProviderCallError
 
-        import amphrang.engine.ai_client as client_module
         import amphrang.server.server as server
-        from amphrang.engine.ai_client import ProviderCallError
 
         retained_error = ProviderCallError(
             category="malformed",
@@ -591,9 +595,9 @@ class TestRoundtrip:
         monkeypatch,
     ):
         from fastapi import HTTPException
+        from pii_redactor.stateless import StatelessSanitizeResult
 
         import amphrang.server.server as server
-        from amphrang.engine.stateless import StatelessSanitizeResult
 
         residual = "เลขบัตรประชาชน 1101700230708"
         forged = StatelessSanitizeResult(
@@ -649,9 +653,9 @@ class TestRoundtrip:
         monkeypatch,
     ):
         from fastapi import HTTPException
+        from pii_redactor.stateless import StatelessSanitizeResult
 
         import amphrang.server.server as server
-        from amphrang.engine.stateless import StatelessSanitizeResult
 
         forged = StatelessSanitizeResult(
             sanitized_text="safe text",
@@ -737,8 +741,9 @@ class TestRoundtrip:
         assert body["warnings"] == []
 
     def test_roundtrip_leak_blocked_422(self, client, monkeypatch):
+        from pii_redactor.stateless import StatelessLeakError
+
         import amphrang.server.server as server
-        from amphrang.engine.stateless import StatelessLeakError
 
         def boom_sanitize(*args, **kwargs):
             raise StatelessLeakError(["THAI_ID"])
@@ -753,7 +758,8 @@ class TestRoundtrip:
         assert "สมชาย" not in resp.text
 
     def test_roundtrip_orphan_digits_block_before_provider(self, client, monkeypatch):
-        import amphrang.engine.stateless as stateless_module
+        import pii_redactor.stateless as stateless_module
+
         import amphrang.server.server as server
 
         calls = []
@@ -798,8 +804,9 @@ class TestRoundtrip:
         monkeypatch,
         residual,
     ):
+        from pii_redactor.stateless import StatelessSanitizeResult
+
         import amphrang.server.server as server
-        from amphrang.engine.stateless import StatelessSanitizeResult
 
         calls = []
 
@@ -835,13 +842,13 @@ class TestRoundtrip:
 
 
 def test_sanitize_residual_error_graph_drops_request_and_staged_vault(monkeypatch):
+    import pii_redactor.session_service as session_module
     from fastapi import HTTPException
+    from pii_redactor.session_service import SessionService
 
-    import amphrang.engine.session_service as session_module
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
-    service = SessionService()
+    service = SessionService(config=server._CORE_CONFIG)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(
         session_module,
@@ -916,11 +923,12 @@ def test_roundtrip_tail_failure_drops_retained_sensitive_graph(monkeypatch, stag
 def test_reidentify_encoding_failure_is_fixed_and_scrubs_restored_text(client, monkeypatch):
     import json
 
+    from pii_redactor.session_service import SessionService
+
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
     private_marker = "SYNTHETIC_RENDER_RESTORED_TEXT"
-    service = SessionService()
+    service = SessionService(config=server._CORE_CONFIG)
     seeded = service.sanitize("โทร 081-234-5678")
     monkeypatch.setattr(server, "SERVICE", service)
     captured = _capture_json_render_errors(monkeypatch)

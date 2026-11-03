@@ -35,7 +35,7 @@ def _isolated_control_state(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_BOOT_TOKEN", None)
     monkeypatch.setattr(server, "_authorization_now", lambda: AUTH_NOW)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
-    monkeypatch.setattr(server, "SERVICE", server.SessionService())
+    monkeypatch.setattr(server, "SERVICE", server.SessionService(config=server._CORE_CONFIG))
 
 
 def _disposal_authorization(
@@ -541,7 +541,9 @@ def test_concurrent_repeated_disposal_cleans_once(monkeypatch):
 
 def test_disposal_of_already_expired_session_is_safe_noop(monkeypatch):
     clock = {"now": 1000.0}
-    service = server.SessionService(ttl_s=10, now_fn=lambda: clock["now"])
+    service = server.SessionService(
+        ttl_s=10, now_fn=lambda: clock["now"], config=server._CORE_CONFIG
+    )
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_BOOT_TOKEN", TOKEN)
     client = _client()

@@ -588,3 +588,52 @@ def test_restore_reports_pseudonyms_it_could_not_account_for():
 
     assert back.replaced_count == 0
     assert back.warnings, "a reply that used none of the tokens must not look complete"
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_mapping_only_source_url_stays_partial(mode):
+    source = "https://source.invalid/?phone=081-234-5678"
+    masked = sanitize_stateless(source, mode=mode, salt="source-proof")
+    assert masked.replacement_highlights
+
+    restored = restore_stateless(masked.sanitized_text, mapping=masked.mapping, mode=mode)
+
+    assert restored.restored_text == masked.sanitized_text
+    assert restored.replaced_count == 0
+    assert restored.leftover_pseudonyms == sorted(masked.mapping)
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+def test_stateless_mixed_occurrence_retains_mapping_count_contract(mode):
+    masked = sanitize_stateless("โทร 081-234-5678", mode=mode, salt="source-proof")
+    token = next(iter(masked.mapping))
+    text = f"{token} https://changed.invalid/?value={token}"
+
+    restored = restore_stateless(text, mapping=masked.mapping, mode=mode)
+
+    assert restored.restored_text == f"081-234-5678 https://changed.invalid/?value={token}"
+    assert restored.replaced_count == 0
+    assert restored.leftover_pseudonyms == [token]
+
+
+@pytest.mark.parametrize("offset", [-1, 1])
+def test_stateless_private_source_range_requires_exact_occurrence(offset):
+    masked = sanitize_stateless(
+        "https://source.invalid/?phone=081-234-5678", mode="token", salt="source-proof"
+    )
+    highlight = masked.replacement_highlights[0]
+
+    restored = restore_stateless(
+        masked.sanitized_text,
+        mapping=masked.mapping,
+        _source_rebuild_ranges=frozenset({(highlight.start + offset, highlight.end)}),
+    )
+
+    assert restored.restored_text == masked.sanitized_text
+    assert restored.replaced_count == 0
+
+
+def test_stateless_legacy_sensitive_plain_restore_remains_supported():
+    restored = restore_stateless("สรุป [Sensitive_1]", mapping={"[Sensitive_1]": "synthetic value"})
+    assert restored.restored_text == "สรุป synthetic value"
+    assert restored.replaced_count == 1

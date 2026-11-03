@@ -66,7 +66,7 @@ class VerifyResult:
 
 
 def _read_version() -> str:
-    """The product version, or "unknown" when the VERSION file is unreachable.
+    """The product version, or "unknown" when no VERSION resource is reachable.
 
     Deliberately does NOT carry a fallback literal the way `app/server.py` does.
     A third hardcoded copy of the version would be one more thing for
@@ -78,6 +78,7 @@ def _read_version() -> str:
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
         candidates.append(Path(meipass) / "VERSION")
+    candidates.append(Path(__file__).resolve().parent / "_artifact" / "VERSION")
     candidates.append(Path(__file__).resolve().parent.parent / "VERSION")
     for candidate in candidates:
         try:

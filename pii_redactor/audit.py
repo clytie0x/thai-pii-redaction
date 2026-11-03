@@ -9,10 +9,11 @@ SECURITY-CRITICAL:
 """
 
 import json
-import os
 import re
 import time
 from pathlib import Path
+
+from pii_redactor.config import AuditConfig
 
 # Allowlist for characters permitted in the correlation-ID part of a log
 # filename. `session_id` remains the legacy parameter/key name, but production
@@ -28,17 +29,17 @@ _SESSION_ID_UNSAFE = re.compile(r"[^A-Za-z0-9_-]")
 _STDOUT_ENV = "AIGUARD_AUDIT_STDOUT"
 
 
-def _stdout_mode() -> bool:
-    return os.environ.get(_STDOUT_ENV) == "1"
+def _stdout_mode(audit_config: AuditConfig | None = None) -> bool:
+    return (AuditConfig.from_env() if audit_config is None else audit_config).stdout
 
 
-def _emit(entry: dict, path: Path) -> Path:
+def _emit(entry: dict, path: Path, *, audit_config: AuditConfig | None = None) -> Path:
     """Write one audit entry to stdout (hosted) or append to `path` (default).
 
     In stdout mode the returned path is where the entry WOULD have been
     written; no file is created or touched.
     """
-    if _stdout_mode():
+    if _stdout_mode(audit_config):
         print(json.dumps(entry, ensure_ascii=False), flush=True)
         return path
     with open(path, "a", encoding="utf-8") as f:
@@ -70,6 +71,8 @@ def write_process_log(
     flags: list[str],
     latency_ms: float,
     output_dir: str = ".",
+    *,
+    audit_config: AuditConfig | None = None,
 ) -> Path:
     """
     Write a process audit log entry.
@@ -100,7 +103,7 @@ def write_process_log(
         "flags": flags,
         "latency_ms": latency_ms,
     }
-    return _emit(entry, _log_path(session_id, "process", output_dir))
+    return _emit(entry, _log_path(session_id, "process", output_dir), audit_config=audit_config)
 
 
 def write_security_log(
@@ -112,6 +115,8 @@ def write_security_log(
     error_type: str | None,
     rollback_occurred: bool,
     output_dir: str = ".",
+    *,
+    audit_config: AuditConfig | None = None,
 ) -> Path:
     """
     Write a security audit log entry.
@@ -142,4 +147,4 @@ def write_security_log(
         "error_type": error_type,
         "rollback_occurred": rollback_occurred,
     }
-    return _emit(entry, _log_path(session_id, "security", output_dir))
+    return _emit(entry, _log_path(session_id, "security", output_dir), audit_config=audit_config)

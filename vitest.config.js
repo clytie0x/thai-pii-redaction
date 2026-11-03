@@ -7,6 +7,7 @@ export default defineConfig({
       "extension/tests/**/*.test.js",
       "desktop/tests/**/*.test.js",
       "demo/tests/**/*.test.js",
+      "tests/enterprise/**/*.test.js",
     ],
   },
 });

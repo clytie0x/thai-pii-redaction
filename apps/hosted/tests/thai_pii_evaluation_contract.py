@@ -315,6 +315,9 @@ def assert_safety_and_boundaries(corpus: dict, baseline: dict) -> None:
         assert forbidden not in evaluator_text
     assert "_install_network_tripwire()" in evaluator_text
     assert "PYTHAINLP_OFFLINE" in evaluator_text
+    assert 'Path("/app/CORE_BUILD_IDENTITY.json")' in evaluator_text
+    assert '"canonical_core"' in evaluator_text
+    assert '"vendored_upstream_sha"' not in evaluator_text
     assert not re.search(r"['\"]C\d{4}['\"]", evaluator_text)
 
     relative = EVAL.relative_to(ROOT).parts

@@ -14,6 +14,7 @@ import types
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from canonical_core import CANONICAL  # noqa: F401
 
 
 ROOT = Path(__file__).resolve().parents[1]

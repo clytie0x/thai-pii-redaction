@@ -13,6 +13,7 @@ from types import MappingProxyType
 
 import httpx
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.leak_guard import (
     OutboundPolicyError,
     enforce_outbound_policy,
@@ -425,7 +426,7 @@ def complete_provider_with_retry_policy(
     )
 
 
-def _validate_pre_send(text: str, vault: SessionVault) -> None:
+def _validate_pre_send(text: str, vault: SessionVault, *, config: CoreConfig | None = None) -> None:
     """
     4 checks before sending any prompt to AI.
     Raise PreSendValidationError if any fail.
@@ -447,10 +448,13 @@ def _validate_pre_send(text: str, vault: SessionVault) -> None:
             guard_context=vault,
             scan_leaks=scan_outbound_leaks,
             scan_residual=scan_residual_signals,
+            config=resolve_config(config),
         )
     except OutboundPolicyError as error:
         discard_exception_graph(error)
         residual_failure = True
+    finally:
+        config = None
     if residual_failure:
         text = ""
         vault = None
@@ -545,6 +549,7 @@ def _send_to_ai(
     *,
     system_prompt: str | None = None,
     max_retries: int = 3,
+    config: CoreConfig | None = None,
 ) -> AIResponse:
     """
     Validate, send to AI, validate response, with retry/rollback on failure.
@@ -567,6 +572,7 @@ def _send_to_ai(
         VaultTimeoutError: If vault has timed out
         ProviderCallError: If a provider call fails or retries are exhausted
     """
+    config = resolve_config(config)
     system = system_prompt or DEFAULT_SYSTEM_PROMPT
 
     # Snapshot for rollback
@@ -575,7 +581,7 @@ def _send_to_ai(
     def validate_attempt(attempt: int) -> None:
         validation_failure = None
         try:
-            _validate_pre_send(pseudonymized_text, vault)
+            _validate_pre_send(pseudonymized_text, vault, config=config)
         except PreSendValidationError as error:
             validation_failure = (
                 error.code
@@ -755,6 +761,7 @@ def send_to_ai(
     *,
     system_prompt: str | None = None,
     max_retries: int = 3,
+    config: CoreConfig | None = None,
 ) -> AIResponse:
     """Run a protected completion without exposing internal exception graphs."""
     failure = ("provider", "failed", "ProviderError", None, 0)
@@ -766,6 +773,7 @@ def send_to_ai(
             provider,
             system_prompt=system_prompt,
             max_retries=max_retries,
+            config=resolve_config(config),
         )
     except Exception as error:
         failure = _public_send_failure_metadata(error)
@@ -777,6 +785,7 @@ def send_to_ai(
     pseudonymized_text = ""
     system_prompt = None
     max_retries = 0
+    config = None
 
     kind, first, second, status_code, attempts = failure
     if kind == "pre_send":

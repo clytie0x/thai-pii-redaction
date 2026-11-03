@@ -121,11 +121,15 @@ def test_anonymize_outcome_false_on_clean_text():
 def test_anonymize_outcome_true_when_leak_guard_blocks(monkeypatch):
     import amphrang
 
-    def blocked(_text, mode):
+    calls = []
+
+    def blocked(_text, *, mode, config):
+        calls.append(config)
         raise amphrang.LeakBlockedError(["NAME"], policy_categories=[])
 
-    monkeypatch.setattr(amphrang, "anonymize", blocked)
+    monkeypatch.setattr(amphrang, "_anonymize_with_config", blocked)
     assert anonymize_outcome("อะไรก็ได้") is True
+    assert len(calls) == 1 and calls[0].allow_remote is False
 
 
 def test_run_reports_leak_blocked_flag_per_class():

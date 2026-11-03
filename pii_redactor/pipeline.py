@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pii_redactor.ai_client import AIProvider, FakeLLMProvider
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.exporter import ExportResult
 from pii_redactor.models import AIResponse, EntityRegistry, ReverseResult
 from pii_redactor.output_validator import ValidationResult
@@ -40,6 +41,7 @@ def run_pipeline(
     salt: str | None = None,
     system_prompt: str | None = None,
     overwrite: bool = False,
+    config: CoreConfig | None = None,
 ) -> PipelineResult:
     """
     Run the 8-step PII redaction pipeline.
@@ -72,6 +74,7 @@ def run_pipeline(
     if input_path is not None and not Path(input_path).exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")
 
+    config = resolve_config(config)
     # Defaults
     if provider is None:
         provider = FakeLLMProvider()
@@ -105,7 +108,7 @@ def run_pipeline(
     # --- Step 2: Detection ---
     from pii_redactor.detectors.aggregate import detect_all
 
-    all_entities = detect_all(clean_text)
+    all_entities = detect_all(clean_text, config=config)
     fp_count = sum(entity.redact_type == "FP" for entity in all_entities)
     entity_registry = EntityRegistry(
         entities=all_entities,
@@ -116,7 +119,7 @@ def run_pipeline(
     # --- Step 3+4: Pseudonymization ---
     from pii_redactor.anonymizer.anonymizer import anonymize
 
-    pseudo_doc = anonymize(clean_text, entity_registry, vault, salt=salt)
+    pseudo_doc = anonymize(clean_text, entity_registry, vault, salt=salt, config=config)
     pseudonymized_text = pseudo_doc.text
 
     # --- Step 5: Send to AI ---
@@ -128,6 +131,7 @@ def run_pipeline(
         vault,
         provider,
         system_prompt=system_prompt,
+        config=config,
     )
 
     # --- Step 6: Reverse mapping ---
@@ -138,12 +142,17 @@ def run_pipeline(
         entity_registry,
         vault,
         mode="surrogate",
+        _source_rebuild_ranges=(
+            frozenset((item.start, item.end) for item in pseudo_doc.replacement_highlights)
+            if ai_response.text == pseudo_doc.text
+            else frozenset()
+        ),
     )
 
     # --- Step 7: Output validation ---
     from pii_redactor.output_validator import validate_output
 
-    validation_result = validate_output(reverse_result, entity_registry, vault)
+    validation_result = validate_output(reverse_result, entity_registry, vault, config=config)
 
     # --- Step 8: Export (optional) ---
     export_result = None

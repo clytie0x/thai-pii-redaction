@@ -1,7 +1,7 @@
 """Chat callers for the LLM-as-detector baseline.
 
 Each caller is a plain `(system, user) -> str` function object. They exist here
-rather than reusing `amphrang.engine.ai_client` on purpose: that module's providers
+rather than reusing `pii_redactor.ai_client` on purpose: that module's providers
 are part of the product's send path and carry the pre-send leak guard, vault
 rollback and retry policy that belong to a real user request. A benchmark caller
 must do none of that -- it sends gold text verbatim and returns raw output.
@@ -13,8 +13,7 @@ import os
 import time
 
 import httpx
-
-from amphrang.engine.openai_compat import (
+from pii_redactor.openai_compat import (
     chat_completions_url,
     extract_chat_content,
     validate_header_value,

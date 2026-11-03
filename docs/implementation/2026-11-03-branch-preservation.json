@@ -1,0 +1,29 @@
+{
+  "all_21_remote_peeled_commits_verified": true,
+  "archive_tags": {
+    "archive/2026-11-03/local/t3/2f45abc8": "a520b118e5ba224b2b46ff6e4a695f595d967ce5",
+    "archive/2026-11-03/local/t3/m01-snapshot-closure-artifact-qualify": "ceadfdeede11c460e91b650cb4438d5c15597fbd",
+    "archive/2026-11-03/local/t3/m7-rights-delivery": "e37c32467e7cdd5c3e6b167ba9f7b0c91016e83e",
+    "archive/2026-11-03/local/t3/m8-organization-controls": "2de950b50761720178c3843f3c359bad43fc514d",
+    "archive/2026-11-03/remote/bench/blind-v3-baseline": "4d75995468a2511cef1b82c6276094376b887b94",
+    "archive/2026-11-03/remote/cursor/broker-hello-stampede-9b82": "dd713e9f18fd67e8243d5795383d14ac62070502",
+    "archive/2026-11-03/remote/cursor/hard-pii-set-9b82": "9ab0214691234557c42b52e0066b90e6e49276e4",
+    "archive/2026-11-03/remote/cursor/per-entity-blind-v2-7c3b": "bd18441ca3ed742382b393acc42cc8896ae81c3f",
+    "archive/2026-11-03/remote/dependabot/github_actions/actions/attest-build-provenance-4.2.2": "53d46dd9ca17b096b38ed687bde05f0ec40566db",
+    "archive/2026-11-03/remote/dependabot/github_actions/actions/download-artifact-8.0.2": "ef42c9693df678cc17ea3604cfe2063d7bba012a",
+    "archive/2026-11-03/remote/dependabot/github_actions/actions/setup-node-7.1.0": "d5cecee950ec1d9b599fa62f5e6cd0ef9fae26bb",
+    "archive/2026-11-03/remote/dependabot/github_actions/actions/upload-artifact-7.0.2": "7cf26e13b1992a3120495392ce59af14030969da",
+    "archive/2026-11-03/remote/dependabot/github_actions/swatinem/rust-cache-2.9.2": "f6d9b03d41c099a788b1f209c4697720da1add3d",
+    "archive/2026-11-03/remote/design/pdpa-enterprise": "2764a772d410a968726be60750b7385aa3229c09",
+    "archive/2026-11-03/remote/feat/pdpa-enterprise": "40cf18e5644b9edbdc2eff3e16e248663e48c1d9",
+    "archive/2026-11-03/remote/feat/recall-campaign": "8eb198397d5a872e7ee00dbf8b1c4d2b4391c0d3",
+    "archive/2026-11-03/remote/fix/history-commit-map": "5c86f22405055514184173acf1a9a902330b5409",
+    "archive/2026-11-03/remote/fix/restore-machine-context": "310bd7270fa7c1b14925e6e6df45fed44af4b369",
+    "archive/2026-11-03/remote/research/pdpa-coverage-lifecycle": "bd2290c15c7bc8a377a72772960943ade92bc0be",
+    "archive/2026-11-03/remote/research/yrss-reproducible-detection": "91fe70182619557d07334802af2b97d1fdc30148",
+    "archive/2026-11-03/remote/source/hosted-core-75-file-pin": "cf50512a043b54ca28f4264d8c103dcc25da1a6d"
+  },
+  "branches_deleted_by_preservation": false,
+  "schema_version": 1,
+  "verified_utc": "2026-11-03T11:05:26.213242+00:00"
+}

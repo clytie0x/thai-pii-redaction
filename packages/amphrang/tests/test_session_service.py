@@ -39,7 +39,7 @@ def _service_state(svc):
                 "created": session.created,
                 "last_access": session.last_access,
                 "entities": [asdict(entity) for entity in session.entities],
-                "trusted_sanitized_digests": session.trusted_sanitized_digests,
+                "trusted_source_rebuilds": session.trusted_source_rebuilds,
                 "vault": {
                     "table": {
                         entity_id: asdict(record)
@@ -85,7 +85,7 @@ def _product_traceback_locals(error):
     traceback = error.__traceback__
     while traceback is not None:
         module = traceback.tb_frame.f_globals.get("__name__", "")
-        if module.startswith(("amphrang.engine.", "amphrang.server.")):
+        if module.startswith(("amphrang.engine.", "amphrang.server.", "pii_redactor.")):
             frames.append(dict(traceback.tb_frame.f_locals))
         traceback = traceback.tb_next
     return frames
@@ -102,7 +102,7 @@ def test_explicit_tner_failure_preserves_existing_session_and_error_secrecy(monk
     retained.credential = credential
     retained.provider_body = provider_body
 
-    def fail_detection(_text):
+    def fail_detection(_text, *, config):
         raise retained
 
     monkeypatch.setattr(stateless_mod, "detect_all", fail_detection)
@@ -586,7 +586,13 @@ def test_token_nonce_exhaustion_is_value_free_and_does_not_publish(monkeypatch):
     )
     monkeypatch.setattr(vault_mod, "new_token_namespace", lambda: namespace)
     monkeypatch.setattr(anonymizer_mod, "new_token_nonce", lambda: nonce)
-    monkeypatch.setattr(stateless_mod, "detect_all", lambda _text: [entity])
+    detections = []
+
+    def detect(_text, *, config):
+        detections.append(config)
+        return [entity]
+
+    monkeypatch.setattr(stateless_mod, "detect_all", detect)
     service, _ = _svc()
 
     with pytest.raises(
@@ -596,6 +602,7 @@ def test_token_nonce_exhaustion_is_value_free_and_does_not_publish(monkeypatch):
         service.sanitize(source, mode="token")
 
     assert service.session_count == 0
+    assert len(detections) == 1
     assert excinfo.value.leak_types == ["ANONYMIZE_FAILED"]
     assert excinfo.value.__cause__ is None
     assert excinfo.value.__context__ is None
@@ -1037,7 +1044,7 @@ def test_foreign_future_token_cannot_become_trusted_later_in_same_session(
     assert "foreign_tokens:1" in after.warnings
 
 
-def test_session_bounds_trusted_sanitized_digests():
+def test_session_bounds_trusted_source_rebuilds():
     svc, _ = _svc()
     out = None
     for index in range(svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT + 3):
@@ -1048,8 +1055,10 @@ def test_session_bounds_trusted_sanitized_digests():
 
     assert out is not None
     session = svc._sessions[out.session_id]
-    assert len(session.trusted_sanitized_digests) == svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT
-    assert len(set(session.trusted_sanitized_digests)) == len(session.trusted_sanitized_digests)
+    assert len(session.trusted_source_rebuilds) == svc_mod._TRUSTED_SANITIZED_DIGEST_LIMIT
+    assert len({item.digest for item in session.trusted_source_rebuilds}) == len(
+        session.trusted_source_rebuilds
+    )
 
 
 def test_restore_multi_turn_uses_accumulated_registry():

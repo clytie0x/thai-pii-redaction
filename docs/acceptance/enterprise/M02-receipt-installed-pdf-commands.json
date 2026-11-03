@@ -1,0 +1,379 @@
+{
+  "artifact_files": {
+    "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "d6fc52cac577cc493e9daf9adf0089d8e67caa46e54ea2a46455e0bf5dbe4daf",
+    "core-direct/thai_pii_redaction_core-0.1.0.tar.gz": "81a737ad82e395b0907e0b4ed4d47bafd00382b8564c68c6933e786064dc32dd",
+    "core-rebuilt/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "d6fc52cac577cc493e9daf9adf0089d8e67caa46e54ea2a46455e0bf5dbe4daf",
+    "sdk-direct/amphrang-0.1.0-py3-none-any.whl": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7",
+    "sdk-direct/amphrang-0.1.0.tar.gz": "50c158a9cb755d2a7ec12cdc373a7f5febf486144a88a7c5133bff3424f9726e",
+    "sdk-rebuilt/amphrang-0.1.0-py3-none-any.whl": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+  },
+  "artifact_workspace": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc",
+  "commands": [
+    {
+      "argv": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "-B",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\.superpowers\\sdd\\parallel-s-m\\m2-pdf-v3\\proof.py",
+        "--inside",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01\\enterprise",
+        "enterprise"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01\\enterprise",
+      "exit_code": 0,
+      "profile": "enterprise",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 73,
+      "stdout_sha256": "073c2f99c8cb3f7521df45526cfd8ab8de76647f77dcb9ff3dce2688f686702d"
+    },
+    {
+      "argv": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "-I",
+        "-B",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\.superpowers\\sdd\\parallel-s-m\\m2-pdf-v3\\proof.py",
+        "--inside",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01\\sdk-server-mcp-proxy",
+        "sdk-server-mcp-proxy"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01\\sdk-server-mcp-proxy",
+      "exit_code": 0,
+      "profile": "sdk-server-mcp-proxy",
+      "stderr_bytes": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_bytes": 73,
+      "stdout_sha256": "073c2f99c8cb3f7521df45526cfd8ab8de76647f77dcb9ff3dce2688f686702d"
+    }
+  ],
+  "driver_sha256": "42641966855ef8dc44777d02e261540e721e3254bf5c3513037d9eb4dcd8d504",
+  "installed_after": {
+    "enterprise": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    },
+    "sdk-core": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    },
+    "sdk-server-mcp-proxy": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    }
+  },
+  "installed_before": {
+    "enterprise": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    },
+    "sdk-core": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    },
+    "sdk-server-mcp-proxy": {
+      "exact_wheel_payload": true,
+      "files": 260,
+      "payload_binding_sha256": "52420b831c07ea6c29d9c2e6bd2e32605989f07551809f490b981bbd9ea232f4"
+    }
+  },
+  "limits": [
+    "seven bounded proof groups per executed profile, not full suites",
+    "sdk-core payload/source binding only; PDF API not run there",
+    "process socket instrumentation, not OS firewall",
+    "successful MCP plaintext preserve contract untouched; MCP not rerun",
+    "no OCR inference, root source CLI, external HTTP/browser/Office, real host/provider, production or current performance acceptance"
+  ],
+  "manifest_sha256": "051e5dcf6b341b7ae19b7380cad39b8a9a7dcea81ea8e1fbad8242654b1ca82a",
+  "passed": true,
+  "preprovisioned_models_unchanged": true,
+  "profiles": {
+    "enterprise": {
+      "artifact_sha256": {
+        "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "d6fc52cac577cc493e9daf9adf0089d8e67caa46e54ea2a46455e0bf5dbe4daf",
+        "sdk-direct/amphrang-0.1.0-py3-none-any.whl": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+      },
+      "captured_output_bytes": 308,
+      "checks": [
+        "installed_wheel_payload_and_origins",
+        "real_core_repeated_occurrence_multipage_bbox_and_flattening",
+        "invalid_provenance_fixed_error_no_output",
+        "installed_thai_font_combining_source_spans",
+        "installed_http_text_pdf_detection_redaction_six_boxes_and_flattening",
+        "http_malformed_encrypted_non_pdf_ocr_absence_work_cap_and_cleanup",
+        "installed_sdk_cli_report_counts_no_raw_value"
+      ],
+      "cli": {
+        "generated_installed_launcher_help": true,
+        "raw_value_absent_from_captured_report": true,
+        "report_dispatch_in_process": true
+      },
+      "cwd_outside_source": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01\\enterprise",
+      "dont_write_bytecode": true,
+      "font": {
+        "packaged_font_selected": true,
+        "path": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\enterprise-environment\\Lib\\site-packages\\pii_redactor\\fonts\\IBMPlexSansThaiLooped-Regular.ttf",
+        "sha256": "8a9e973b2ded165b9447fee50287878ef1648531023a834c2248094a54188ceb"
+      },
+      "geometry": {
+        "all_source_spans_exact": true,
+        "identical_occurrences": 3,
+        "pages": 2,
+        "selected_black": 2,
+        "unselected_preserved": 1
+      },
+      "http": {
+        "email_count": 2,
+        "errors": {
+          "encrypted": {
+            "code": "document_invalid",
+            "status": 422
+          },
+          "malformed": {
+            "code": "document_invalid",
+            "status": 422
+          },
+          "non_pdf": {
+            "code": "document_invalid",
+            "status": 422
+          },
+          "ocr_absent": {
+            "code": "ocr_unavailable",
+            "status": 503
+          },
+          "page_work_cap": {
+            "code": "payload_too_large",
+            "status": 413
+          }
+        },
+        "no_mapping_or_before_preview": true,
+        "no_output_pii_metadata": true,
+        "pages": 2,
+        "phone_count": 4,
+        "solid_black_source_boxes": 6,
+        "temporary_cleanup": true
+      },
+      "installed_payload_files_verified": 260,
+      "interpreter_isolated": true,
+      "limits": [
+        "root_ai_guard_cli_not_in_wheel_source_only_unqualified",
+        "ocr_inference_not_installed_not_qualified",
+        "root_cli_source_path_not_installed_or_executed",
+        "asgi_in_process_not_external_http_browser_or_office",
+        "no_provider_or_production_or_performance_acceptance"
+      ],
+      "migration_resources": {
+        "001_foundation.sql": "7bdb7ec2ba3b091f8f589ce7dadf34d58b321c3c0acc293d044cf1ee4c7930c0",
+        "002_registry.sql": "1d44b0a30f92365b00eaaf003268e806c9503aeb636ca52b3c66d3e272e7744c",
+        "003_staff_sessions.sql": "47b4cca4fee56c8dc55c5acaaa6adfec0bd47e3afbf371f9805ee76d2fde2781",
+        "004_subject_consent.sql": "874c3d29f0184903cc8439c63caa18eccc41fcb85a99ed5b1f306f9fcf763e5b",
+        "005_managed_execution.sql": "12dc8bcddcb1b857210738f6550aaebe2882d788c9cec44f5e44d12aa5a22469",
+        "006_retention_holds.sql": "7e565c6eae0501867f17f63689b6f4d4ac91522eb809c648e3ada03c759cf26d",
+        "007_rights_delivery.sql": "5932a3cee9970f1f90838fd9c94e1f294fb18d0d3645b4fddcd5682b908b56b5",
+        "008_organization_controls.sql": "050254aa6eb5732f04960b0598d4c1956db6068cc8e5c210797fd14b76f6b7a3",
+        "009_operations.sql": "e399521eb3183c70b4fa9c3a74cae7407c40b3409118547c54ce5fd30eb4c019",
+        "010_processing_controls.sql": "d78f30500f14ffffdb99a49e946651d2a1f65d198a987906c59a276ef873d4d5",
+        "011_runtime_fence_authority.sql": "152591521ed6f96f8e210a07b775a3a08f594ec4e597f0823c137dc030c6a7cd",
+        "012_restore_cutover.sql": "0890389c1fad6a362065e1e0b48e2dd22c1261076ca4d3b734da35ee98ed0f8c",
+        "013_initial_activation.sql": "7bfe03ab23ee055d146b90fef7fc7c6254215f5c05dcd95c518cfe18500e2b0f"
+      },
+      "model_files_sha256": {
+        "db.json": "8bff37993324365f1f243cf983880915c908cf7ee14ef4013d3aad6c934f38c8",
+        "thai-ner-1-4.crfsuite": "8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38"
+      },
+      "models_unchanged": true,
+      "network_attempts": 0,
+      "origins": {
+        "amphrang_cli": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\enterprise-environment\\Lib\\site-packages\\amphrang\\cli.py",
+        "pii_redactor": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\enterprise-environment\\Lib\\site-packages\\pii_redactor\\__init__.py"
+      },
+      "passed": true,
+      "profile": "enterprise",
+      "python": "3.13.12",
+      "report_receipt": {
+        "installed_api_and_source_cli_guidance": true,
+        "pdpa_report_api": true,
+        "product_version": "0.1.0",
+        "receipt_issue_recompute_verify": true,
+        "receipt_operator_fields_omitted": true,
+        "receipt_pages": 1,
+        "report_pages": 1,
+        "source_values_absent_in_retained_pdf_text_and_metadata": true
+      },
+      "runtime_identity_after": "7e0777205b60c3b1d9d892b487810e093985ba3813a24031068c61175e65a623",
+      "runtime_identity_before": "7e0777205b60c3b1d9d892b487810e093985ba3813a24031068c61175e65a623",
+      "stdlib_internal_socketpairs": 1,
+      "versions": {
+        "Pillow": "12.3.0",
+        "amphrang": "0.1.0",
+        "pdfplumber": "0.11.10",
+        "pypdfium2": "5.12.1",
+        "pythainlp": "5.3.4",
+        "reportlab": "5.0.0",
+        "thai-pii-redaction-core": "0.1.0"
+      }
+    },
+    "sdk-server-mcp-proxy": {
+      "artifact_sha256": {
+        "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl": "d6fc52cac577cc493e9daf9adf0089d8e67caa46e54ea2a46455e0bf5dbe4daf",
+        "sdk-direct/amphrang-0.1.0-py3-none-any.whl": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+      },
+      "captured_output_bytes": 0,
+      "checks": [
+        "installed_wheel_payload_and_origins",
+        "real_core_repeated_occurrence_multipage_bbox_and_flattening",
+        "invalid_provenance_fixed_error_no_output",
+        "installed_thai_font_combining_source_spans",
+        "installed_http_text_pdf_detection_redaction_six_boxes_and_flattening",
+        "http_malformed_encrypted_non_pdf_ocr_absence_work_cap_and_cleanup",
+        "installed_sdk_cli_report_counts_no_raw_value"
+      ],
+      "cli": {
+        "generated_installed_launcher_help": true,
+        "raw_value_absent_from_captured_report": true,
+        "report_dispatch_in_process": true
+      },
+      "cwd_outside_source": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01\\sdk-server-mcp-proxy",
+      "dont_write_bytecode": true,
+      "font": {
+        "packaged_font_selected": true,
+        "path": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\sdk-server-mcp-proxy-environment\\Lib\\site-packages\\pii_redactor\\fonts\\IBMPlexSansThaiLooped-Regular.ttf",
+        "sha256": "8a9e973b2ded165b9447fee50287878ef1648531023a834c2248094a54188ceb"
+      },
+      "geometry": {
+        "all_source_spans_exact": true,
+        "identical_occurrences": 3,
+        "pages": 2,
+        "selected_black": 2,
+        "unselected_preserved": 1
+      },
+      "http": {
+        "email_count": 2,
+        "errors": {
+          "encrypted": {
+            "code": "document_invalid",
+            "status": 422
+          },
+          "malformed": {
+            "code": "document_invalid",
+            "status": 422
+          },
+          "non_pdf": {
+            "code": "document_invalid",
+            "status": 422
+          },
+          "ocr_absent": {
+            "code": "ocr_unavailable",
+            "status": 503
+          },
+          "page_work_cap": {
+            "code": "payload_too_large",
+            "status": 413
+          }
+        },
+        "no_mapping_or_before_preview": true,
+        "no_output_pii_metadata": true,
+        "pages": 2,
+        "phone_count": 4,
+        "solid_black_source_boxes": 6,
+        "temporary_cleanup": true
+      },
+      "installed_payload_files_verified": 260,
+      "interpreter_isolated": true,
+      "limits": [
+        "root_ai_guard_cli_not_in_wheel_source_only_unqualified",
+        "ocr_inference_not_installed_not_qualified",
+        "root_cli_source_path_not_installed_or_executed",
+        "asgi_in_process_not_external_http_browser_or_office",
+        "no_provider_or_production_or_performance_acceptance"
+      ],
+      "migration_resources": {
+        "001_foundation.sql": "7bdb7ec2ba3b091f8f589ce7dadf34d58b321c3c0acc293d044cf1ee4c7930c0",
+        "002_registry.sql": "1d44b0a30f92365b00eaaf003268e806c9503aeb636ca52b3c66d3e272e7744c",
+        "003_staff_sessions.sql": "47b4cca4fee56c8dc55c5acaaa6adfec0bd47e3afbf371f9805ee76d2fde2781",
+        "004_subject_consent.sql": "874c3d29f0184903cc8439c63caa18eccc41fcb85a99ed5b1f306f9fcf763e5b",
+        "005_managed_execution.sql": "12dc8bcddcb1b857210738f6550aaebe2882d788c9cec44f5e44d12aa5a22469",
+        "006_retention_holds.sql": "7e565c6eae0501867f17f63689b6f4d4ac91522eb809c648e3ada03c759cf26d",
+        "007_rights_delivery.sql": "5932a3cee9970f1f90838fd9c94e1f294fb18d0d3645b4fddcd5682b908b56b5",
+        "008_organization_controls.sql": "050254aa6eb5732f04960b0598d4c1956db6068cc8e5c210797fd14b76f6b7a3",
+        "009_operations.sql": "e399521eb3183c70b4fa9c3a74cae7407c40b3409118547c54ce5fd30eb4c019",
+        "010_processing_controls.sql": "d78f30500f14ffffdb99a49e946651d2a1f65d198a987906c59a276ef873d4d5",
+        "011_runtime_fence_authority.sql": "152591521ed6f96f8e210a07b775a3a08f594ec4e597f0823c137dc030c6a7cd",
+        "012_restore_cutover.sql": "0890389c1fad6a362065e1e0b48e2dd22c1261076ca4d3b734da35ee98ed0f8c",
+        "013_initial_activation.sql": "7bfe03ab23ee055d146b90fef7fc7c6254215f5c05dcd95c518cfe18500e2b0f"
+      },
+      "model_files_sha256": {
+        "db.json": "8bff37993324365f1f243cf983880915c908cf7ee14ef4013d3aad6c934f38c8",
+        "thai-ner-1-4.crfsuite": "8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38"
+      },
+      "models_unchanged": true,
+      "network_attempts": 0,
+      "origins": {
+        "amphrang_cli": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\sdk-server-mcp-proxy-environment\\Lib\\site-packages\\amphrang\\cli.py",
+        "pii_redactor": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-receipt-v3-f_fyedoc\\sdk-server-mcp-proxy-environment\\Lib\\site-packages\\pii_redactor\\__init__.py"
+      },
+      "passed": true,
+      "profile": "sdk-server-mcp-proxy",
+      "python": "3.13.12",
+      "report_receipt": {
+        "installed_api_and_source_cli_guidance": true,
+        "pdpa_report_api": true,
+        "product_version": "0.1.0",
+        "receipt_issue_recompute_verify": true,
+        "receipt_operator_fields_omitted": true,
+        "receipt_pages": 1,
+        "report_pages": 1,
+        "source_values_absent_in_retained_pdf_text_and_metadata": true
+      },
+      "runtime_identity_after": "7e0777205b60c3b1d9d892b487810e093985ba3813a24031068c61175e65a623",
+      "runtime_identity_before": "7e0777205b60c3b1d9d892b487810e093985ba3813a24031068c61175e65a623",
+      "stdlib_internal_socketpairs": 1,
+      "versions": {
+        "Pillow": "13.0.0",
+        "amphrang": "0.1.0",
+        "pdfplumber": "0.11.10",
+        "pypdfium2": "5.14.0",
+        "pythainlp": "5.3.7",
+        "reportlab": "5.1.0",
+        "thai-pii-redaction-core": "0.1.0"
+      }
+    }
+  },
+  "retained_outputs_sha256": {
+    "enterprise/geometry-output.pdf": "d23fb0414bfcb37a52f1881df54408e0c7d53b75d4d660316ca3d1a366b28894",
+    "enterprise/geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+    "enterprise/geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+    "enterprise/http-output.pdf": "4628e775ffdae6310d724cf8c631639d8081fca93467c8e76ed333e20cc27e98",
+    "enterprise/http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+    "enterprise/pdpa-report.pdf": "7be88ddc1e306abaa855b82839637f917cd1863d5f1647fb7e91b62f13f4d0d0",
+    "enterprise/pdpa-report.png": "b6a37a80c3e429d85dc44ddf082a597afe695a6f45bce85b34b2cef618d73d77",
+    "enterprise/processing-receipt.pdf": "1e2cf4a8a7f9eb7917318fe8db7834588bd7d725f2529b1ff50c6824723cd384",
+    "enterprise/processing-receipt.png": "5e314ba9b9a56145c4e32785186adf84171c1d46afa9fc81667dba03f3acea9d",
+    "enterprise/result.json": "4dcd70e653e8eafdac21cd98a9f20a74a0e961d5458f0c58494262dcefdd8b70",
+    "sdk-server-mcp-proxy/geometry-output.pdf": "49be24c9829bff5569bd0129e55aaea35a5d26892e2f064836c7d29bd8991ddf",
+    "sdk-server-mcp-proxy/geometry-page-1.png": "c78ae8c2136226bc11bebb124544ca89e0ab1a850eb9c0ba59e7a782c38c2bf7",
+    "sdk-server-mcp-proxy/geometry-page-2.png": "ceb17da0bacfeba2a8616b09a49e54e3e671a50eaacb96e04f0e73943c8466b5",
+    "sdk-server-mcp-proxy/http-output.pdf": "5cea7e2e1f4e7885c06e6a84dbb775c4b859a7aeaba163056bf58dee23649dec",
+    "sdk-server-mcp-proxy/http-page-1.png": "335ee83dfe557cad0248d5bc8da7ad42fe5f182bb49132f7ad0f4fde4a415d92",
+    "sdk-server-mcp-proxy/pdpa-report.pdf": "ef45afab80900d22b481d3b9d1839666b88025e3f9dcaea84dae81e5364f59a7",
+    "sdk-server-mcp-proxy/pdpa-report.png": "b6a37a80c3e429d85dc44ddf082a597afe695a6f45bce85b34b2cef618d73d77",
+    "sdk-server-mcp-proxy/processing-receipt.pdf": "c6e303080921aed30b799fbccd874f6655e02434c16cefa7ba780139b0e1d6fb",
+    "sdk-server-mcp-proxy/processing-receipt.png": "941e9a7ce8260c472315d1991d22054d1a16aec10ae3ea04b8def3879f65ead7",
+    "sdk-server-mcp-proxy/result.json": "4757d0fbfa9274c08b09faaf0ea6ec0f5ef40a5369469d2172251e8f69f9bcac"
+  },
+  "source_after": {
+    "binding_sha256": "c200a85dac93be8d28f6b8956b294405a760d759108b007e13b950ec7e5a8f12",
+    "count": 255,
+    "exact_frozen_inputs": true
+  },
+  "source_before": {
+    "binding_sha256": "c200a85dac93be8d28f6b8956b294405a760d759108b007e13b950ec7e5a8f12",
+    "count": 255,
+    "exact_frozen_inputs": true
+  },
+  "workspace": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-installed-pdf-v3-xy8d7h01"
+}

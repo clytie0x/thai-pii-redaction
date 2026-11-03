@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Guard | เอกสารที่องค์กรจัดการ</title>
+  <link rel="icon" href="/static/logo.png" type="image/png">
+  <link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/managed_style.css">
+  <script type="module" src="/static/managed_app.js"></script>
+</head>
+<body data-managed-root>
+  <a class="skip-link" href="#main">ข้ามไปเนื้อหา</a>
+  <header class="brand"><a href="/">AI Guard</a><span>เอกสารที่องค์กรจัดการ</span></header>
+  <main id="main" tabindex="-1">
+    <div class="workspace-heading"><div><p class="eyebrow">พื้นที่ทดสอบข้อมูลสังเคราะห์</p><h1>เอกสารและคำสั่งที่ผ่านการทบทวน</h1></div><a href="/">กลับทะเบียนกิจกรรม</a></div>
+    <p class="managed-notice">ใช้ได้เฉพาะการจำกัดการเข้าถึง ระงับการใช้งาน และแก้ไขเอกสารที่ระบบนี้ดูแล การลบข้อมูลจริงยังไม่เปิดใช้งาน ผลตรวจยืนยันครอบคลุมคลังหลักเท่านั้น ไม่รวมสำเนาสำรองหรือผู้ประมวลผลอื่น</p>
+    <p id="managed-status" role="status" aria-live="polite">กำลังโหลดสิทธิ์และเอกสาร…</p>
+    <button id="managed-refresh" type="button">รีเฟรชสถานะ</button>
+    <section class="panel" id="managed-create-panel" hidden><h2>สร้างคลังเอกสาร</h2>
+      <form id="managed-create"><label>กิจกรรมที่มีผลอนุมัติ<select name="activity_id" required></select></label>
+        <div class="form-grid"><label>รหัสเจ้าของข้อมูล (เฉพาะฐานความยินยอม)<input name="subject_id" maxlength="36"></label><label>รหัสรุ่นวัตถุประสงค์<input name="purpose_version" maxlength="36"></label></div>
+        <button class="primary" type="submit">สร้างคลังที่เข้ารหัส</button></form>
+    </section>
+    <section class="panel"><h2>เอกสารในขอบเขตของคุณ</h2>
+      <label>คลังเอกสาร<select id="managed-collection"></select></label><p id="managed-collection-state" class="muted"></p>
+      <div id="managed-documents" class="record-list"></div>
+      <form id="managed-upload" hidden><label>เพิ่มเอกสารข้อความสังเคราะห์<textarea name="content" maxlength="32768" rows="3" required></textarea></label><button type="submit">เข้ารหัสและเพิ่มเอกสาร</button></form>
+      <pre id="managed-content" class="managed-content" hidden aria-label="เนื้อหาเอกสารที่มีสิทธิ์อ่าน"></pre>
+      <button id="managed-clear-content" type="button" hidden>ปิดเนื้อหา</button>
+    </section>
+    <section id="managed-proposal-panel" class="panel" hidden><h2>เสนอคำสั่งสำหรับเอกสารที่เลือก</h2>
+      <p id="managed-target" class="muted">เลือกเอกสารจากรายการก่อน</p>
+      <form id="managed-propose"><label>การดำเนินการ<select name="action"><option value="restrict">จำกัดการเข้าถึง</option><option value="suppress">ระงับการใช้งาน</option><option value="correct">แก้ไขเป็นรุ่นใหม่</option></select></label>
+        <label id="managed-correction-label" hidden>ข้อความสังเคราะห์ที่แก้ไขแล้ว<textarea name="correction" maxlength="32768" rows="3"></textarea></label>
+        <label>คำอนุมัติมีผลนาน (นาที)<input name="minutes" type="number" min="1" max="1440" value="30" required></label>
+        <button type="submit">เสนอให้ผู้ทบทวนอีกคน</button></form>
+    </section>
+    <section class="panel"><h2>คำสั่งและผลตรวจคลังหลัก</h2><p class="muted">การส่งคิวไม่ใช่ผลสำเร็จ สถานะไม่ทราบผลต้องตรวจสอบและทบทวนก่อนเริ่มอีกครั้ง</p><div id="managed-instructions" class="record-list"></div></section>
+    <section class="panel" id="managed-recovery-panel" hidden><h2>ทดสอบการกู้คืนในเขตกักกัน</h2><p class="muted">การกู้คืนปิดการอ่านทันที ผู้ทบทวนอีกคนต้องตรวจและนำข้อจำกัดเดิมกลับมาใช้ก่อนเปิดอ่าน ขอบเขตนี้ยังไม่ใช่การรับรองระบบสำรองข้อมูลจริง</p>
+      <button id="managed-snapshot" type="button">บันทึกจุดทดสอบของคลังที่เลือก</button><p id="managed-snapshot-info" class="muted"></p>
+      <form id="managed-recovery"><label>รหัสจุดทดสอบ<input name="snapshot_id" maxlength="36" required></label><label>รุ่นของจุดทดสอบ<input name="expected_revision" type="number" min="1" value="1" required></label><div class="actions"><button type="submit" name="operation" value="quarantine">กู้คืนเข้ากักกัน</button><button type="submit" name="operation" value="reconcile">ทบทวนและนำข้อจำกัดกลับมาใช้</button></div></form>
+    </section>
+  </main>
+</body>
+</html>

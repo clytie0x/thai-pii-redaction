@@ -1,7 +1,7 @@
 """FastAPI server for the Amphrang Thai PII engine.
 
 Session-namespaced TOKEN-mode pseudonymization; the token -> original map lives in
-`amphrang.engine.session_service.SessionService` in backend memory. HTTP contract v2
+`pii_redactor.session_service.SessionService` in backend memory. HTTP contract v2
 returns only strict, data-minimized projections.
 """
 
@@ -24,35 +24,36 @@ from pathlib import Path
 from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.responses import Response
-
-from amphrang.engine.ai_client import (
+from pii_redactor.ai_client import (
     DEFAULT_SYSTEM_PROMPT,
     ProviderCallError,
     complete_provider_with_retry_policy,
     get_provider_factories,
 )
-from amphrang.engine.audit import write_process_log
-from amphrang.engine.detectors.aggregate import detect_all
-from amphrang.engine.detectors.ner_failure import NERFailureError, ner_failure_metadata
-from amphrang.engine.guard.injection import scan_injection
-from amphrang.engine.ingest.text_cleaner import clean, clean_length_preserving
-from amphrang.engine.leak_guard import (
+from pii_redactor.audit import write_process_log
+from pii_redactor.detectors.aggregate import detect_all
+from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
+from pii_redactor.guard.injection import scan_injection
+from pii_redactor.ingest.text_cleaner import clean, clean_length_preserving
+from pii_redactor.leak_guard import (
     OutboundPolicyError,
     enforce_outbound_policy,
     normalize_outbound_leak_types,
     scan_outbound_leaks,
     scan_residual_signals,
 )
-from amphrang.engine.report import analyze_text
-from amphrang.engine.safe_errors import discard_exception_graph
-from amphrang.engine.stateless import (
+from pii_redactor.report import analyze_text
+from pii_redactor.safe_errors import discard_exception_graph
+from pii_redactor.stateless import (
     StatelessLeakError,
     restore_stateless,
     sanitize_stateless,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.responses import Response
+
+from amphrang._core_config import sdk_audit_config, sdk_core_config
 from amphrang.server.access_logging import install_uvicorn_access_log_filter
 from amphrang.server.http_v2 import (
     CONTRACT_HEADER,
@@ -82,6 +83,9 @@ from amphrang.server.session_control_auth import (
     make_session_disposal_authorization,
     verify_session_disposal_authorization,
 )
+
+_CORE_CONFIG = sdk_core_config()
+_AUDIT_CONFIG = sdk_audit_config()
 
 
 def _contain_public_errors(func):
@@ -525,7 +529,7 @@ def _check_audit_dir_writable() -> None:
     audit.py deliberately never swallows write errors (a lost audit trail is worse than a
     crash). Skipped in stdout audit mode (AMPHRANG_AUDIT_STDOUT=1), which never touches disk.
     """
-    if os.environ.get("AMPHRANG_AUDIT_STDOUT") == "1":
+    if _AUDIT_CONFIG.stdout:
         return
     log_dir = Path(_get_audit_log_dir())
     probe = log_dir / f".write_probe_{os.getpid()}"
@@ -542,7 +546,8 @@ def _check_audit_dir_writable() -> None:
 def _get_audit_log_dir() -> str:
     """Audit log directory: ./logs under the current working directory."""
     log_dir = Path.cwd() / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    if not _AUDIT_CONFIG.stdout:
+        log_dir.mkdir(parents=True, exist_ok=True)
     return str(log_dir)
 
 
@@ -558,7 +563,7 @@ def _now() -> float:
 
 
 # now_fn is late-bound through the module global so tests monkeypatching _now keep working.
-from amphrang.engine.session_service import (
+from pii_redactor.session_service import (
     DisposalAuthorizationError,
     ModeMismatchError,
     OutboundLeakError,
@@ -582,6 +587,7 @@ SERVICE = SessionService(
     ttl_s=_SESSION_TTL_S,
     now_fn=lambda: _now(),
     timer_factory=_new_session_expiry_timer,
+    config=_CORE_CONFIG,
 )
 atexit.register(SERVICE.close)
 
@@ -659,6 +665,13 @@ def _restore_warnings(out) -> list[dict[str, object]]:
     if type(foreign_count) is int and foreign_count > 0:
         warnings.append({"code": "foreign_replacement", "count": foreign_count})
     return warnings
+
+
+def _section26_warnings(findings: object) -> list[dict[str, object]]:
+    return [
+        {"code": f"section26:{category}", "count": 1}
+        for category in _section26_categories(findings)
+    ]
 
 
 def _analyze_projection(result: dict) -> dict[str, object]:
@@ -896,7 +909,7 @@ def sanitize(request: SanitizeRequest):
             "highlights": highlights,
             "section26_categories": _section26_categories(out.section26),
             "guard_findings": _guard_findings(request.text),
-            "warnings": [],
+            "warnings": _section26_warnings(out.section26),
             "safety": {"status": "pass", "residual_count": 0},
         }
         # Render (and fail) before the one-assignment publish in SessionService.
@@ -910,6 +923,7 @@ def sanitize(request: SanitizeRequest):
             flags=[],
             latency_ms=(time.time() - start) * 1000,
             output_dir=_get_audit_log_dir(),
+            audit_config=_AUDIT_CONFIG,
         )
         return response
 
@@ -944,6 +958,7 @@ def sanitize(request: SanitizeRequest):
             flags=[f"leak_type:{item}" for item in residual_types],
             latency_ms=(time.time() - start) * 1000,
             output_dir=_get_audit_log_dir(),
+            audit_config=_AUDIT_CONFIG,
         )
         request = None
         source_text = ""
@@ -988,6 +1003,7 @@ def reidentify(request: ReidentifyRequest):
         flags=([f"leftover_count:{leftover_count}"] if leftover_count else []),
         latency_ms=(time.time() - start) * 1000,
         output_dir=_get_audit_log_dir(),
+        audit_config=_AUDIT_CONFIG,
     )
     return _render(
         ReidentifyResponse,
@@ -1040,7 +1056,7 @@ def analyze(request: AnalyzeRequest):
     start = time.time()
     _validate_text_input(request.text)
     text = clean(request.text).text
-    result = analyze_text(text)
+    result = analyze_text(text, config=_CORE_CONFIG)
     write_process_log(
         session_id=str(uuid.uuid4()),
         step="api_analyze",
@@ -1049,6 +1065,7 @@ def analyze(request: AnalyzeRequest):
         flags=[],
         latency_ms=(time.time() - start) * 1000,
         output_dir=_get_audit_log_dir(),
+        audit_config=_AUDIT_CONFIG,
     )
     return validated_payload(AnalyzeResponse, _analyze_projection(result))
 
@@ -1061,7 +1078,7 @@ def detect(request: DetectRequest):
     Uses clean_length_preserving, never clean(), so offsets stay aligned with the caller's text.
     """
     _validate_text_input(request.text)
-    entities = detect_all(clean_length_preserving(request.text))
+    entities = detect_all(clean_length_preserving(request.text), config=_CORE_CONFIG)
     highlights = [
         {
             "start": e.span[0],
@@ -1135,6 +1152,7 @@ def roundtrip(request: RoundtripRequest):
             mode=request.mode,
             salt=uuid.uuid4().hex,
             detection_text=detection_text,
+            config=_CORE_CONFIG,
         )
     except (OutboundPolicyError, StatelessLeakError) as error:
         sanitize_failure = getattr(error, "policy_category_count", 0)
@@ -1159,6 +1177,7 @@ def roundtrip(request: RoundtripRequest):
             guard_context=masked.guard_context,
             scan_leaks=scan_outbound_leaks,
             scan_residual=scan_residual_signals,
+            config=_CORE_CONFIG,
         )
 
     rescan_failure = 0
@@ -1228,6 +1247,12 @@ def roundtrip(request: RoundtripRequest):
             ai_text,
             mapping=masked.mapping,
             mode=request.mode,
+            config=_CORE_CONFIG,
+            _source_rebuild_ranges=(
+                frozenset((item.start, item.end) for item in masked.replacement_highlights)
+                if ai_text == masked.sanitized_text
+                else frozenset()
+            ),
         )
     except Exception as error:
         restore_failed = True
@@ -1246,6 +1271,7 @@ def roundtrip(request: RoundtripRequest):
     warnings = _restore_warnings(restored)
     leftover_count = len(restored.leftover_pseudonyms)
     restoration_status = "unsafe" if warnings else "incomplete" if leftover_count else "complete"
+    warnings.extend(_section26_warnings(masked.section26))
     write_process_log(
         session_id=str(uuid.uuid4()),
         step="api_roundtrip",
@@ -1255,6 +1281,7 @@ def roundtrip(request: RoundtripRequest):
         + ([f"leftover_count:{leftover_count}"] if leftover_count else []),
         latency_ms=(time.time() - start) * 1000,
         output_dir=_get_audit_log_dir(),
+        audit_config=_AUDIT_CONFIG,
     )
     payload = {
         "sanitized_text": masked.sanitized_text,

@@ -1,0 +1,63 @@
+{
+  "comparison": "Three alternating source arms, same Python/model/dependencies; legacy anchor unchanged",
+  "controls": [
+    {
+      "arm": "baseline",
+      "iteration": 0,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "candidate",
+      "iteration": 0,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "baseline",
+      "iteration": 1,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "candidate",
+      "iteration": 1,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "baseline",
+      "iteration": 2,
+      "legacy_gate_exit": 1
+    },
+    {
+      "arm": "candidate",
+      "iteration": 2,
+      "legacy_gate_exit": 1
+    }
+  ],
+  "operations": {
+    "detect": {
+      "baseline": 5.9,
+      "candidate": 6.04,
+      "ratio": 1.0237288135593219
+    },
+    "sanitize": {
+      "baseline": 15.82,
+      "candidate": 15.82,
+      "ratio": 1.0
+    },
+    "restore": {
+      "baseline": 0.25,
+      "candidate": 0.26,
+      "ratio": 1.04
+    },
+    "pdf_redact": {
+      "baseline": 80.99,
+      "candidate": 71.87,
+      "ratio": 0.8873935053710336
+    }
+  },
+  "peak_rss_mb": {
+    "baseline": 151.3,
+    "candidate": 151.5
+  },
+  "peak_rss_ratio": 1.0013218770654329,
+  "relative_gate_passed": true
+}

@@ -136,6 +136,32 @@ def test_sanitize_reidentify_roundtrip_via_handle_only():
     assert "๐๘๑-๒๓๔-๕๖๗๘" in restored["restored_text"]
 
 
+def test_machine_context_reidentify_uses_owned_source_and_keeps_count_only_shape():
+    server = build_server()
+    original = "081-234-5678"
+    source = "https://example.test/?phone=" + original
+    masked = _call(server, "sanitize", {"text": source, "mode": "token"})
+    assert original not in repr(masked)
+    assert not (
+        set(masked)
+        & {"mapping", "replacement_highlights", "_source_rebuild_ranges", "source_proof"}
+    )
+    handle = masked["session_handle"]
+    exact = _call(
+        server, "reidentify", {"session_handle": handle, "text": masked["sanitized_text"]}
+    )
+    assert exact["restored_text"] == source
+    assert exact["replaced_count"] == 1 and exact["leftover_count"] == 0
+    assert set(exact) == {"restored_text", "replaced_count", "leftover_count", "warnings"}
+
+    token = masked["sanitized_text"].split("phone=", 1)[1]
+    changed = f"https://changed.test/{token} Readable {token}"
+    partial = _call(server, "reidentify", {"session_handle": handle, "text": changed})
+    assert partial["restored_text"] == f"https://changed.test/{token} Readable {original}"
+    assert partial["replaced_count"] == 1 and partial["leftover_count"] == 1
+    assert set(partial) == set(exact)
+
+
 def test_sanitize_result_never_contains_original_values():
     server = build_server()
     masked = _call(server, "sanitize", {"text": THAI_NUMERAL_SAMPLE, "mode": "token"})

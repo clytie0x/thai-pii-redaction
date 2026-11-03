@@ -1,0 +1,330 @@
+{
+  "corpus_version": "pdpa-context-v1",
+  "corrections": {
+    "attribution_changes": 0,
+    "calibration_text_changes": 10,
+    "error_kinds": {
+      "cross_split_raw_modality_paraphrase_scenario": 4,
+      "cross_split_semantic_near_paraphrase_family": 6,
+      "missing_secondary_category": 2
+    },
+    "evaluation_target_changes": 2,
+    "evaluation_text_changes": 0,
+    "primary_label_changes": 0,
+    "records_changed": 12,
+    "target_additions": 2,
+    "target_removals": 0
+  },
+  "counts": {
+    "all": {
+      "by_modality": {
+        "audio": 4,
+        "genetic_binary": 4,
+        "image": 4,
+        "text": 264,
+        "video": 4
+      },
+      "by_primary_attribution": {
+        "ambiguous": 55,
+        "personal": 132,
+        "topic": 77
+      },
+      "by_primary_category": {
+        "ACTIVITY": 8,
+        "BELIEF": 16,
+        "BIOMETRIC_IDENTITY": 16,
+        "CONTACT": 8,
+        "CRIMINAL_RECORD": 16,
+        "DISABILITY": 16,
+        "EDUCATION": 8,
+        "EMPLOYMENT": 8,
+        "ETHNICITY": 16,
+        "FINANCIAL": 8,
+        "GENETIC_DATA": 16,
+        "HEALTH": 16,
+        "IDENTITY": 8,
+        "LABOR_UNION": 16,
+        "LOCATION": 8,
+        "MEDIA": 8,
+        "ONLINE": 8,
+        "POLITICAL_OPINION": 16,
+        "QUASI_IDENTIFIERS": 8,
+        "RACE": 16,
+        "RELATIONSHIPS": 8,
+        "SEXUAL_BEHAVIOR": 16
+      },
+      "by_scope": {
+        "general": 88,
+        "modality": 16,
+        "sensitive": 176
+      },
+      "multi_target_records": 16,
+      "records": 280,
+      "target_attribution_counts": {
+        "ambiguous": 56,
+        "personal": 148,
+        "topic": 79
+      },
+      "target_category_counts": {
+        "ACTIVITY": 11,
+        "BELIEF": 16,
+        "BIOMETRIC_IDENTITY": 16,
+        "CONTACT": 9,
+        "CRIMINAL_RECORD": 17,
+        "DISABILITY": 16,
+        "EDUCATION": 9,
+        "EMPLOYMENT": 8,
+        "ETHNICITY": 16,
+        "FINANCIAL": 8,
+        "GENETIC_DATA": 17,
+        "HEALTH": 18,
+        "IDENTITY": 13,
+        "LABOR_UNION": 17,
+        "LOCATION": 9,
+        "MEDIA": 8,
+        "ONLINE": 11,
+        "POLITICAL_OPINION": 16,
+        "QUASI_IDENTIFIERS": 8,
+        "RACE": 16,
+        "RELATIONSHIPS": 8,
+        "SEXUAL_BEHAVIOR": 16
+      },
+      "target_count": 283
+    },
+    "calibration": {
+      "by_modality": {
+        "audio": 1,
+        "genetic_binary": 1,
+        "image": 1,
+        "text": 66,
+        "video": 1
+      },
+      "by_primary_attribution": {
+        "ambiguous": 11,
+        "personal": 33,
+        "topic": 22
+      },
+      "by_primary_category": {
+        "ACTIVITY": 2,
+        "BELIEF": 4,
+        "BIOMETRIC_IDENTITY": 4,
+        "CONTACT": 2,
+        "CRIMINAL_RECORD": 4,
+        "DISABILITY": 4,
+        "EDUCATION": 2,
+        "EMPLOYMENT": 2,
+        "ETHNICITY": 4,
+        "FINANCIAL": 2,
+        "GENETIC_DATA": 4,
+        "HEALTH": 4,
+        "IDENTITY": 2,
+        "LABOR_UNION": 4,
+        "LOCATION": 2,
+        "MEDIA": 2,
+        "ONLINE": 2,
+        "POLITICAL_OPINION": 4,
+        "QUASI_IDENTIFIERS": 2,
+        "RACE": 4,
+        "RELATIONSHIPS": 2,
+        "SEXUAL_BEHAVIOR": 4
+      },
+      "by_scope": {
+        "general": 22,
+        "modality": 4,
+        "sensitive": 44
+      },
+      "multi_target_records": 0,
+      "records": 70,
+      "target_attribution_counts": {
+        "ambiguous": 11,
+        "personal": 33,
+        "topic": 22
+      },
+      "target_category_counts": {
+        "ACTIVITY": 2,
+        "BELIEF": 4,
+        "BIOMETRIC_IDENTITY": 4,
+        "CONTACT": 2,
+        "CRIMINAL_RECORD": 4,
+        "DISABILITY": 4,
+        "EDUCATION": 2,
+        "EMPLOYMENT": 2,
+        "ETHNICITY": 4,
+        "FINANCIAL": 2,
+        "GENETIC_DATA": 4,
+        "HEALTH": 4,
+        "IDENTITY": 2,
+        "LABOR_UNION": 4,
+        "LOCATION": 2,
+        "MEDIA": 2,
+        "ONLINE": 2,
+        "POLITICAL_OPINION": 4,
+        "QUASI_IDENTIFIERS": 2,
+        "RACE": 4,
+        "RELATIONSHIPS": 2,
+        "SEXUAL_BEHAVIOR": 4
+      },
+      "target_count": 66
+    },
+    "evaluation": {
+      "by_modality": {
+        "audio": 3,
+        "genetic_binary": 3,
+        "image": 3,
+        "text": 198,
+        "video": 3
+      },
+      "by_primary_attribution": {
+        "ambiguous": 44,
+        "personal": 99,
+        "topic": 55
+      },
+      "by_primary_category": {
+        "ACTIVITY": 6,
+        "BELIEF": 12,
+        "BIOMETRIC_IDENTITY": 12,
+        "CONTACT": 6,
+        "CRIMINAL_RECORD": 12,
+        "DISABILITY": 12,
+        "EDUCATION": 6,
+        "EMPLOYMENT": 6,
+        "ETHNICITY": 12,
+        "FINANCIAL": 6,
+        "GENETIC_DATA": 12,
+        "HEALTH": 12,
+        "IDENTITY": 6,
+        "LABOR_UNION": 12,
+        "LOCATION": 6,
+        "MEDIA": 6,
+        "ONLINE": 6,
+        "POLITICAL_OPINION": 12,
+        "QUASI_IDENTIFIERS": 6,
+        "RACE": 12,
+        "RELATIONSHIPS": 6,
+        "SEXUAL_BEHAVIOR": 12
+      },
+      "by_scope": {
+        "general": 66,
+        "modality": 12,
+        "sensitive": 132
+      },
+      "multi_target_records": 16,
+      "records": 210,
+      "target_attribution_counts": {
+        "ambiguous": 45,
+        "personal": 115,
+        "topic": 57
+      },
+      "target_category_counts": {
+        "ACTIVITY": 9,
+        "BELIEF": 12,
+        "BIOMETRIC_IDENTITY": 12,
+        "CONTACT": 7,
+        "CRIMINAL_RECORD": 13,
+        "DISABILITY": 12,
+        "EDUCATION": 7,
+        "EMPLOYMENT": 6,
+        "ETHNICITY": 12,
+        "FINANCIAL": 6,
+        "GENETIC_DATA": 13,
+        "HEALTH": 14,
+        "IDENTITY": 11,
+        "LABOR_UNION": 13,
+        "LOCATION": 7,
+        "MEDIA": 6,
+        "ONLINE": 9,
+        "POLITICAL_OPINION": 12,
+        "QUASI_IDENTIFIERS": 6,
+        "RACE": 12,
+        "RELATIONSHIPS": 6,
+        "SEXUAL_BEHAVIOR": 12
+      },
+      "target_count": 217
+    }
+  },
+  "cross_split_review": {
+    "all_records_semantically_read": true,
+    "character_shingle_candidates_manually_checked": 25,
+    "confirmed_overlapping_families_corrected": 10,
+    "known_remaining_shared_document_or_value_families": 0,
+    "same_category_pairs_semantically_compared": true,
+    "similarity_used_for_near_duplicate_candidates_only": true,
+    "uncertainty": "A semantic review cannot prove the absence of every latent shared template; category vocabulary and coarse task structures necessarily recur."
+  },
+  "digest_encoding": "SHA-256 of compact UTF-8 JSON with sorted object keys and sorted family-id arrays; no final LF for family digests.",
+  "hashes": {
+    "annotation_guide_sha256": "051303e253aec46cb1bebb8db85f16f23280a4a52092230bfd0be13be79d72a4",
+    "calibration_family_digest": "191e2a777cb0dd1a30274aa98d1b8a59c7f2ae765d8b5b9b618d97e27a01cb79",
+    "calibration_sha256": "d397ed91a49e37ee3791e88cceaf9f1ca830f85f31fa38e194dbb8f07169b054",
+    "draft_sha256": "83e059cb095d149c0222d3e911f790811e0163134538b60e21041ad9d4a5de08",
+    "evaluation_family_digest": "d672f5a639498d7b8ded074f64839122a73bf1e09b26af60fedfa5f5fddda9e2",
+    "evaluation_plaintext_sha256": "5275f47ce6ed2242cbe41cc1ade88ddbbe516b1ecd1c295c119e0c58680a86b5",
+    "split_family_digest": "b7be13840c5ac450c8ba2e3c15df46769066b54fcf8126f584cc527f9513613f"
+  },
+  "limitations": [
+    "AI-authored and AI-reviewed fictional sample, without independent human adjudication or population sampling.",
+    "Explicit fiction, provenance and uncertainty cues create exploitable attribution shortcuts; recurring first-person, form, correction, education and unlabelled-fragment genres remain.",
+    "Identifiers and input ordering encode the split and primary attribution schedule; evaluators must pass only text and declared modality to assessment strategies.",
+    "Raw-modality records are textual capability placeholders with no actual payload, OCR, transcription, biometric extraction or genetic parsing evidence.",
+    "General identifiers in sensitive-scoped documents are not independently adjudicated by this label set.",
+    "Primary-category counts govern composition; multiple independently attributable target categories are allowed, so target counts differ.",
+    "No detector run, score-based correction, model request, calibration selection or evaluation was performed by this reviewer."
+  ],
+  "mechanical_checks": {
+    "composition_by_primary_category": true,
+    "contact_domain_reservation_check": true,
+    "evaluation_prose_unchanged": true,
+    "exact_normalized_duplicate_records": 0,
+    "ip_documentation_range_check": true,
+    "long_numeric_identifier_scan": true,
+    "raw_biological_sequence_scan": true,
+    "required_schema": true,
+    "split_family_intersection": 0,
+    "subset_files_identical_to_draft_filters": true,
+    "unique_doc_ids": true,
+    "unique_family_ids": true,
+    "utf8_physical_lf": true
+  },
+  "originals": {
+    "external_directory": "C:\\Users\\teera\\aiguard-pdpa-context-v1\\author-originals",
+    "preserved_files": 6,
+    "sha256_by_file": {
+      "annotation-guide.md": "051303e253aec46cb1bebb8db85f16f23280a4a52092230bfd0be13be79d72a4",
+      "author-qa.json": "40e3916c9a5c0034a39a60212327bfba45c09c787da257b142c653a5dc4b257c",
+      "author_corpus.py": "722f24786948a483780f38f5e8efb6c0d40b7ea61c9b1bfc898784b0fd515491",
+      "calibration.jsonl": "d22dab8e4d37c30d92a79cbaf26d524a7fb62e185fd0297811c1030591fe6c0e",
+      "draft.jsonl": "41716d7643fce919ff9b5d431cc9e248b9e00a6fb4b4a6ee3d6b674716adde12",
+      "evaluation.draft.jsonl": "5081876d64d565eb8fe76531aebb5c3041c60657516b29a1501e6716981dfe9e"
+    }
+  },
+  "review_scope": "All 280 authored records; no detector, embedding, classifier, prototype, result, or old corpus access.",
+  "review_status": "passed_with_disclosed_constructed_sample_limitations",
+  "reviewed_boundaries": [
+    "source-category attribution",
+    "nationality versus ethnicity",
+    "ordinary media versus biometric identification",
+    "negated and quoted personal assertions",
+    "within-scope completeness",
+    "narrow explicit statutory types",
+    "synthetic privacy",
+    "primary composition",
+    "split and semantic family separation"
+  ],
+  "schema_version": 1,
+  "semantic_records_reviewed": 280,
+  "style_bias": {
+    "ambiguous_primary_records": 55,
+    "ambiguous_with_explicit_uncertainty_cues_lexicon_count": 47,
+    "ambiguous_with_explicit_unresolved_provenance_reviewer_count": 55,
+    "explicit_fiction_cue_records": 175,
+    "explicit_fiction_cue_text_scoped_records": 162,
+    "general_category_blocks_with_same_primary_attribution_schedule": 11,
+    "id_suffix_and_order_encode_split_and_primary_attribution": true,
+    "latin_script_present_records": 138,
+    "same_authoring_genre_patterns_recur": true,
+    "sensitive_category_blocks_with_same_primary_attribution_schedule": 11,
+    "text_scoped_records": 264,
+    "thai_script_present_records": 184,
+    "topic_primary_records": 77
+  }
+}

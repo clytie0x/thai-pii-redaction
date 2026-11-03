@@ -5,20 +5,27 @@ conceal, to camouflage") — Thai PII detection and anonymization for Python:
 mask personal data before it reaches an external AI, restore it locally.
 
 > **Pre-publication:** amphrang has not been published to PyPI. Until the
-> first public release, install it from a local source checkout; the package
-> name and version remain subject to pre-publication review.
+> first public release, use a qualified first-party SDK/core wheel pair.
+> No package publication is authorized by this source candidate.
 
-Install the surface you need in editable mode:
+The current development candidate deliberately replaces upstream proxy error
+bodies with fixed metadata. Its proxy extra requires AnyIO 4.4 or newer. The
+shared-core/warn-report migration is implemented in the live SDK adapters.
+Final combined artifact/image/CI qualification remains open. Read the
+[migration guide](docs/migrations/shared-core.md) before adopting this candidate.
+
+Install the supplied matching pair without public-index resolution:
 
 ```
-python -m pip install -e .             # core SDK and CLI
-python -m pip install -e ".[proxy]"   # sanitizing proxy
-python -m pip install -e ".[server]"  # FastAPI server
-python -m pip install -e ".[mcp]"     # MCP server
+python -m pip install --no-index --find-links /qualified/wheelhouse \
+  /qualified/thai_pii_redaction_core-0.1.0-py3-none-any.whl \
+  /qualified/amphrang-0.1.0-py3-none-any.whl
 ```
 
-`pip install amphrang` and its extras will become available only after a
-public package release.
+Use `[server]`, `[proxy]` or `[mcp]` on the supplied SDK wheel for the optional
+surface you need. Development uses the explicit local core source in uv; the
+migration guide describes the pinned build/install boundary. Bare registry
+installation remains unavailable until a separately authorized public release.
 
 ```python
 import amphrang
@@ -44,6 +51,12 @@ with amphrang.Session(mode="token") as session:
 amphrang.analyze(text)
 ```
 
+Restoration can be partial: mapping-only `restore()` keeps pseudonyms masked in
+URLs, Markdown destinations/reference definitions, and HTML/XML machine
+contexts. Check `restored.leftover_pseudonyms`. Plain-text restoration remains
+supported; see the [restoration migration contract](docs/migrations/shared-core.md#partial-restoration-in-machine-contexts)
+for source rebuilding and streaming behavior.
+
 ## What it detects
 
 Structured Thai identifiers with checksum validation (national ID mod-11,
@@ -52,10 +65,10 @@ driver licences, LINE IDs, GPS coordinates, house registration codes, IP and
 MAC addresses, and land deed numbers. Alongside them, names, addresses, dates,
 and organizations come from Thai NER (PyThaiNLP thainer-CRF, offline) with
 context-cue recall boosters; the two together are the 19 structured/entity
-types scored in the table below. Person-linked ม.26
-sensitive content (HEALTH, CRIMINAL_RECORD, and eight more statutory
-categories) becomes a maskable span, on by default, only when it is tied to a
-person in the same text — an impersonal mention is left alone. Detection
+types scored in the historical table below. ม.26 sensitive content (HEALTH,
+CRIMINAL_RECORD and eight more statutory categories) produces warnings/reports;
+it is not automatically masked or blocked. Separately detected identifiers
+remain protected. Historical detection
 quality is measured against a
 hand-authored, twice-adjudicated gold corpus (in `benchmark/`), including a
 negative (no-PII) slice so the false-positive rate is a reported number, not
@@ -76,7 +89,12 @@ profile's type references matching the code's own `TOKEN_LABEL` table in both
 directions; it reads no recall or precision figure, so those are refreshed by
 hand from a benchmark run.
 
-## Measured accuracy
+## Historical measured accuracy
+
+The following figures describe the earlier SDK engine and its automatic
+sensitive-masking policy. They are retained as historical evidence and do not
+qualify the migrated canonical candidate. Its current evidence is the named
+synthetic contract/adapter checks, followed by the still-open artifact/CI gates.
 
 Default engine (thainer-CRF, offline) on the open gold corpus, run
 2026-08-27 (`python -m benchmark --source gold`, gold-v7, 332 documents,
@@ -189,8 +207,9 @@ the [full report](docs/benchmarks/2026-08-25-perf-win11-dev-2.md),
 - **Fail closed.** If a masked result would still carry residual PII
   (structured, text-based, or a bare 6+ digit run), `anonymize` raises
   `amphrang.LeakBlockedError` instead of returning a partial mask.
-- **Local only.** Detection and masking run in-process. The library makes no
-  network calls and keeps no state on disk.
+- **Local engines.** SDK detection and masking run in-process and reject remote
+  TNER even when root configuration enables it. Provision model assets before
+  offline use. Session mappings stay in process memory.
 - **The mapping is yours to guard.** `anonymize` returns the
   pseudonym→original mapping to you; keeping it out of logs and storage is
   your responsibility. Prefer `Session` when it can stay in process memory.
@@ -211,9 +230,11 @@ for a text file.
 
 The source checkout's `[proxy]` extra adds `amphrang-proxy` — an
 OpenAI-compatible reverse proxy. Point any existing app's `base_url` at it
-and its chat traffic is masked on the way out and restored on the way back,
-streaming included; the token→original mapping lives only in request-scoped
-proxy memory.
+and its chat traffic is masked on the way out. Ordinary reply text is restored
+locally, including supported bracket tokens during streaming. Machine-context
+occurrences remain masked; mapping-only and streaming restoration cannot prove
+source URL identity. The token→original mapping lives only in request-scoped
+proxy memory. See the [restoration migration contract](docs/migrations/shared-core.md#partial-restoration-in-machine-contexts).
 
 ```
 AMPHRANG_PROXY_UPSTREAM=https://api.openai.com \
@@ -264,12 +285,15 @@ One process, loopback only; opens the API docs at `http://127.0.0.1:8000/docs`.
 `--allow-remote` **and** `AMPHRANG_API_KEY`, so the data plane is never
 silently open to a network.)
 
-For a host instead of a laptop, the repository's `Dockerfile` packages the
+For a host instead of a laptop, the repository's `Dockerfile` consumes an
+artifact-only context containing the qualified wheel pair, trusted dependencies
+and model assets. It packages the
 same server; it refuses to start without `AMPHRANG_API_KEY` (the data plane is
 never silently open):
 
 ```
-docker build -t amphrang . && docker run --rm -p 8000:8000 -e AMPHRANG_API_KEY=change-me amphrang
+docker build -f Dockerfile -t amphrang /qualified/sdk-context
+docker run --rm -p 8000:8000 -e AMPHRANG_API_KEY=change-me amphrang
 ```
 
 ## MCP server (for AI agents)
@@ -277,10 +301,12 @@ docker build -t amphrang . && docker run --rm -p 8000:8000 -e AMPHRANG_API_KEY=c
 The source checkout's `[mcp]` extra adds `amphrang-mcp` — the same guard as a
 Model Context Protocol toolset an agent can call: `detect_pii`, `sanitize`,
 `reidentify`, `pdpa_analyze`, `guard_prompt`, `close_session`. Run it over
-stdio for a local agent (text never leaves the machine, no auth needed) or
+stdio for a local agent (no transport auth needed) or
 `--transport http` for a shared endpoint. `sanitize` returns masked text plus
 an opaque `session_handle`; the pseudonym→original mapping stays in the
-server's memory and is never part of a tool result — a returned mapping would
+server's memory and is never part of a tool result. The host does receive raw
+matched text from `detect_pii` and restored text from `reidentify`; it controls
+any onward transmission. A returned mapping would
 land in the very model context the guard exists to protect (see
 `docs/decisions/0003-mcp-no-plaintext-mapping.md`).
 

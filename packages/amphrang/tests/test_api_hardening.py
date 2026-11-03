@@ -40,6 +40,7 @@ def _isolated_session_service(monkeypatch, tmp_path):
             cap=server._SESSION_CAP,
             ttl_s=server._SESSION_TTL_S,
             now_fn=lambda: server._now(),
+            config=server._CORE_CONFIG,
         ),
     )
 

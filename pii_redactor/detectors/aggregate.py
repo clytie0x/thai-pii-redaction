@@ -9,12 +9,16 @@ from __future__ import annotations
 
 import re
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.fn_scanner import scan_fn
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_parallel_record_names
+from pii_redactor.detectors.scan_views import original_guard_entities
+from pii_redactor.detectors.structured_views import admit_recovery, recover_structured
 from pii_redactor.detectors.tb_detector import NERChunkDiagnostics, detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
+from pii_redactor.safe_errors import minimize_failure_frames
 
 
 def dedupe_spans(entities: list[Entity]) -> list[Entity]:
@@ -235,6 +239,30 @@ def _extend_address_chains(text: str, entities: list[Entity], tb: list[Entity]) 
     return merge_address_spans(text, out)
 
 
+# Numberless places remain protected, but must not claim a numbered address.
+_ADMIN_AREA_RE = re.compile(r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่|ต\.|อ\.|จ\.|ม\.")
+
+
+def _relabel_numberless_addresses(entities: list[Entity]) -> list[Entity]:
+    out: list[Entity] = []
+    for entity in entities:
+        if (
+            entity.data_type == "ADDRESS"
+            and not any(char.isdigit() for char in entity.original_text)
+            and not _ADMIN_AREA_RE.search(entity.original_text)
+        ):
+            entity = Entity(
+                entity_id=entity.entity_id,
+                redact_type=entity.redact_type,
+                data_type="LOCATION",
+                span=entity.span,
+                score=entity.score,
+                original_text=entity.original_text,
+            )
+        out.append(entity)
+    return out
+
+
 # Bare facility designators (ng19): a bookable meeting room in a facilities
 # notice is furniture, not a place tied to a person. thainer maps FACILITY to
 # nothing by design, but the CRF emits these as LOCATION. Runs post-merge,
@@ -322,22 +350,31 @@ def _relabel_student_ids(tb: list[Entity], kept: list[Entity]) -> list[Entity]:
     return out
 
 
+@minimize_failure_frames
 @native_broker_detector_phase
 def detect_all(
     text: str,
     *,
     ner_diagnostics: NERChunkDiagnostics | None = None,
+    config: CoreConfig | None = None,
 ) -> list[Entity]:
     """Run the full detection ensemble and return deduped entities."""
+    config = resolve_config(config)
     fp = detect_fp(text)
     if ner_diagnostics is None:
-        tb = detect_tb(text)
+        tb = detect_tb(text, config=config)
     else:
-        tb = detect_tb(text, diagnostics=ner_diagnostics)
+        tb = detect_tb(text, diagnostics=ner_diagnostics, config=config)
     fn = scan_fn(text, fp + tb)
     record_names = detect_parallel_record_names(text, fp + tb + fn)
     deduped = dedupe_spans(fp + tb + fn + record_names)
     kept = merge_address_spans(text, _prefer_record_names(deduped, record_names))
     kept = _extend_address_chains(text, kept, tb)
+    kept = _relabel_numberless_addresses(kept)
     kept = _drop_unanchored_facility_spans(text, kept)
-    return _relabel_student_ids(tb, kept)
+    recovered = recover_structured(text)
+    return admit_recovery(
+        _relabel_student_ids(tb, kept),
+        recovered,
+        required=original_guard_entities(text) if recovered else (),
+    )

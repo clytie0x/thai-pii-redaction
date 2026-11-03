@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Guard | งานข้อมูลส่วนบุคคล</title>
+  <link rel="icon" href="/static/logo.png" type="image/png">
+  <link rel="stylesheet" href="/static/tokens.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body data-enterprise-root>
+  <a class="skip-link" href="#main">ข้ามไปเนื้อหา</a>
+  <header class="brand"><a href="/" aria-label="AI Guard หน้าหลัก">AI Guard</a><span>งานข้อมูลส่วนบุคคลขององค์กร</span></header>
+  <main id="main" tabindex="-1">
+    <p id="status" role="status" aria-live="polite">กำลังตรวจสอบเซสชัน…</p>
+    <section id="welcome" class="welcome">
+      <p class="eyebrow">พื้นที่ทำงานสำหรับเจ้าหน้าที่</p>
+      <h1>จัดทำทะเบียน ส่งทบทวน<br>และติดตามหลักฐานในที่เดียว</h1>
+      <p>เข้าสู่ระบบองค์กรเพื่อจัดการกิจกรรมประมวลผล ประกาศความเป็นส่วนตัว และสิทธิ์เจ้าหน้าที่ตามขอบเขตที่ได้รับ</p>
+      <a class="button primary" href="/auth/login">เข้าสู่ระบบองค์กร</a>
+      <details><summary>ยังไม่มีสิทธิ์เข้าใช้งาน?</summary><p>ติดต่อผู้ดูแลเพื่อยืนยันตัวตนและขอบเขตงาน การเพิ่มสิทธิ์ต้องผ่านผู้ทบทวนอีกคน หน้านี้ไม่เปิดสมัครหรือกำหนดบทบาทด้วยตนเอง</p></details>
+      <p class="muted">เครื่องมือนี้ช่วยจัดการงานและหลักฐาน ไม่ใช่ใบรับรองการปฏิบัติตามกฎหมาย</p>
+    </section>
+    <section id="workspace" hidden>
+      <!-- enterprise-feature-links -->
+      <div class="workspace-heading"><div><h1 id="page-title" tabindex="-1">ทะเบียนกิจกรรม</h1><p id="session-scope" class="muted"></p></div><div class="actions"><button id="refresh" type="button">รีเฟรช</button><button id="logout" type="button">ออกจากระบบ</button></div></div>
+      <nav aria-label="พื้นที่ทำงาน" class="tabs"><button type="button" data-view="activities" aria-pressed="true">ทะเบียนกิจกรรม</button><button type="button" data-view="grants" aria-pressed="false">เจ้าหน้าที่และสิทธิ์</button><button type="button" data-view="audit" aria-pressed="false">บันทึกเหตุการณ์</button></nav>
+      <p id="no-permissions" hidden>บัญชีนี้ยังไม่มีพื้นที่งานที่เปิดใช้สำหรับบทบาทที่ได้รับ โปรดติดต่อผู้ดูแลหากขอบเขตงานไม่ถูกต้อง</p>
+      <section id="view-activities">
+        <div class="section-heading"><div><h2>กิจกรรมในขอบเขตของคุณ</h2><p class="muted">เริ่มจากร่าง ตรวจข้อมูลให้ครบ แล้วส่งให้ผู้ทบทวนอีกคน</p></div><button id="new-activity" class="primary" type="button">สร้างกิจกรรม</button></div>
+        <div id="records" class="record-list" aria-label="รายการกิจกรรม"></div>
+        <section id="activity-editor" class="panel" hidden>
+          <div class="section-heading"><h2 id="editor-title">ร่างกิจกรรมใหม่</h2><button id="close-editor" type="button">ปิดฟอร์ม</button></div>
+          <p class="muted">กรอกเท่าที่จำเป็น ไม่ใส่ข้อมูลบุคคลหรือเอกสารระบุตัวตนลงในช่องอ้างอิงหลักฐาน</p>
+          <form id="activity-form">
+            <div class="form-grid"><label>รหัสแผนก<input name="department_id" list="department-options" pattern="[a-z][a-z0-9_-]{0,63}" required maxlength="64"></label><label>ชื่อกิจกรรม<input name="title" required maxlength="200"></label></div>
+            <datalist id="department-options"></datalist>
+            <label>วัตถุประสงค์<textarea name="purpose" required maxlength="2000" rows="2"></textarea></label>
+            <label>ความจำเป็นของการใช้ข้อมูล<textarea name="necessity" maxlength="2000" rows="2"></textarea></label>
+            <fieldset><legend>หมวดข้อมูลที่เกี่ยวข้อง</legend><div id="category-options" class="check-grid"></div><p class="muted">หมวดเหล่านี้เป็นทะเบียนที่ผู้รับผิดชอบยืนยัน ไม่ใช่ผลรับรองจากตัวตรวจจับ</p></fieldset>
+            <div class="form-grid"><div class="field"><label for="activity-form-general_basis">ฐานการประมวลผล</label><select id="activity-form-general_basis" name="general_basis"><option value="">ยังไม่ระบุในร่าง</option></select></div><div class="field"><label for="activity-form-sensitive_condition">เงื่อนไขข้อมูลอ่อนไหว</label><select id="activity-form-sensitive_condition" name="sensitive_condition"><option value="">ไม่ระบุ / ไม่เกี่ยวข้อง</option></select></div></div>
+            <label>หลักเกณฑ์ระยะเวลาเก็บข้อมูล<textarea name="retention_rule" maxlength="2000" rows="2"></textarea></label>
+            <label>ปลายทางและพื้นที่จัดเก็บ<textarea name="destination" maxlength="2000" rows="2"></textarea></label>
+            <div class="form-grid"><label>แหล่งข้อมูลอ้างอิง<textarea name="source_refs" rows="2" placeholder="หนึ่งรายการต่อบรรทัด"></textarea></label><label>กลุ่มเจ้าของข้อมูล<textarea name="subject_groups" rows="2" placeholder="หนึ่งรายการต่อบรรทัด"></textarea></label></div>
+            <label>ผู้รับข้อมูล / ผู้ประมวลผลอ้างอิง<textarea name="recipient_refs" rows="2" placeholder="หนึ่งรายการต่อบรรทัด"></textarea></label>
+            <button class="primary" type="submit">บันทึกร่าง</button>
+          </form>
+        </section>
+        <section id="activity-detail" class="panel" hidden>
+          <h2 id="detail-title" tabindex="-1"></h2><p id="detail-state" class="badge"></p>
+          <dl id="detail-values" class="detail-values"></dl>
+          <div class="actions"><button id="edit-activity" type="button">แก้ไขร่าง</button><button id="submit-activity" type="button" class="primary">ส่งทบทวน</button><button id="reload-detail" type="button">โหลดข้อมูลล่าสุดแทนร่างในฟอร์ม</button></div>
+          <h3>ประกาศความเป็นส่วนตัวของกิจกรรมนี้</h3><div id="notices" class="record-list"></div>
+          <form id="notice-form"><h3>สร้างร่างประกาศ</h3><label>ชื่อประกาศ<input name="title" required maxlength="200"></label><label>เนื้อหาประกาศ<textarea name="body" required minlength="20" maxlength="20000" rows="5"></textarea></label><div class="field"><label for="notice-form-language">ภาษา</label><select id="notice-form-language" name="language"><option value="th">ไทย</option><option value="en">English</option></select></div><button type="submit">สร้างร่างประกาศ</button></form>
+          <form id="review-form"><h3>ผลการทบทวนโดยอีกคน</h3><p id="review-separation" class="muted"></p><div class="field"><label for="review-form-decision">ผลการพิจารณา</label><select id="review-form-decision" name="decision" required><option value="">เลือกผลการทบทวน</option><option value="approve">อนุมัติกิจกรรม</option><option value="reject">ส่งกลับพร้อมเหตุผล</option></select></div><label>เหตุผลการพิจารณา<textarea name="reason" required minlength="10" maxlength="2000" rows="3"></textarea></label><div class="field"><label for="review-form-notice_id">ประกาศที่เผยแพร่แล้ว</label><select id="review-form-notice_id" name="notice_id"><option value="">เลือกประกาศ</option></select></div><fieldset><legend>อ้างอิงหลักฐานที่ได้ทบทวน</legend><div class="form-grid"><label>ทะเบียนและหมวดข้อมูล<input name="inventory" maxlength="256"></label><label>ฐานการประมวลผล<input name="basis" maxlength="256"></label><label>ระยะเวลาเก็บ<input name="retention" maxlength="256"></label><label>ผู้รับและปลายทาง<input name="destination" maxlength="256"></label><label>เงื่อนไขข้อมูลอ่อนไหว<input name="sensitive" maxlength="256"></label></div></fieldset><p class="muted">การยืนยันนี้บันทึกคำพิจารณาของผู้ทบทวน ระบบไม่ได้ตรวจเอกสารอ้างอิงแทนคุณ</p><button class="primary" type="submit">บันทึกผลการทบทวน</button></form>
+        </section>
+      </section>
+      <section id="view-grants" hidden>
+        <h2>เจ้าหน้าที่ในขอบเขตที่ดูแล</h2><div id="members" class="record-list"></div>
+        <form id="enrollment-form" class="panel"><h2>เสนอเพิ่มเจ้าหน้าที่</h2><p class="muted">ใช้รหัส subject ที่ผู้ดูแลยืนยันจากระบบองค์กร บัญชีใหม่ยังใช้งานไม่ได้จนกว่าผู้ทบทวนอีกคนจะอนุมัติ</p><label>รหัส subject ของผู้ใช้<input name="subject" required maxlength="255"></label><div class="field"><label for="enrollment-form-roles">บทบาทที่เสนอ</label><select id="enrollment-form-roles" name="roles" class="role-options" multiple required size="5"></select></div><label>รหัสแผนก<textarea name="departments" required rows="2" placeholder="หนึ่งรายการต่อบรรทัด"></textarea></label><button type="submit">ส่งข้อเสนอเพิ่มเจ้าหน้าที่</button></form>
+        <form id="grant-form" class="panel"><h2>เสนอเปลี่ยนสิทธิ์</h2><div class="field"><label for="grant-form-member_id">เจ้าหน้าที่</label><select id="grant-form-member_id" name="member_id" required></select></div><div class="field"><label for="grant-form-roles">บทบาทที่เสนอ</label><select id="grant-form-roles" name="roles" class="role-options" multiple required size="5"></select></div><label>รหัสแผนก<textarea name="departments" required rows="2"></textarea></label><div class="field"><label for="grant-form-enabled">สถานะที่เสนอ</label><select id="grant-form-enabled" name="enabled"><option value="">คงสถานะเดิม</option><option value="true">เปิดใช้งานหลังอนุมัติ</option><option value="false">ระงับหลังอนุมัติ</option></select></div><button type="submit">ส่งข้อเสนอเปลี่ยนสิทธิ์</button></form>
+        <h2>ข้อเสนอสิทธิ์ที่รอพิจารณาและประวัติ</h2><div id="grants" class="record-list"></div>
+      </section>
+      <section id="view-audit" hidden><h2>บันทึกเหตุการณ์ตามสิทธิ์</h2><p class="muted">ผู้ตรวจเฉพาะแผนกเห็นเหตุการณ์กิจกรรมและประกาศในขอบเขต ผู้ตรวจระดับองค์กรจึงเห็นเหตุการณ์สิทธิ์และเซสชัน การตรวจ hash ภายในยังไม่ใช่หลักฐานจากระบบ checkpoint อิสระ</p><div id="audit-entries" class="record-list"></div></section>
+      <div class="pagination"><button id="previous" type="button">หน้าก่อน</button><span id="page-info" class="muted"></span><button id="next" type="button">หน้าถัดไป</button></div>
+    </section>
+  </main>
+  <dialog id="confirmation"><form method="dialog"><h2>ยืนยันการดำเนินการ</h2><p id="confirmation-text"></p><div class="actions"><button value="cancel">ยกเลิก</button><button id="confirm-action" value="confirm" class="primary">ยืนยัน</button></div></form></dialog>
+</body>
+</html>

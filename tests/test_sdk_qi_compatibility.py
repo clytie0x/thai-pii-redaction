@@ -1,0 +1,66 @@
+"""Preserve the SDK's existing quasi-identifier reports in the shared core."""
+
+import re
+from pathlib import Path
+
+import pytest
+
+from pii_redactor.reid_risk import assess_reid_risk
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.mark.parametrize(
+    ("text", "category"),
+    [
+        ("ผู้สมัคร สัญชาติไทย อาศัยในกรุงเทพ", "nationality"),
+        ("เขามีสัญชาติไทยโดยกำเนิด", "nationality"),
+        ("ผู้ต้องหาถือสัญชาติลาว", "nationality"),
+        ("น้ำหนัก 62 กก. ส่วนสูง 171 ซม.", "body_metrics"),
+    ],
+)
+def test_existing_sdk_quasi_identifiers_keep_their_category_and_weight(text, category):
+    result = assess_reid_risk(text)
+    assert result.qi_found == [category]
+    assert result.score == 10.0 and result.grade == "A"
+
+
+@pytest.mark.parametrize("prefix", ["ข้าม", "ต่าง", "นานา", "หลาย"])
+def test_nationality_prefix_exclusions_are_preserved(prefix):
+    assert "nationality" not in assess_reid_risk(f"องค์กร{prefix}สัญชาติจัดประชุม").qi_found
+
+
+def test_http_qi_projection_accepts_existing_sdk_categories_in_order():
+    pytest.importorskip("fastapi")
+    from pydantic import ValidationError
+
+    from app.http_v2 import ReidProjection
+
+    values = ["religion", "nationality", "body_metrics"]
+    result = ReidProjection(
+        score=30.0, grade="B", quasi_identifier_categories=values, high_risk_combination=False
+    )
+    assert result.quasi_identifier_categories == values
+    with pytest.raises(ValidationError):
+        ReidProjection(
+            score=30.0,
+            grade="B",
+            quasi_identifier_categories=list(reversed(values)),
+            high_risk_combination=False,
+        )
+
+
+def test_office_qi_allowlist_keeps_canonical_order():
+    source = (ROOT / "office-addin/src/api.ts").read_text(encoding="utf-8")
+    block = re.search(r"const QI_CATEGORIES = \[(.*?)\] as const", source, re.S).group(1)
+    assert re.findall(r'"([a-z_]+)"', block) == [
+        "gender",
+        "date_of_birth",
+        "age",
+        "district",
+        "province",
+        "occupation",
+        "religion",
+        "nationality",
+        "body_metrics",
+    ]

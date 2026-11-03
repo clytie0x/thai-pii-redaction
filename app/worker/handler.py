@@ -197,6 +197,11 @@ def _op_roundtrip(payload: dict) -> dict:
             ai_text,
             mapping=masked.mapping,
             mode=mode,
+            _source_rebuild_ranges=(
+                frozenset((item.start, item.end) for item in masked.replacement_highlights)
+                if ai_text == masked.sanitized_text
+                else frozenset()
+            ),
         )
     except Exception as error:
         discard_exception_graph(error)

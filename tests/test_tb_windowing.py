@@ -345,7 +345,11 @@ def test_partial_name_expansion_respects_the_hard_call_cap(monkeypatch):
 @pytest.mark.parametrize("engine_name", ["wangchanberta", "tner"])
 def test_isolated_line_fallback_never_adds_calls_for_other_single_engines(monkeypatch, engine_name):
     ner = GreedyIsolatedNER()
-    monkeypatch.setitem(tbd._ner_cache, engine_name, ner)
+    if engine_name == "tner":
+        monkeypatch.setenv("AIFORTHAI_API_KEY", "synthetic-test-key")
+        monkeypatch.setattr("pii_redactor.detectors.tner_client.TnerEngine", lambda *, api_key: ner)
+    else:
+        monkeypatch.setitem(tbd._ner_cache, engine_name, ner)
     monkeypatch.setenv("AIGUARD_NER_ENGINE", engine_name)
 
     entities = tbd.detect_tb("หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ")
@@ -372,7 +376,9 @@ def test_isolated_line_fallback_never_adds_calls_for_union(monkeypatch):
 def test_isolated_line_fallback_never_runs_for_finetuned(monkeypatch):
     calls = []
     monkeypatch.setenv("AIGUARD_NER_ENGINE", "finetuned")
-    monkeypatch.setattr(tbd, "_detect_tb_finetuned", lambda text: calls.append(text) or [])
+    monkeypatch.setattr(
+        tbd, "_detect_tb_finetuned", lambda text, *, config=None: calls.append(text) or []
+    )
     text = "หัวข้อ แบบฟอร์ม\nสมชาย ใจดี\nเอกสาร แนบ"
 
     assert tbd.detect_tb(text) == []

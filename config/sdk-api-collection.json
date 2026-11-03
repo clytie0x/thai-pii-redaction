@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "requests": {
+    "Analyze.bru": {
+      "sha256": "9c51dcab262d93216ca31ddfaf196d59deebba802f8fce91a34cbdf683d18aca",
+      "assertions": 1,
+      "script_tests": 0
+    },
+    "Audit Log.bru": {
+      "sha256": "f2f23dd937fc5053d3e009460a778222af0ea568ef346d2bade43c3960688b5e",
+      "assertions": 1,
+      "script_tests": 0
+    },
+    "Detect.bru": {
+      "sha256": "480728582f3e48044a814d456934de20a71b20cfa8164afcae7b97a3d86b8298",
+      "assertions": 1,
+      "script_tests": 1
+    },
+    "Guard.bru": {
+      "sha256": "27f6d2295383bc14abed571dbfdb608ab442719bbc9174f329cfcae23fbce537",
+      "assertions": 1,
+      "script_tests": 1
+    },
+    "Health.bru": {
+      "sha256": "b89c3f75f351b82e0e505afdcc5bc35e92b9656e8864dd5f85079cfdea5c805d",
+      "assertions": 2,
+      "script_tests": 0
+    },
+    "Reidentify.bru": {
+      "sha256": "6872689b3c6ceab7903b8c3b03ed6689f7f84fdef84063965ef73a04db24929c",
+      "assertions": 1,
+      "script_tests": 1
+    },
+    "Roundtrip.bru": {
+      "sha256": "4722f645dd2bed69e84710b1a92a2722dee33f22e266736e4201e4451e629166",
+      "assertions": 1,
+      "script_tests": 0
+    },
+    "Sanitize.bru": {
+      "sha256": "e828e9f0a60b7eaa32e2bf523134cce8dbfe8108f3b335177aca0eddb6cfc4fe",
+      "assertions": 1,
+      "script_tests": 1
+    }
+  }
+}

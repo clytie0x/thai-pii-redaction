@@ -186,7 +186,11 @@ def test_analyze_text_runs_detection_once(monkeypatch):
 
     calls = []
 
-    def fake_detect(text):
+    from amphrang._core_config import sdk_core_config
+
+    config = sdk_core_config()
+
+    def fake_detect(text, *, config):
         calls.append(text)
         return [
             Entity(
@@ -200,7 +204,7 @@ def test_analyze_text_runs_detection_once(monkeypatch):
         ]
 
     monkeypatch.setattr(report_module, "detect_all", fake_detect)
-    result = report_module.analyze_text("1234567890123")
+    result = report_module.analyze_text("1234567890123", config=config)
 
     assert calls == ["1234567890123"]
     assert result["direct_pii_count"] == 1

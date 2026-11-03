@@ -1,0 +1,2433 @@
+{
+  "artifacts": {
+    "core": {
+      "compressed_bytes_identical": true,
+      "distribution": "thai-pii-redaction-core",
+      "files": [
+        {
+          "bytes": 1089761,
+          "path": "core-direct/thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+          "sha256": "625cad269502d3a86bc6bb67d9fca20c27a6bf7cf6442894552baa4d8bd0c192"
+        },
+        {
+          "bytes": 995989,
+          "path": "core-direct/thai_pii_redaction_core-0.1.0.tar.gz",
+          "sha256": "cd7b663770b594a5f08b28bc8e08de85bc57039f086a5218d7e0e82f7cfa4288"
+        },
+        {
+          "bytes": 1089761,
+          "path": "core-rebuilt/thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+          "sha256": "625cad269502d3a86bc6bb67d9fca20c27a6bf7cf6442894552baa4d8bd0c192"
+        }
+      ],
+      "members": 205,
+      "output_control_files": [
+        {
+          "path": "core-direct/.gitignore",
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": "core-rebuilt/.gitignore",
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        }
+      ],
+      "rebuilt_wheel_sha256": "625cad269502d3a86bc6bb67d9fca20c27a6bf7cf6442894552baa4d8bd0c192",
+      "runtime_files": 180,
+      "sdist_sha256": "cd7b663770b594a5f08b28bc8e08de85bc57039f086a5218d7e0e82f7cfa4288",
+      "unpacked_bytes_identical": true,
+      "version": "0.1.0",
+      "wheel_sha256": "625cad269502d3a86bc6bb67d9fca20c27a6bf7cf6442894552baa4d8bd0c192"
+    },
+    "sdk": {
+      "compressed_bytes_identical": true,
+      "distribution": "amphrang",
+      "files": [
+        {
+          "bytes": 69215,
+          "path": "sdk-direct/amphrang-0.1.0-py3-none-any.whl",
+          "sha256": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+        },
+        {
+          "bytes": 64080,
+          "path": "sdk-direct/amphrang-0.1.0.tar.gz",
+          "sha256": "12a10d3c99356ff571c7e08c0121771b1ea7fac9cb934e7f7f61b457ef8d9cc5"
+        },
+        {
+          "bytes": 69215,
+          "path": "sdk-rebuilt/amphrang-0.1.0-py3-none-any.whl",
+          "sha256": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+        }
+      ],
+      "members": 57,
+      "output_control_files": [
+        {
+          "path": "sdk-direct/.gitignore",
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": "sdk-rebuilt/.gitignore",
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        }
+      ],
+      "rebuilt_wheel_sha256": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7",
+      "runtime_files": 50,
+      "sdist_sha256": "12a10d3c99356ff571c7e08c0121771b1ea7fac9cb934e7f7f61b457ef8d9cc5",
+      "unpacked_bytes_identical": true,
+      "version": "0.1.0",
+      "wheel_sha256": "b449c6715ad46565687b70b9b7030f5f527912590ef627c1a3ea8dd9069288d7"
+    }
+  },
+  "commands": [
+    {
+      "captured_output_sha256": "d330344936a8072d447243239c484b075ca7348bdd3ccf701bcf1d8c0b62b307",
+      "command": [
+        "uv",
+        "build",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sources\\core",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--wheel",
+        "--sdist",
+        "--offline",
+        "--no-index",
+        "--no-build-isolation",
+        "--no-sources",
+        "--build-constraints",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\requirements-build.lock",
+        "--out-dir",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 7.524,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "e9ffa8070f4feb25a6e3e30955d325ecbb65eb814ada69d6fe1ca035ceab76be",
+      "step": "core-direct"
+    },
+    {
+      "captured_output_sha256": "0b2830719f028314600a4d64b3cfb841553ada7ae1c6edf78ee69f626bcfd674",
+      "command": [
+        "uv",
+        "build",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0.tar.gz",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--wheel",
+        "--offline",
+        "--no-index",
+        "--no-build-isolation",
+        "--no-sources",
+        "--build-constraints",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\requirements-build.lock",
+        "--out-dir",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-rebuilt"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 4.469,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "a8eefa3d5cceb1e142ab0dc2b63f8229f5763b125e3fb72575e64bccac97accf",
+      "step": "core-sdist-rebuild"
+    },
+    {
+      "captured_output_sha256": "855c91173be8a47cf91e010580657a0a83d3d18f8eee20a1cd8f796a55c7b39e",
+      "command": [
+        "uv",
+        "build",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sources\\sdk",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--wheel",
+        "--sdist",
+        "--offline",
+        "--no-index",
+        "--no-build-isolation",
+        "--no-sources",
+        "--build-constraints",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\requirements-build.lock",
+        "--out-dir",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.402,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "0cd9f28d2bdb70a77f9e855b5d65a96d8f6c3c3808fb9371a81e856f982d34fb",
+      "step": "sdk-direct"
+    },
+    {
+      "captured_output_sha256": "644d020bc7ccd06f0270ad9c32dc3bd1a4e971441d8f74d24301e6d25c89bbe8",
+      "command": [
+        "uv",
+        "build",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0.tar.gz",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--wheel",
+        "--offline",
+        "--no-index",
+        "--no-build-isolation",
+        "--no-sources",
+        "--build-constraints",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\requirements-build.lock",
+        "--out-dir",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-rebuilt"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.979,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "761241c88e6c8ab9ada4577bf316b052c149f1bb63048310bce2d102ed042440",
+      "step": "sdk-sdist-rebuild"
+    },
+    {
+      "captured_output_sha256": "d64496b2ca7327ca2a1fb611e86e4ee983903469cbfd58fe5c36f51c6f665ffb",
+      "command": [
+        "uv",
+        "export",
+        "--frozen",
+        "--no-dev",
+        "--no-emit-project",
+        "--no-emit-package",
+        "thai-pii-redaction-core",
+        "--output-file",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core.txt"
+      ],
+      "cwd": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\packages\\amphrang",
+      "elapsed_s": 0.06,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "8186f06bd251ca0df6fa3d64dda76f4f16118d34cf917b09ab78dfce6368484d",
+      "step": "sdk-core-export"
+    },
+    {
+      "captured_output_sha256": "6c7f81158caf2dfe977ae0e32f60c3c9f86c59125b00c967ad1b8fcd908ee111",
+      "command": [
+        "uv",
+        "export",
+        "--frozen",
+        "--no-dev",
+        "--no-emit-project",
+        "--no-emit-package",
+        "thai-pii-redaction-core",
+        "--output-file",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy.txt",
+        "--extra",
+        "server",
+        "--extra",
+        "mcp",
+        "--extra",
+        "proxy"
+      ],
+      "cwd": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\packages\\amphrang",
+      "elapsed_s": 0.036,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "82c56271e50dc3fc79fb34ea2790b85d2d574064afd4299b7acf9f02bf1c3d38",
+      "step": "sdk-server-mcp-proxy-export"
+    },
+    {
+      "captured_output_sha256": "e5ec0567b064385fbf558f2a3f342e88621ea3ada5a9beb1f00703d3cf20ce9a",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--offline",
+        "--no-project",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.175,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "f16b176d51864828adef632fc78760f99a1f94954cf7fa7cb92f03e21414a26f",
+      "step": "enterprise-venv"
+    },
+    {
+      "captured_output_sha256": "8078edc95a4931a681a6c8c09c736c8860d4141d3bb15b8c2f7e2b7d2dfc6fde",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--find-links",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-wheelhouse",
+        "--require-hashes",
+        "-r",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\requirements-enterprise.lock"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 7.402,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "7c4dc1abb12664df88c52ceff4a584c2b5b6fb951f23b5668262ce756b33b19b",
+      "step": "enterprise-dependencies"
+    },
+    {
+      "captured_output_sha256": "c0d6721ac03eb97c08d6246c883d5c470a64fc6c9aa31cda0318c859d42fe0db",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--no-deps",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl[enterprise]",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.547,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "d12e92aa21dadeb0de34590ac191b46e408af22b700fba025b01cba20435216a",
+      "step": "enterprise-pair-install"
+    },
+    {
+      "captured_output_sha256": "55f948e9349c217eafaa5e92a2a31474fa3f5d8931f6697041c0bf307cbf9e2a",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "--offline"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 1.203,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "089006c427cce55b53ba66d12a31db8fc7551fb97c6d9e92f308bfde7dc06a31",
+      "step": "enterprise-dependency-check"
+    },
+    {
+      "captured_output_sha256": "f34098d981901eeea1d41c9116954825c31dcaafc86a7fd52eba6c636fa60922",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 6.261,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fec9d0634728288d371b55d8f7c27359251f44e271890a9bb4660794eef19475",
+      "step": "enterprise-installed-checker"
+    },
+    {
+      "captured_output_sha256": "61be0ff8ac6104b0fb681251aae081b6257d419697167b7520468386ac276acc",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Lib\\site-packages",
+        "positive"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 37.633,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "61be0ff8ac6104b0fb681251aae081b6257d419697167b7520468386ac276acc",
+      "step": "enterprise-runtime-identity"
+    },
+    {
+      "captured_output_sha256": "16c92232f9fbd6b3626fd79650ea2bba119b9d7588f0f95a35cccd99e8287203",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_runtime.py",
+        "enterprise",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-expected.json"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 17.945,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "18b2ccabee0dd905b8ad9393c9d43c79f8e6128341a498c5bbfb5a9a87a764b2",
+      "step": "enterprise-public-runtime"
+    },
+    {
+      "captured_output_sha256": "285c7de5069c34ae12896f84e0bf8df5bc67a4754742af782c9671dfcd4a72be",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--offline",
+        "--no-project",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.16,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "cf8e90e2d155cea557cbf2584ff5f65ac377179448085dc014eb9ec4fe9fe98f",
+      "step": "sdk-core-venv"
+    },
+    {
+      "captured_output_sha256": "849887191790a70731c65408642ae28a7856ee89798a74b1bb499d509fdfb11c",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--find-links",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-wheelhouse",
+        "--require-hashes",
+        "-r",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core.txt"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 3.008,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "4d3165f09e1eb09db15070368f6fe59d60e552846b27c362190e69cd11885b13",
+      "step": "sdk-core-dependencies"
+    },
+    {
+      "captured_output_sha256": "6b7bb6905b7b488f3c1c445d20631d12f798577b78f91a9d0a4a0d49506ea9f9",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--no-deps",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.268,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "3868014f25ae276eeda0f3c2707d0fff77523d731dde497144d46eac0bf51a06",
+      "step": "sdk-core-pair-install"
+    },
+    {
+      "captured_output_sha256": "12d5a02386da25b3cf07e6cf44606b35a065c3d6af054cbb8425375ee6d3db00",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Scripts\\python.exe",
+        "--offline"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.66,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "70a79a169ca8ad9d40d4479f72a0d9892bc3bd56a3776a52e0082e2935efcd70",
+      "step": "sdk-core-dependency-check"
+    },
+    {
+      "captured_output_sha256": "f34098d981901eeea1d41c9116954825c31dcaafc86a7fd52eba6c636fa60922",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 6.185,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fec9d0634728288d371b55d8f7c27359251f44e271890a9bb4660794eef19475",
+      "step": "sdk-core-installed-checker"
+    },
+    {
+      "captured_output_sha256": "61be0ff8ac6104b0fb681251aae081b6257d419697167b7520468386ac276acc",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Lib\\site-packages",
+        "positive"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 32.134,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "61be0ff8ac6104b0fb681251aae081b6257d419697167b7520468386ac276acc",
+      "step": "sdk-core-runtime-identity"
+    },
+    {
+      "captured_output_sha256": "da0c9dbb27ab4002d642126f7cbd476d840502dfd869debff7b70e475f6401fc",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_runtime.py",
+        "sdk-core",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-core-expected.json"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 5.743,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "9eb0cf0e9a628187baff5eb3c63b948ef9a310e815bab53646b00e1b0f2765f6",
+      "step": "sdk-core-public-runtime"
+    },
+    {
+      "captured_output_sha256": "38660df692c42a189754300101a76f59e7212e814324c8f5c5ea4ba8c77f13d4",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+        "--offline",
+        "--no-project",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.144,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "ed6ed3fb6928df51676b2a7dd5924b8ac49f730058442cf986749f62f0a13680",
+      "step": "sdk-server-mcp-proxy-venv"
+    },
+    {
+      "captured_output_sha256": "32cfa6347599241c8012586fc75e735a8f4816c9b7c80b881f00ce1b505c842a",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--find-links",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-wheelhouse",
+        "--require-hashes",
+        "-r",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy.txt"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 5.111,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "dba489bbfa2cd9d781feb848ea5ac8fa5645edc926311c6758f0ff74c51f2fa0",
+      "step": "sdk-server-mcp-proxy-dependencies"
+    },
+    {
+      "captured_output_sha256": "616ea2e30d89493fc776aeb501062f88618798fe3ba7f6800677cde7740e7eb3",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--no-deps",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl[server,mcp,proxy]"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.241,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "bfef315621e5f5136735649a0804f16b0d6b7fa4c712c8f86d3f051957284fd1",
+      "step": "sdk-server-mcp-proxy-pair-install"
+    },
+    {
+      "captured_output_sha256": "05a4dc34df71e8c705df1fb0433ec7c2b4c741f5b01ab69919ad51a83a156492",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "--offline"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 1.387,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "da075340c11862e0b2a5301e64e806e778042e5593593ec2662dd7663390b723",
+      "step": "sdk-server-mcp-proxy-dependency-check"
+    },
+    {
+      "captured_output_sha256": "f34098d981901eeea1d41c9116954825c31dcaafc86a7fd52eba6c636fa60922",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 6.433,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fec9d0634728288d371b55d8f7c27359251f44e271890a9bb4660794eef19475",
+      "step": "sdk-server-mcp-proxy-installed-checker"
+    },
+    {
+      "captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.182,
+      "exit": 1,
+      "expected": "nonzero",
+      "log_sha256": "c6c51b20a775e865e27e7dcc8f4f7ec439b32151d3c185cec891ae7ceb0f8d11",
+      "step": "negative-wrong-core-artifact"
+    },
+    {
+      "captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.16,
+      "exit": 1,
+      "expected": "nonzero",
+      "log_sha256": "c6c51b20a775e865e27e7dcc8f4f7ec439b32151d3c185cec891ae7ceb0f8d11",
+      "step": "negative-wrong-sdk-artifact"
+    },
+    {
+      "captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\absent-core.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.183,
+      "exit": 1,
+      "expected": "nonzero",
+      "log_sha256": "c6c51b20a775e865e27e7dcc8f4f7ec439b32151d3c185cec891ae7ceb0f8d11",
+      "step": "negative-missing-core-artifact"
+    },
+    {
+      "captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Lib\\site-packages",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\absent-sdk.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.171,
+      "exit": 1,
+      "expected": "nonzero",
+      "log_sha256": "c6c51b20a775e865e27e7dcc8f4f7ec439b32151d3c185cec891ae7ceb0f8d11",
+      "step": "negative-missing-sdk-artifact"
+    },
+    {
+      "captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-missing-installed-core",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.486,
+      "exit": 1,
+      "expected": "nonzero",
+      "log_sha256": "c6c51b20a775e865e27e7dcc8f4f7ec439b32151d3c185cec891ae7ceb0f8d11",
+      "step": "negative-missing-installed-core-no-ambient-fallback"
+    },
+    {
+      "captured_output_sha256": "ffa500fb0cf16839da6c44fcef996d748bb6adb4388aede3330547b15ae427dd",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\check_sdk_installed.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-checker-collision",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-direct\\amphrang-0.1.0-py3-none-any.whl",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.624,
+      "exit": 1,
+      "expected": "nonzero",
+      "log_sha256": "c6c51b20a775e865e27e7dcc8f4f7ec439b32151d3c185cec891ae7ceb0f8d11",
+      "step": "negative-colliding-namespace-owner"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-missing-runtime",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.109,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-missing-runtime"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-changed-runtime",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 1.934,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-changed-runtime"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-missing-manifest",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.278,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-missing-manifest"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-missing-build-input",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 1.934,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-missing-build-input"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-changed-lock",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.261,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-changed-lock"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-private-resource",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.169,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-private-resource"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-extra-resource",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.3,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-extra-resource"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-stale-manifest",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.53,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-stale-manifest"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-namespace-owner",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.259,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-namespace-owner"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-timestamp-opt0",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.687,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-timestamp-opt0"
+    },
+    {
+      "captured_output_sha256": "61be0ff8ac6104b0fb681251aae081b6257d419697167b7520468386ac276acc",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Lib\\site-packages",
+        "positive"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 48.792,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "61be0ff8ac6104b0fb681251aae081b6257d419697167b7520468386ac276acc",
+      "step": "sdk-server-mcp-proxy-runtime-identity"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-timestamp-opt1",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.453,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-timestamp-opt1"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-timestamp-opt2",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 1.868,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-timestamp-opt2"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-checked-opt0",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.211,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-checked-opt0"
+    },
+    {
+      "captured_output_sha256": "de9df7d07a50985091f126a5ea338569f8757918da55d5a63bfda8dadb08a603",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_runtime.py",
+        "sdk-server-mcp-proxy",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-expected.json"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 6.012,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "250734604604dc7cbce2d8924ba62d8a97127c24833504501e4f4f65bb09339c",
+      "step": "sdk-server-mcp-proxy-public-runtime"
+    },
+    {
+      "captured_output_sha256": "62eb159725aebf6bdff52b90f1919d87f9a043ac94c829da76f4bbd2adff6d6d",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--find-links",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\test-harness-wheelhouse",
+        "--require-hashes",
+        "-r",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\test-harness.txt"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.082,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "c8cb269f6cf404fde512109e4a3acf0e0ff2d8c4ba48215a3954042b8bd27fad",
+      "step": "sdk-server-mcp-proxy-harness-dependencies"
+    },
+    {
+      "captured_output_sha256": "fef287800210ed3a92f4df4c40c1405a8205f18e1ff44ad8eb707e71172bf244",
+      "command": [
+        "uv",
+        "pip",
+        "check",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "--offline"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.034,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "d5facd45d6df1d3124c5518049937176d1d91e1cc7f593d8b4dfe85ea75a59e7",
+      "step": "sdk-server-mcp-proxy-harness-dependency-check"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-checked-opt1",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.242,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-checked-opt1"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-checked-opt2",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 1.985,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-checked-opt2"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-unchecked-opt0",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.205,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-unchecked-opt0"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-unchecked-opt1",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.308,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-unchecked-opt1"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-unchecked-opt2",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.307,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-unchecked-opt2"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-cache-build-resource",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.293,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-cache-build-resource"
+    },
+    {
+      "captured_output_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\enterprise-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-identity-malformed-cache",
+        "reject"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 2.118,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "fe5aa84695eaee1d016d0c6ab1368f89a5f5ff4df80ffd133b00351f9263a20b",
+      "step": "negative-identity-malformed-cache"
+    },
+    {
+      "captured_output_sha256": "3c6aceff413bbf4508eddb9570dcfc99fc7688ce41bb34e94c0a11ae00bb9c29",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\python.exe",
+        "--offline",
+        "--no-project",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.11"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.282,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "42aa9f6978724b0641a4da1a21968ff31edd50d8f87a7ae4e9559350d307af84",
+      "step": "identity-3.11-venv"
+    },
+    {
+      "captured_output_sha256": "119bd4b0a031589d72aa657e388d2da9b8c60860cb61d14d555ee23caf1da1df",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.11\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--no-deps",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.416,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "173bfce83a9671347d555a55639430ac08a1d98d1ea9c430282d8b3842021144",
+      "step": "identity-3.11-core-install"
+    },
+    {
+      "captured_output_sha256": "603511761774d562fed194e7bb5e4b4e29266eb4c12c10f921e8ed99a5f07a0a",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\sdk-server-mcp-proxy-environment\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_adapters.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\adapter-tests"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 26.432,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "49746f2bdf198e829b990a76328c1d25cbe2419d622ee70aa6ee25f0a17c93e9",
+      "step": "sdk-server-mcp-proxy-packaged-adapters"
+    },
+    {
+      "captured_output_sha256": "3ebba8cfa3f3434d550f8fdbd0be504891a4b0664706fe9d46d9ab463c107d20",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.11\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.11\\Lib\\site-packages",
+        "positive"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 9.219,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "3ebba8cfa3f3434d550f8fdbd0be504891a4b0664706fe9d46d9ab463c107d20",
+      "step": "identity-3.11-format"
+    },
+    {
+      "captured_output_sha256": "b370e3ff31dde30a8af3e5f3eb670831994fbc950328a73aa1ac20d62f6aa5ee",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\python.exe",
+        "--offline",
+        "--no-project",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.12"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.364,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "8171450dbeef9ce5f0c35c7c10d9195b0b2a6e55e94e1fc6c3c94b278c775004",
+      "step": "identity-3.12-venv"
+    },
+    {
+      "captured_output_sha256": "4fd6a149acd7e15651c8230bb2df0f2a9c7e1583680a48371ed11467a2f34886",
+      "command": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.12\\Scripts\\python.exe",
+        "--offline",
+        "--no-index",
+        "--no-deps",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.321,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "094897f4bc6bbeee7910899ef61c899eb99a245f746d5561205d549cb85e2b25",
+      "step": "identity-3.12-core-install"
+    },
+    {
+      "captured_output_sha256": "5091a59221a161d2e1ed3ae54e2ab76368813f2d6d258e9832e1e0931ff00096",
+      "command": [
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.12\\Scripts\\python.exe",
+        "-I",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\probe_identity.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\identity-python-3.12\\Lib\\site-packages",
+        "positive"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 8.422,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "5091a59221a161d2e1ed3ae54e2ab76368813f2d6d258e9832e1e0931ff00096",
+      "step": "identity-3.12-format"
+    },
+    {
+      "captured_output_sha256": "dcb02dd5e97880c1c696e7596848d7d87f1a3aa47e3796a029d6f20c4fdc5cb9",
+      "command": [
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe",
+        "-B",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\.superpowers\\sdd\\integrated-artifacts-v2\\audit_archive_allowlist.py"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.313,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "20575dcce33db3ce42253babf3894ea18617972e03bbd49564b169996850b01c",
+      "step": "archive-explicit-allowlist"
+    },
+    {
+      "captured_output_sha256": "69e9f3be1609209fb3b0ea7f46ce22d49c8c8259fddc2193742b256f4aff03e0",
+      "command": [
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe",
+        "-I",
+        "-B",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\scripts\\check_enterprise_wheel.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-direct\\thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+        "--expect-version",
+        "0.1.0"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.203,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "a40d481d0d3268fd307a73ad8e45a655cca80ac738f8c9f57372a4f7c1dcb880",
+      "step": "core-direct-enterprise-resource-check"
+    },
+    {
+      "captured_output_sha256": "69e9f3be1609209fb3b0ea7f46ce22d49c8c8259fddc2193742b256f4aff03e0",
+      "command": [
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe",
+        "-I",
+        "-B",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\scripts\\check_enterprise_wheel.py",
+        "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\core-rebuilt\\thai_pii_redaction_core-0.1.0-py3-none-any.whl",
+        "--expect-version",
+        "0.1.0"
+      ],
+      "cwd": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406",
+      "elapsed_s": 0.108,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "a40d481d0d3268fd307a73ad8e45a655cca80ac738f8c9f57372a4f7c1dcb880",
+      "step": "core-rebuilt-enterprise-resource-check"
+    },
+    {
+      "captured_output_sha256": "ae59fa3cfcd5785cf4a58476ba586ec898c11e8cdf3b4804f9596802a7e544cc",
+      "command": [
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise\\.venv-enterprise\\Scripts\\python.exe",
+        "-I",
+        "-B",
+        "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean\\scripts\\check_version.py"
+      ],
+      "cwd": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean",
+      "elapsed_s": 0.093,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "df08906f718a1d1dac7bf23837e016b49a0e43f8e7e182afa1e80241c4264f4f",
+      "step": "version-check"
+    },
+    {
+      "captured_output_sha256": "1bc3072e81858544c9798419b4f976f0148ff7b633a6e9a0edd29853496ed91f",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean",
+      "elapsed_s": 0.058,
+      "exit": 0,
+      "expected": 0,
+      "log_sha256": "01529d177603de873a16a9a21631a43e592c7e5e5e79436c1c38a6367229021b",
+      "step": "diff-check"
+    }
+  ],
+  "dependencies": {
+    "enterprise": {
+      "packages": [
+        {
+          "filename": "annotated_doc-0.0.4-py3-none-any.whl",
+          "name": "annotated-doc",
+          "sha256": "571ac1dc6991c450b25a9c2d84a3705e2ae7a53467b5d111c24fa8baabbed320",
+          "version": "0.0.4"
+        },
+        {
+          "filename": "annotated_types-0.7.0-py3-none-any.whl",
+          "name": "annotated-types",
+          "sha256": "1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53",
+          "version": "0.7.0"
+        },
+        {
+          "filename": "anyio-4.14.2-py3-none-any.whl",
+          "name": "anyio",
+          "sha256": "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494",
+          "version": "4.14.2"
+        },
+        {
+          "filename": "authlib-1.9.1-py2.py3-none-any.whl",
+          "name": "authlib",
+          "sha256": "8b9be8b1e5174dcbf5520e984f1a22dc2edae5b6e40a61d4cedbf86b97e9e69b",
+          "version": "1.9.1"
+        },
+        {
+          "filename": "certifi-2026.6.17-py3-none-any.whl",
+          "name": "certifi",
+          "sha256": "2227dcbaafe0d2f59279d1762ddddc37783ed4354594f194ffc31d20f41fc3db",
+          "version": "2026.6.17"
+        },
+        {
+          "filename": "cffi-2.1.0-cp313-cp313-win_amd64.whl",
+          "name": "cffi",
+          "sha256": "8e74a6135550c4748af665b1b1118b6aab33b1fc6a16f9aff630af107c3b4512",
+          "version": "2.1.0"
+        },
+        {
+          "filename": "charset_normalizer-3.4.9-cp313-cp313-win_amd64.whl",
+          "name": "charset-normalizer",
+          "sha256": "fe2c7201c642b7c308f1675355ad7ff7b66acfe3541625efe5a3ad38f29d6115",
+          "version": "3.4.9"
+        },
+        {
+          "filename": "click-8.4.2-py3-none-any.whl",
+          "name": "click",
+          "sha256": "e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76",
+          "version": "8.4.2"
+        },
+        {
+          "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+          "name": "colorama",
+          "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+          "version": "0.4.6"
+        },
+        {
+          "filename": "cryptography-49.0.0-cp311-abi3-win_amd64.whl",
+          "name": "cryptography",
+          "sha256": "e5dfc1e64de5677cec922ffa8da89c546d0415bf6efdf081842e5d44c84e1f0e",
+          "version": "49.0.0"
+        },
+        {
+          "filename": "fastapi-0.139.2-py3-none-any.whl",
+          "name": "fastapi",
+          "sha256": "b9ad015a835173d59865e2f5d8296fbc2b317bf56a2ba1a5bfbdd03de2fd4b1c",
+          "version": "0.139.2"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "name": "httpcore",
+          "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+          "version": "1.0.9"
+        },
+        {
+          "filename": "httptools-0.8.0-cp313-cp313-win_amd64.whl",
+          "name": "httptools",
+          "sha256": "7685df791fad561384bfb139e77fde27a1ffd93134e016f95a0db424ffbf77b1",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "name": "httpx",
+          "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+          "version": "0.28.1"
+        },
+        {
+          "filename": "idna-3.18-py3-none-any.whl",
+          "name": "idna",
+          "sha256": "7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2",
+          "version": "3.18"
+        },
+        {
+          "filename": "iniconfig-2.3.0-py3-none-any.whl",
+          "name": "iniconfig",
+          "sha256": "f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12",
+          "version": "2.3.0"
+        },
+        {
+          "filename": "joserfc-1.7.7-py3-none-any.whl",
+          "name": "joserfc",
+          "sha256": "06979cfbab78bc802f14c0358f32969826cc26720e13cb38926ffdc86bc0cb2c",
+          "version": "1.7.7"
+        },
+        {
+          "filename": "packaging-26.2-py3-none-any.whl",
+          "name": "packaging",
+          "sha256": "5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e",
+          "version": "26.2"
+        },
+        {
+          "filename": "pdfminer_six-20260107-py3-none-any.whl",
+          "name": "pdfminer-six",
+          "sha256": "366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9",
+          "version": "20260107"
+        },
+        {
+          "filename": "pdfplumber-0.11.10-py3-none-any.whl",
+          "name": "pdfplumber",
+          "sha256": "7741ea81bf165b474b153e6789d10d18e06b6ddcf3ec84289c3ef2fed6802580",
+          "version": "0.11.10"
+        },
+        {
+          "filename": "pillow-12.3.0-cp313-cp313-win_amd64.whl",
+          "name": "pillow",
+          "sha256": "1cca606cd25738df4ed873d5ad46bbdb3d83b5cbca291f6b4ff13a4df6b0bbe8",
+          "version": "12.3.0"
+        },
+        {
+          "filename": "pluggy-1.6.0-py3-none-any.whl",
+          "name": "pluggy",
+          "sha256": "e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "psycopg-3.3.6-py3-none-any.whl",
+          "name": "psycopg",
+          "sha256": "a1db9f7148b06a28606767efaca51fa6f9398c5c0a3810519be69d7000bdb631",
+          "version": "3.3.6"
+        },
+        {
+          "filename": "psycopg_binary-3.3.6-cp313-cp313-win_amd64.whl",
+          "name": "psycopg-binary",
+          "sha256": "0ebfad5d131de9f892ae9e70cc7616207768b6714b66a52d4612b8ceaf78b372",
+          "version": "3.3.6"
+        },
+        {
+          "filename": "pycparser-3.0-py3-none-any.whl",
+          "name": "pycparser",
+          "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992",
+          "version": "3.0"
+        },
+        {
+          "filename": "pydantic-2.13.4-py3-none-any.whl",
+          "name": "pydantic",
+          "sha256": "45a282cde31d808236fd7ea9d919b128653c8b38b393d1c4ab335c62924d9aba",
+          "version": "2.13.4"
+        },
+        {
+          "filename": "pydantic_core-2.46.4-cp313-cp313-win_amd64.whl",
+          "name": "pydantic-core",
+          "sha256": "6b3ace8194b0e5204818c92802dcdca7fc6d88aabbb799d7c795540d9cd6d292",
+          "version": "2.46.4"
+        },
+        {
+          "filename": "pygments-2.20.0-py3-none-any.whl",
+          "name": "pygments",
+          "sha256": "81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176",
+          "version": "2.20.0"
+        },
+        {
+          "filename": "pypdfium2-5.12.1-py3-none-win_amd64.whl",
+          "name": "pypdfium2",
+          "sha256": "9609be73a6701a68f29dffe0335f7a2e4b3ba581542ed65d35d49f761a4600ca",
+          "version": "5.12.1"
+        },
+        {
+          "filename": "pytest-9.1.1-py3-none-any.whl",
+          "name": "pytest",
+          "sha256": "37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c",
+          "version": "9.1.1"
+        },
+        {
+          "filename": "pythainlp-5.3.4-py3-none-any.whl",
+          "name": "pythainlp",
+          "sha256": "76744e51e27c895630bafd74f53a1f0aa8782cef2f7f02eebd6427fe8ce8d84d",
+          "version": "5.3.4"
+        },
+        {
+          "filename": "python_crfsuite-0.9.12-cp313-cp313-win_amd64.whl",
+          "name": "python-crfsuite",
+          "sha256": "21334c298318d4de057eacaad2ed179b7f63640e9cbd0c8141d656f58e7bd3f1",
+          "version": "0.9.12"
+        },
+        {
+          "filename": "python_dotenv-1.2.2-py3-none-any.whl",
+          "name": "python-dotenv",
+          "sha256": "1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a",
+          "version": "1.2.2"
+        },
+        {
+          "filename": "python_multipart-0.0.32-py3-none-any.whl",
+          "name": "python-multipart",
+          "sha256": "ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23",
+          "version": "0.0.32"
+        },
+        {
+          "filename": "pyyaml-6.0.3-cp313-cp313-win_amd64.whl",
+          "name": "pyyaml",
+          "sha256": "79005a0d97d5ddabfeeea4cf676af11e647e41d81c9a7722a193022accdb6b7c",
+          "version": "6.0.3"
+        },
+        {
+          "filename": "regex-2026.7.10-cp313-cp313-win_amd64.whl",
+          "name": "regex",
+          "sha256": "5e792367e5f9b4ffb8cad93f1beaa91837056b94da98aa5c65a0db0c1b474927",
+          "version": "2026.7.10"
+        },
+        {
+          "filename": "reportlab-5.0.0-py3-none-any.whl",
+          "name": "reportlab",
+          "sha256": "9d5a3affa84919e1111ede580031266a570e93b1ce388219621347965ff1d93c",
+          "version": "5.0.0"
+        },
+        {
+          "filename": "starlette-1.3.1-py3-none-any.whl",
+          "name": "starlette",
+          "sha256": "c7372aae11c3c3f26a42df7bd626cec2f47d03483d261d369516a615a53714c6",
+          "version": "1.3.1"
+        },
+        {
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "name": "typing-extensions",
+          "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "typing_inspection-0.4.2-py3-none-any.whl",
+          "name": "typing-inspection",
+          "sha256": "4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7",
+          "version": "0.4.2"
+        },
+        {
+          "filename": "tzdata-2026.3-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "sha256": "dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931",
+          "version": "2026.3"
+        },
+        {
+          "filename": "uharfbuzz-0.55.0-cp310-abi3-win_amd64.whl",
+          "name": "uharfbuzz",
+          "sha256": "72f653625e33f68dda56b258b4b9dcd2ff9c9e4f21fd53c7bbff9d9620c4fba0",
+          "version": "0.55.0"
+        },
+        {
+          "filename": "uvicorn-0.51.0-py3-none-any.whl",
+          "name": "uvicorn",
+          "sha256": "5d38af6cd620f2ae3849fb44fd4879e0890aa1febe8d47eb355fb45d93fe6a5b",
+          "version": "0.51.0"
+        },
+        {
+          "filename": "watchfiles-1.2.0-cp313-cp313-win_amd64.whl",
+          "name": "watchfiles",
+          "sha256": "a0f27f01bee51861392bb6b7c4fdb290b27d1eb194e9e28788d68102a0e898d9",
+          "version": "1.2.0"
+        },
+        {
+          "filename": "websockets-16.1-cp313-cp313-win_amd64.whl",
+          "name": "websockets",
+          "sha256": "bef52d327d70fa75dad93ee61ea2cb1d1489aca9f35c188833563f5a3b4df0a5",
+          "version": "16.1"
+        }
+      ],
+      "requirements_sha256": "ddb7640e1e11b6a6dace8a9b36c5db8535ab5f6b273f5fbbf935b79cbfb5d3c4"
+    },
+    "sdk-core": {
+      "packages": [
+        {
+          "filename": "anyio-4.14.2-py3-none-any.whl",
+          "name": "anyio",
+          "sha256": "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494",
+          "version": "4.14.2"
+        },
+        {
+          "filename": "certifi-2026.7.22-py3-none-any.whl",
+          "name": "certifi",
+          "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+          "version": "2026.7.22"
+        },
+        {
+          "filename": "cffi-2.1.1-cp313-cp313-win_amd64.whl",
+          "name": "cffi",
+          "sha256": "1aa5645c30469b09530c4ebca77ebf8f17618293c58f8549cb1a543a50236e7d",
+          "version": "2.1.1"
+        },
+        {
+          "filename": "charset_normalizer-3.5.2-cp313-cp313-win_amd64.whl",
+          "name": "charset-normalizer",
+          "sha256": "78456a747de8dc58360ffa581f30a002baf5aa28cb262536545e91f113ed7639",
+          "version": "3.5.2"
+        },
+        {
+          "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+          "name": "colorama",
+          "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+          "version": "0.4.6"
+        },
+        {
+          "filename": "cryptography-50.0.0-cp311-abi3-win_amd64.whl",
+          "name": "cryptography",
+          "sha256": "bd1c592e4d5974f0d08d4888e432157adba757c66da0246918e43677fafa2d30",
+          "version": "50.0.0"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "name": "httpcore",
+          "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+          "version": "1.0.9"
+        },
+        {
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "name": "httpx",
+          "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+          "version": "0.28.1"
+        },
+        {
+          "filename": "idna-3.19-py3-none-any.whl",
+          "name": "idna",
+          "sha256": "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+          "version": "3.19"
+        },
+        {
+          "filename": "iniconfig-2.3.0-py3-none-any.whl",
+          "name": "iniconfig",
+          "sha256": "f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12",
+          "version": "2.3.0"
+        },
+        {
+          "filename": "packaging-26.3-py3-none-any.whl",
+          "name": "packaging",
+          "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+          "version": "26.3"
+        },
+        {
+          "filename": "pdfminer_six-20260107-py3-none-any.whl",
+          "name": "pdfminer-six",
+          "sha256": "366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9",
+          "version": "20260107"
+        },
+        {
+          "filename": "pdfplumber-0.11.10-py3-none-any.whl",
+          "name": "pdfplumber",
+          "sha256": "7741ea81bf165b474b153e6789d10d18e06b6ddcf3ec84289c3ef2fed6802580",
+          "version": "0.11.10"
+        },
+        {
+          "filename": "pillow-13.0.0-cp313-cp313-win_amd64.whl",
+          "name": "pillow",
+          "sha256": "9dda0788a9932776a75d8bcc020076edc308ce2508b51f6739a45e3158b3fc42",
+          "version": "13.0.0"
+        },
+        {
+          "filename": "pluggy-1.6.0-py3-none-any.whl",
+          "name": "pluggy",
+          "sha256": "e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "pycparser-3.0-py3-none-any.whl",
+          "name": "pycparser",
+          "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992",
+          "version": "3.0"
+        },
+        {
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "name": "pygments",
+          "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+          "version": "2.21.0"
+        },
+        {
+          "filename": "pypdfium2-5.14.0-py3-none-win_amd64.whl",
+          "name": "pypdfium2",
+          "sha256": "149fd5c6397b8df8bf7911a93506eff0be874f877afe7ac936cf5d37d21a6a06",
+          "version": "5.14.0"
+        },
+        {
+          "filename": "pytest-9.1.1-py3-none-any.whl",
+          "name": "pytest",
+          "sha256": "37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c",
+          "version": "9.1.1"
+        },
+        {
+          "filename": "pythainlp-5.3.7-py3-none-any.whl",
+          "name": "pythainlp",
+          "sha256": "625b32cd42320dc6e359315108c58eb62480804b16ae843ae3249d925f4f2cf9",
+          "version": "5.3.7"
+        },
+        {
+          "filename": "python_crfsuite-0.9.12-cp313-cp313-win_amd64.whl",
+          "name": "python-crfsuite",
+          "sha256": "21334c298318d4de057eacaad2ed179b7f63640e9cbd0c8141d656f58e7bd3f1",
+          "version": "0.9.12"
+        },
+        {
+          "filename": "regex-2026.7.19-cp313-cp313-win_amd64.whl",
+          "name": "regex",
+          "sha256": "d51ffd3427640fa2da6ade574ceba932f210ad095f65fcc450a2b0a0d454868e",
+          "version": "2026.7.19"
+        },
+        {
+          "filename": "reportlab-5.1.0-py3-none-any.whl",
+          "name": "reportlab",
+          "sha256": "59fdbaec5efe437095ad1d7292ec9a271c8ca2d3ec75e889c6e61400929b90df",
+          "version": "5.1.0"
+        },
+        {
+          "filename": "tzdata-2026.3-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "sha256": "dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931",
+          "version": "2026.3"
+        },
+        {
+          "filename": "uharfbuzz-0.57.0-cp311-abi3-win_amd64.whl",
+          "name": "uharfbuzz",
+          "sha256": "0448bc4ab92a9c65a8526fa743452c2313314d1d9675d308cf989da99ace8e04",
+          "version": "0.57.0"
+        }
+      ],
+      "requirements_sha256": "d64496b2ca7327ca2a1fb611e86e4ee983903469cbfd58fe5c36f51c6f665ffb"
+    },
+    "sdk-server-mcp-proxy": {
+      "packages": [
+        {
+          "filename": "annotated_doc-0.0.5-py3-none-any.whl",
+          "name": "annotated-doc",
+          "sha256": "117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101",
+          "version": "0.0.5"
+        },
+        {
+          "filename": "annotated_types-0.8.0-py3-none-any.whl",
+          "name": "annotated-types",
+          "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "anyio-4.14.2-py3-none-any.whl",
+          "name": "anyio",
+          "sha256": "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494",
+          "version": "4.14.2"
+        },
+        {
+          "filename": "attrs-26.1.0-py3-none-any.whl",
+          "name": "attrs",
+          "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309",
+          "version": "26.1.0"
+        },
+        {
+          "filename": "certifi-2026.7.22-py3-none-any.whl",
+          "name": "certifi",
+          "sha256": "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+          "version": "2026.7.22"
+        },
+        {
+          "filename": "cffi-2.1.1-cp313-cp313-win_amd64.whl",
+          "name": "cffi",
+          "sha256": "1aa5645c30469b09530c4ebca77ebf8f17618293c58f8549cb1a543a50236e7d",
+          "version": "2.1.1"
+        },
+        {
+          "filename": "charset_normalizer-3.5.2-cp313-cp313-win_amd64.whl",
+          "name": "charset-normalizer",
+          "sha256": "78456a747de8dc58360ffa581f30a002baf5aa28cb262536545e91f113ed7639",
+          "version": "3.5.2"
+        },
+        {
+          "filename": "click-8.4.2-py3-none-any.whl",
+          "name": "click",
+          "sha256": "e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76",
+          "version": "8.4.2"
+        },
+        {
+          "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+          "name": "colorama",
+          "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+          "version": "0.4.6"
+        },
+        {
+          "filename": "cryptography-50.0.0-cp311-abi3-win_amd64.whl",
+          "name": "cryptography",
+          "sha256": "bd1c592e4d5974f0d08d4888e432157adba757c66da0246918e43677fafa2d30",
+          "version": "50.0.0"
+        },
+        {
+          "filename": "fastapi-0.141.1-py3-none-any.whl",
+          "name": "fastapi",
+          "sha256": "bfb91aa2d334c61cb35ba9a116fc123b3d3df31640b801cf57a7a78ec3f603b3",
+          "version": "0.141.1"
+        },
+        {
+          "filename": "h11-0.16.0-py3-none-any.whl",
+          "name": "h11",
+          "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+          "version": "0.16.0"
+        },
+        {
+          "filename": "httpcore-1.0.9-py3-none-any.whl",
+          "name": "httpcore",
+          "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+          "version": "1.0.9"
+        },
+        {
+          "filename": "httpcore2-2.12.0-py3-none-any.whl",
+          "name": "httpcore2",
+          "sha256": "7e04258ce01013d7d615e5b910a3b27fac937d7a95038227e79652b4ba3b4ceb",
+          "version": "2.12.0"
+        },
+        {
+          "filename": "httptools-0.8.0-cp313-cp313-win_amd64.whl",
+          "name": "httptools",
+          "sha256": "7685df791fad561384bfb139e77fde27a1ffd93134e016f95a0db424ffbf77b1",
+          "version": "0.8.0"
+        },
+        {
+          "filename": "httpx-0.28.1-py3-none-any.whl",
+          "name": "httpx",
+          "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+          "version": "0.28.1"
+        },
+        {
+          "filename": "httpx2-2.12.0-py3-none-any.whl",
+          "name": "httpx2",
+          "sha256": "cc8b6eecb8661c146b8f89a60e97456ee086e91a784ed31ac450c3a9e613dd36",
+          "version": "2.12.0"
+        },
+        {
+          "filename": "idna-3.19-py3-none-any.whl",
+          "name": "idna",
+          "sha256": "815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+          "version": "3.19"
+        },
+        {
+          "filename": "iniconfig-2.3.0-py3-none-any.whl",
+          "name": "iniconfig",
+          "sha256": "f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12",
+          "version": "2.3.0"
+        },
+        {
+          "filename": "jsonschema-4.26.0-py3-none-any.whl",
+          "name": "jsonschema",
+          "sha256": "d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce",
+          "version": "4.26.0"
+        },
+        {
+          "filename": "jsonschema_specifications-2025.9.1-py3-none-any.whl",
+          "name": "jsonschema-specifications",
+          "sha256": "98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe",
+          "version": "2025.9.1"
+        },
+        {
+          "filename": "mcp-2.1.0-py3-none-any.whl",
+          "name": "mcp",
+          "sha256": "b8acaed6ca4b9376801377463e44246395749363b1c34467ec6243a50be5ed28",
+          "version": "2.1.0"
+        },
+        {
+          "filename": "mcp_types-2.1.0-py3-none-any.whl",
+          "name": "mcp-types",
+          "sha256": "6a65bfb7d057ceaf2418781ee61b3041e1f4b5418199297f8939a4b4ed334c3a",
+          "version": "2.1.0"
+        },
+        {
+          "filename": "opentelemetry_api-1.44.0-py3-none-any.whl",
+          "name": "opentelemetry-api",
+          "sha256": "94b98c893a91b88657eaac1e3ba89618cdb85be6918196705354f34728b2cdef",
+          "version": "1.44.0"
+        },
+        {
+          "filename": "packaging-26.3-py3-none-any.whl",
+          "name": "packaging",
+          "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+          "version": "26.3"
+        },
+        {
+          "filename": "pdfminer_six-20260107-py3-none-any.whl",
+          "name": "pdfminer-six",
+          "sha256": "366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9",
+          "version": "20260107"
+        },
+        {
+          "filename": "pdfplumber-0.11.10-py3-none-any.whl",
+          "name": "pdfplumber",
+          "sha256": "7741ea81bf165b474b153e6789d10d18e06b6ddcf3ec84289c3ef2fed6802580",
+          "version": "0.11.10"
+        },
+        {
+          "filename": "pillow-13.0.0-cp313-cp313-win_amd64.whl",
+          "name": "pillow",
+          "sha256": "9dda0788a9932776a75d8bcc020076edc308ce2508b51f6739a45e3158b3fc42",
+          "version": "13.0.0"
+        },
+        {
+          "filename": "pluggy-1.6.0-py3-none-any.whl",
+          "name": "pluggy",
+          "sha256": "e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "pycparser-3.0-py3-none-any.whl",
+          "name": "pycparser",
+          "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992",
+          "version": "3.0"
+        },
+        {
+          "filename": "pydantic-2.13.4-py3-none-any.whl",
+          "name": "pydantic",
+          "sha256": "45a282cde31d808236fd7ea9d919b128653c8b38b393d1c4ab335c62924d9aba",
+          "version": "2.13.4"
+        },
+        {
+          "filename": "pydantic_core-2.46.4-cp313-cp313-win_amd64.whl",
+          "name": "pydantic-core",
+          "sha256": "6b3ace8194b0e5204818c92802dcdca7fc6d88aabbb799d7c795540d9cd6d292",
+          "version": "2.46.4"
+        },
+        {
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "name": "pygments",
+          "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+          "version": "2.21.0"
+        },
+        {
+          "filename": "pyjwt-2.13.0-py3-none-any.whl",
+          "name": "pyjwt",
+          "sha256": "66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728",
+          "version": "2.13.0"
+        },
+        {
+          "filename": "pypdfium2-5.14.0-py3-none-win_amd64.whl",
+          "name": "pypdfium2",
+          "sha256": "149fd5c6397b8df8bf7911a93506eff0be874f877afe7ac936cf5d37d21a6a06",
+          "version": "5.14.0"
+        },
+        {
+          "filename": "pytest-9.1.1-py3-none-any.whl",
+          "name": "pytest",
+          "sha256": "37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c",
+          "version": "9.1.1"
+        },
+        {
+          "filename": "pythainlp-5.3.7-py3-none-any.whl",
+          "name": "pythainlp",
+          "sha256": "625b32cd42320dc6e359315108c58eb62480804b16ae843ae3249d925f4f2cf9",
+          "version": "5.3.7"
+        },
+        {
+          "filename": "python_crfsuite-0.9.12-cp313-cp313-win_amd64.whl",
+          "name": "python-crfsuite",
+          "sha256": "21334c298318d4de057eacaad2ed179b7f63640e9cbd0c8141d656f58e7bd3f1",
+          "version": "0.9.12"
+        },
+        {
+          "filename": "python_dotenv-1.2.3-py3-none-any.whl",
+          "name": "python-dotenv",
+          "sha256": "904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9",
+          "version": "1.2.3"
+        },
+        {
+          "filename": "python_multipart-0.0.32-py3-none-any.whl",
+          "name": "python-multipart",
+          "sha256": "ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23",
+          "version": "0.0.32"
+        },
+        {
+          "filename": "pywin32-312-cp313-cp313-win_amd64.whl",
+          "name": "pywin32",
+          "sha256": "c53e878d15a1c44788082bfe712a905433473aa38f86375b7cf8b45e3acbaaf9",
+          "version": "312"
+        },
+        {
+          "filename": "pyyaml-6.0.3-cp313-cp313-win_amd64.whl",
+          "name": "pyyaml",
+          "sha256": "79005a0d97d5ddabfeeea4cf676af11e647e41d81c9a7722a193022accdb6b7c",
+          "version": "6.0.3"
+        },
+        {
+          "filename": "referencing-0.37.0-py3-none-any.whl",
+          "name": "referencing",
+          "sha256": "381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231",
+          "version": "0.37.0"
+        },
+        {
+          "filename": "regex-2026.7.19-cp313-cp313-win_amd64.whl",
+          "name": "regex",
+          "sha256": "d51ffd3427640fa2da6ade574ceba932f210ad095f65fcc450a2b0a0d454868e",
+          "version": "2026.7.19"
+        },
+        {
+          "filename": "reportlab-5.1.0-py3-none-any.whl",
+          "name": "reportlab",
+          "sha256": "59fdbaec5efe437095ad1d7292ec9a271c8ca2d3ec75e889c6e61400929b90df",
+          "version": "5.1.0"
+        },
+        {
+          "filename": "rpds_py-2026.6.3-cp313-cp313-win_amd64.whl",
+          "name": "rpds-py",
+          "sha256": "9250a9a0a6fd4648b3f868da8d91a4c52b5811a62df58e753d50ae4454a36f80",
+          "version": "2026.6.3"
+        },
+        {
+          "filename": "sse_starlette-3.4.8-py3-none-any.whl",
+          "name": "sse-starlette",
+          "sha256": "6e82314c786709a3cd9520f2285cf9fff90e181e598e8a357b0cf80f66afba0d",
+          "version": "3.4.8"
+        },
+        {
+          "filename": "starlette-1.6.0-py3-none-any.whl",
+          "name": "starlette",
+          "sha256": "a86dd39d14bb45f85a3d18525215a9ef0cfd1f192ac793220e72598c90335f0c",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "truststore-0.10.4-py3-none-any.whl",
+          "name": "truststore",
+          "sha256": "adaeaecf1cbb5f4de3b1959b42d41f6fab57b2b1666adb59e89cb0b53361d981",
+          "version": "0.10.4"
+        },
+        {
+          "filename": "typing_extensions-4.16.0-py3-none-any.whl",
+          "name": "typing-extensions",
+          "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+          "version": "4.16.0"
+        },
+        {
+          "filename": "typing_inspection-0.4.4-py3-none-any.whl",
+          "name": "typing-inspection",
+          "sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
+          "version": "0.4.4"
+        },
+        {
+          "filename": "tzdata-2026.3-py2.py3-none-any.whl",
+          "name": "tzdata",
+          "sha256": "dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931",
+          "version": "2026.3"
+        },
+        {
+          "filename": "uharfbuzz-0.57.0-cp311-abi3-win_amd64.whl",
+          "name": "uharfbuzz",
+          "sha256": "0448bc4ab92a9c65a8526fa743452c2313314d1d9675d308cf989da99ace8e04",
+          "version": "0.57.0"
+        },
+        {
+          "filename": "uvicorn-0.52.4-py3-none-any.whl",
+          "name": "uvicorn",
+          "sha256": "f86e41a149d7d05a9969337e3946a9c171c06a5d42680896daaba624aeac8da1",
+          "version": "0.52.4"
+        },
+        {
+          "filename": "watchfiles-1.2.0-cp313-cp313-win_amd64.whl",
+          "name": "watchfiles",
+          "sha256": "a0f27f01bee51861392bb6b7c4fdb290b27d1eb194e9e28788d68102a0e898d9",
+          "version": "1.2.0"
+        },
+        {
+          "filename": "websockets-17.0.1-cp313-cp313-win_amd64.whl",
+          "name": "websockets",
+          "sha256": "409d93efcaa14f7a99592c5baaef5ec6ca94fba0f5aec1a86f693977c69c9c1c",
+          "version": "17.0.1"
+        }
+      ],
+      "requirements_sha256": "6c7f81158caf2dfe977ae0e32f60c3c9f86c59125b00c967ad1b8fcd908ee111"
+    },
+    "test-harness": {
+      "packages": [
+        {
+          "filename": "colorama-0.4.6-py2.py3-none-any.whl",
+          "name": "colorama",
+          "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+          "version": "0.4.6"
+        },
+        {
+          "filename": "iniconfig-2.3.0-py3-none-any.whl",
+          "name": "iniconfig",
+          "sha256": "f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12",
+          "version": "2.3.0"
+        },
+        {
+          "filename": "packaging-26.3-py3-none-any.whl",
+          "name": "packaging",
+          "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+          "version": "26.3"
+        },
+        {
+          "filename": "pluggy-1.6.0-py3-none-any.whl",
+          "name": "pluggy",
+          "sha256": "e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746",
+          "version": "1.6.0"
+        },
+        {
+          "filename": "pygments-2.21.0-py3-none-any.whl",
+          "name": "pygments",
+          "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+          "version": "2.21.0"
+        },
+        {
+          "filename": "pytest-9.1.1-py3-none-any.whl",
+          "name": "pytest",
+          "sha256": "37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c",
+          "version": "9.1.1"
+        }
+      ],
+      "requirements_sha256": "724ea6a9eb3d2bfc3a4646f93f6f72913a0a3965d04b227be9e8ecf37effca21"
+    }
+  },
+  "environment": {
+    "architecture": "AMD64",
+    "os": "Windows-11-10.0.26300-SP0",
+    "provisioning": "offline fresh owned venvs; existing hashlocked copied caches only",
+    "python": "3.13.12",
+    "source_date_epoch": "1770000000"
+  },
+  "evidence_date": "2026-11-03",
+  "evidence_files_sha256": {
+    "archive-audit-driver-negative.json": "07d25dd0f392b1ff7143d87ea6525a1aa9fa6dcf1d0d3902524507ff1efced14",
+    "archive-audit.json": "9132da4c1f7c37cafd4674a20cf68226120c2cd637e6f366cdef42ea3a71bb2d",
+    "archive-explicit-audit.json": "3c50a07e95aa0931c0ad004d9ac104c9ab897e738b7c682fd749621a31ca1599",
+    "audit-complete.json": "8a7124548e95af86b8e10bb135bdfe4a3373169370597af0d2d457f1c9936196",
+    "audit-driver-attempt.json": "3dcd7dc51de17a792f959072830ac25fc0bc33257371b556554f5deadcd893a5",
+    "build-complete.json": "f456bcdb2629db5890bef6ff990041ce572c25dccbb1b704a895307d3b97a6bf",
+    "commands.jsonl": "0ebb954f32ace6cdc9f6b4cab90d0e270be00fe5e6cf9608422a556707123f61",
+    "dependency-profiles.json": "6bbecd927611f00eb6a32439ddd1890e4c6f335ad845e033d28ddc7168dcb89b",
+    "final-aggregator-negative.json": "bb26892a5614d2e31cc5f24b324d8d4e0a9af2a2410dc64ad37883081b363290",
+    "final-input-audit.json": "eb474d9df194f14071ce76ef78a0a994400c747aa640776660f1a0270a4b98e7",
+    "identity-python-formats.json": "334c3a3ad37cd9beb880a70b3456c367b58c4e3b8affe72571846c5c6d942ed1",
+    "model-profile.json": "19c0d60cf607a1dc96f99d8a3549bfa1e45f532a65d2b235c594cb94390e2e52",
+    "negative-artifacts.json": "723222b4bdc3ba593fa3753aade3392d7fd47af899bb61f2084bf909ec1efe17",
+    "preserved-inputs.json": "4d22f0136d60282b032f27653f2166c969bf258c5f04609b33372143b9b60c51",
+    "probe-source-hashes.json": "5ddb0d4bdc66cae51c84e2d8552b49f90f31c981f01d04aa641b042ed8b3f815",
+    "runtime-complete.json": "de6bf25b0318211e66e1a06cc080574821be1593c62fca9efc68e42ddc5e7720",
+    "source-inputs.json": "c180e4a99607c91172455ccf27d04ecc92e366b45a4b231e344a7f133cd77c2e"
+  },
+  "harness_delta": {
+    "aggregator_failure": {
+      "already_passed_checks": [
+        "core-direct-enterprise-resource-check",
+        "core-rebuilt-enterprise-resource-check",
+        "version-check",
+        "diff-check"
+      ],
+      "artifact_rebuild": false,
+      "cause": "uv generates .gitignore in each output directory; distribution artifacts are six wheel/sdist files",
+      "driver_sha256": "1c6d7cf28413823363b9820b12092566b056aad2e6e90dab343180e14364899c",
+      "partial_driver_snapshot": "qualification-drivers",
+      "retained_driver": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-driver-attempts\\final_checks-before-output-control-fix.py",
+      "state": "rejected_aggregator_distribution_file_count"
+    },
+    "correction": "Frozen input byte comparison covers only the 255 frozen inputs. Generated egg-info and setup metadata have exact explicit allowlists, version/requirements checks and direct/rebuilt wheel equivalence. Unknown archive payload remains rejected.",
+    "explicit_archive_audit": {
+      "harness_negative_retained": "archive-audit-driver-negative.json",
+      "harness_original_driver_retained": "negative-driver-attempts/audit-before-generated-metadata-fix.py",
+      "lanes": {
+        "core": {
+          "frozen_source_bytes": true,
+          "generated_metadata_allowlist": [
+            "PKG-INFO",
+            "setup.cfg",
+            "thai_pii_redaction_core.egg-info/PKG-INFO",
+            "thai_pii_redaction_core.egg-info/SOURCES.txt",
+            "thai_pii_redaction_core.egg-info/dependency_links.txt",
+            "thai_pii_redaction_core.egg-info/requires.txt",
+            "thai_pii_redaction_core.egg-info/top_level.txt"
+          ],
+          "metadata_version_and_requirements": true,
+          "sdist_files": 205,
+          "sdist_frozen_inputs": 198,
+          "unknown_payload_rejected": true,
+          "wheel_members": 205
+        },
+        "sdk": {
+          "frozen_source_bytes": true,
+          "generated_metadata_allowlist": [
+            "PKG-INFO",
+            "amphrang.egg-info/PKG-INFO",
+            "amphrang.egg-info/SOURCES.txt",
+            "amphrang.egg-info/dependency_links.txt",
+            "amphrang.egg-info/entry_points.txt",
+            "amphrang.egg-info/requires.txt",
+            "amphrang.egg-info/top_level.txt",
+            "setup.cfg"
+          ],
+          "metadata_version_and_requirements": true,
+          "sdist_files": 64,
+          "sdist_frozen_inputs": 56,
+          "unknown_payload_rejected": true,
+          "wheel_members": 57
+        }
+      },
+      "passed": true
+    },
+    "original_audit_failure": {
+      "mismatches": [
+        {
+          "archive_sha256": "22a8d301895d49329aa15d1328379c24e1b466504a154a38f670967082683a08",
+          "lane": "core",
+          "path": "thai_pii_redaction_core.egg-info/SOURCES.txt",
+          "source_sha256": "5686853887f9fde1480093b35f62c2efc2e808ed88e2ce594e7f05c1680efa7d"
+        },
+        {
+          "archive_sha256": "ce45649161d8ff3386c9f696db1f9cce0def99c9515b75e67631d2633a5c52fb",
+          "lane": "sdk",
+          "path": "amphrang.egg-info/PKG-INFO",
+          "source_sha256": "877d6bd9b7951e97937b7dfc2c7867274721d42f41921d9b7ad5060279fde14e"
+        },
+        {
+          "archive_sha256": "abbe17e023339d3b97a394dff6a46ea26dd708f294190e8dccbcf5c2223983d8",
+          "lane": "sdk",
+          "path": "amphrang.egg-info/SOURCES.txt",
+          "source_sha256": "b1d8dec903bb0aa164789432f1cdd40e76102d521e35021cda8c63fa48bcbf87"
+        }
+      ],
+      "source_binding_unchanged": "303f0006f47d6930a05e762eab245218fadab6d9822537dc04d8cbb90a85503f",
+      "state": "archive_audit_input_classification_failure"
+    },
+    "original_driver": {
+      "artifact_rebuild": false,
+      "driver_sha256": "16732cc446831a031c3d40bcf6e66f8814f86c638bd22b2aed13b795f91fbc1f",
+      "error_type": "AssertionError",
+      "failure_classification": "compared generated egg-info against stale ignored checkout metadata",
+      "retained_driver": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406\\negative-driver-attempts\\audit-before-generated-metadata-fix.py"
+    }
+  },
+  "identity_python_formats": {
+    "profiles": {
+      "3.11": {
+        "all_manifest_inputs": true,
+        "canonical_origins": true,
+        "identity": "ee02b56b0d8a07afe18b4a7ed565f56c4b6bcc81d62fdfdac3ea79b0f69fe62e",
+        "layout": "installed-wheel",
+        "migrations": 13,
+        "no_ambient_source_fallback": true,
+        "optimization_levels": 3,
+        "passed": true,
+        "python": "3.11.15",
+        "semantic_cache_negatives": 12,
+        "valid_cache_modes": 3
+      },
+      "3.12": {
+        "all_manifest_inputs": true,
+        "canonical_origins": true,
+        "identity": "ee02b56b0d8a07afe18b4a7ed565f56c4b6bcc81d62fdfdac3ea79b0f69fe62e",
+        "layout": "installed-wheel",
+        "migrations": 13,
+        "no_ambient_source_fallback": true,
+        "optimization_levels": 3,
+        "passed": true,
+        "python": "3.12.12",
+        "semantic_cache_negatives": 12,
+        "valid_cache_modes": 3
+      }
+    },
+    "scope": "identity/cache-format only; not full dependency/model/runtime acceptance"
+  },
+  "limits": [
+    "Windows x64/CPython 3.13 full installed profiles only",
+    "CPython 3.11/3.12 checks cover stdlib-only installed identity/cache formats, not full runtime dependencies/models",
+    "preprovisioned thainer reused; no independent model provisioning",
+    "MCP in-process/ASGI and mock proxy transports only",
+    "no PostgreSQL/IdP/browser/restart/Docker/realhost/liveprovider/legal/pilot acceptance",
+    "no new performance measurement; M3 hold remains",
+    "parent owns CI/integration and independent review"
+  ],
+  "negative_artifacts": {
+    "ambient_fallback": false,
+    "checker_args": 3,
+    "checker_rejected": [
+      "wrong-core-artifact",
+      "wrong-sdk-artifact",
+      "missing-core-artifact",
+      "missing-sdk-artifact",
+      "missing-installed-core-no-ambient-fallback",
+      "colliding-namespace-owner"
+    ],
+    "identity_rejected": [
+      "missing-runtime",
+      "changed-runtime",
+      "missing-manifest",
+      "missing-build-input",
+      "changed-lock",
+      "private-resource",
+      "extra-resource",
+      "stale-manifest",
+      "namespace-owner",
+      "cache-timestamp-opt0",
+      "cache-timestamp-opt1",
+      "cache-timestamp-opt2",
+      "cache-checked-opt0",
+      "cache-checked-opt1",
+      "cache-checked-opt2",
+      "cache-unchecked-opt0",
+      "cache-unchecked-opt1",
+      "cache-unchecked-opt2",
+      "cache-build-resource",
+      "malformed-cache"
+    ],
+    "passed": true
+  },
+  "old_evidence": "b4 positive and batch1 negative retained without mutation or reinterpretation",
+  "paths": {
+    "BUILDER": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-core-artifact-199bbd788b044c98987d1a0c38c5e16e\\builder\\Scripts\\python.exe",
+    "ROOT": "C:\\Users\\teera\\dev\\thai-pii-redaction\\.worktrees\\pdpa-enterprise-clean",
+    "WORK": "C:\\Users\\teera\\AppData\\Local\\Temp\\aiguard-integrated-v2-5c0fd80f0f824eaab4da890bced1e406"
+  },
+  "profiles": {
+    "enterprise": {
+      "dependency_check": true,
+      "installed_pair_checker": true,
+      "public_runtime": {
+        "checks": [
+          "exact_dependency_inventory",
+          "canonical_identity",
+          "detect",
+          "token_surrogate_restore",
+          "prior_mapping",
+          "session",
+          "serial_spawn_batch",
+          "warn_report",
+          "fail_closed",
+          "pipeline_snapshot",
+          "warm_root_fake_tner_zero_calls",
+          "29_canonical_aliases",
+          "installed_origins"
+        ],
+        "enterprise_module_imports": 13,
+        "model_provisioning": "preprovisioned_thainer_reused_not_independent",
+        "passed": true,
+        "profile": "enterprise"
+      },
+      "runtime_identity": {
+        "all_manifest_inputs": true,
+        "canonical_origins": true,
+        "identity": "ee02b56b0d8a07afe18b4a7ed565f56c4b6bcc81d62fdfdac3ea79b0f69fe62e",
+        "layout": "installed-wheel",
+        "migrations": 13,
+        "no_ambient_source_fallback": true,
+        "optimization_levels": 3,
+        "passed": true,
+        "python": "3.13.12",
+        "semantic_cache_negatives": 12,
+        "valid_cache_modes": 3
+      }
+    },
+    "sdk-core": {
+      "dependency_check": true,
+      "installed_pair_checker": true,
+      "public_runtime": {
+        "checks": [
+          "exact_dependency_inventory",
+          "canonical_identity",
+          "detect",
+          "token_surrogate_restore",
+          "prior_mapping",
+          "session",
+          "serial_spawn_batch",
+          "warn_report",
+          "fail_closed",
+          "pipeline_snapshot",
+          "warm_root_fake_tner_zero_calls",
+          "29_canonical_aliases",
+          "installed_origins"
+        ],
+        "enterprise_module_imports": 0,
+        "model_provisioning": "preprovisioned_thainer_reused_not_independent",
+        "passed": true,
+        "profile": "sdk-core"
+      },
+      "runtime_identity": {
+        "all_manifest_inputs": true,
+        "canonical_origins": true,
+        "identity": "ee02b56b0d8a07afe18b4a7ed565f56c4b6bcc81d62fdfdac3ea79b0f69fe62e",
+        "layout": "installed-wheel",
+        "migrations": 13,
+        "no_ambient_source_fallback": true,
+        "optimization_levels": 3,
+        "passed": true,
+        "python": "3.13.12",
+        "semantic_cache_negatives": 12,
+        "valid_cache_modes": 3
+      }
+    },
+    "sdk-server-mcp-proxy": {
+      "dependency_check": true,
+      "installed_pair_checker": true,
+      "packaged_adapters": {
+        "checks_passed": 214,
+        "collection_errors": 0,
+        "evidence": "packaged_in_process_mcp_asgi_mock_upstream",
+        "failed": 0,
+        "installed_origins": true,
+        "passed": true,
+        "skipped": 0
+      },
+      "public_runtime": {
+        "checks": [
+          "exact_dependency_inventory",
+          "canonical_identity",
+          "detect",
+          "token_surrogate_restore",
+          "prior_mapping",
+          "session",
+          "serial_spawn_batch",
+          "warn_report",
+          "fail_closed",
+          "pipeline_snapshot",
+          "warm_root_fake_tner_zero_calls",
+          "29_canonical_aliases",
+          "installed_origins"
+        ],
+        "enterprise_module_imports": 0,
+        "model_provisioning": "preprovisioned_thainer_reused_not_independent",
+        "passed": true,
+        "profile": "sdk-server-mcp-proxy"
+      },
+      "runtime_identity": {
+        "all_manifest_inputs": true,
+        "canonical_origins": true,
+        "identity": "ee02b56b0d8a07afe18b4a7ed565f56c4b6bcc81d62fdfdac3ea79b0f69fe62e",
+        "layout": "installed-wheel",
+        "migrations": 13,
+        "no_ambient_source_fallback": true,
+        "optimization_levels": 3,
+        "passed": true,
+        "python": "3.13.12",
+        "semantic_cache_negatives": 12,
+        "valid_cache_modes": 3
+      }
+    }
+  },
+  "qualification": "passed_bounded_windows_installed_artifacts",
+  "schema_version": 1,
+  "source_binding_sha256": "303f0006f47d6930a05e762eab245218fadab6d9822537dc04d8cbb90a85503f",
+  "source_dirty": true,
+  "source_files": 255,
+  "source_head": "05d5d77f87afeb6b5d3d0d04b6a1737ae7166f8f"
+}

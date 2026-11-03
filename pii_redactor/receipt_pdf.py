@@ -98,7 +98,10 @@ def render_receipt(receipt: dict) -> bytes:
     line(f"- เครื่องมือรู้จำชื่อเฉพาะ  {environment['ner_engine']}", dy=22)
 
     line("วิธีตรวจสอบใบนี้", 13, 18)
-    line("รันคำสั่งนี้กับไฟล์ต้นฉบับที่เก็บไว้ ระบบจะประมวลผลซ้ำแล้วเทียบค่าแฮชทั้งสองค่า", 10, 14)
+    line("ใช้ใบรับรอง JSON และไฟล์ต้นฉบับที่เก็บไว้ เพื่อประมวลผลซ้ำแล้วเทียบค่าแฮช", 10, 14)
+    line("เมื่อติดตั้งแพ็กเกจ Python ให้ใช้ API:", 10, 14)
+    line("  pii_redactor.receipt.verify_receipt(receipt, path)", 9, 18)
+    line("CLI ต่อไปนี้ใช้ได้เมื่อมี source checkout ของโปรเจค:", 10, 14)
     line("  python ai_guard.py receipt verify <ไฟล์ใบรับรอง .json> <ไฟล์ต้นฉบับ>", 9, 22)
 
     y = min(y, 150)

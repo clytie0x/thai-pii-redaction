@@ -8,5 +8,24 @@ benchmark/data/*.enc -text
 benchmark/data/blind-scores.jsonl text eol=lf
 benchmark/data/*.lock.json text eol=lf
 
+# The broader PDPA context corpus is also byte-exact authenticated blinding.
+research/pdpa-coverage/*.enc -text
+# Keep measured bytes and accept CRLF as line endings in whitespace checks.
+research/pdpa-coverage/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+research/pdpa-coverage/annotation-guide-at-freeze.md -text
+docs/research/pdpa-coverage-plan.md -text
+
+# Migration fingerprints must survive checkout on every supported platform.
+pii_redactor/governance/migrations/*.sql text eol=lf
+
+# Preserve copied qualification records and accept their observed CRLF bytes.
+docs/acceptance/enterprise/M01-integrated-artifact*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/acceptance/enterprise/M01-receipt-artifact*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/acceptance/enterprise/M02-receipt-installed-pdf*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# New compact evidence records use stable LF bytes on every checkout.
+docs/acceptance/enterprise/M03-controlled-performance.json text eol=lf
+docs/implementation/2026-11-03-branch-preservation.json text eol=lf
+
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary

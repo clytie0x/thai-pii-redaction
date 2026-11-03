@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.aggregate import detect_all
 from pii_redactor.models import Entity
 from pii_redactor.pdpa_categories import SECTION26_PATTERNS
@@ -46,6 +47,34 @@ def scan_section26(text: str) -> list[dict]:
                 }
             )
     return hits
+
+
+def section26_warnings(text: str) -> list[str]:
+    """Expose category signals without returning matched text."""
+    return [f"section26:{hit['category']}" for hit in scan_section26(text)]
+
+
+def project_analysis(result: dict) -> dict:
+    """Keep the SDK analysis summary free of matched sensitive values."""
+    keys = {
+        "overall_score",
+        "overall_grade",
+        "risk_label",
+        "direct_pii_count",
+        "fp_count",
+        "tb_count",
+        "section26",
+        "reid",
+        "breakdown",
+        "recommendations",
+    }
+    projected = {key: value for key, value in result.items() if key in keys}
+    if "section26" in projected:
+        projected["section26"] = [
+            {key: hit[key] for key in ("category", "start", "end", "source") if key in hit}
+            for hit in result["section26"]
+        ]
+    return projected
 
 
 def _generate_report(text: str, entities: list[Entity]) -> PDPAReport:
@@ -108,9 +137,9 @@ def _generate_report(text: str, entities: list[Entity]) -> PDPAReport:
     )
 
 
-def generate_report(text: str) -> PDPAReport:
+def generate_report(text: str, *, config: CoreConfig | None = None) -> PDPAReport:
     """Generate a PDPA risk report without changing the text."""
-    return _generate_report(text, detect_all(text))
+    return _generate_report(text, detect_all(text, config=resolve_config(config)))
 
 
 def _risk_label(score: float) -> str:
@@ -127,12 +156,12 @@ def _risk_label(score: float) -> str:
     )
 
 
-def analyze_text(text: str) -> dict:
+def analyze_text(text: str, *, config: CoreConfig | None = None) -> dict:
     """Build the shared PDPA response for clean text.
 
     The API, PDF report, and worker use this same result.
     """
-    entities = detect_all(text)
+    entities = detect_all(text, config=resolve_config(config))
     report = _generate_report(text, entities)
     reid = report.reid_risk
 

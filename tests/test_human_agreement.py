@@ -242,3 +242,6 @@ def test_frozen_paper_gold_can_be_loaded_from_git():
     assert sum(len(sample.spans) for sample in samples) == 641
     assert provenance["gold_version"] == "gold-v3"
     assert len(provenance["sha256"]) == 64
+    assert (
+        provenance["sha256"] == "d2591229e0bae20d27e5a8a20aa5b41ee3cc18622a54dd39b2a2c363f761fd5d"
+    )

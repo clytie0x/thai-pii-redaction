@@ -25,6 +25,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
+  "thai-pii-redaction-core==0.1.0",
   "pythainlp>=5.0.0",
   "python-crfsuite>=0.9.9",
   "regex>=2024.0.0",
@@ -39,6 +40,7 @@ server = [
 ]
 mcp = ["mcp>=2.0"]
 proxy = [
+  "anyio>=4.4.0",
   "fastapi>=0.111.0",
   "uvicorn[standard]>=0.30.0",
 ]
@@ -76,11 +78,9 @@ version = { file = "VERSION" }
 [tool.setuptools]
 # `amphrang`'s top-level module (amphrang/__init__.py, cli.py, mcp.py,
 # serve.py) is the public facade and the only import surface with a semver
-# contract. `amphrang.engine` and `amphrang.server` ship the internal
-# engine and the optional local HTTP server; they carry no cross-release
-# stability promise. Everything lives under the `amphrang` distribution
-# name so nothing installs a generic top-level import name (`app`,
-# `pii_redactor`) that could collide with an unrelated package.
+# contract. Live adapters consume the separately supplied first-party core.
+# Its app/pii_redactor namespaces and broader dependencies are intentional.
+# Internal engine imports are thin aliases to the same canonical module objects.
 packages = [
   "amphrang",
   "amphrang.engine",
@@ -91,6 +91,10 @@ packages = [
   "amphrang.proxy",
   "amphrang.server",
 ]
+
+[tool.uv.sources]
+# Development only. Qualified installs use explicit matching offline wheels.
+thai-pii-redaction-core = { path = "../.." }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

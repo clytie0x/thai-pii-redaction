@@ -2,6 +2,45 @@
 
 ## Current release boundary
 
+- 2026-11-03 source candidate: the Hosted Docker path installs an explicit
+  source-bound `thai-pii-redaction-core==0.1.0` wheel offline. The maintained
+  `core/app` and `core/pii_redactor` copies are removed; the old port manifest
+  remains inactive historical provenance. Gateway/auth, Protected Markdown,
+  the security overlay and certified thainer model digest remain Hosted-owned.
+  The build requires a supplied prepared artifact context; it cannot fetch a
+  core package, Python dependency or model as a fallback. Source-only contracts
+  do not qualify the exact image. Docker is unavailable on the local Windows
+  host, so exact-image/no-egress and all real-host/provider/deploy gates remain
+  open. M1 is not accepted by this source change. See
+  [canonical core build](docs/canonical-core-build.md).
+  Safe generated-PII offset metadata is now available from the canonical core,
+  preserving strict failure behavior and authoritative restored ranges. The
+  source migration initially passed 12/14 real-detector execute checks, then
+  13/14 after safe offset propagation. Porting exactly the prior Hosted fixed
+  Markdown-label and glued-role NAME boundary guards now gives 14/14 without
+  relaxing assertions or tuning the model. Adjacent/overlapping authoritative
+  ranges use exact union coverage; a one-character gap still blocks. These are
+  local source checks, not exact-image or detector-accuracy acceptance.
+  `LEGACY_HOSTED_SECTION26_CATEGORIES` preserves the existing eight-category
+  wire projection; root/SDK's ten-category report is not a new Hosted claim.
+  A subsequent source review reproduced two missing gates: a valid offset
+  subset could admit a partially sanitized reply, and the runner secret scan
+  omitted the separately mounted canonical packages. The candidate now requires
+  explicit complete-offset proof from the actual validator; unknown, malformed
+  or out-of-bounds metadata withholds the entire Hosted answer. A schema-2
+  inventory and the wheel preparer scan the same exact canonical source byte
+  snapshot bound by the artifact source digest. Synthetic secret markers are
+  rejected without printing their values. These corrections still require
+  independent review and exact-image/complete affected-gate qualification.
+  The remaining nine named aggregate/name/TB failures from the retained SDK
+  alias run now pass after the approved common-core compatibility port:
+  honest numberless LOCATION labels, driver-license/assignment name cues,
+  form-label exclusions and land-document abbreviation hygiene. Numbered and
+  administrative ADDRESS spans, real names, source intervals, CoreConfig,
+  complete-offset proof and root WARNING logging remain preserved. Focused
+  root detector/config checks pass 266/266; Hosted execute remains 16/16.
+  This does not substitute for the next complete SDK/CI or exact-image gate.
+
 - 2026-10-19: source `core/VERSION` restarted at `0.1.0` and the public pages
   no longer link to the archived Desktop/Extension 3.0.0 downloads (repository
   decision `docs/decisions/2026-10-19-version-reset.md` at the repository

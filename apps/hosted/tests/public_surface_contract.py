@@ -6,6 +6,8 @@ import re
 import json
 from pathlib import Path
 
+from canonical_core import CANONICAL
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -20,7 +22,7 @@ def main() -> int:
         (ROOT / "web" / name).read_text(encoding="utf-8")
         for name in ("index.html", "app.html", "hosted3-app.js", "developers.html")
     )
-    core = (ROOT / "core" / "app" / "server.py").read_text(encoding="utf-8")
+    core = (CANONICAL / "app" / "server.py").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     state = (ROOT / "STATE.md").read_text(encoding="utf-8")
     deploy_day = (ROOT / "docs" / "DEPLOY-DAY.md").read_text(encoding="utf-8")

@@ -147,6 +147,30 @@ def _broker_cargo_lock_set(path: Path, new_version: str) -> None:
         path.write_text(new_text, encoding="utf-8")
 
 
+def _plain_get(path: Path) -> str | None:
+    value = path.read_text(encoding="utf-8").strip()
+    return value if re.fullmatch(r"\d+\.\d+\.\d+", value) else None
+
+
+def _plain_set(path: Path, new_version: str) -> None:
+    path.write_text(new_version + "\n", encoding="utf-8")
+
+
+_SDK_CORE_PIN_RE = re.compile(r'^(\s*"thai-pii-redaction-core==)([^"\n]+)(")', re.MULTILINE)
+
+
+def _sdk_core_pin_get(path: Path) -> str | None:
+    matches = list(_SDK_CORE_PIN_RE.finditer(path.read_text(encoding="utf-8")))
+    return matches[0].group(2) if len(matches) == 1 else None
+
+
+def _sdk_core_pin_set(path: Path, new_version: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    path.write_text(
+        _SDK_CORE_PIN_RE.sub(rf"\g<1>{new_version}\g<3>", text, count=1), encoding="utf-8"
+    )
+
+
 def targets(root: Path) -> list[tuple[Path, Getter, Setter, bool]]:
     """Every file (besides VERSION itself) that carries the version string,
     as (path-relative-to-root, getter, setter, optional).
@@ -158,6 +182,8 @@ def targets(root: Path) -> list[tuple[Path, Getter, Setter, bool]]:
     rather than silently pass a broken drift gate).
     """
     return [
+        (Path("packages/amphrang/VERSION"), _plain_get, _plain_set, False),
+        (Path("packages/amphrang/pyproject.toml"), _sdk_core_pin_get, _sdk_core_pin_set, False),
         (Path("extension/manifest.json"), _json_get, _json_set, False),
         (Path("office-addin/manifest.json"), _json_get, _json_set, False),
         (Path("office-addin/manifest.dev.xml"), _office_xml_get, _office_xml_set, False),

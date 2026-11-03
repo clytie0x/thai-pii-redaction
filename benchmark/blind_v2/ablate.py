@@ -2,7 +2,8 @@
 
 The full path (``disabled is None``) calls the same functions as
 ``detect_all`` in the same order. A unit test locks that equality. This
-module does not change detection rules.
+module does not change detection rules. Source recovery and label normalization
+remain enabled in every assembly-layer variant.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ def predict_ablated(text: str, disabled: str | None = None) -> list[tuple[int, i
         _drop_unanchored_facility_spans,
         _extend_address_chains,
         _prefer_record_names,
+        _relabel_numberless_addresses,
         _relabel_student_ids,
         dedupe_spans,
         merge_address_spans,
@@ -32,6 +34,8 @@ def predict_ablated(text: str, disabled: str | None = None) -> list[tuple[int, i
     from pii_redactor.detectors.fn_scanner import scan_fn
     from pii_redactor.detectors.fp_detector import detect_fp
     from pii_redactor.detectors.name_context import detect_parallel_record_names
+    from pii_redactor.detectors.scan_views import original_guard_entities
+    from pii_redactor.detectors.structured_views import admit_recovery, recover_structured
     from pii_redactor.detectors.tb_detector import detect_tb
 
     off = disabled
@@ -46,10 +50,17 @@ def predict_ablated(text: str, disabled: str | None = None) -> list[tuple[int, i
     else:
         kept = merge_address_spans(text, preferred)
         kept = _extend_address_chains(text, kept, tb)
+    kept = _relabel_numberless_addresses(kept)
     if off != "facility_filter":
         kept = _drop_unanchored_facility_spans(text, kept)
     if off != "student_relabel":
         kept = _relabel_student_ids(tb, kept)
+    recovered = recover_structured(text)
+    kept = admit_recovery(
+        kept,
+        recovered,
+        required=original_guard_entities(text) if recovered else (),
+    )
     return [(entity.span[0], entity.span[1], entity.data_type) for entity in kept]
 
 

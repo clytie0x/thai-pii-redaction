@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Guard | ขอบเขตการประมวลผลที่ทบทวนแล้ว</title>
+  <link rel="stylesheet" href="/static/tokens.css"><link rel="stylesheet" href="/static/processing_controls_style.css">
+  <script type="module" src="/static/processing_controls_app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">ข้ามไปเนื้อหา</a>
+  <header><a href="/">AI Guard</a><a href="/governance">ทะเบียนหลักฐานองค์กร</a></header>
+  <main id="main">
+    <p class="eyebrow">ก่อนเริ่มใช้ข้อมูลในองค์กร</p><h1>ทบทวนขอบเขตการประมวลผล</h1>
+    <p>ผูกกิจกรรมฉบับที่อนุมัติกับหลักฐานฉบับปัจจุบัน ผู้ทบทวนต้องเป็นคนละคนกับผู้เสนอ การเปลี่ยนหลักฐานหรือขอบเขตจะระงับคำสั่งเดิมที่ยังไม่ดำเนินการ</p>
+    <p class="notice">ผลในหน้านี้เป็นหลักฐานการทบทวนขององค์กร ไม่ใช่การรับรองกฎหมาย ความยินยอมและคำสั่งระงับยังตรวจแยกทุกครั้ง</p>
+    <p id="pc-message" role="status" aria-live="polite" tabindex="-1"></p>
+    <button id="pc-refresh" type="button">ตรวจบัญชีและสิทธิ์ปัจจุบัน</button>
+    <div id="pc-workspace" hidden>
+      <section class="panel"><h2>ฝ่ายงานที่รับผิดชอบ</h2><div class="toolbar">
+        <label>ฝ่ายงาน<input id="pc-department" list="pc-departments" autocomplete="off" required></label><datalist id="pc-departments"></datalist>
+        <button id="pc-load" type="button">โหลดกิจกรรมและหลักฐาน</button>
+      </div></section>
+      <div class="columns">
+        <section class="panel"><h2>เสนอขอบเขตหรือฉบับใหม่</h2>
+          <form id="pc-editor">
+            <label>กิจกรรมฉบับที่อนุมัติแล้ว<select id="pc-activity" required><option value="">เลือกกิจกรรมก่อน</option></select></label>
+            <button id="pc-more-activities" type="button" hidden>โหลดกิจกรรมเพิ่มเติม</button>
+            <fieldset><legend>ผลทบทวนข้อควบคุมทั้งแปดด้าน</legend><p>เลือกหลักฐานแต่ละด้านโดยชัดแจ้ง รวมด้านที่ผู้รับผิดชอบทบทวนว่าไม่ใช้บังคับ ห้ามถือว่ารายการที่หายไปเป็นข้อยกเว้น</p><div id="pc-legal"></div></fieldset>
+            <fieldset><legend>ผู้ประมวลผล การโอน และหลักฐานอื่นที่ใช้กับงานนี้</legend><div id="pc-optional"></div><button id="pc-more-controls" type="button" hidden>โหลดหลักฐานเพิ่มเติม</button></fieldset>
+            <label>หลักฐานเหตุผลของขอบเขตนี้<input id="pc-evidence" required autocomplete="off" aria-describedby="pc-reference-help"></label>
+            <p id="pc-reference-help" class="hint">ใช้รหัสอ้างอิงหลักฐานที่ได้รับอนุญาต ห้ามใส่ชื่อบุคคล เนื้อหาเอกสาร หรือกุญแจ</p>
+            <label>ใช้ขอบเขตนี้ได้ถึง<input id="pc-expiry" type="datetime-local" required></label>
+            <div class="toolbar"><button id="pc-save" type="submit">บันทึกข้อเสนอ</button><button id="pc-new" type="button" class="secondary">เริ่มข้อเสนอใหม่</button></div>
+          </form>
+        </section>
+        <section class="panel"><h2>ขอบเขตและสถานะปัจจุบัน</h2><div id="pc-records"></div><button id="pc-more" type="button" hidden>โหลดขอบเขตเพิ่มเติม</button>
+          <h3 id="pc-selected" tabindex="-1">เลือกรายการเพื่อทบทวน</h3><div id="pc-detail"></div>
+          <div class="toolbar"><button id="pc-submit" type="button" disabled>ส่งให้ผู้ทบทวน</button><button id="pc-preview" type="button" disabled>ตรวจหลักฐานฉบับที่ผูกไว้</button><button id="pc-history" type="button" disabled>ดูประวัติฉบับ</button></div>
+          <div id="pc-preview-detail" class="evidence" aria-live="polite"></div><div id="pc-history-detail"></div><button id="pc-more-history" type="button" hidden>โหลดประวัติเพิ่มเติม</button>
+          <label>หลักฐานผลทบทวน<input id="pc-review-evidence" autocomplete="off"></label>
+          <div class="toolbar"><button id="pc-approve" type="button" disabled>เห็นชอบฉบับที่ตรวจแล้ว</button><button id="pc-reject" type="button" disabled>ไม่เห็นชอบ</button><button id="pc-activate" type="button" disabled>เปิดใช้ขอบเขตนี้</button></div>
+          <p class="hint">การเปิดใช้ไม่อนุญาตให้ใช้คำสั่งหรือคำอนุมัติเก่าที่ถูกระงับ ต้องเสนอคำสั่งใหม่และให้ผู้ทบทวนอนุมัติแยกอีกครั้ง</p>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -10,6 +10,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from canonical_core import CANONICAL  # noqa: F401
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -95,7 +95,7 @@ services:
 
   core:
     build:
-      context: ./core
+      context: ${AIFT_CORE_BUILD_CONTEXT:-./core}
       args:
         AIFT_BUILD_COMMIT: ${CI_COMMIT_SHA:-local-working-tree}
     restart: unless-stopped

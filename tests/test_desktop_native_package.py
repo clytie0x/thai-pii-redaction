@@ -2498,6 +2498,117 @@ def test_packaged_smoke_stops_on_fixed_runtime_failure(tmp_path):
 
 
 @pytest.mark.parametrize(
+    ("reason", "api_code", "invalidated", "restart"),
+    [
+        ("api_rejected", "broker_busy", False, False),
+        ("api_rejected", "ner_unavailable", False, False),
+        ("api_rejected", "operation_failed", True, True),
+        ("api_rejected", "unknown", False, False),
+        ("assertion_failed", "not_applicable", False, False),
+        ("unexpected_error", "not_applicable", False, False),
+    ],
+)
+def test_packaged_smoke_projects_only_closed_failure_diagnostics(
+    tmp_path, reason, api_code, invalidated, restart
+):
+    marker = tmp_path / smoke_package.SMOKE_FAILURE
+    marker.write_text(
+        json.dumps(
+            {
+                "stage": "analyze",
+                "diagnostic": {
+                    "reason": reason,
+                    "api_code": api_code,
+                    "session_invalidated": invalidated,
+                    "restart_required": restart,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError) as failure:
+        smoke_package._raise_for_smoke_failure(marker)
+
+    assert str(failure.value) == (
+        "packaged Desktop smoke failed at fixed stage: analyze; "
+        f"reason={reason}; api_code={api_code}; "
+        f"session_invalidated={str(invalidated).lower()}; restart_required={str(restart).lower()}"
+    )
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"reason": "private provider body"},
+        {"api_code": "private error code"},
+        {"session_invalidated": "private flag"},
+        {"restart_required": 1},
+        {"body": "private provider body"},
+        {"reason": "assertion_failed", "api_code": "broker_busy"},
+        {"api_code": "not_applicable"},
+        {"reason": "assertion_failed", "api_code": "not_applicable", "restart_required": True},
+        {
+            "reason": "unexpected_error",
+            "api_code": "not_applicable",
+            "session_invalidated": True,
+        },
+    ],
+)
+def test_packaged_smoke_rejects_untrusted_diagnostics_without_echoing_them(tmp_path, change):
+    marker = tmp_path / smoke_package.SMOKE_FAILURE
+    diagnostic = {
+        "reason": "api_rejected",
+        "api_code": "broker_busy",
+        "session_invalidated": False,
+        "restart_required": False,
+        **change,
+    }
+    marker.write_text(json.dumps({"stage": "analyze", "diagnostic": diagnostic}), encoding="utf-8")
+
+    with pytest.raises(RuntimeError) as failure:
+        smoke_package._raise_for_smoke_failure(marker)
+
+    assert str(failure.value) == "packaged Desktop smoke failure evidence invalid"
+    assert "private" not in str(failure.value)
+
+
+@pytest.mark.parametrize(
+    "encoded",
+    [
+        b'{"stage":"analyze","stage":"sanitize","diagnostic":{}}',
+        b'{"stage":"analyze","diagnostic":{"reason":"api_rejected","reason":"private"}}',
+        b'{"stage":"analyze","diagnostic":{},"body":"private"}',
+        b'{"stage":[],"diagnostic":{}}',
+        b'{"stage":"analyze","diagnostic":null}',
+        b'["private"]',
+        b"\xffprivate",
+        b"{" + b" " * 1024,
+        b"[" * 1000,
+    ],
+    ids=[
+        "duplicate_stage",
+        "duplicate_reason",
+        "extra_payload",
+        "nonstring_stage",
+        "null_diagnostic",
+        "nonobject_root",
+        "nonascii",
+        "oversized",
+        "deep_invalid_json",
+    ],
+)
+def test_packaged_smoke_rejects_malformed_diagnostics_without_echoing_bytes(tmp_path, encoded):
+    marker = tmp_path / smoke_package.SMOKE_FAILURE
+    marker.write_bytes(encoded)
+
+    with pytest.raises(RuntimeError) as failure:
+        smoke_package._raise_for_smoke_failure(marker)
+
+    assert str(failure.value) == "packaged Desktop smoke failure evidence invalid"
+
+
+@pytest.mark.parametrize(
     ("returncode", "expected"),
     [
         (0, "packaged Desktop smoke evidence unavailable"),
@@ -2778,7 +2889,7 @@ def test_windows_process_count_requires_exact_installed_executable_path(tmp_path
     assert smoke_package._windows_process_count(expected) == 1
 
 
-@pytest.mark.parametrize("failure", ["timeout", "sampler"])
+@pytest.mark.parametrize("failure", ["timeout", "sampler", "diagnostic", "private_marker"])
 def test_run_desktop_failure_reaps_process_and_removes_markers(tmp_path, monkeypatch, failure):
     package_dir = tmp_path / "package"
     package_dir.mkdir()
@@ -2809,9 +2920,28 @@ def test_run_desktop_failure_reaps_process_and_removes_markers(tmp_path, monkeyp
     launched = []
 
     def fake_popen(*_args, **_kwargs):
+        assert _kwargs["stdout"] == smoke_package.subprocess.DEVNULL
+        assert _kwargs["stderr"] == smoke_package.subprocess.DEVNULL
         for marker in markers:
             if marker.name != smoke_package.SMOKE_FAILURE:
                 marker.write_text("health", encoding="utf-8")
+        if failure in {"diagnostic", "private_marker"}:
+            (marker_root / smoke_package.SMOKE_FAILURE).write_text(
+                json.dumps(
+                    {
+                        "stage": "analyze",
+                        "diagnostic": {
+                            "reason": "api_rejected",
+                            "api_code": "broker_busy"
+                            if failure == "diagnostic"
+                            else "private body",
+                            "session_invalidated": False,
+                            "restart_required": False,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
         process = real_popen(
             [sys.executable, "-c", "import time; time.sleep(30)"],
             stdin=smoke_package.subprocess.DEVNULL,
@@ -2836,10 +2966,14 @@ def test_run_desktop_failure_reaps_process_and_removes_markers(tmp_path, monkeyp
             "_sample_resources",
             lambda _paths: dict.fromkeys(smoke_package.EXPECTED_RESOURCE_METRICS, 1.0),
         )
-        expected_error = "timed out"
+        expected_error = {
+            "timeout": "timed out",
+            "diagnostic": "fixed stage: analyze; reason=api_rejected; api_code=broker_busy",
+            "private_marker": "failure evidence invalid",
+        }[failure]
         timeout = 0.05
 
-    with pytest.raises(RuntimeError, match=expected_error):
+    with pytest.raises(RuntimeError, match=expected_error) as raised:
         smoke_package._run_desktop(
             component_paths["desktop"],
             package_dir,
@@ -2849,6 +2983,7 @@ def test_run_desktop_failure_reaps_process_and_removes_markers(tmp_path, monkeyp
             timeout,
         )
 
+    assert "private" not in str(raised.value)
     assert len(launched) == 1
     assert launched[0].poll() is not None
     assert not any(marker.exists() for marker in markers)

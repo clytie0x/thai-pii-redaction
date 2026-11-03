@@ -121,7 +121,7 @@ def _strict_json(body: bytes) -> object:
 
 
 class Hosted3Overlay:
-    """Handle unexposed Hosted 3.0 routes before the vendored FastAPI app."""
+    """Handle internal Hosted routes before the shared FastAPI application."""
 
     def __init__(
         self,

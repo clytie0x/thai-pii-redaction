@@ -1,0 +1,42 @@
+# Parameterized candidate. No digest here is invented or accepted by this template.
+services:
+  enterprise:
+    image: ${AIGUARD_IMAGE:?supply qualified registry/name@sha256 digest}
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    pids_limit: 128
+    mem_limit: ${AIGUARD_MEMORY_LIMIT:?freeze workload budget first}
+    cpus: ${AIGUARD_CPU_LIMIT:?freeze workload budget first}
+    command: [python, -m, app.enterprise, serve, --host, 0.0.0.0, --port, "8765"]
+    ports: ["127.0.0.1:${AIGUARD_LOOPBACK_PORT:?set proxy upstream port}:8765"]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m,mode=1777"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      AIGUARD_ENTERPRISE_MODE: production
+      AIGUARD_ENTERPRISE_ORGANIZATION_ID: ${AIGUARD_ORGANIZATION_ID:?required}
+      AIGUARD_ENTERPRISE_PUBLIC_ORIGIN: https://${AIGUARD_TLS_HOST:?exact TLS hostname}
+      AIGUARD_ENTERPRISE_ISSUER: ${AIGUARD_STAFF_ISSUER:?qualified https issuer}
+      AIGUARD_ENTERPRISE_CLIENT_ID: ${AIGUARD_STAFF_CLIENT_ID:?required}
+      AIGUARD_ENTERPRISE_SUBJECT_ISSUER: ${AIGUARD_SUBJECT_ISSUER:?qualified subject issuer}
+      AIGUARD_ENTERPRISE_SUBJECT_CLIENT_ID: ${AIGUARD_SUBJECT_CLIENT_ID:?required}
+      AIGUARD_ENTERPRISE_SUBJECT_OIDC_SECRET_FILE: /run/secrets/subject_oidc
+      AIGUARD_ENTERPRISE_DB_FILE: /run/secrets/runtime_db
+      AIGUARD_ENTERPRISE_OIDC_SECRET_FILE: /run/secrets/staff_oidc
+      AIGUARD_ENTERPRISE_MANAGED_KEYS_FILE: /run/secrets/managed_keys
+      AIGUARD_ENTERPRISE_PROFILE_FILE: /run/secrets/profile
+      AIGUARD_ENTERPRISE_CHECKPOINT_FILE: /run/secrets/checkpoint
+    # Bind mounts preserve operator-controlled mode/owner, unlike permissive defaults.
+    volumes:
+      - ${AIGUARD_SECRET_DIRECTORY:?protected separate custody mount}:/run/secrets:ro
+    healthcheck:
+      test: [CMD, python, -c, "import http.client; c=http.client.HTTPConnection('127.0.0.1',8765,timeout=3); c.request('GET','/health/live',headers={'Host':'${AIGUARD_TLS_HOST}'}); assert c.getresponse().status==200"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "none"
+# PostgreSQL, TLS proxy, IdP and witness are separately operated authorities.
+# Do not put their owner or migration keys in this runtime container.

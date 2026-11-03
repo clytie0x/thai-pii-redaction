@@ -88,3 +88,32 @@ def test_glued_surname_split_still_counts_as_a_name():
     names = [entity.original_text for entity in detect_name_context(text)]
     assert "มาลีทองอยู่" in names
     assert detect_name_context("เป็นของขวัญวันเกิด") == []
+
+
+def test_unchanged_surface_avoids_python_character_folding(monkeypatch):
+    from pii_redactor.detectors import surface_norm
+
+    def unnecessary_fold(_char):
+        raise AssertionError("Unchanged source should not need per-character folding")
+
+    monkeypatch.setattr(surface_norm, "_fold", unnecessary_fold)
+    text = "เอกสารทั่วไป มีรายการ 123456 และข้อมูลติดต่อในระบบ"
+    normalized, origins = surface_norm.normalize_surface(text)
+    assert normalized == text
+    assert origins == list(range(len(text)))
+
+
+def test_surface_shortcut_keeps_unicode_digit_padding_semantics():
+    from pii_redactor.detectors.surface_norm import normalize_surface
+
+    for text, expected in [
+        ("²  ³", "²³"),
+        ("१२ - ३४", "१२-३४"),
+        (" 12  ", " 12  "),
+        ("12  -  34", "12-34"),
+        ("ข้อความ ทั่วไป", "ข้อความ ทั่วไป"),
+    ]:
+        normalized, origins = normalize_surface(text)
+        assert normalized == expected
+        assert len(origins) == len(normalized)
+        assert all(text[source] == char for char, source in zip(normalized, origins))

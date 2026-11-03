@@ -8,13 +8,16 @@ import os
 import re
 import uuid
 from dataclasses import dataclass, replace
+from pathlib import Path
+from threading import RLock
 
 from pythainlp import sent_tokenize
 from pythainlp.tag import NER
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
 from pii_redactor.models import Entity
-from pii_redactor.safe_errors import discard_exception_graph
+from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
 
 _LOG = logging.getLogger(__name__)
 
@@ -140,6 +143,8 @@ _NAME_DOC_COMPOUND_RE = re.compile(
 # the strict shape gate below would otherwise discard the name because of a
 # comma. Deliberately narrow: only characters that end a clause.
 _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
+# Fixed presentation syntax, never a person's name.
+_NAME_FORMAT_LABEL_RE = re.compile(r"^[*_`# \t]*คำตอบ[:：*_`# \t]*$")
 # A digit run (with its separators) inside a NAME span is the same class of
 # invariant as the line break: a person's name never contains one. The CRF
 # glues a trailing account number into the PERSON span ("บัญชี ศักดิ์ชัย
@@ -152,6 +157,8 @@ _NAME_SEGMENT_TRIM_CHARS = ",.;:!?)]}\"'"
 # name text can be lost. Tail segments keep their existing wholesale shape
 # rejection instead — see the loop below.
 _NAME_DIGIT_RUN_RE = re.compile(r"[0-9][0-9\s./-]*")
+# A digit after this prefix denotes a land document, not a person title.
+_LAND_DOC_ABBREV_RE = re.compile(r"น\.ส\.\d")
 
 
 # A CRF "location" that is really หนังสือราชการ numbering, in two shapes seen
@@ -234,6 +241,18 @@ def _apply_cue_upgrades(text: str, start: int, end: int, data_type: str) -> str 
     return data_type
 
 
+def _spaceless_run_is_not_a_name(segment: str) -> bool:
+    """Reject a space-free form label while keeping ordinary name shapes."""
+    from pii_redactor.detectors.name_context import (
+        _GLUED_NAME_MAX_CHARS,
+        is_non_person_segment,
+    )
+
+    if not _ISOLATED_GLUED_LINE_RE.fullmatch(segment):
+        return False
+    return len(segment) > _GLUED_NAME_MAX_CHARS or is_non_person_segment(segment)
+
+
 def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
     """Shared NAME span hygiene for every neural engine (CRF and fine-tuned).
 
@@ -285,6 +304,15 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         lstripped = line.lstrip()
         pad = len(line) - len(lstripped)
         seg = lstripped.rstrip().rstrip(_NAME_SEGMENT_TRIM_CHARS).rstrip()
+        if _NAME_FORMAT_LABEL_RE.fullmatch(seg):
+            return None
+        t_lo, _t_hi = trim_same_line_name_edges(seg)
+        first_group = re.match(r"[^ \t]+", seg)
+        # Trim only a role glued to the name; keep a separately spaced role.
+        if first_group is not None and 0 < t_lo < first_group.end():
+            seg = seg[t_lo:]
+        else:
+            t_lo = 0
         if len(seg) < 2:
             return None
         if _NAME_DOC_COMPOUND_RE.match(seg):
@@ -293,11 +321,13 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
             return None
         if is_non_person_segment(seg):
             return None
-        seg_start = line_start + pad
+        seg_start = line_start + pad + t_lo
         return (seg_start, seg_start + len(seg))
 
     entity_text = text[start:end]
     if "\n" not in entity_text and not _NAME_DIGIT_RUN_RE.search(entity_text):
+        if _NAME_FORMAT_LABEL_RE.fullmatch(entity_text.strip()):
+            return []
         compound = _NAME_DOC_COMPOUND_RE.match(entity_text)
         if compound:
             # A document compound at the head does NOT mean the whole span is
@@ -321,6 +351,8 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         t_lo, t_hi = trim_same_line_name_edges(entity_text)
         if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(entity_text[t_lo:t_hi]):
             return []
+        if _spaceless_run_is_not_a_name(entity_text[t_lo:t_hi]):
+            return []
         return [(start + t_lo, start + t_hi)]
 
     if "\n" in entity_text:
@@ -334,6 +366,8 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
         line_start = start + offset
         offset += len(line) + 1
         if index == 0:
+            if _LAND_DOC_ABBREV_RE.match(line.lstrip()):
+                continue
             # HEAD only: split at the first digit run. Tail lines keep the
             # stricter rule they always had — the shape gate rejects a
             # digit-bearing line wholesale, and truncating one instead would
@@ -354,13 +388,19 @@ def _name_hygiene(text: str, start: int, end: int) -> list[tuple[int, int]]:
                 if got:
                     spans.append(got)
             seg = head.rstrip()
-            if len(seg) < 2 or _NAME_DOC_COMPOUND_RE.match(seg):
+            if (
+                len(seg) < 2
+                or _NAME_FORMAT_LABEL_RE.fullmatch(seg.strip())
+                or _NAME_DOC_COMPOUND_RE.match(seg)
+            ):
                 continue
             # Same-line role/label edge trim (B1/B2/B3), re-checking the
             # compound gate on the result: a trim can expose a document
             # compound the role word was glued in front of.
             t_lo, t_hi = trim_same_line_name_edges(seg)
             if t_hi - t_lo < 2 or _NAME_DOC_COMPOUND_RE.match(seg[t_lo:t_hi]):
+                continue
+            if _spaceless_run_is_not_a_name(seg[t_lo:t_hi]):
                 continue
             spans.append((line_start + t_lo, line_start + t_hi))
             continue
@@ -377,10 +417,11 @@ _FINETUNED_LABEL_MAP = {
     "DATE": "DATE",
     "STUDENT_ID": "STUDENT_ID",
 }
-_finetuned_cache: dict[str, object] = {}
+_finetuned_cache: dict[tuple, object] = {}
+_engine_lock = RLock()
 
 
-def _detect_tb_finetuned(text: str) -> list[Entity]:
+def _detect_tb_finetuned(text: str, *, config: CoreConfig | None = None) -> list[Entity]:
     """TB detection under the fine-tuned engine (AIGUARD_NER_ENGINE=finetuned).
 
     Two deliberate differences from the CRF path, both from the reveal-3
@@ -394,12 +435,25 @@ def _detect_tb_finetuned(text: str) -> list[Entity]:
       name labels) stay unconditional — the pre-registered high-precision
       fallback.
     """
-    from pii_redactor.detectors.finetuned_engine import FinetunedEngine
+    from pii_redactor.detectors.finetuned_engine import (
+        FinetunedEngine,
+        FinetunedEngineUnavailableError,
+    )
     from pii_redactor.detectors.name_context import detect_name_context_passes
 
-    if "engine" not in _finetuned_cache:
-        _finetuned_cache["engine"] = FinetunedEngine()
-    engine = _finetuned_cache["engine"]
+    config = resolve_config(config)
+    if not config.finetuned_model_dir:
+        raise FinetunedEngineUnavailableError("finetuned engine requires a model directory")
+    directory = Path(config.finetuned_model_dir).resolve()
+    if not directory.is_dir():
+        raise FinetunedEngineUnavailableError("finetuned engine requires a model directory")
+    thresholds_path = directory / "thresholds.json"
+    artifact = thresholds_path.read_bytes() if thresholds_path.exists() else None
+    key = (str(directory), artifact)
+    with _engine_lock:
+        if key not in _finetuned_cache:
+            _finetuned_cache[key] = FinetunedEngine(model_dir=str(directory))
+        engine = _finetuned_cache[key]
 
     thresholds = getattr(engine, "thresholds", {}) or {}
     candidates: list[Entity] = []
@@ -507,10 +561,22 @@ _ENGINE_CONFIG: dict[str, dict[str, str | None]] = {
 _ner_cache: dict[str, NER] = {}
 
 
-def _load_ner(name: str) -> NER:
+def _load_ner(name: str, *, config: CoreConfig | None = None) -> NER:
     """Return the NER engine for a single engine name (thainer / wangchanberta),
     loading and caching it on first use. Raises ValueError for an unknown name
     and NEREngineUnavailableError if the engine's dependency is missing."""
+    settings = resolve_config(config)
+    if name == "tner":
+        if not settings.allow_remote or not settings.tner_api_key:
+            raise NEREngineUnavailableError("tner requires remote permission and AIFORTHAI_API_KEY")
+        from pii_redactor.detectors.tner_client import TnerEngine
+
+        return TnerEngine(api_key=settings.tner_api_key)
+    with _engine_lock:
+        return _load_local_ner(name)
+
+
+def _load_local_ner(name: str) -> NER:
     if name not in _ENGINE_CONFIG:
         raise ValueError(
             f"Unknown AIGUARD_NER_ENGINE={name!r}; supported: {sorted(_ENGINE_CONFIG)} (or 'union')"
@@ -539,31 +605,24 @@ def _load_ner(name: str) -> NER:
                         f"AIGUARD_NER_ENGINE={name!r} requires {requires!r}. "
                         f"Run: pip install -r requirements-ml.txt"
                     ) from None
-        if name == "tner":
-            # Not a PyThaiNLP engine: TNER is an HTTP service, so NER(engine=
-            # "tner") raised a raw library error and the registered slot did
-            # nothing. TnerEngine exposes the same .tag() contract instead.
-            from pii_redactor.detectors.tner_client import TnerEngine
-
-            _ner_cache[name] = TnerEngine(api_key=os.environ.get("AIFORTHAI_API_KEY", ""))
-        else:
-            _ner_cache[name] = NER(engine=config["ner_engine"])
+        _ner_cache[name] = NER(engine=config["ner_engine"])
     return _ner_cache[name]
 
 
-def _resolve_engine_name() -> str:
+def _resolve_engine_name(config: CoreConfig | None = None) -> str:
     """The engine named by AIGUARD_NER_ENGINE, defaulting to the offline CRF.
 
     The default is load-bearing: the AI for Thai proposal claims detection runs
     offline in-container, which is only true while every network-backed engine
     stays opt-in.
     """
-    return os.environ.get("AIGUARD_NER_ENGINE", "thainer")
+    return resolve_config(config).engine
 
 
-def _get_ner() -> NER:
+def _get_ner(*, config: CoreConfig | None = None) -> NER:
     """Select the single engine named by AIGUARD_NER_ENGINE (default thainer)."""
-    return _load_ner(_resolve_engine_name())
+    config = resolve_config(config)
+    return _load_ner(config.engine, config=config)
 
 
 # ---------------------------------------------------------------------------
@@ -1127,6 +1186,7 @@ def _detect_tb_impl(
     *,
     window_size: int = 1,
     diagnostics: NERChunkDiagnostics | None = None,
+    config: CoreConfig | None = None,
 ) -> list[Entity]:
     """Run TB detection on prose, including zero-width and per-letter spacing.
 
@@ -1141,6 +1201,7 @@ def _detect_tb_impl(
         text if origins is None else folded,
         window_size=window_size,
         diagnostics=diagnostics,
+        config=config,
     )
     if origins is None:
         return found
@@ -1157,6 +1218,7 @@ def _detect_tb_scanned(
     *,
     window_size: int = 1,
     diagnostics: NERChunkDiagnostics | None = None,
+    config: CoreConfig | None = None,
 ) -> list[Entity]:
     """
     Detect text-based PII entities using PyThaiNLP NER (thainer CRF).
@@ -1191,14 +1253,15 @@ def _detect_tb_scanned(
         pos = idx + len(sent)
 
     # Engine selection: union runs both, everything else is a single engine.
-    name = _resolve_engine_name()
+    config = resolve_config(config)
+    name = config.engine
     if name == "finetuned":
-        return _detect_tb_finetuned(text)
+        return _detect_tb_finetuned(text, config=config)
     try:
         if name == "union":
-            ners = [_load_ner("thainer"), _load_ner("wangchanberta")]
+            ners = [_load_ner("thainer", config=config), _load_ner("wangchanberta", config=config)]
         else:
-            ners = [_load_ner(name)]
+            ners = [_load_ner(name, config=config)]
     except Exception as error:
         if name == "tner":
             _raise_explicit_ner_failure(
@@ -1248,11 +1311,13 @@ def _detect_tb_scanned(
     return _deduplicate(candidates)
 
 
+@minimize_failure_frames
 def detect_tb(
     text: str,
     *,
     window_size: int = 1,
     diagnostics: NERChunkDiagnostics | None = None,
+    config: CoreConfig | None = None,
 ) -> list[Entity]:
     """Run TB detection while containing explicit remote-engine failures."""
 
@@ -1262,6 +1327,7 @@ def detect_tb(
             text,
             window_size=window_size,
             diagnostics=diagnostics,
+            config=resolve_config(config),
         )
     except NERFailureError as error:
         failure = ner_failure_metadata(error)
@@ -1269,6 +1335,7 @@ def detect_tb(
 
     text = ""
     diagnostics = None
+    config = None
     code, category, count = failure
     failure = None
     raise NERFailureError(code, category=category, count=count) from None

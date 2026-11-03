@@ -1,0 +1,1674 @@
+{
+  "schema": "pdpa-calibration/1",
+  "identity": {
+    "python": "3.13.12",
+    "ner_asset_sha256": "8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38",
+    "protocol_sha256": "2184185b0abdb514bd5be319ac87c46efd6146ee1576a8f3421f77d2f384962d",
+    "corpus_lock_sha256": "da0b6e2a0d918986322c5dbc63dfda638750a016c4bd9310d5fcfbe0f1d529f2",
+    "source_files": {
+      "pii_redactor/__init__.py": "230474107d3bc2a222d5c19070a63f7562abd98b0502f6a2cfbd8099216ce2d5",
+      "pii_redactor/ai_client.py": "468e6d5c0c13a154f580491d85413e60e90e0a93b83adb58a3abd7f5fb82af6b",
+      "pii_redactor/anonymizer/__init__.py": "69c68e7e94f67d8e3f65c3d78280548108af51b4ea30eb0b70abc582d31f983b",
+      "pii_redactor/anonymizer/anonymizer.py": "7bd38c0eaf9f52a882ed46192cee74e87a3dd502b281a092ce583b613d619a05",
+      "pii_redactor/anonymizer/fp_generator.py": "3be2913f409d4759306d5a2d1cc8a3cf6d09853be7782324199fa49e4b6d0dff",
+      "pii_redactor/anonymizer/tb_generator.py": "db0690461fb820f9e5d49e31df3e3a4b7134977ae1ffb55d897f5901f879ee9e",
+      "pii_redactor/anonymizer/token_generator.py": "28a833f6e17222db7bca31700fa391a315d2d60832b211ef52c07c3b2cc2a49f",
+      "pii_redactor/audit.py": "960597dcd86c934b3b205708fbc44ab24326591662716a7837f4f8f7381ed933",
+      "pii_redactor/breach.py": "3e950c9c232c1eff6aff846fda6ee43c3cdae05d8a5106ae0d99fbd55121a2cb",
+      "pii_redactor/breach_pdf.py": "80ed1ef22a610bf360ef78a2a4ef98f44903d749de86e408fbad299ad46ae882",
+      "pii_redactor/detectors/__init__.py": "8e5049db71825575a571631739cffde9c6e3114c12c099d0ad75f92ff16fe4e9",
+      "pii_redactor/detectors/aggregate.py": "088504fbba6cc3ee7460efe6700b6fbeeca2cd42900aff888ec9acc4716fb733",
+      "pii_redactor/detectors/finetuned_engine.py": "1f647456888205798fb8db5afd13020c83a4c41f99bc8bdbb6e4a392e9c45176",
+      "pii_redactor/detectors/fn_scanner.py": "38beaad761cd61d0e7a598c05a2028638dd1606617e256d423155c984d9bd0c8",
+      "pii_redactor/detectors/fp_detector.py": "16c6e052c137a5f69307c666c424369c18cf947e991f5595c6b87aa05db7e2d5",
+      "pii_redactor/detectors/name_context.py": "b80b07c5c8965532244a31849c6e2062b0c0ca396db89dd0231e1b0a04237ffd",
+      "pii_redactor/detectors/ner_failure.py": "c3d0a6358265f037dec5ce23aeae0b441dd7d6acd3f4bbe77583337ef5dae82d",
+      "pii_redactor/detectors/scan_views.py": "75b25788f88d03f7cbd9ab66c6fa474f0a268a7fcfdd6293adf587f647318a82",
+      "pii_redactor/detectors/structured_views.py": "0fc0d94c92a28df43089ed15b70e3b273eb3eb769cc123f896d25102581586a7",
+      "pii_redactor/detectors/tb_detector.py": "a76404d7d3c0f7576e173dcdeafc8744b53fc03cb39723efddd57eb354896935",
+      "pii_redactor/detectors/thai_id.py": "edd814ed58e6c4864370ec4490f71dc01b2b86e159f46dd53de03f2361917ca4",
+      "pii_redactor/detectors/tner_client.py": "9f73a8533ed3bd16a29733f19b6b1a18f544975073ef8780b7347e0ae7e26a79",
+      "pii_redactor/dsar.py": "bb42bbc6ad98e562a6656829010d740b7c66307af87c591433bfabf355c10fa0",
+      "pii_redactor/dsar_pdf.py": "33e049e6c9eae36be0fc566b490406dac7c950b21f4ed8b7a1292191743da785",
+      "pii_redactor/exporter.py": "28e2fba8598c939c687008c53c5f7890e70a8a7b0e9034b972ed41cdb1c507fd",
+      "pii_redactor/guard/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pii_redactor/guard/injection.py": "10cd28d44c363cb5434f199a8683cf45c28970bec09fc84b52c8c5a0107571ca",
+      "pii_redactor/ingest/__init__.py": "d1383d4f34c0ad43ebe9130e6df3a3677e60406bd7c8cbb7ff603701c65bca41",
+      "pii_redactor/ingest/file_detector.py": "50b5d1d0551761b7c919c29f02743e991a2405bd49b1f140e861edcff19abdb9",
+      "pii_redactor/ingest/ocr_processor.py": "efa2175efced1010faf996c16447d952564618b7089d547e55ac9c6165aa6e2c",
+      "pii_redactor/ingest/quality_validator.py": "efb99330678cb58f4d09bbc83a515a7031b5fabda2172946b95082a0c85b00c2",
+      "pii_redactor/ingest/text_cleaner.py": "a8a2aa847a92127b4f0ba67c01f0546119b8fc347048b10dc4f76851193fc9ae",
+      "pii_redactor/ingest/text_extractor.py": "ce96a2f4ca2bb9a6eaff60d4f81a4a90395db5d3131edef268f4eae5d0335297",
+      "pii_redactor/leak_guard.py": "4ad1d6ebd8fe0bfb2f6bd61e737d27796ea24a06de41bba24466fa893d3e98f0",
+      "pii_redactor/models.py": "d3554bcf92182f903e232e8bcdc2d72fa7d9a208cf699ad96c73021394f6f6dc",
+      "pii_redactor/native_broker_context.py": "a2e53ae361e4bfc6007b91c2375439f49d66a472ed70a51ae18fa5d93e43f032",
+      "pii_redactor/openai_compat.py": "675feaff72ad26fa487f73c25ab23ddcce4a68ef2968a7ed6d4f00953112ef85",
+      "pii_redactor/output_validator.py": "d4293a3fdac8e0b134446667411b5675bcd0d6fd6669ca4aef22454771e7a484",
+      "pii_redactor/pdf_render.py": "059c37cd030ded09d5c1188f02458f3a79d6d7879d11cfe78e2887731ce505ab",
+      "pii_redactor/pdpa_assessment.py": "72f7891e14bac32c781ac1b422b62066e4fcf33c2b2e41ca973e6e8862a89866",
+      "pii_redactor/pdpa_catalog.py": "c90340b2dfc1d4fd25c3e17d3d213926a3d8e019db21665dbbeaeaad0874c982",
+      "pii_redactor/pdpa_lifecycle.py": "1b2d171806c14b9aa3f24385da36cb170dd221ab7b40d88a81927ff29a341874",
+      "pii_redactor/pdpa_semantic.py": "bfb1ec34904c0d02d867c3140a4593d07be37d23deb48fca3002916905b256ed",
+      "pii_redactor/pipeline.py": "feb8203d7baa1802266688e926aa5217baa485754c641cbe5ad5f00de6d2df08",
+      "pii_redactor/receipt.py": "99f68a0a2a7156c1bbe172288a9c6d3f9919871426d65c403e0dc531c2894fb3",
+      "pii_redactor/receipt_pdf.py": "21b9431c4c2204925e41d036f59d3eb6b31de8d519bc6cb4bcf45e55315fc8aa",
+      "pii_redactor/redactor.py": "fed54ba60eb6aae740365d881abc57c06e24bb08d25e17bdecb72bd149181d11",
+      "pii_redactor/reid_risk.py": "f26657916228b1a3c8fe3ee0247eb6e309b821ed35821f8f727f6d4f38ac9eec",
+      "pii_redactor/report.py": "fa8bf494834c6048f2de05e03f9af22898698d8c9f1474087a2f1f6bfa002e9b",
+      "pii_redactor/report_pdf.py": "d216406a7437a4fa1f5f40a9b318d7754bb438bd65e5d51d4dfcb1638c7e8335",
+      "pii_redactor/reverse_mapper.py": "36364fd163a14a5a9670a6ee701fb21720841114f32c8cfeac84485ee213d6f5",
+      "pii_redactor/safe_errors.py": "5fb9138778801e629504cd029fe22ea5fb7b9b6e9a587fda3777d50e5aff14bf",
+      "pii_redactor/scan_common.py": "4a721df9be4740cac70d2cead77072e079505d3960de1356f41022f2d4a8f260",
+      "pii_redactor/sensitive_detector.py": "9e97abbe4cbc63b1f9ae0ab5b828ac6d2df38b73bb725d6eaca519c2b3c0a84f",
+      "pii_redactor/session_service.py": "84792d6053934a5a5193a51f6f02c2021f9fa967700b83d7389722283fb5b08d",
+      "pii_redactor/session_vault.py": "06f14120a91b2b7aaf0ca23ad1a4abac5652362b825ff655b11dbcf750d1e4aa",
+      "pii_redactor/stateless.py": "d50a29248493f1857e36062230b7a1ecaa4b99a1c9843303cdeedc0e2280f105",
+      "pii_redactor/thai_pdf_text.py": "62bc1b12ce345b004cf35f26bfc09adb231135f34f477a2316ad31ff79295796",
+      "ai_guard.py": "7c4e26499521aa189f06402a10b8dbd9cc8a51d048dc92681165f999a76b32fc",
+      "benchmark/pdpa_study.py": "84330d7b6c8ca45af94ca78b4d90a81ec63b4aaf83a8a45feb6f8e3392bb1e47",
+      "benchmark/scorer.py": "e136b5cf01aaa375ce2be4588dc265c70d81383dda4329263c2ad373cf29704f",
+      "benchmark/campaign.py": "f77f70d31010f3637c5cadb7aab686024e6587806ba43b4645f49287fb6ca968",
+      "benchmark/blind.py": "8dd559eac4e416288aee75c6dd44a3d7b7c65f0c7bcd59b031ec82f5ab7c7c0f",
+      "benchmark/gold.py": "f88cbcb7533f7054fe3d3708a7d68697d1f42b69f23733dab9a3c648a2c3e6d1"
+    },
+    "source_sha256": "5bcad757ba299823a87ca9d50bda49802658d4e3711f0e56b3d5d13ff3b728ab",
+    "packages": {
+      "annotated-doc": "0.0.4",
+      "annotated-types": "0.7.0",
+      "anyio": "4.14.2",
+      "certifi": "2026.6.17",
+      "cffi": "2.1.0",
+      "charset-normalizer": "3.4.9",
+      "click": "8.4.2",
+      "cloudpickle": "3.1.2",
+      "colorama": "0.4.6",
+      "cryptography": "49.0.0",
+      "fastapi": "0.139.2",
+      "filelock": "4.2.5",
+      "fsspec": "2026.9.0",
+      "h11": "0.16.0",
+      "hf-xet": "1.8.0",
+      "httpcore": "1.0.9",
+      "httpcore2": "2.16.0",
+      "httptools": "0.8.0",
+      "httpx": "0.28.1",
+      "httpx2": "2.16.0",
+      "huggingface_hub": "2.4.0",
+      "idna": "3.18",
+      "iniconfig": "2.3.0",
+      "jinja2": "3.1.6",
+      "joblib": "1.6.0",
+      "markdown-it-py": "4.2.0",
+      "markupsafe": "3.0.4",
+      "mdurl": "0.1.2",
+      "mpmath": "1.3.0",
+      "narwhals": "2.28.0",
+      "networkx": "3.7",
+      "numpy": "2.5.4",
+      "packaging": "26.2",
+      "pdfminer.six": "20260107",
+      "pdfplumber": "0.11.10",
+      "pillow": "12.3.0",
+      "pluggy": "1.6.0",
+      "psutil": "7.2.2",
+      "pycparser": "3.0",
+      "pydantic": "2.13.4",
+      "pydantic_core": "2.46.4",
+      "pygments": "2.20.0",
+      "pypdfium2": "5.12.1",
+      "pytest": "9.1.1",
+      "pythainlp": "5.3.4",
+      "python-crfsuite": "0.9.12",
+      "python-dotenv": "1.2.2",
+      "python-multipart": "0.0.32",
+      "pyyaml": "6.0.3",
+      "regex": "2026.7.10",
+      "reportlab": "5.0.0",
+      "rich": "15.0.0",
+      "safetensors": "0.8.0",
+      "scikit-learn": "1.9.1",
+      "scipy": "1.18.1",
+      "sentence-transformers": "6.2.0",
+      "setuptools": "84.2.1",
+      "shellingham": "1.5.4",
+      "starlette": "1.3.1",
+      "sympy": "1.14.0",
+      "threadpoolctl": "3.7.0",
+      "tokenizers": "0.23.3",
+      "torch": "2.15.0",
+      "tqdm": "4.70.1",
+      "transformers": "5.22.1",
+      "truststore": "0.10.5",
+      "typer": "0.27.3",
+      "typing-inspection": "0.4.2",
+      "typing_extensions": "4.16.0",
+      "tzdata": "2026.3",
+      "uharfbuzz": "0.55.0",
+      "uvicorn": "0.51.0",
+      "watchfiles": "1.2.0",
+      "websockets": "16.1"
+    },
+    "git_head": "65aedaf66a16f38d0eade138dc93f35b9757f521"
+  },
+  "calibration_sha256": "d397ed91a49e37ee3791e88cceaf9f1ca830f85f31fa38e194dbb8f07169b054",
+  "records": 70,
+  "model": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "weights_sha256": "eaa086f0ffee582aeb45b36e34cdd1fe2d6de2bef61f8a559a1bbc9bd955917b",
+    "prototype_sha256": "bc1c363e6330a30383261c07427d25e0a355fba3970a547993316ee422e47b6c",
+    "max_tokens": 128,
+    "device": "cpu",
+    "scores": "cosine_similarity_not_probability"
+  },
+  "results": {
+    "keyword": {
+      "personal": {
+        "tp": 9,
+        "fp": 26,
+        "fn": 24,
+        "precision": 0.2571428571428571,
+        "recall": 0.2727272727272727,
+        "f1": 0.2647058823529411,
+        "f2": 0.2694610778443114
+      },
+      "topic": {
+        "tp": 27,
+        "fp": 8,
+        "fn": 39,
+        "precision": 0.7714285714285715,
+        "recall": 0.4090909090909091,
+        "f1": 0.5346534653465347,
+        "f2": 0.451505016722408
+      },
+      "joint": {
+        "tp": 9,
+        "fp": 26,
+        "fn": 57,
+        "precision": 0.2571428571428571,
+        "recall": 0.13636363636363635,
+        "f1": 0.17821782178217818,
+        "f2": 0.1505016722408027
+      },
+      "by_category": {
+        "RACE": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.5,
+          "f1": 0.4,
+          "f2": 0.45454545454545453
+        },
+        "ETHNICITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "POLITICAL_OPINION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BELIEF": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.5,
+          "f1": 0.4,
+          "f2": 0.45454545454545453
+        },
+        "SEXUAL_BEHAVIOR": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5,
+          "f2": 0.5
+        },
+        "CRIMINAL_RECORD": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "HEALTH": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "DISABILITY": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.5,
+          "f1": 0.4,
+          "f2": 0.45454545454545453
+        },
+        "LABOR_UNION": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.5,
+          "f1": 0.4,
+          "f2": 0.45454545454545453
+        },
+        "GENETIC_DATA": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BIOMETRIC_IDENTITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "IDENTITY": {
+          "tp": 1,
+          "fp": 5,
+          "fn": 0,
+          "precision": 0.16666666666666666,
+          "recall": 1.0,
+          "f1": 0.2857142857142857,
+          "f2": 0.5
+        },
+        "CONTACT": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "LOCATION": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "f1": 0.5,
+          "f2": 0.7142857142857143
+        },
+        "FINANCIAL": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EDUCATION": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6666666666666666,
+          "f2": 0.8333333333333334
+        },
+        "EMPLOYMENT": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "ONLINE": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6666666666666666,
+          "f2": 0.8333333333333334
+        },
+        "ACTIVITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "RELATIONSHIPS": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "MEDIA": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "QUASI_IDENTIFIERS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        }
+      },
+      "macro_personal_f2": 0.23632428177882722,
+      "shared_legacy_sensitive_macro_f2": 0.25757575757575757,
+      "text_records": 66,
+      "reviewed_records": 31,
+      "topic_only_records": 22,
+      "topic_only_false_alerts": 16,
+      "topic_only_reviewed": 16,
+      "unsupported_records": 4,
+      "unsupported_reviewed": 4,
+      "topic_only_false_alert_rate": 0.7272727272727273,
+      "topic_only_review_rate": 0.7272727272727273,
+      "warm_ms": {
+        "p50": 4.903500001091743,
+        "p95": 9.585200001311023,
+        "text_records": 66
+      },
+      "ner_chunks": {
+        "attempted": 66,
+        "succeeded": 66,
+        "skipped": 0
+      }
+    },
+    "contextual": {
+      "personal": {
+        "tp": 14,
+        "fp": 3,
+        "fn": 19,
+        "precision": 0.8235294117647058,
+        "recall": 0.42424242424242425,
+        "f1": 0.5599999999999999,
+        "f2": 0.4697986577181208
+      },
+      "topic": {
+        "tp": 40,
+        "fp": 5,
+        "fn": 26,
+        "precision": 0.8888888888888888,
+        "recall": 0.6060606060606061,
+        "f1": 0.7207207207207208,
+        "f2": 0.6472491909385113
+      },
+      "joint": {
+        "tp": 29,
+        "fp": 16,
+        "fn": 37,
+        "precision": 0.6444444444444445,
+        "recall": 0.4393939393939394,
+        "f1": 0.5225225225225225,
+        "f2": 0.4692556634304207
+      },
+      "by_category": {
+        "RACE": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ETHNICITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "POLITICAL_OPINION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BELIEF": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "SEXUAL_BEHAVIOR": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CRIMINAL_RECORD": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "HEALTH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "DISABILITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "LABOR_UNION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "GENETIC_DATA": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BIOMETRIC_IDENTITY": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "IDENTITY": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "f1": 0.5,
+          "f2": 0.7142857142857143
+        },
+        "CONTACT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "LOCATION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "FINANCIAL": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EDUCATION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EMPLOYMENT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "ONLINE": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ACTIVITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "RELATIONSHIPS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "MEDIA": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "QUASI_IDENTIFIERS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        }
+      },
+      "macro_personal_f2": 0.38095238095238093,
+      "shared_legacy_sensitive_macro_f2": 0.5679012345679012,
+      "text_records": 66,
+      "reviewed_records": 24,
+      "topic_only_records": 22,
+      "topic_only_false_alerts": 0,
+      "topic_only_reviewed": 3,
+      "unsupported_records": 4,
+      "unsupported_reviewed": 4,
+      "topic_only_false_alert_rate": 0.0,
+      "topic_only_review_rate": 0.13636363636363635,
+      "warm_ms": {
+        "p50": 5.13390000196523,
+        "p95": 9.478499996475875,
+        "text_records": 66
+      },
+      "ner_chunks": {
+        "attempted": 66,
+        "succeeded": 66,
+        "skipped": 0
+      }
+    },
+    "hybrid_0.40": {
+      "personal": {
+        "tp": 23,
+        "fp": 13,
+        "fn": 10,
+        "precision": 0.6388888888888888,
+        "recall": 0.696969696969697,
+        "f1": 0.6666666666666666,
+        "f2": 0.6845238095238094
+      },
+      "topic": {
+        "tp": 56,
+        "fp": 17,
+        "fn": 10,
+        "precision": 0.7671232876712328,
+        "recall": 0.8484848484848485,
+        "f1": 0.8057553956834531,
+        "f2": 0.8308605341246291
+      },
+      "joint": {
+        "tp": 42,
+        "fp": 31,
+        "fn": 24,
+        "precision": 0.5753424657534246,
+        "recall": 0.6363636363636364,
+        "f1": 0.60431654676259,
+        "f2": 0.6231454005934719
+      },
+      "by_category": {
+        "RACE": {
+          "tp": 2,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6666666666666666,
+          "f2": 0.8333333333333334
+        },
+        "ETHNICITY": {
+          "tp": 2,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6666666666666666,
+          "f2": 0.8333333333333334
+        },
+        "POLITICAL_OPINION": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "BELIEF": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "SEXUAL_BEHAVIOR": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CRIMINAL_RECORD": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "HEALTH": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "DISABILITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "LABOR_UNION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "GENETIC_DATA": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "BIOMETRIC_IDENTITY": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "IDENTITY": {
+          "tp": 1,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0.2,
+          "recall": 1.0,
+          "f1": 0.33333333333333337,
+          "f2": 0.5555555555555556
+        },
+        "CONTACT": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "LOCATION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "FINANCIAL": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "EDUCATION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EMPLOYMENT": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ONLINE": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ACTIVITY": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "RELATIONSHIPS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "MEDIA": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6666666666666666,
+          "f2": 0.8333333333333334
+        },
+        "QUASI_IDENTIFIERS": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        }
+      },
+      "macro_personal_f2": 0.648989898989899,
+      "shared_legacy_sensitive_macro_f2": 0.7530864197530864,
+      "text_records": 66,
+      "reviewed_records": 36,
+      "topic_only_records": 22,
+      "topic_only_false_alerts": 0,
+      "topic_only_reviewed": 3,
+      "unsupported_records": 4,
+      "unsupported_reviewed": 4,
+      "topic_only_false_alert_rate": 0.0,
+      "topic_only_review_rate": 0.13636363636363635,
+      "warm_ms": {
+        "p50": 28.603599999769358,
+        "p95": 37.78579999925569,
+        "text_records": 66
+      },
+      "ner_chunks": {
+        "attempted": 66,
+        "succeeded": 66,
+        "skipped": 0
+      }
+    },
+    "hybrid_0.50": {
+      "personal": {
+        "tp": 19,
+        "fp": 5,
+        "fn": 14,
+        "precision": 0.7916666666666666,
+        "recall": 0.5757575757575758,
+        "f1": 0.6666666666666667,
+        "f2": 0.608974358974359
+      },
+      "topic": {
+        "tp": 47,
+        "fp": 7,
+        "fn": 19,
+        "precision": 0.8703703703703703,
+        "recall": 0.7121212121212122,
+        "f1": 0.7833333333333333,
+        "f2": 0.738993710691824
+      },
+      "joint": {
+        "tp": 35,
+        "fp": 19,
+        "fn": 31,
+        "precision": 0.6481481481481481,
+        "recall": 0.5303030303030303,
+        "f1": 0.5833333333333333,
+        "f2": 0.5503144654088049
+      },
+      "by_category": {
+        "RACE": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ETHNICITY": {
+          "tp": 2,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8,
+          "f2": 0.9090909090909091
+        },
+        "POLITICAL_OPINION": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "BELIEF": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "SEXUAL_BEHAVIOR": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CRIMINAL_RECORD": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "HEALTH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "DISABILITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "LABOR_UNION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "GENETIC_DATA": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "BIOMETRIC_IDENTITY": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "IDENTITY": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "f1": 0.5,
+          "f2": 0.7142857142857143
+        },
+        "CONTACT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "LOCATION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "FINANCIAL": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EDUCATION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EMPLOYMENT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "ONLINE": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ACTIVITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "RELATIONSHIPS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "MEDIA": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "QUASI_IDENTIFIERS": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        }
+      },
+      "macro_personal_f2": 0.5131837859110586,
+      "shared_legacy_sensitive_macro_f2": 0.7182940516273849,
+      "text_records": 66,
+      "reviewed_records": 31,
+      "topic_only_records": 22,
+      "topic_only_false_alerts": 0,
+      "topic_only_reviewed": 3,
+      "unsupported_records": 4,
+      "unsupported_reviewed": 4,
+      "topic_only_false_alert_rate": 0.0,
+      "topic_only_review_rate": 0.13636363636363635,
+      "warm_ms": {
+        "p50": 27.14660000128788,
+        "p95": 35.08549999969546,
+        "text_records": 66
+      },
+      "ner_chunks": {
+        "attempted": 66,
+        "succeeded": 66,
+        "skipped": 0
+      }
+    },
+    "hybrid_0.60": {
+      "personal": {
+        "tp": 15,
+        "fp": 3,
+        "fn": 18,
+        "precision": 0.8333333333333334,
+        "recall": 0.45454545454545453,
+        "f1": 0.5882352941176471,
+        "f2": 0.5
+      },
+      "topic": {
+        "tp": 42,
+        "fp": 5,
+        "fn": 24,
+        "precision": 0.8936170212765957,
+        "recall": 0.6363636363636364,
+        "f1": 0.7433628318584069,
+        "f2": 0.67524115755627
+      },
+      "joint": {
+        "tp": 31,
+        "fp": 16,
+        "fn": 35,
+        "precision": 0.6595744680851063,
+        "recall": 0.4696969696969697,
+        "f1": 0.5486725663716814,
+        "f2": 0.4983922829581994
+      },
+      "by_category": {
+        "RACE": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ETHNICITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "POLITICAL_OPINION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BELIEF": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "SEXUAL_BEHAVIOR": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CRIMINAL_RECORD": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "HEALTH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "DISABILITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "LABOR_UNION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "GENETIC_DATA": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BIOMETRIC_IDENTITY": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "IDENTITY": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "f1": 0.5,
+          "f2": 0.7142857142857143
+        },
+        "CONTACT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "LOCATION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "FINANCIAL": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EDUCATION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EMPLOYMENT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "ONLINE": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ACTIVITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "RELATIONSHIPS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "MEDIA": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "QUASI_IDENTIFIERS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        }
+      },
+      "macro_personal_f2": 0.4264069264069264,
+      "shared_legacy_sensitive_macro_f2": 0.5679012345679012,
+      "text_records": 66,
+      "reviewed_records": 25,
+      "topic_only_records": 22,
+      "topic_only_false_alerts": 0,
+      "topic_only_reviewed": 3,
+      "unsupported_records": 4,
+      "unsupported_reviewed": 4,
+      "topic_only_false_alert_rate": 0.0,
+      "topic_only_review_rate": 0.13636363636363635,
+      "warm_ms": {
+        "p50": 25.641449999966426,
+        "p95": 33.866400000988506,
+        "text_records": 66
+      },
+      "ner_chunks": {
+        "attempted": 66,
+        "succeeded": 66,
+        "skipped": 0
+      }
+    },
+    "hybrid_0.70": {
+      "personal": {
+        "tp": 14,
+        "fp": 3,
+        "fn": 19,
+        "precision": 0.8235294117647058,
+        "recall": 0.42424242424242425,
+        "f1": 0.5599999999999999,
+        "f2": 0.4697986577181208
+      },
+      "topic": {
+        "tp": 40,
+        "fp": 5,
+        "fn": 26,
+        "precision": 0.8888888888888888,
+        "recall": 0.6060606060606061,
+        "f1": 0.7207207207207208,
+        "f2": 0.6472491909385113
+      },
+      "joint": {
+        "tp": 29,
+        "fp": 16,
+        "fn": 37,
+        "precision": 0.6444444444444445,
+        "recall": 0.4393939393939394,
+        "f1": 0.5225225225225225,
+        "f2": 0.4692556634304207
+      },
+      "by_category": {
+        "RACE": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ETHNICITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "POLITICAL_OPINION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BELIEF": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "SEXUAL_BEHAVIOR": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CRIMINAL_RECORD": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "HEALTH": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "DISABILITY": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "LABOR_UNION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "GENETIC_DATA": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "BIOMETRIC_IDENTITY": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.6666666666666666,
+          "f2": 0.5555555555555556
+        },
+        "IDENTITY": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "f1": 0.5,
+          "f2": 0.7142857142857143
+        },
+        "CONTACT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "LOCATION": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "FINANCIAL": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EDUCATION": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "EMPLOYMENT": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "ONLINE": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "ACTIVITY": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "RELATIONSHIPS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "MEDIA": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        },
+        "QUASI_IDENTIFIERS": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "f2": 0.0
+        }
+      },
+      "macro_personal_f2": 0.38095238095238093,
+      "shared_legacy_sensitive_macro_f2": 0.5679012345679012,
+      "text_records": 66,
+      "reviewed_records": 24,
+      "topic_only_records": 22,
+      "topic_only_false_alerts": 0,
+      "topic_only_reviewed": 3,
+      "unsupported_records": 4,
+      "unsupported_reviewed": 4,
+      "topic_only_false_alert_rate": 0.0,
+      "topic_only_review_rate": 0.13636363636363635,
+      "warm_ms": {
+        "p50": 25.98665000186884,
+        "p95": 35.23449999920558,
+        "text_records": 66
+      },
+      "ner_chunks": {
+        "attempted": 66,
+        "succeeded": 66,
+        "skipped": 0
+      }
+    }
+  },
+  "recommended_available_strategy": "hybrid_0.40",
+  "hybrid_threshold": 0.4,
+  "eligibility_met": true,
+  "hybrid_eligibility_met": true,
+  "operational_default": "contextual_until_optional_model_packaging_review",
+  "limits": "Small AI-authored synthetic calibration; similarity is not probability.",
+  "cold_model_load_seconds": 6.068986999998742,
+  "model_threads": 4
+}

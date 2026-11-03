@@ -1,0 +1,181 @@
+{
+  "scope": "Synthetic personal-attribution evidence, not full statutory/compliance coverage",
+  "categories": [
+    {
+      "category": "RACE",
+      "personal_targets": 6,
+      "observed_tp": 4,
+      "observed_fn": 2,
+      "f2": 0.6060606060606061,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "ETHNICITY",
+      "personal_targets": 6,
+      "observed_tp": 3,
+      "observed_fn": 3,
+      "f2": 0.5,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "POLITICAL_OPINION",
+      "personal_targets": 6,
+      "observed_tp": 1,
+      "observed_fn": 5,
+      "f2": 0.19999999999999996,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "BELIEF",
+      "personal_targets": 6,
+      "observed_tp": 4,
+      "observed_fn": 2,
+      "f2": 0.6666666666666666,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "SEXUAL_BEHAVIOR",
+      "personal_targets": 6,
+      "observed_tp": 5,
+      "observed_fn": 1,
+      "f2": 0.8620689655172415,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "CRIMINAL_RECORD",
+      "personal_targets": 6,
+      "observed_tp": 2,
+      "observed_fn": 4,
+      "f2": 0.3846153846153846,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "HEALTH",
+      "personal_targets": 8,
+      "observed_tp": 7,
+      "observed_fn": 1,
+      "f2": 0.8974358974358975,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "DISABILITY",
+      "personal_targets": 6,
+      "observed_tp": 4,
+      "observed_fn": 2,
+      "f2": 0.689655172413793,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "LABOR_UNION",
+      "personal_targets": 6,
+      "observed_tp": 4,
+      "observed_fn": 2,
+      "f2": 0.6666666666666666,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "GENETIC_DATA",
+      "personal_targets": 6,
+      "observed_tp": 4,
+      "observed_fn": 2,
+      "f2": 0.6666666666666666,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "BIOMETRIC_IDENTITY",
+      "personal_targets": 6,
+      "observed_tp": 3,
+      "observed_fn": 3,
+      "f2": 0.5357142857142857,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "IDENTITY",
+      "personal_targets": 8,
+      "observed_tp": 3,
+      "observed_fn": 5,
+      "f2": 0.35714285714285715,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "CONTACT",
+      "personal_targets": 4,
+      "observed_tp": 3,
+      "observed_fn": 1,
+      "f2": 0.7894736842105263,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "LOCATION",
+      "personal_targets": 4,
+      "observed_tp": 2,
+      "observed_fn": 2,
+      "f2": 0.5555555555555556,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "FINANCIAL",
+      "personal_targets": 3,
+      "observed_tp": 3,
+      "observed_fn": 0,
+      "f2": 1.0,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "EDUCATION",
+      "personal_targets": 4,
+      "observed_tp": 2,
+      "observed_fn": 2,
+      "f2": 0.5263157894736842,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "EMPLOYMENT",
+      "personal_targets": 3,
+      "observed_tp": 1,
+      "observed_fn": 2,
+      "f2": 0.3571428571428571,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "ONLINE",
+      "personal_targets": 6,
+      "observed_tp": 2,
+      "observed_fn": 4,
+      "f2": 0.3703703703703703,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "ACTIVITY",
+      "personal_targets": 6,
+      "observed_tp": 0,
+      "observed_fn": 6,
+      "f2": 0.0,
+      "validation": "manual_inventory_required_no_positive_recovery_in_sample"
+    },
+    {
+      "category": "RELATIONSHIPS",
+      "personal_targets": 3,
+      "observed_tp": 1,
+      "observed_fn": 2,
+      "f2": 0.3846153846153846,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "MEDIA",
+      "personal_targets": 3,
+      "observed_tp": 1,
+      "observed_fn": 2,
+      "f2": 0.29411764705882354,
+      "validation": "partial_synthetic_evidence_not_complete_detection"
+    },
+    {
+      "category": "QUASI_IDENTIFIERS",
+      "personal_targets": 3,
+      "observed_tp": 0,
+      "observed_fn": 3,
+      "f2": 0.0,
+      "validation": "manual_inventory_required_no_positive_recovery_in_sample"
+    }
+  ]
+}

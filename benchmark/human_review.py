@@ -14,7 +14,9 @@ from .gold import parse_gold
 from .types import SHARED_ENTITY_TYPE_SET, SHARED_ENTITY_TYPES, GoldSpan, Sample
 
 PACKET_SCHEMA = 2
-STT52_GOLD_COMMIT = "d93d10b17be6783d5c684cb47f25d4156ed6fb4b"
+# Public-history commit carrying the exact corpus pinned by the old packet.
+STT52_GOLD_COMMIT = "61cde3ba1322597411957d3332d742c04d0c16eb"
+STT52_GOLD_SHA256 = "d2591229e0bae20d27e5a8a20aa5b41ee3cc18622a54dd39b2a2c363f761fd5d"
 STT52_GOLD_VERSION = "gold-v3"
 STT52_GOLD_PATH = "benchmark/data/gold.jsonl"
 STT52_REVIEW_SAMPLE_ID = "stt52-second-human-v1"
@@ -75,6 +77,8 @@ def load_gold_at_commit(
     except (OSError, subprocess.CalledProcessError, UnicodeError) as exc:
         raise HumanReviewError("cannot load the frozen gold commit") from exc
 
+    if revision == STT52_GOLD_COMMIT and hashlib.sha256(raw).hexdigest() != STT52_GOLD_SHA256:
+        raise HumanReviewError("frozen gold corpus hash mismatch")
     samples = _parse_gold_jsonl(raw)
     return samples, {
         "gold_version": STT52_GOLD_VERSION,

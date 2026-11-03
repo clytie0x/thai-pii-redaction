@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-import os
+from dataclasses import replace
+
+from amphrang._core_config import sdk_core_config
 
 from .corpus import build_corpus
 from .gold import GOLD_VERSION, load_gold
@@ -25,12 +27,10 @@ def predict_samples(
 ) -> list[list[tuple[int, int, str]]]:
     """Run detect_all over samples under the requested NER engine.
 
-    The NER engine is a process-global lazy singleton keyed off the env var at
-    first load. Reset it (and restore afterward) so switching engines in one
-    process actually takes effect and the benchmark never pollutes other tests.
+    One immutable SDK profile governs the run. The explicit benchmark engine
+    overrides only the engine name; environment and canonical caches stay intact.
     """
-    from amphrang.engine.detectors import tb_detector
-    from amphrang.engine.detectors.aggregate import detect_all
+    from pii_redactor.detectors.aggregate import detect_all
 
     env_by_engine = {
         "crf": "thainer",
@@ -40,30 +40,20 @@ def predict_samples(
     }
     if engine not in env_by_engine:
         raise ValueError(f"unknown engine {engine!r}; supported: {sorted(env_by_engine)}")
-    prev_env = os.environ.get("AMPHRANG_NER_ENGINE")
-    prev_ner = dict(tb_detector._ner_cache)
-    os.environ["AMPHRANG_NER_ENGINE"] = env_by_engine[engine]
-    tb_detector._ner_cache = {}
-    try:
-        return [
-            [
-                (e.span[0], e.span[1], e.data_type)
-                for e in detect_all(s.text, ner_diagnostics=diagnostics)
-            ]
-            for s in samples
+    config = replace(sdk_core_config(), engine=env_by_engine[engine])
+    return [
+        [
+            (e.span[0], e.span[1], e.data_type)
+            for e in detect_all(s.text, ner_diagnostics=diagnostics, config=config)
         ]
-    finally:
-        tb_detector._ner_cache = prev_ner
-        if prev_env is None:
-            os.environ.pop("AMPHRANG_NER_ENGINE", None)
-        else:
-            os.environ["AMPHRANG_NER_ENGINE"] = prev_env
+        for s in samples
+    ]
 
 
 def run_benchmark(
     engine: str = "crf", seed: int = 42, size: int = 200, source: str = "synthetic"
 ) -> dict:
-    from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics
+    from pii_redactor.detectors.tb_detector import NERChunkDiagnostics
 
     samples = load_gold() if source == "gold" else build_corpus(seed=seed, size=size)
     diagnostics = NERChunkDiagnostics()
@@ -135,36 +125,25 @@ def render_table(report: dict) -> str:
 def run_strategy_comparison(source: str = "synthetic", seed: int = 42, size: int = 200) -> dict:
     """Score four NER strategies (crf, wcb, union, route) on one corpus.
 
-    Runs each engine once over the corpus (resetting the process-global NER
-    singleton, as run_benchmark does), composes union/route per sample, and
-    scores all four with the shared scorer.
+    Runs each engine once with the same SDK profile, composes union/route per
+    sample, and scores all four with the shared scorer.
     """
-    from amphrang.engine.detectors import tb_detector
-    from amphrang.engine.detectors.aggregate import detect_all
+    from pii_redactor.detectors.aggregate import detect_all
 
     from .strategies import route_entities, union_entities
 
     samples = load_gold() if source == "gold" else build_corpus(seed=seed, size=size)
+    profile = sdk_core_config()
 
     def _run(engine_env: str):
-        from amphrang.engine.detectors.tb_detector import NERChunkDiagnostics
+        from pii_redactor.detectors.tb_detector import NERChunkDiagnostics
 
-        prev_ner = dict(tb_detector._ner_cache)
-        prev_env = os.environ.get("AMPHRANG_NER_ENGINE")
-        os.environ["AMPHRANG_NER_ENGINE"] = engine_env
-        tb_detector._ner_cache = {}
+        config = replace(profile, engine=engine_env)
         diagnostics = NERChunkDiagnostics()
-        try:
-            entities = [detect_all(s.text, ner_diagnostics=diagnostics) for s in samples]
-            if diagnostics.skipped:
-                raise BenchmarkIntegrityError(diagnostics.as_dict())
-            return entities, diagnostics.as_dict()
-        finally:
-            tb_detector._ner_cache = prev_ner
-            if prev_env is None:
-                os.environ.pop("AMPHRANG_NER_ENGINE", None)
-            else:
-                os.environ["AMPHRANG_NER_ENGINE"] = prev_env
+        entities = [detect_all(s.text, ner_diagnostics=diagnostics, config=config) for s in samples]
+        if diagnostics.skipped:
+            raise BenchmarkIntegrityError(diagnostics.as_dict())
+        return entities, diagnostics.as_dict()
 
     crf_ents, crf_chunks = _run("thainer")
     wcb_ents, wcb_chunks = _run("wangchanberta")

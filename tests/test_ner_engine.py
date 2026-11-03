@@ -148,20 +148,23 @@ def test_tner_without_credentials_fails_loudly(monkeypatch):
 
 
 def test_detect_resolves_the_selected_tner_engine_once(monkeypatch):
+    from pii_redactor import config as core_config
+    from pii_redactor.detectors import tner_client
+
     calls = []
 
     class EmptyTner:
         def tag(self, _text):
             return []
 
-    def resolve_once():
+    def resolve_once(cls, *args, **kwargs):
         calls.append("resolved")
         if len(calls) > 1:
             raise AssertionError("engine selection changed during one detection")
-        return "tner"
+        return core_config.CoreConfig(engine="tner", tner_api_key="synthetic-key")
 
-    monkeypatch.setattr(tb_detector, "_resolve_engine_name", resolve_once)
-    monkeypatch.setitem(tb_detector._ner_cache, "tner", EmptyTner())
+    monkeypatch.setattr(core_config.CoreConfig, "from_env", classmethod(resolve_once))
+    monkeypatch.setattr(tner_client, "TnerEngine", lambda *, api_key: EmptyTner())
 
     assert tb_detector.detect_tb("ข้อความทดสอบ") == []
     assert calls == ["resolved"]

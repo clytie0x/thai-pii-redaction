@@ -1,0 +1,23 @@
+{
+  "profile": "single_organization_production_v1",
+  "artifact": "REPLACE_WITH_IDENTITY_COMMAND_ARTIFACT_DIGEST",
+  "schema": "REPLACE_WITH_IDENTITY_COMMAND_SCHEMA_DIGEST",
+  "public_origin": "https://REPLACE_WITH_EXACT_ORIGIN",
+  "checkpoint_max_age": 300,
+  "checkpoint_max_events": 100,
+  "evidence": {
+    "tls_proxy": "PENDING_OWNER_ACCEPTANCE",
+    "database_runtime_role": "PENDING_OWNER_ACCEPTANCE",
+    "storage_acl": "PENDING_OWNER_ACCEPTANCE",
+    "secret_custody": "PENDING_OWNER_ACCEPTANCE",
+    "key_custody": "PENDING_OWNER_ACCEPTANCE",
+    "sink_custody": "PENDING_OWNER_ACCEPTANCE",
+    "backup_custody": "PENDING_OWNER_ACCEPTANCE",
+    "rpo_rto_drill": "PENDING_MEASURED_ACCEPTANCE",
+    "capacity": "PENDING_FROZEN_WORKLOAD",
+    "idp": "PENDING_REAL_IDP",
+    "release_scope": "PENDING_ALL_DECLARED_STOREFRONTS",
+    "image_inventory": "PENDING_EXACT_IMAGE",
+    "rollback": "PENDING_EXACT_ARTIFACT_AND_SCHEMA"
+  }
+}

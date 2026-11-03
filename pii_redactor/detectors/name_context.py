@@ -207,6 +207,7 @@ _ROLE_CUES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ผู้ป่วย", ("ใน", "นอก", "ราย", "ทุก", "ต้อง", "ควร", "ที่", "จะ", "ได้", "เรื้อรัง")),
     ("ผู้กู้", ("ร่วม", "ยืม", "ต้อง", "ควร")),
     ("มอบอำนาจให้", ("__require_space__",)),
+    ("มอบหมายให้", ("__require_space__",)),
     # Card/receipt issuance rows ("4024-... ออกให้ ปกรณ์เกียรติ ธนวัฒนา").
     # __require_space__ makes the glued forms (ออกให้แก่, ออกให้ทะเบียน)
     # no-ops — a stated recall cost on the แก่ form.
@@ -291,7 +292,8 @@ _ROSTER_HEADER_WINDOW = 300
 # A two-group Thai name immediately followed by a passport-format value or
 # the word passport (hotel/visa/tour rosters).
 _NAME_BEFORE_PASSPORT_RE = re.compile(
-    r"([ก-๛]{2,25})[ \t]([ก-๛]{2,25})[ \t]+(?=passport|[A-Z]{2}\d{7})"
+    r"([ก-๛]{2,25})[ \t]([ก-๛]{2,25})[ \t]+"
+    r"(?=passport|[A-Z]{2}\d{7}|ใบขับขี่|ใบอนุญาตขับ|[Dd]river'?s?[ \t]*[Ll]icen[cs]e)"
 )
 
 # Latin-script names: the Thai CRF never tags them. Cue-driven extraction

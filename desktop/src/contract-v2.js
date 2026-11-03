@@ -10,6 +10,8 @@ const SECTION26 = new Set([
   "CRIMINAL_RECORD",
   "DISABILITY",
   "LABOR_UNION",
+  "GENETIC",
+  "BIOMETRIC",
 ]);
 const GUARD_CATEGORIES = new Set([
   "instruction_override",
@@ -36,6 +38,8 @@ const QUASI_CATEGORIES = new Set([
   "province",
   "occupation",
   "religion",
+  "nationality",
+  "body_metrics",
 ]);
 const RECOMMENDATION_LEVELS = new Set(["high", "medium", "info"]);
 const RECOMMENDATION_TEMPLATES = {

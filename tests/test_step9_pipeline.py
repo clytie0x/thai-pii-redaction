@@ -57,6 +57,44 @@ def test_pipeline_with_email_roundtrip():
     assert "real.user@example.com" in result.reverse_result.text
 
 
+def test_pipeline_echo_rebuilds_owned_source_url():
+    source = "https://source.invalid/?phone=081-234-5678"
+    result = run_pipeline(text=source, provider=FakeLLMProvider(), salt="source-proof")
+    assert result.reverse_result.text == source
+    assert result.reverse_result.audit_summary["replaced_count"] == 1
+
+
+def test_pipeline_changed_url_does_not_rebuild_source(monkeypatch):
+    import pii_redactor.reverse_mapper as reverse_module
+
+    reverse_results = []
+    original_reverse = reverse_module.reverse_map
+
+    def record_reverse(*args, **kwargs):
+        result = original_reverse(*args, **kwargs)
+        reverse_results.append((args[0].text, result))
+        return result
+
+    monkeypatch.setattr(reverse_module, "reverse_map", record_reverse)
+
+    class ChangedDestination(AIProvider):
+        def complete(self, system, user, *, timeout=30.0):
+            return user.replace("source.invalid", "changed.invalid")
+
+    result = run_pipeline(
+        text="https://source.invalid/?phone=081-234-5678",
+        provider=ChangedDestination(),
+        salt="source-proof",
+    )
+    assert len(reverse_results) == 1
+    masked_text, reversed_result = reverse_results[0]
+    assert reversed_result.text == masked_text
+    assert reversed_result.audit_summary["replaced_count"] == 0
+    assert result.validation_result.layer1_pii_clean
+    assert not result.validation_result.layer2_completeness_ok
+    assert not result.validation_result.halt
+
+
 def test_pipeline_pseudonymized_text_has_no_real_email():
     text = "Contact me at real.user@example.com for info."
     result = run_pipeline(text=text, provider=FakeLLMProvider())

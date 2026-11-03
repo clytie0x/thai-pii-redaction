@@ -86,6 +86,26 @@ Use `scripts\bump_version.py X.Y.Z` only for an approved release change. There
 is no package-manager metadata to update afterwards; releases are distributed as
 assets with `SHA256SUMS` and provenance.
 
+## Imported SDK and Hosted checks
+
+`.github/workflows/subtree-checks.yml` is the current command inventory. Keep SDK
+core, server-only and server/MCP profiles distinct; test the declared Windows
+and Python floor combinations. Run `uv lock --check`, the isolated subtree
+checks and explicit installed-artifact verification. The existing loose SDK
+`benchmark.perf --profile ci` gate does not replace the root time/RSS gate.
+
+The API collection uses the private tooling profile under `tools/sdk-api-checks`
+and `scripts/run_sdk_api_collection.py`. Missing assertions, omitted script tests,
+wrong HTTP status, foreign listener, failed cleanup or missing reports fail.
+Use only fresh ignored report paths and synthetic data. Read that profile's
+dependency-risk note before using it beyond the fixed fixture.
+
+Docker checks require the local Linux daemon. The Hosted simulator runs only
+`--job check --gitlab-network`; the SDK image gate uses owned network-none
+containers and fixed value-free probes. A source/unit check cannot close the
+actual-image gate. After direct canonical dependency migration, qualify both
+first-party artifacts and prohibit unrelated public-index fallback.
+
 ## Documentation-only
 
 Run `git diff --check`, verify every relative link and command touched, and

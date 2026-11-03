@@ -354,3 +354,210 @@ def test_reverse_map_repeated_pii_no_false_incomplete():
     assert "[ชื่อ_1]" not in result.text
     incomplete = [f for f in result.flags if "incomplete_reverse" in f]
     assert incomplete == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "https://example.invalid/?q=[Sensitive_1]",
+        "![image](relative/[Sensitive_1])",
+        "[label]: relative/[Sensitive_1]",
+        "[Sensitive_1]: https://example.invalid/",
+        '<a title=">" href="[Sensitive_1]">safe</a>',
+        "<!-- [Sensitive_1] -->",
+        "<script>const x = '[Sensitive_1]';</script>",
+        "<style>a{content:'[Sensitive_1]'}</style>",
+        '<a href="unterminated [Sensitive_1]',
+        "[label](nested(one/[Sensitive_1])",
+    ],
+)
+def test_reverse_map_keeps_machine_context_opaque(text):
+    vault = _make_vault_with_mapping("[Sensitive_1]", "synthetic-original")
+    result = reverse_map(
+        _make_ai_response(text), EntityRegistry(entities=[], fp_count=0, tb_count=0), vault
+    )
+    assert result.text == text
+    assert result.restored_ranges == ()
+    assert result.audit_summary["replaced_count"] == 0
+
+
+def test_reverse_map_mixed_occurrences_keep_distinct_replacement_count():
+    vault = _make_vault_with_mapping("[Sensitive_1]", "synthetic-original")
+    result = reverse_map(
+        _make_ai_response("[Sensitive_1] https://example.invalid/[Sensitive_1]"),
+        EntityRegistry(entities=[], fp_count=0, tb_count=0),
+        vault,
+    )
+    assert result.text == "synthetic-original https://example.invalid/[Sensitive_1]"
+    assert result.audit_summary["replaced_count"] == 1
+    assert result.flags == ["pseudonym_residue:1"]
+
+
+def test_reverse_map_source_rebuild_only_exempts_exact_occurrence():
+    token = "[Sensitive_1]"
+    text = f"🙂 ก https://example.invalid/{token}/{token}"
+    start = text.index(token)
+    vault = _make_vault_with_mapping(token, "synthetic-original")
+    result = reverse_map(
+        _make_ai_response(text),
+        EntityRegistry(entities=[], fp_count=0, tb_count=0),
+        vault,
+        _source_rebuild_ranges=frozenset({(start, start + len(token))}),
+    )
+    assert result.text == "🙂 ก https://example.invalid/synthetic-original/[Sensitive_1]"
+
+
+@pytest.mark.parametrize("offset", [-1, 1])
+def test_reverse_map_source_rebuild_rejects_nonmatching_range(offset):
+    token = "[Sensitive_1]"
+    text = f"https://example.invalid/{token}"
+    start = text.index(token)
+    vault = _make_vault_with_mapping(token, "synthetic-original")
+    result = reverse_map(
+        _make_ai_response(text),
+        EntityRegistry(entities=[], fp_count=0, tb_count=0),
+        vault,
+        _source_rebuild_ranges=frozenset({(start + offset, start + len(token))}),
+    )
+    assert result.text == text
+
+
+def test_reverse_map_source_rebuild_rejects_bool_offsets():
+    vault = _make_vault_with_mapping("[Sensitive_1]", "synthetic-original")
+    text = "<[Sensitive_1]>"
+    result = reverse_map(
+        _make_ai_response(text),
+        EntityRegistry(entities=[], fp_count=0, tb_count=0),
+        vault,
+        _source_rebuild_ranges=frozenset({(True, len(text) - 1)}),
+    )
+    assert result.text == text
+
+
+def test_reverse_map_surrogate_scheme_is_protected():
+    vault = _make_vault_with_mapping("synthetic", "original")
+    result = reverse_map(
+        _make_ai_response("synthetic://example.invalid/"),
+        EntityRegistry(entities=[], fp_count=0, tb_count=0),
+        vault,
+    )
+    assert result.text == "synthetic://example.invalid/"
+
+
+@pytest.mark.parametrize(
+    "mac", ["82:40:32:e4:61:23", "aa:bb:cc:dd:ee:ff", "82:40:32:44:61:23", "82-40-32-e4-61-23"]
+)
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        "{}",
+        "MAC {}",
+        "MAC: {}",
+        "MAC={}",
+        "({}).",
+        "{}, next",
+        "[{}]",
+        "[{}](/destination)",
+        "[label]: /url\n{}",
+    ],
+)
+def test_reverse_map_known_mac_scalar_preserves_plaintext_restoration(mac, wrapper):
+    vault = _make_vault_with_mapping(mac, "02:00:00:00:00:01", data_type="MAC_ADDRESS")
+    text = wrapper.format(mac)
+    result = reverse_map(
+        _make_ai_response(text), EntityRegistry(entities=[], fp_count=0, tb_count=0), vault
+    )
+    assert result.text == wrapper.format("02:00:00:00:00:01")
+    assert result.audit_summary["replaced_count"] == 1
+
+
+@pytest.mark.parametrize("mac", ["82:40:32:e4:61:23", "82:40:32:44:61:23"])
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        "https://example.invalid/{}",
+        "custom:{}",
+        "custom://{}",
+        "opaque+v1:{}",
+        "www.example.invalid/{}",
+        '<a href="{}">safe</a>',
+        "[label](relative/{})",
+        "[label]: {}",
+        "[{}]: /destination",
+        "[first\n{}]: /destination",
+        "[label]:\n{}",
+        '[label]: /destination\n "title {}"',
+        "<script>const value='{}';</script>",
+        "<style>p{{content:'{}'}}</style>",
+        "<!-- {} -->",
+        "{}/path",
+        "{}?query=value",
+        "{}#fragment",
+        "{}:attachment",
+        "{}://example.invalid/",
+    ],
+)
+def test_reverse_map_known_mac_keeps_machine_context_and_uri_attachments_opaque(mac, wrapper):
+    vault = _make_vault_with_mapping(mac, "02:00:00:00:00:01", data_type="MAC_ADDRESS")
+    text = wrapper.format(mac)
+    result = reverse_map(
+        _make_ai_response(text), EntityRegistry(entities=[], fp_count=0, tb_count=0), vault
+    )
+    assert result.text == text
+    assert result.restored_ranges == ()
+    assert result.audit_summary["replaced_count"] == 0
+
+
+def test_reverse_map_known_mac_scalar_and_machine_occurrence_count_stays_distinct():
+    mac = "82:40:32:e4:61:23"
+    vault = _make_vault_with_mapping(mac, "02:00:00:00:00:01", data_type="MAC_ADDRESS")
+    result = reverse_map(
+        _make_ai_response(f"MAC {mac}, https://example.invalid/{mac}"),
+        EntityRegistry(entities=[], fp_count=0, tb_count=0),
+        vault,
+    )
+    assert result.text == f"MAC 02:00:00:00:00:01, https://example.invalid/{mac}"
+    assert result.audit_summary["replaced_count"] == 1
+
+
+def test_reverse_map_mac_type_and_incomplete_mac_shape_do_not_grant_scalar_status():
+    value = "aa:bb:cc:dd:ee:ff:extra"
+    vault = _make_vault_with_mapping(value, "synthetic-original", data_type="MAC_ADDRESS")
+    result = reverse_map(
+        _make_ai_response(value), EntityRegistry(entities=[], fp_count=0, tb_count=0), vault
+    )
+    assert result.text == value
+
+
+@pytest.mark.parametrize("mac", ["82:40:32:e4:61:23", "aa:bb:cc:dd:ee:ff", "82:40:32:44:61:23"])
+@pytest.mark.parametrize("prefix", ["opaque.", "opaque+", "opaque-", "opaque.+"])
+@pytest.mark.parametrize(
+    "wrapper",
+    [
+        "{}",
+        "[ref]: /destination\n{}",
+        "[ref]:\n{}",
+        '[ref]: /destination\n "{}"',
+        "> [ref]: /destination\n> {}",
+    ],
+)
+def test_reverse_map_mac_atom_never_erases_a_pending_uri_scheme(mac, prefix, wrapper):
+    vault = _make_vault_with_mapping(mac, "02:00:00:00:00:01", data_type="MAC_ADDRESS")
+    vault.write(
+        VaultRecord(
+            entity_id=str(uuid.uuid4()),
+            original="synthetic-original",
+            pseudonym="[Sensitive_1]",
+            type="TB",
+            data_type="NAME",
+            span=(0, 18),
+            timestamp=time.monotonic(),
+        )
+    )
+    text = wrapper.format(prefix + mac + "[Sensitive_1]")
+    result = reverse_map(
+        _make_ai_response(text), EntityRegistry(entities=[], fp_count=0, tb_count=0), vault
+    )
+    assert result.text == text
+    assert result.restored_ranges == ()
+    assert result.audit_summary["replaced_count"] == 0

@@ -7,6 +7,14 @@ Paper title:
 The study stays frozen at gold-v3 and system commit
 `d93d10b17be6783d5c684cb47f25d4156ed6fb4b`.
 
+History portability correction (2026-10-31): that historical private SHA does
+not resolve in the restored repository. The exact gold-v3 bytes are reachable
+at `61cde3ba1322597411957d3332d742c04d0c16eb`, verified against the unchanged
+review packet's corpus SHA-256
+`d2591229e0bae20d27e5a8a20aa5b41ee3cc18622a54dd39b2a2c363f761fd5d`.
+The loader uses this reachable commit and enforces the hash. This restores
+corpus loading only; it does not rebind or rerun the historical system score.
+
 ## Evidence
 
 - `evidence/gold-v3-crf.json`: main system score, document bootstrap CI,

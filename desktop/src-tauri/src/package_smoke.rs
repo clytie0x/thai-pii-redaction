@@ -110,6 +110,74 @@ impl PackageSmokeFailure {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PackageSmokeFailureReason {
+    ApiRejected,
+    AssertionFailed,
+    UnexpectedError,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PackageSmokeApiCode {
+    BrokerBusy,
+    BrokerIncompatible,
+    BrokerUnauthorized,
+    BrokerUnavailable,
+    OperationTimeout,
+    SessionUnavailable,
+    PayloadTooLarge,
+    DocumentInvalid,
+    ResidualPii,
+    ProviderConfiguration,
+    ProviderUnavailable,
+    ProviderRejected,
+    ProviderResponseInvalid,
+    NerUnavailable,
+    NerIncomplete,
+    OcrUnavailable,
+    DependencyUnavailable,
+    RestoreFailed,
+    RequestInvalid,
+    OperationFailed,
+    Unknown,
+    NotApplicable,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(
+    deny_unknown_fields,
+    rename_all(serialize = "snake_case", deserialize = "camelCase")
+)]
+pub struct PackageSmokeDiagnostic {
+    reason: PackageSmokeFailureReason,
+    api_code: PackageSmokeApiCode,
+    session_invalidated: bool,
+    restart_required: bool,
+}
+
+impl PackageSmokeDiagnostic {
+    fn is_consistent(&self) -> bool {
+        match self.reason {
+            PackageSmokeFailureReason::ApiRejected => {
+                !matches!(self.api_code, PackageSmokeApiCode::NotApplicable)
+            }
+            _ => {
+                matches!(self.api_code, PackageSmokeApiCode::NotApplicable)
+                    && !self.session_invalidated
+                    && !self.restart_required
+            }
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct PackageSmokeFailureEvidence {
+    stage: PackageSmokeFailure,
+    diagnostic: PackageSmokeDiagnostic,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(
     deny_unknown_fields,
     rename_all(serialize = "snake_case", deserialize = "camelCase")
@@ -437,9 +505,25 @@ pub async fn desktop_package_smoke_finish(app: AppHandle, evidence: PackageSmoke
 }
 
 #[tauri::command]
-pub async fn desktop_package_smoke_fail(app: AppHandle, stage: PackageSmokeFailure) {
+pub async fn desktop_package_smoke_fail(
+    app: AppHandle,
+    stage: PackageSmokeFailure,
+    diagnostic: Option<PackageSmokeDiagnostic>,
+) {
     if requested() {
-        let _ = write_marker(PackageSmokeMarker::Failure, stage.as_str().as_bytes());
+        match diagnostic {
+            Some(diagnostic) if diagnostic.is_consistent() => {
+                if let Ok(encoded) =
+                    serde_json::to_vec(&PackageSmokeFailureEvidence { stage, diagnostic })
+                {
+                    let _ = write_marker(PackageSmokeMarker::Failure, &encoded);
+                }
+            }
+            None => {
+                let _ = write_marker(PackageSmokeMarker::Failure, stage.as_str().as_bytes());
+            }
+            Some(_) => {}
+        }
     }
     shutdown_and_exit(app, 75).await;
 }
@@ -524,6 +608,68 @@ mod tests {
             PackageSmokeFailure::WebviewProcess.as_str(),
             "webview_process"
         );
+        let diagnostic: PackageSmokeDiagnostic = serde_json::from_value(serde_json::json!({
+            "reason": "api_rejected",
+            "apiCode": "broker_busy",
+            "sessionInvalidated": false,
+            "restartRequired": true
+        }))
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(PackageSmokeFailureEvidence {
+                stage: PackageSmokeFailure::Analyze,
+                diagnostic,
+            })
+            .unwrap(),
+            serde_json::json!({
+                "stage": "analyze",
+                "diagnostic": {
+                    "reason": "api_rejected",
+                    "api_code": "broker_busy",
+                    "session_invalidated": false,
+                    "restart_required": true
+                }
+            })
+        );
+        for field in [
+            "reason",
+            "apiCode",
+            "sessionInvalidated",
+            "restartRequired",
+            "body",
+        ] {
+            let mut value = serde_json::json!({
+                "reason": "api_rejected",
+                "apiCode": "operation_failed",
+                "sessionInvalidated": false,
+                "restartRequired": true
+            });
+            value[field] = serde_json::json!("private detail");
+            assert!(serde_json::from_value::<PackageSmokeDiagnostic>(value).is_err());
+        }
+    }
+
+    #[test]
+    fn failure_diagnostics_reject_inconsistent_reason_and_api_state() {
+        for (reason, api_code, invalidated, restart, expected) in [
+            ("api_rejected", "unknown", false, false, true),
+            ("api_rejected", "operation_failed", true, true, true),
+            ("assertion_failed", "not_applicable", false, false, true),
+            ("unexpected_error", "not_applicable", false, false, true),
+            ("api_rejected", "not_applicable", false, false, false),
+            ("assertion_failed", "broker_busy", false, false, false),
+            ("assertion_failed", "not_applicable", true, false, false),
+            ("unexpected_error", "not_applicable", false, true, false),
+        ] {
+            let diagnostic: PackageSmokeDiagnostic = serde_json::from_value(serde_json::json!({
+                "reason": reason,
+                "apiCode": api_code,
+                "sessionInvalidated": invalidated,
+                "restartRequired": restart,
+            }))
+            .unwrap();
+            assert_eq!(diagnostic.is_consistent(), expected);
+        }
     }
 
     #[test]

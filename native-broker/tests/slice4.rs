@@ -1028,12 +1028,12 @@ fn simultaneous_start_live_operations_restart_and_resource_cycles_are_fail_close
         Duration::from_secs(5),
     )
     .unwrap();
-    existing.health().unwrap();
+    health_until_ready(&mut existing, Duration::from_secs(5)).unwrap();
     drop(existing);
     let mut primary = clients.remove(0);
     let secondary = Arc::new(Mutex::new(clients.remove(0)));
-    primary.health().unwrap();
-    secondary.lock().unwrap().health().unwrap();
+    health_until_ready(&mut primary, Duration::from_secs(5)).unwrap();
+    health_until_ready(&mut secondary.lock().unwrap(), Duration::from_secs(5)).unwrap();
 
     let first_scope = primary.open_scope(DesktopScopeKind::Ui).unwrap();
     let second_scope = secondary
@@ -1269,7 +1269,7 @@ fn simultaneous_start_live_operations_restart_and_resource_cycles_are_fail_close
         },
     )
     .unwrap();
-    restarted.health().unwrap();
+    health_until_ready(&mut restarted, Duration::from_secs(5)).unwrap();
     let new_scope = restarted.open_scope(DesktopScopeKind::Ui).unwrap();
     let generation_stale = restarted
         .reidentify(&new_scope, &pre_restart_session, "[PHONE_1]")
@@ -1343,6 +1343,9 @@ where
     let mut child = child.lock().unwrap().take().into_iter().collect::<Vec<_>>();
     reap_brokers(&mut child);
     remove_temp_tree(&endpoint_root);
+    assert!(child
+        .iter_mut()
+        .all(|child| child.try_wait().unwrap().unwrap().success()));
     error
 }
 
@@ -1370,8 +1373,9 @@ fn incompatible_broker_and_native_faults_are_fixed_terminal_and_never_replayed()
     assert!(after.session_invalidated());
     assert_fixed_error(&after);
 
-    let malformed =
-        run_connected_fault("malformed_response", |client| client.health().unwrap_err());
+    let malformed = run_connected_fault("malformed_response", |client| {
+        health_until_ready(client, Duration::from_secs(1)).unwrap_err()
+    });
     assert_eq!(malformed.code(), "request_invalid");
     assert!(malformed.connection_invalidated());
     assert_fixed_error(&malformed);
@@ -1391,6 +1395,14 @@ fn incompatible_broker_and_native_faults_are_fixed_terminal_and_never_replayed()
         busy
     });
     assert_fixed_error(&transient_busy);
+
+    let expired_busy = run_connected_fault("busy_then_health", |client| {
+        health_until_ready(client, Duration::ZERO).unwrap_err()
+    });
+    assert_eq!(expired_busy.code(), "broker_busy");
+    assert!(!expired_busy.connection_invalidated());
+    assert!(!expired_busy.session_invalidated());
+    assert_fixed_error(&expired_busy);
 
     let timeout = run_connected_fault("operation_timeout", |client| client.health().unwrap_err());
     assert_eq!(timeout.code(), "operation_timeout");
@@ -1818,8 +1830,11 @@ fn run_authenticated_fault_broker(
         let raw = connection
             .stream_mut()
             .read_frame(max_frame_bytes(), Duration::from_secs(10))
-            .unwrap()
             .unwrap();
+        let Some(raw) = raw else {
+            assert!(mode == "busy_then_health" && request_ids.len() == 1);
+            return;
+        };
         let request = validate_request(&raw, &mut state, false).unwrap();
         assert!(request_ids.insert(request.request_id.clone()));
 
@@ -1866,7 +1881,8 @@ fn run_authenticated_fault_broker(
         match mode {
             "busy_then_health" => {
                 assert_eq!(request.operation, "broker_health");
-                let response = if request_ids.len() == 1 {
+                // The readiness helper must also receive a busy response.
+                let response = if request_ids.len() <= 2 {
                     error_message("broker_busy", Some(&request.request_id), 1).unwrap()
                 } else {
                     success_message(
@@ -1882,7 +1898,7 @@ fn run_authenticated_fault_broker(
                     .stream_mut()
                     .write_value(&response, max_frame_bytes(), Duration::from_secs(5))
                     .unwrap();
-                if request_ids.len() == 1 {
+                if request_ids.len() <= 2 {
                     continue;
                 }
                 assert!(connection

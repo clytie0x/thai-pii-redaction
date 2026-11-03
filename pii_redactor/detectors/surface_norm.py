@@ -8,9 +8,24 @@ text, including the characters that were skipped.
 
 from __future__ import annotations
 
+import re
+
 _ZERO_WIDTH = frozenset("\u200b\u200c\ufeff\u2060")
 _DIGIT_FOLD = {ord("๐") + offset: ord("0") + offset for offset in range(10)}
 _DIGIT_FOLD.update({0x0660 + offset: ord("0") + offset for offset in range(10)})
+_SURFACE_TRANSLATION = {**_DIGIT_FOLD, **{ord(char): None for char in _ZERO_WIDTH}}
+_SPACE_RUN = re.compile(" +")
+
+
+def _has_digit_padding(text: str) -> bool:
+    for match in _SPACE_RUN.finditer(text):
+        previous = text[match.start() - 1] if match.start() else ""
+        following = text[match.end()] if match.end() < len(text) else ""
+        if previous.isdigit() and (following.isdigit() or following == "-"):
+            return True
+        if previous == "-" and following.isdigit():
+            return True
+    return False
 
 
 def _fold(char: str) -> str:
@@ -22,6 +37,9 @@ def _fold(char: str) -> str:
 
 def normalize_surface(text: str) -> tuple[str, list[int]]:
     """Return folded text and the original index of each folded character."""
+    # Keep the common unchanged path out of the Python character loop.
+    if text.translate(_SURFACE_TRANSLATION) == text and not _has_digit_padding(text):
+        return text, list(range(len(text)))
     kept: list[tuple[str, int]] = []
     for index, char in enumerate(text):
         if char in _ZERO_WIDTH:

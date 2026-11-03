@@ -5,14 +5,20 @@ and public GitHub Release. The hosted API contract has its own
 `contract_version`; a product release does not automatically break that
 contract.
 
-**Platform scope since 3.0.0.** The release matrix builds Windows and macOS
+**Current source line:** product, Hosted source and SDK are 0.1.0 under the
+[accepted reset](decisions/2026-10-19-version-reset.md). Archived 2.x/3.x assets
+are historical. Recorded Hosted production remains a separately verified
+deployment identity, not a source-version inference. The M0-M12 authorization
+allows preparation, not an unspecified production promotion or public release.
+
+**Current platform scope.** The release matrix builds Windows and macOS
 only. `desktop/src-tauri/tauri.conf.json` no longer lists `deb` or `appimage`
 as bundle targets, `latest.json` carries no `linux-x86_64` entry, and
 `scripts/check_release_assets.py` no longer requires the Linux assets. The
 Linux sections further down still describe live, tested code: the bundling
 helpers, the AppImage finalizer, and the DEB maintainer scripts were kept so
-Linux packaging can be restored without recertifying the lifecycle. They simply
-do not run for a release today.
+Linux packaging can be evaluated again. They do not run for a release today;
+re-enabling Linux requires fresh candidate-specific packaging/lifecycle evidence.
 
 ## Sources of truth
 
@@ -54,17 +60,18 @@ Branch CI can build unpublished package candidates and exercise bounded smoke
 paths. Those jobs do not create or publish a GitHub Release. The Release
 workflow also has a manual pre-tag mode: it accepts only an exact 40-character
 commit SHA, checks out and verifies that commit, builds the same updater-signed
-production artifact set on all three platforms, and retains the packages plus a
+production artifact set on the current Windows/macOS matrix, and retains the packages plus a
 closed machine-readable source/tree/run-bound manifest as workflow artifacts. It does not create a
 tag or Release. The same build jobs now black-box the non-feature-gated final
-packages before staging them: NSIS is silently installed and removed, DEB is
-installed and removed with `dpkg`, both macOS payload forms are launched, and
-the finalized AppImage is launched through extract-and-run plus FUSE when the
-runner exposes it. Each launch must observe the manifest-matched production
+packages before staging them: NSIS is silently installed and removed and both
+macOS payload forms are launched. Each launch must observe the manifest-matched production
 Desktop, broker, and backend process chain and clean it up. These bounded
 release checks complement, rather than replace, the deeper feature-gated Slice
 6 install/repair/upgrade/interruption lifecycle. Treat every result according
-to the exact evidence class recorded for it. A distributable AppImage must pass the
+to the exact evidence class recorded for it.
+
+The following retained Linux helper requirements are historical and apply only
+if Linux packaging is explicitly re-enabled and requalified. A distributable AppImage must pass the
 checksum-pinned post-`linuxdeploy` finalizer before smoke, hashing, signing, or
 upload. For the pinned no-sign/no-update build, that gate permits only the
 single non-executable, non-overlapping 16-byte `.digest_md5` rewrite defined by
@@ -90,11 +97,13 @@ never substitutes for FUSE evidence.
 Docs-only commits do not require a tag. Development commits after a release stay
 under `Unreleased` until the next release-preparation branch chooses the version.
 
-Published product versions are monotonic and are never reset to `0.1.0` in the
-same distribution identity. A separately deployed AI for Thai service may adopt
-its own line only after an independent service-version source is implemented;
-the current sibling port inherits the product version. See
-[the versioning proposal](versioning-proposal.md).
+The owner accepted restarting source versions at `0.1.0`; the prior recommendation
+against reset is superseded by the accepted decision above. Before 1.0.0, an
+incompatible change bumps the minor version; other changes bump the patch.
+Development/acceptance work does not bump versions. Archived 3.x clients do not
+automatically downgrade to 0.x; distribution identity/update migration remains
+explicit. Imported Hosted and SDK keep their own VERSION sources. Source
+metadata does not change production without a separately accepted deployment.
 
 ## Release preparation branch
 
@@ -139,7 +148,7 @@ Rules:
 In tag mode, the release workflow verifies the tag/version/changelog
 relationship (including an empty `Unreleased` section), builds each platform
 artifact, production-smokes it, and creates a draft release. The checksums job
-downloads the nine Desktop files from the same workflow run, binds their names,
+downloads the exact expected Desktop files from the same workflow run, binds their names,
 sizes, SHA-256 digests, source commit/tree, run ID, and attempt in a closed build
 manifest, then resolves exactly one draft by tag. It regenerates `latest.json`
 from that draft's exact asset IDs, rejects every extra or missing asset, and
@@ -147,7 +156,7 @@ requires the downloaded draft bytes to match the current-run manifest before
 and after uploading `SHA256SUMS`. Only that redownloaded closed set receives
 GitHub provenance. A same-version filename or reused draft is not evidence.
 
-On Linux, five Tauri bundling helpers are fetched through immutable URLs,
+Retained Linux path (not in the current release matrix): five Tauri bundling helpers are fetched through immutable URLs,
 verified by size and SHA-256, normalized for Tauri's documented three-byte
 `linuxdeploy` header patch, and preseeded into a closed cache. The cache must be
 unchanged after bundling. The action then runs through
@@ -161,15 +170,12 @@ action can discover or upload it. Release notes come from the exact dated
 
 The draft remains unpublished until the maintainer verifies:
 
-- all expected Windows/macOS/Linux assets and every expected updater/signature
+- all expected Windows/macOS assets and every expected updater/signature
   file are present, with no additional draft asset outside the closed set;
 - the tag workflow's current-run build manifest matches every downloadable
   Desktop byte and canonical `latest.json` matches the uploaded copy;
-- the exact final NSIS, both macOS payloads, DEB, and AppImage extract-and-run
-  production-package smoke checks pass (with FUSE status recorded separately);
-- every AppImage was finalized from the post-`linuxdeploy` AppDir and the exact
-  finalized file, not the raw Tauri output, was hashed and exercised through
-  the recorded outer-AppImage/verified-`AppRun` path;
+- the exact final NSIS and both macOS payload production-package smoke checks
+  pass; Linux checks apply only to an explicitly re-enabled Linux release;
 - the workflow is green on the tag;
 - checksums match downloaded artifacts;
 - `gh attestation verify` succeeds for representative artifacts;

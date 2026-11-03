@@ -67,7 +67,9 @@ model_cache/
 models/
 
 # Local agent workspaces and superseded private working notes
+.worktrees/
 .superpowers/
+.codex-remote-attachments/
 docs/superpowers/
 docs/submission/
 docs/demo/

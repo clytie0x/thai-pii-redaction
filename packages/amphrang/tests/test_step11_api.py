@@ -242,8 +242,9 @@ def test_sanitize_token_mode_unchanged(client):
 
 
 def test_shutdown_endpoint_returns_ack(monkeypatch):
+    from pii_redactor.session_service import SessionService
+
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
     called = {}
 
@@ -251,7 +252,7 @@ def test_shutdown_endpoint_returns_ack(monkeypatch):
         called["scheduled"] = True
 
     monkeypatch.setattr(server, "_schedule_exit", fake_schedule_exit)
-    monkeypatch.setattr(server, "SERVICE", SessionService())
+    monkeypatch.setattr(server, "SERVICE", SessionService(config=server._CORE_CONFIG))
 
     from fastapi.testclient import TestClient
 
@@ -285,11 +286,11 @@ def test_sanitize_api_stage_failure_preserves_complete_session_state(
     stage,
 ):
     from fastapi import HTTPException
+    from pii_redactor.session_service import SessionService
 
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
-    service = SessionService(now_fn=lambda: 1000.0)
+    service = SessionService(now_fn=lambda: 1000.0, config=server._CORE_CONFIG)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
     existing = service.sanitize("โทร 081-234-5678") if with_existing_session else None
@@ -336,14 +337,14 @@ def test_sanitize_api_stage_failure_preserves_complete_session_state(
 
 
 def test_blocked_sanitize_audit_failure_drops_retained_exception(monkeypatch):
+    import pii_redactor.session_service as session_module
     from fastapi import HTTPException
+    from pii_redactor.session_service import SessionService
 
-    import amphrang.engine.session_service as session_module
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
     retained_error = RuntimeError("synthetic blocked audit failure")
-    service = SessionService()
+    service = SessionService(config=server._CORE_CONFIG)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(
         session_module,
@@ -369,12 +370,12 @@ def test_blocked_sanitize_audit_failure_drops_retained_exception(monkeypatch):
 @pytest.mark.parametrize("hostile_detail", [False, True])
 def test_untrusted_downstream_http_exception_becomes_fixed_500(monkeypatch, hostile_detail):
     from fastapi import HTTPException
+    from pii_redactor.session_service import SessionService
 
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
     private_marker = "SYNTHETIC_PRIVATE_HTTP_DETAIL"
-    service = SessionService()
+    service = SessionService(config=server._CORE_CONFIG)
     seeded = service.sanitize("โทร 081-234-5678")
     monkeypatch.setattr(server, "SERVICE", service)
 
@@ -422,11 +423,11 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
     stdout_mode,
 ):
     from fastapi.testclient import TestClient
+    from pii_redactor.session_service import SessionService
 
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
-    service = SessionService(now_fn=lambda: 1000.0)
+    service = SessionService(now_fn=lambda: 1000.0, config=server._CORE_CONFIG)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
@@ -434,6 +435,7 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
         monkeypatch.setenv("AMPHRANG_AUDIT_STDOUT", "1")
     else:
         monkeypatch.delenv("AMPHRANG_AUDIT_STDOUT", raising=False)
+    monkeypatch.setattr(server, "_AUDIT_CONFIG", server.sdk_audit_config())
 
     response = TestClient(
         server.app,
@@ -470,14 +472,14 @@ def test_sanitize_audit_uses_operation_id_without_mapping_material(
 
 
 def test_blocked_sanitize_audit_is_safe_and_non_authorizing(tmp_path, monkeypatch):
+    import pii_redactor.session_service as service_module
     from fastapi.testclient import TestClient
+    from pii_redactor.models import Entity
+    from pii_redactor.session_service import SessionService
 
-    import amphrang.engine.session_service as service_module
     import amphrang.server.server as server
-    from amphrang.engine.models import Entity
-    from amphrang.engine.session_service import SessionService
 
-    service = SessionService(now_fn=lambda: 1000.0)
+    service = SessionService(now_fn=lambda: 1000.0, config=server._CORE_CONFIG)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))
@@ -525,13 +527,13 @@ def test_detector_independent_sanitize_block_is_safe_and_transactional(
     tmp_path,
     monkeypatch,
 ):
+    import pii_redactor.session_service as service_module
     from fastapi.testclient import TestClient
+    from pii_redactor.session_service import SessionService
 
-    import amphrang.engine.session_service as service_module
     import amphrang.server.server as server
-    from amphrang.engine.session_service import SessionService
 
-    service = SessionService(now_fn=lambda: 1000.0)
+    service = SessionService(now_fn=lambda: 1000.0, config=server._CORE_CONFIG)
     monkeypatch.setattr(server, "SERVICE", service)
     monkeypatch.setattr(server, "_API_KEY", None)
     monkeypatch.setattr(server, "_get_audit_log_dir", lambda: str(tmp_path))

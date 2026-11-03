@@ -27,6 +27,11 @@ repository starts telling three different stories.
 from this map or a storefront named here has no status row, so a new lane cannot
 be added without appearing in both.
 
+`tools/sdk-api-checks/` holds the private, locked development CLI profile for
+the existing synthetic SDK API collection. The owned server/report harness
+lives in `scripts/run_sdk_api_collection.py`; this tool profile is not a product
+runtime dependency or a general-purpose sandbox.
+
 ## Environment Setup
 
 Windows console is cp1252 by default - set UTF-8 before every Python invocation:
@@ -126,16 +131,28 @@ fallback.
 ## Architecture: "Single Brain, Multiple Storefronts"
 
 One shared Python core/backend implementation (`pii_redactor/` plus the
-applicable adapter) is reused by five storefronts. This is a code-ownership
+applicable adapter) is reused by the declared storefronts. This is a code-ownership
 boundary, not a claim that every storefront shares one process or transport:
 
 | Storefront | Entry point |
 |---|---|
 | Browser extension (primary UI) | `extension/` (MV3: one service-worker-owned `connectNative` port, separate per-tab/per-panel broker scopes, strict sender/result validation, no handle in content/panel JavaScript, and fail-closed disconnect/restart state; in-page Mask/Restore on ChatGPT/Claude/Gemini/Grok/Perplexity/GLM·Z.ai plus a docked side panel. Restore renders in a closed shadow root.) |
 | CLI | `demo_cli.py`, `ai_guard.py` |
+| Enterprise application | `python -m app.enterprise` for offline migrate/enroll/check, guarded serving and explicit `work-once`; `app/enterprise/` owns separate staff/subject OIDC, scoped BFF/API/Thai pages and protected operator commands. `pii_redactor/governance/` owns PostgreSQL authority, registry, consent, encrypted collections, execution, retention/holds, rights/delivery, reviewed processing controls and recovery. It does not persist local reversible vault mappings. |
+| Python SDK | `packages/amphrang/amphrang/` keeps its public Python/Session/batch/CLI and HTTP/MCP/proxy adapters while calling canonical `pii_redactor` operations through captured SDK configuration. Its 29 internal engine modules are thin aliases; the sensitive-span engine copy is removed. |
+| Hosted application | `apps/hosted/core/` keeps the AI for Thai gateway/auth/protected-Markdown adapters; `scripts/prepare_hosted_core.py` prepares an offline context from a supplied canonical wheel, trusted dependency wheelhouse and model assets. It does not maintain `core/app/` or `core/pii_redactor/` source copies. |
 | Queue worker (provisional emulator) | `app/worker/` (`python -m app.worker`; job → stateless core; HTTP-poll transport and job schema are provisional local failure/retry fixtures, not the official AI for Thai delivery path; no PII in logs per VAULT-4; `docker compose --profile worker`) |
 | Desktop app | `desktop/` (Tauri: `src/` web UI, `src-tauri/` Rust shell, typed broker commands/client, tray, hotkeys, updater, and lifecycle cleanup). The webview invokes only fixed typed commands. Rust is admitted under protocol-v1 `desktop`, owns per-window `desktop_ui` and separate `desktop_hotkey` scopes, and has no direct backend/data-plane HTTP, provider implementation, Python-launch, port-discovery, backend-key, or fallback authority. The shared broker owns the private HTTP-v2 backend and Python remains the only product pipeline. The installed profile is fixed to local `thainer`; `fake` is available only to internal native conformance, not through a webview provider command. |
 | Microsoft 365 add-in | `office-addin/` (TypeScript task pane, Vite + Vitest, Node 22. `src/adapters/{word,excel,powerpoint}.ts` are host adapters behind one contract; `src/controller.ts` holds the shared Detect/Analyze/Mask/Restore flow; `src/api.ts` talks to the backend over an HTTPS localhost proxy; session state is memory-only. `scripts/*.mjs` validate the per-host manifests and package the unified manifest. Its `package.json`/`vitest.config.ts` are separate from the repo-root ones.) |
+
+`config/shared-core-qualification.json` names nine text profiles and their
+engine/input/span, warning, mapping and error boundaries. Root uses immutable
+`CoreConfig` snapshots; SDK captures `AMPHRANG_*` with remote detection disabled.
+Installed native clients keep the fixed local profile. Python SDK callers may
+own an explicit mapping; HTTP/MCP use opaque handles. MCP successful inspection
+or restoration can still return text, so the host's external-model exposure is
+a separate boundary. Hosted receives raw requests remotely and uses transient
+stateless protection; common code does not make its input device-local.
 
 The single machine-readable broker-v1 policy is
 `native-broker/protocol-v1.json`; `native_broker_protocol.py` and the Rust
@@ -229,12 +246,11 @@ never as direct callers. The CLI and provisional worker call shared `pii_redacto
 services through their own adapters rather than going through FastAPI. Main now also
 contains `app.hosted`, a strict-v2 generic hosted candidate with required
 API-key/provider configuration and a fixed seven-route allowlist. It is not the
-confirmed official route/lifecycle contract. The separate `aiguard-aift`
-platform port pins current core `8c6efef`; its public unversioned and `/v1`
-aliases proxy strict contract 2 and return minimized projections. No
-independent hosted service version is implemented. Its first push, public
-HTTPS/browser route, PDF correctness boundary, and official acceptance remain
-pending. The extension is the product's front door. Its service worker calls
+confirmed official route/lifecycle contract. The imported AI for Thai port lives
+in `apps/hosted/` and consumes a supplied canonical core wheel; historical
+pinned-core/deployment records do not describe the new image. Its public aliases,
+gateway and protected-Markdown adapters retain their own contracts and minimized
+projections. The extension is the product's front door. Its service worker calls
 only the registered native host; the fixed-port API remains API-only and `/`
 redirects to `/docs` (Swagger). The canonical token → original map lives
 in the backend's in-memory `SessionService` sessions
@@ -378,6 +394,18 @@ All 8 steps are wired together by `pii_redactor/pipeline.py`'s `run_pipeline()` 
 |---|---|
 | `app/http_v2.py` | Strict v2 response/error DTOs and extra-field rejection for main HTTP adapters |
 | `app/hosted.py` | Generic strict-v2 hosted candidate with required API-key/provider configuration and a fixed seven-route allowlist; not official deployment evidence |
+| `app/enterprise/` | Staff/subject OIDC and session boundaries, scoped BFF routers and Thai pages; `capabilities.py` loads optional subject configuration and a separate file-backed managed-key authority; `worker.py`/`work-once` consume already approved managed outbox work, independently of the AI for Thai emulator |
+| `pii_redactor/governance/subjects.py`, `consent.py` | Reviewed subject linkage, isolated subject authority, immutable notice/purpose presentation and append-only consent/refusal/withdrawal events; pending/failed propagation blocks consent-bound processing |
+| `pii_redactor/governance/collections.py`, `evidence.py`, `connectors/managed_documents.py` | Versioned encrypted documents and protected evidence in the governance transaction; independently supplied key authority, scoped reads, current consent/hold fences and collection-level restore quarantine/reconciliation |
+| `pii_redactor/governance/execution.py`, `outbox.py` | Exact target/revision/version/action approvals, current proposer/reviewer checks, leases/attempts and independently verified outcomes; domain mutation, minimized audit and outbox state commit together |
+| `pii_redactor/governance/holds.py`, `retention.py`, `migrations/004_subject_consent.sql` through `006_retention_holds.sql` | Serialized effective holds and independently reviewed release; versioned retention policies/triggers/due actions and copy obligations. Dispatch supports restriction/suppression, not physical or backup erasure |
+| `pii_redactor/governance/rights.py`, `delivery.py`, `app/enterprise/rights_routes.py` | Reviewed right-specific intake/clocks, exact fulfilment plans and immutable same-case outcome chains; encrypted recipient/session-bound delivery and explicit receipts. Historical closure evidence hashes protected metadata without authorizing new disclosure |
+| `pii_redactor/governance/control_register.py`, domain register modules and `policy_register.py` | Versioned processor, transfer, incident, assessment, responsibility, policy and legal-source records; independent review and current scope/source/dependency checks, not an automatic legal verdict |
+| `pii_redactor/governance/processing_controls.py`, `app/enterprise/processing_control_routes.py` | All-eight reviewed activity controls, independent preview/review/activation, immutable instruction snapshots and exact cancellation of unexecuted stale work; production processing includes non-consent paths |
+| `pii_redactor/governance/operations.py`, `checkpoints.py`, `runtime_roles.py`, `key_operations.py` | Source/schema/profile/readiness binding, retained signed witness history, least-privilege database/runtime fences and versioned key operations; full qualification uses a private read-only snapshot, never business authorization |
+| `pii_redactor/governance/backup.py`, `recovery_controls.py`, `initial_activation.py` | Authenticated encrypted whole-DB backup, canonical source-freeze/replay/witnessed restore cutover and separately reviewed fresh-organization activation; migrations 007-013 add the corresponding state and fences |
+| `pii_redactor/artifact_identity.py`, `_cache_identity.py`, `_aiguard_build.py` | Stdlib source/installed namespace and resource identity, bounded derived-cache verification and generated private wheel inputs; build residue is rejected before archive creation |
+| `pii_redactor/config.py`, `packages/amphrang/amphrang/_core_config.py` | Immutable root configuration and local-only `AMPHRANG` factories captured at adapter/operation/Session boundaries; profile assertions live in `config/shared-core-qualification.json` |
 | `pii_redactor/pipeline.py` | CLI pipeline orchestrator (`run_pipeline`); calls `send_to_ai` |
 | `pii_redactor/detectors/` | FP (regex/checksum), TB (thainer CRF NER), FN scanner |
 | `pii_redactor/anonymizer/` | Package: `anonymizer.py` (vault replace), `fp_generator.py` + `tb_generator.py` (valid-format / Thai fake values) |
@@ -407,8 +435,8 @@ All 8 steps are wired together by `pii_redactor/pipeline.py`'s `run_pipeline()` 
 | `pii_redactor/safe_errors.py` | Clears completed traceback frames/chaining plus ordinary mutable exception payloads before a boundary translates or swallows a failure; nested group members are scrubbed recursively, while the read-only `BaseExceptionGroup` shell is preserved and dropped to avoid Python 3.13 `repr()` corruption; built-in attribute access resists hostile overrides |
 | `scripts/http_v2_client.py` | Strict contract-v2 smoke client used by container and packaged-runtime checks |
 | `pii_redactor/guard/injection.py` | ชั้นสัญญาณเตือน prompt injection แบบ dependency-light (explicit rules + bounded normalization/intent classifier แยกจาก PII detection และ leak_guard); `scan_injection` → `GuardFinding[]`; 5 bypass เดิมเป็น passing regression พร้อม negative controls |
-| `apps/hosted/` | The AI for Thai hosted application (formerly the separate `aiguard-aift` repository, imported with full history by `git subtree` on 2026-10-19). It keeps its own `AGENTS.md`, README, tests and a vendored `core/pii_redactor` that has drifted from the root `pii_redactor/`; see [2026-10-19 monorepo import](docs/decisions/2026-10-19-monorepo-import.md). The root pytest suite does not collect it |
-| `packages/amphrang/` | The `amphrang` Python SDK (formerly its own repository, imported the same way). Its `.github/` workflows do not run from a subdirectory; the root CI does not test it yet |
+| `apps/hosted/` | Imported AI for Thai application and its independent gateway/tests. The build consumes a supplied `thai-pii-redaction-core` wheel offline; `verify_core_install.py` and source-integrity tooling bind installed `app/`/`pii_redactor/` files, model assets and approval state to their source. Root workflows explicitly run the imported checks; root pytest alone does not collect them |
+| `packages/amphrang/` | Imported `amphrang` SDK with an exact first-party core dependency, SDK-owned public adapters/configuration and 29 thin internal module aliases. Root workflows explicitly run SDK source/artifact/image checks; configured checks do not prove a green run |
 | `training/` | Fine-tuning lane (Track A #5): `lexicons.json` (gold-disjoint fabricated pools), `generate_data.py` (synthetic BIO data + ThaiNER rehearsal + hard negatives), `train.py` (HF Trainer). Weights live OUTSIDE the repo; the opt-in engine `AIGUARD_NER_ENGINE=finetuned` loads them via `AIGUARD_FINETUNED_MODEL_DIR` through `detectors/finetuned_engine.py` (char-offset adapter) with a model-as-verifier policy for the extended name-cue passes (strong cues stay unconditional). Needs `requirements-train.txt` on top of `requirements-ml.txt`. |
 
 
@@ -539,6 +567,12 @@ type. Responses are cached under `benchmark/reports/llm_cache/` as parsed
 forbids in acceptance artifacts — keyed by a hash of provider, prompt and
 document text so a prompt or gold-set edit cannot silently reuse a stale answer.
 `benchmark/reports/` is gitignored.
+
+These unmasked model-baseline callers are deliberate scientific tooling, not
+product provider entry points. Their named experiment may submit synthetic
+unmasked documents to measure a model as a detector. The canonical-consumer
+migration does not run those calls, change corpus/score records or turn them
+into production protection paths.
 
 `blind_v2/` — a reproducible comparison freeze, separate from the sealed
 protocol blobs. `corpus.py` builds synthetic documents from generation seed

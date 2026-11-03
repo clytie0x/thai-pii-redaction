@@ -29,6 +29,14 @@ TOKEN_LABEL: dict[str, str] = {
     "DATE": "วันที่",
     "ORGANIZATION": "องค์กร",
     "ID_NUMBER": "รหัสอ้างอิง",
+    "JURISTIC_ID": "ทะเบียนนิติบุคคล",
+    "DRIVER_LICENSE": "ใบขับขี่",
+    "LINE_ID": "ไลน์ไอดี",
+    "GPS_COORD": "พิกัด",
+    "HOUSE_REG_ID": "รหัสประจำบ้าน",
+    "IP_ADDRESS": "ไอพี",
+    "MAC_ADDRESS": "แมคแอดเดรส",
+    "LAND_DEED_ID": "โฉนด",
 }
 
 TOKEN_NAMESPACE_BITS = 64

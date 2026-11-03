@@ -23,6 +23,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol, TypeVar
 
+from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
 from pii_redactor.leak_guard import (
     OutboundPolicyError,
@@ -40,7 +41,7 @@ from pii_redactor.output_validator import PIILeakError as OutputPIILeakError
 from pii_redactor.output_validator import validate_output
 from pii_redactor.report import scan_section26
 from pii_redactor.reverse_mapper import reverse_map
-from pii_redactor.safe_errors import discard_exception_graph
+from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
 from pii_redactor.session_vault import SessionVault, VaultTimeoutError
 from pii_redactor.stateless import StatelessLeakError, sanitize_into_vault
 
@@ -134,6 +135,14 @@ class RestoreOutcome:
     foreign_replacement_count: int = 0
 
 
+@dataclass(frozen=True)
+class _SourceRebuildProof:
+    """Bind exact core-created occurrences to one successful sanitized output."""
+
+    digest: bytes
+    ranges: frozenset[tuple[int, int]]
+
+
 @dataclass
 class _Session:
     vault: SessionVault
@@ -142,7 +151,7 @@ class _Session:
     created: float
     last_access: float
     entities: list[Entity] = field(default_factory=list)
-    trusted_sanitized_digests: tuple[bytes, ...] = ()
+    trusted_source_rebuilds: tuple[_SourceRebuildProof, ...] = ()
 
 
 def _sanitized_digest(text: str) -> bytes:
@@ -157,7 +166,9 @@ class SessionService:
         ttl_s: int = 1800,
         now_fn: Callable[[], float] = time.monotonic,
         timer_factory: _TimerFactory | None = None,
+        config: CoreConfig | None = None,
     ):
+        self._config = config
         self._sessions: dict[str, _Session] = {}
         self._cap = cap
         self._ttl_s = ttl_s
@@ -480,6 +491,7 @@ class SessionService:
             raise SessionExpiredError("Session not found or expired")
         return disposed is not None
 
+    @minimize_failure_frames
     def sanitize(
         self,
         text: str,
@@ -532,6 +544,7 @@ class SessionService:
             raise NERFailureError(code, category=category, count=count)
         raise SanitizeTransactionError("sanitize transaction failed")
 
+    @minimize_failure_frames
     def sanitize_transaction(
         self,
         text: str,
@@ -612,6 +625,7 @@ class SessionService:
         must not re-enter this service or mutate its private session graph.
         """
         with self._lock:
+            config = resolve_config(self._config)
             sid, staged, is_new = self._stage_sanitize_locked(session_id, mode)
             residual_failure = None
             core = None
@@ -631,6 +645,7 @@ class SessionService:
                         detection_text=detection_text,
                         scan_leaks=scan_outbound_leaks,
                         scan_residual=scan_residual_signals,
+                        config=config,
                     )
                 except StatelessLeakError as error:
                     residual_failure = (
@@ -663,10 +678,16 @@ class SessionService:
                     )
                     prepared = finalize(outcome)
                     digest = _sanitized_digest(core.sanitized_text)
-                    prior_digests = tuple(
-                        item for item in staged.trusted_sanitized_digests if item != digest
+                    proof = _SourceRebuildProof(
+                        digest=digest,
+                        ranges=frozenset(
+                            (item.start, item.end) for item in core.replacement_highlights
+                        ),
                     )
-                    staged.trusted_sanitized_digests = (prior_digests + (digest,))[
+                    prior_proofs = tuple(
+                        item for item in staged.trusted_source_rebuilds if item.digest != digest
+                    )
+                    staged.trusted_source_rebuilds = (prior_proofs + (proof,))[
                         -_TRUSTED_SANITIZED_DIGEST_LIMIT:
                     ]
                     # A request that acquired the lifecycle lock before expiry
@@ -726,7 +747,7 @@ class SessionService:
                 # Entity is immutable, so a detached list can safely share
                 # prior records and append only this turn's detections.
                 entities=list(published.entities),
-                trusted_sanitized_digests=published.trusted_sanitized_digests,
+                trusted_source_rebuilds=published.trusted_source_rebuilds,
             )
             return session_id, staged, False
 
@@ -782,9 +803,10 @@ class SessionService:
             _LOG.error("Session vault cleanup did not complete")
         finally:
             session.entities.clear()
-            session.trusted_sanitized_digests = ()
+            session.trusted_source_rebuilds = ()
             session.salt = ""
 
+    @minimize_failure_frames
     def restore(self, session_id: str, text: str) -> RestoreOutcome:
         failure_kind = None
         try:
@@ -842,6 +864,7 @@ class SessionService:
         raise RestoreTransactionError("restore failed")
 
     def _restore_locked_impl(self, session_id: str, text: str) -> RestoreOutcome:
+        config = resolve_config(self._config)
         session, _admitted_at = self._get_existing_locked(session_id, None)
         sid = session_id
         if not text or not text.strip():
@@ -857,19 +880,24 @@ class SessionService:
             tb_count=sum(1 for e in session.entities if e.redact_type == "TB"),
         )
         response = AIResponse(text=text, request_id=sid, latency=0.0)
-        trusted_sanitized_input = _sanitized_digest(text) in session.trusted_sanitized_digests
+        digest = _sanitized_digest(text)
+        source_proof = next(
+            (item for item in session.trusted_source_rebuilds if item.digest == digest),
+            None,
+        )
         reverse_result = reverse_map(
             response,
             registry,
             session.vault,
             mode=session.mode,
+            _source_rebuild_ranges=source_proof.ranges if source_proof else frozenset(),
         )
 
         warnings = [f for f in reverse_result.flags if not f.startswith(_NOISY_PREFIXES)]
         generated_pii_count = 0
-        if not trusted_sanitized_input:
+        if source_proof is None:
             try:
-                validation = validate_output(reverse_result, registry, session.vault)
+                validation = validate_output(reverse_result, registry, session.vault, config=config)
                 warnings.extend(
                     f
                     for f in validation.flags

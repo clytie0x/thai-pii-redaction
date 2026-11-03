@@ -1,0 +1,14 @@
+{
+  "purpose_specified": true,
+  "basis": "contract",
+  "basis_reviewed": false,
+  "notice_recorded": false,
+  "sensitive_data": true,
+  "consent": "unknown",
+  "capacity": "unknown",
+  "retention_until": "2027-10-31",
+  "as_of": "2026-10-31",
+  "right": "access",
+  "received_on": "2026-10-31",
+  "identity_verified": false
+}
