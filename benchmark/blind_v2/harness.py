@@ -14,7 +14,7 @@ from .ablate import LAYERS, AIGuard, predict_ablated
 from .baselines import PresidioBaseline, PyThaiNLPNER, RegexBaseline, WangchanBERTaNER
 from .corpus import corpus_sha256
 from .llm import LLMRedactor, LLMUnavailable, complete, probe_llm
-from .score import percentile, score_predictions
+from .score import name_miss_census, percentile, score_predictions
 from .types import REDACTION_TYPES, SECTION26_TYPES
 from .utility import score_utility
 
@@ -60,6 +60,7 @@ def run_benchmark(
         if predicted is not None:
             predictions[system.name] = predicted
 
+    identity = _dataset_identity(corpus)
     report = {
         "ablations": _ablations(documents)
         if ablate
@@ -68,9 +69,7 @@ def run_benchmark(
             "documents": len(documents),
             "limited": bool(limit),
             "official": not limit,
-            "plaintext_sha256": corpus_sha256(corpus),
-            "seed": corpus.seed,
-            "version": corpus.version,
+            **identity,
         },
         "section26": _section26(documents) if section26 else {"status": "skipped"},
         "systems": system_rows,
@@ -87,7 +86,8 @@ def render_report(report: dict) -> str:
         f"dataset={dataset['version']} seed={dataset['seed']} "
         f"documents={dataset['documents']} sha256={dataset['plaintext_sha256']} "
         f"official={str(dataset['official']).lower()}",
-        f"{'system':<18}{'status':<10}{'P':>8}{'R':>8}{'F2':>8}{'macroF2':>9}"
+        f"{'system':<18}{'status':<10}{'P':>8}{'R':>8}{'F1':>8}{'F2':>8}"
+        f"{'macroF1':>9}{'macroF2':>9}"
         f"{'p50ms':>8}{'p95ms':>8}{'p50KiB':>9}{'p95KiB':>9}{'cost':>8}",
     ]
     for system in report["systems"]:
@@ -95,7 +95,7 @@ def render_report(report: dict) -> str:
         if system["status"] != "ok":
             lines.append(f"  reason: {system['reason']}")
     lines.append("per-entity")
-    header = f"{'system':<18}{'type':<16}{'n':>5}{'P':>8}{'R':>8}{'F2':>8}"
+    header = f"{'system':<18}{'type':<16}{'n':>5}{'P':>8}{'R':>8}{'F1':>8}{'F2':>8}"
     lines.append(header)
     for system in report["systems"]:
         if system["status"] != "ok":
@@ -104,12 +104,14 @@ def render_report(report: dict) -> str:
             row = system["by_type"][entity_type]
             if row["n"] == 0:
                 lines.append(
-                    f"{system['name']:<18}{entity_type:<16}{row['n']:>5}     n/a     n/a     n/a"
+                    f"{system['name']:<18}{entity_type:<16}{row['n']:>5}"
+                    "     n/a     n/a     n/a     n/a"
                 )
                 continue
             lines.append(
                 f"{system['name']:<18}{entity_type:<16}{row['n']:>5}"
-                f"{row['precision']:>8.3f}{row['recall']:>8.3f}{row['f2']:>8.3f}"
+                f"{row['precision']:>8.3f}{row['recall']:>8.3f}"
+                f"{row['f1']:>8.3f}{row['f2']:>8.3f}"
             )
         negative = system["negative"]
         lines.append(
@@ -117,6 +119,13 @@ def render_report(report: dict) -> str:
             f"false_positives={negative['false_positives']} "
             f"other_fp={system['other_false_positives']}"
         )
+        misses = system.get("name_misses")
+        if misses:
+            lines.append(
+                "  name_fn "
+                f"cued={misses['false_negatives_with_prefix_cue']} "
+                f"uncued={misses['false_negatives_without_prefix_cue']}"
+            )
     ablation = report["ablations"]
     lines.append("ablations (delta = layer-removed minus full; negative means the layer helped)")
     if ablation.get("status") != "ok":
@@ -129,6 +138,15 @@ def render_report(report: dict) -> str:
                 f"delta_f2={row['delta_micro_f2']:+.3f} "
                 f"delta_recall={row['delta_micro_recall']:+.3f}"
             )
+            deltas = row.get("delta_by_type_recall")
+            if not deltas:
+                continue
+            moved = any(abs(value) > 1e-12 for value in deltas.values())
+            if row["disabled"] not in {"fp", "tb"} and not moved:
+                continue
+            lines.append(f"  per-type recall delta without {row['disabled']}")
+            for entity_type in REDACTION_TYPES:
+                lines.append(f"    {entity_type:<16} {deltas[entity_type]:+.3f}")
     section = report["section26"]
     lines.append("section26 warn-path (AI Guard keyword scan, not a redaction score)")
     if section.get("status") == "skipped":
@@ -200,6 +218,7 @@ def _evaluate(system, documents):
         "macro": scored["macro"],
         "micro": scored["micro"],
         "name": system.name,
+        "name_misses": name_miss_census(documents, predictions),
         "negative": scored["negative"],
         "other_false_positives": scored["other_false_positives"],
         "peak_memory_bytes": {
@@ -210,6 +229,26 @@ def _evaluate(system, documents):
         "status": "ok",
     }
     return row, predictions
+
+
+def layer_delta(full_score: dict, scored: dict, disabled: str) -> dict:
+    """Score with one layer removed, minus the full score. No document text."""
+    return {
+        "by_type": scored["by_type"],
+        "delta_by_type_recall": {
+            entity_type: scored["by_type"][entity_type]["recall"]
+            - full_score["by_type"][entity_type]["recall"]
+            for entity_type in scored["by_type"]
+        },
+        "delta_micro_f1": scored["micro"]["f1"] - full_score["micro"]["f1"],
+        "delta_micro_f2": scored["micro"]["f2"] - full_score["micro"]["f2"],
+        "delta_micro_recall": scored["micro"]["recall"] - full_score["micro"]["recall"],
+        "disabled": disabled,
+        "macro": scored["macro"],
+        "micro": scored["micro"],
+        "micro_f2": scored["micro"]["f2"],
+        "micro_recall": scored["micro"]["recall"],
+    }
 
 
 def _ablations(documents) -> dict:
@@ -224,18 +263,17 @@ def _ablations(documents) -> dict:
         for layer in LAYERS:
             predicted = [predict_ablated(document.text, layer) for document in documents]
             scored = score_predictions(documents, predicted)
-            layers.append(
-                {
-                    "delta_micro_f2": scored["micro"]["f2"] - full_score["micro"]["f2"],
-                    "delta_micro_recall": scored["micro"]["recall"] - full_score["micro"]["recall"],
-                    "disabled": layer,
-                    "micro_f2": scored["micro"]["f2"],
-                    "micro_recall": scored["micro"]["recall"],
-                }
-            )
+            layers.append(layer_delta(full_score, scored, layer))
     except Exception as exc:
         return {"status": "error", "reason": type(exc).__name__}
-    return {"full_micro_f2": full_score["micro"]["f2"], "layers": layers, "status": "ok"}
+    return {
+        "full_by_type": full_score["by_type"],
+        "full_macro": full_score["macro"],
+        "full_micro": full_score["micro"],
+        "full_micro_f2": full_score["micro"]["f2"],
+        "layers": layers,
+        "status": "ok",
+    }
 
 
 def _section26(documents) -> dict:
@@ -266,7 +304,27 @@ def _section26(documents) -> dict:
     }
 
 
+def _dataset_identity(corpus) -> dict:
+    """Hash the corpus with the lock that owns it. Hard splits have no version."""
+    if hasattr(corpus, "version"):
+        return {
+            "plaintext_sha256": corpus_sha256(corpus),
+            "seed": corpus.seed,
+            "version": corpus.version,
+        }
+    from .hard_set import public_lock as hard_public_lock
+
+    lock = hard_public_lock(corpus)
+    return {
+        "plaintext_sha256": lock["plaintext_sha256"],
+        "seed": corpus.seed,
+        "version": lock["version"],
+    }
+
+
 def _utility(documents, predictions: dict) -> dict:
+    if not documents or not hasattr(documents[0], "questions"):
+        return {"status": "skipped", "reason": "the split has no questions", "systems": {}}
     if not predictions:
         return {"status": "skipped", "reason": "no system produced predictions"}
     probe = probe_llm()
@@ -320,15 +378,17 @@ def _system_line(system: dict) -> str:
     if system["status"] != "ok":
         return (
             f"{system['name']:<18}{system['status']:<10}"
-            f"{'':>8}{'':>8}{'':>8}{'':>9}{'':>8}{'':>8}{'':>9}{'':>9}{'n/a':>8}"
+            f"{'':>8}{'':>8}{'':>8}{'':>8}{'':>9}{'':>9}"
+            f"{'':>8}{'':>8}{'':>9}{'':>9}{'n/a':>8}"
         )
     micro = system["micro"]
     cost = system["cost_usd"]
     cost_text = "n/a" if cost is None else f"{cost:.2f}"
     return (
         f"{system['name']:<18}{system['status']:<10}"
-        f"{micro['precision']:>8.3f}{micro['recall']:>8.3f}{micro['f2']:>8.3f}"
-        f"{system['macro']['f2']:>9.3f}"
+        f"{micro['precision']:>8.3f}{micro['recall']:>8.3f}"
+        f"{micro['f1']:>8.3f}{micro['f2']:>8.3f}"
+        f"{system['macro']['f1']:>9.3f}{system['macro']['f2']:>9.3f}"
         f"{system['latency_ms']['p50']:>8.1f}{system['latency_ms']['p95']:>8.1f}"
         f"{system['peak_memory_bytes']['p50'] / 1024:>9.1f}"
         f"{system['peak_memory_bytes']['p95'] / 1024:>9.1f}"
