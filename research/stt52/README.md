@@ -7,6 +7,10 @@ Paper title:
 The study stays frozen at gold-v3 and system commit
 `d93d10b17be6783d5c684cb47f25d4156ed6fb4b`.
 
+This gold-v3 packet is not the YRSS comparison. Rules for gold-v4, sealed
+blind-v2, yrss-holdout-v1, and the synthetic hard test are in
+[`research/yrss2026/CLAIM-MAP.md`](../yrss2026/CLAIM-MAP.md).
+
 History portability correction (2026-10-31): that historical private SHA does
 not resolve in the restored repository. The exact gold-v3 bytes are reachable
 at `61cde3ba1322597411957d3332d742c04d0c16eb`, verified against the unchanged

@@ -1,0 +1,32 @@
+{
+  "cost_usd": 0,
+  "date": "2026-11-03",
+  "llm_probe": "no local Ollama model, llama.cpp model, or OpenRouter free-tier key is available",
+  "llm_scored": false,
+  "lock_file_sha256": {
+    "freeze": "717b48ec6c3e33f7394d67b5b9698bafde5fc3d02d0ecc90a6486c24b48332fe",
+    "hard-dev": "4b06224f475d306a4389781a96e073efc116a25370bf03658fb3a909652888e9",
+    "hard-test": "21eda81a3b19e19531775a20b312a5b94405ccba5dbbe27f603f8c55bd5b36cd"
+  },
+  "ner_engine": "unset; product default is thainer",
+  "packages": {
+    "pythainlp": "5.4.0",
+    "presidio-analyzer": "2.2.360",
+    "spacy": "3.8.7",
+    "torch": "2.15.0+cpu",
+    "transformers": "4.46.3",
+    "sentencepiece": "0.2.2",
+    "click": "8.5.0"
+  },
+  "platform": "Linux-6.12.94+-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "spacy_model": "en_core_web_sm 3.8.0",
+  "systems": [
+    "aiguard",
+    "regex",
+    "presidio",
+    "pythainlp-ner",
+    "wangchanberta-ner"
+  ],
+  "utility": "disabled"
+}

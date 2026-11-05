@@ -2,8 +2,9 @@
 
 The full path (``disabled is None``) calls the same functions as
 ``detect_all`` in the same order. A unit test locks that equality. This
-module does not change detection rules. Source recovery and label normalization
-remain enabled in every assembly-layer variant.
+module does not change detection rules. Label normalization stays on in every
+variant. Structured recovery is part of the format layer, so removing ``fp``
+removes it too.
 """
 
 from __future__ import annotations
@@ -55,12 +56,13 @@ def predict_ablated(text: str, disabled: str | None = None) -> list[tuple[int, i
         kept = _drop_unanchored_facility_spans(text, kept)
     if off != "student_relabel":
         kept = _relabel_student_ids(tb, kept)
-    recovered = recover_structured(text)
-    kept = admit_recovery(
-        kept,
-        recovered,
-        required=original_guard_entities(text) if recovered else (),
-    )
+    if off != "fp":
+        recovered = recover_structured(text)
+        kept = admit_recovery(
+            kept,
+            recovered,
+            required=original_guard_entities(text) if recovered else (),
+        )
     return [(entity.span[0], entity.span[1], entity.data_type) for entity in kept]
 
 

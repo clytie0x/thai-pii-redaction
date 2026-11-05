@@ -75,7 +75,9 @@ constructed negatives limit generalisation. Originals and the blinding key
 intentionally remain outside every repository at
 `C:/Users/teera/aiguard-yrss-holdout-v1/`; developer contexts must not open it.
 The held-out paired disclosure is complete. See [RESULTS.md](RESULTS.md) and
-`heldout-paired.json` for exact results and uncertainty. The original source
+`heldout-paired.json` for exact results and uncertainty. Citation limits for
+gold-v4, sealed blind-v2, this holdout, and the synthetic hard-test split are
+in [CLAIM-MAP.md](CLAIM-MAP.md) and [METHODS-RESULTS.md](METHODS-RESULTS.md). The original source
 candidate remains frozen at `ed01027`. This set is now closed to tuning and
 must never be presented as a new blind evaluation after further changes.
 

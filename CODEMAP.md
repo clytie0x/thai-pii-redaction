@@ -583,9 +583,13 @@ fixing) and `20261103` (test, different frames, scored only after the fix).
 The rendered text is not committed. `data/blind-v2-repro.lock.json`,
 `data/hard-dev.lock.json`, and `data/hard-test.lock.json` pin the SHA-256
 and the counts. `python -m benchmark.blind_v2 --self-check` regenerates
-the original set and compares that hash. `python -m benchmark.blind_v2` scores AI Guard,
+the original set and compares that hash. `--split hard-dev` and
+`--split hard-test` check or score the locked prose splits with the same
+scorer. `python -m benchmark.blind_v2` scores AI Guard,
 a regex baseline, optional Presidio and WangchanBERTa runs, and PyThaiNLP NER,
-then reports per-entity precision, recall, and F2, micro and macro scores,
+then reports per-entity precision, recall, F1, and F2, micro and macro scores.
+`present.py` renders a JSON report as the markdown tables in
+`docs/benchmark/per-entity-results.md`. The command also reports
 latency, peak memory, cost, layer ablations, and a small utility set when a
 free or local model is available. Labels stay out of `pii_redactor/` and
 `app/`. This set is not a tuning target. It also does not replace
@@ -606,6 +610,8 @@ Top-level `research/` holds frozen paper evidence: `research/stt52/` pins the
 STT52 study at gold-v3 and a fixed system commit so the paper's numbers stay
 reproducible while the detector moves on. Its prediction files carry offsets
 and types only — never document text or entity values (see its README).
+`research/yrss2026/CLAIM-MAP.md` is the citation map for the later gold-v4,
+sealed blind-v2, holdout, and synthetic hard-test figures.
 
 ## Performance baseline (`perf/`)
 

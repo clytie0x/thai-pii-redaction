@@ -38,6 +38,12 @@ status page and does not silently override a newer current-state document.
   reaches the gold set, what validates it locally, and what gets turned away.
 - [Blind-v2 comparison results](benchmark/blind-v2-results.md) - the seeded
   synthetic comparison and the command that reproduces it.
+- [Blind-v2 per-entity results](benchmark/per-entity-results.md) - precision,
+  recall, F1, and F2 by entity type on the three locked splits.
+- [YRSS claim map](../research/yrss2026/CLAIM-MAP.md) - which headline F1 and
+  F2 figures are development-only, sealed held-out, or comparative synthetic.
+- [YRSS methods and results](../research/yrss2026/METHODS-RESULTS.md) - the
+  short methods note for those same stored scores.
 - [Blind-v2 gap list](benchmark/gap-list.md) - what is still missing for a
   best-in-Thailand claim.
 - [Accepted version reset](decisions/2026-10-19-version-reset.md) - current
