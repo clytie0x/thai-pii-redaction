@@ -121,15 +121,46 @@ The `.3f` text of that re-run F2 is 0.965, the same three decimals as the
 hard-test F2, and a different float. The stored freeze headline stays 0.964.
 
 The `fp`-removed ablation moved on every split. Hard-test F2
-0.5147058823529411 to 0.570539419087137. Current `ablate.py` still runs
-source recovery when `fp` is removed. The `tb`-removed freeze micro F2 stayed
-0.7704654895666132.
+0.5147058823529411 to 0.570539419087137. The cause is recorded below.
+
+## Drift root cause, 2026-11-05
+
+The historical JSON has no git SHA. That metadata is absent. The blobs were
+introduced by `bd18441ca3ed742382b393acc42cc8896ae81c3f`. `git diff 38b235f
+bd18441 -- pii_redactor benchmark/blind_v2/ablate.py` is empty.
+`score.py` at `bd18441` matches this branch. Re-scoring
+`38b235ffb5cede349e51362049a03666b8637dc6` reproduces freeze full fp 24 and
+the historical `fp`-removed tp/fn. `git rev-list --count 38b235f..52bd94a`
+is 1. The only detector commit is
+`52bd94a7b7dfac5bde8fe8a1cf5c2532051baec7`.
+
+File swaps in a detached worktree, AI Guard only, same locks:
+
+- Old detectors plus only the new `tb_detector.py`: freeze full fp 24 to 22.
+  `fp`-removed counts stay historical.
+- Disabling only `_spaceless_run_is_not_a_name` on the current tree: freeze
+  full fp returns to 24.
+- Old `ablate.py` plus new detectors: `fp`-removed counts stay historical.
+  Freeze full fp is already 22 because `tb_detector.py` is new.
+- Current `ablate.py` with `recover_structured` and without the address
+  relabel: `fp`-removed counts match the re-run.
+
+So (a) is the new length gate in `tb_detector.py`. The dropped spans are
+NAME 0:27 on `b2r-0000` (gov_form) and NAME 0:42 on `b2r-0078` (negative).
+Both are space-free runs longer than 25 characters. (b) is
+`ablate.py` calling `recover_structured` when `fp` is disabled. The new true
+positives are exact gold spans listed in `research/yrss2026/CLAIM-MAP.md`.
+`_relabel_numberless_addresses` turns four ADDRESS false positives into
+LOCATION and does not change the micro false-positive total.
+
+After this write-up, `PYTHONUTF8=1 .venv/bin/python -m pytest -q --tb=line`
+printed `3467 passed, 318 skipped` in 94.31s. Exit code 0. No failures.
 
 ## Self-review
 
-- The hard-test headline reproduced. The labeled-freeze full score and the
-  `fp`-removed ablations did not. Historical JSON was left in place, and the
-  three-decimal collision is written down.
+- The hard-test headline reproduced. Freeze full fp 24 to 22 is the new
+  spaceless-name gate in `52bd94a`. The `fp`-removed F2 move is recovery
+  staying on in `ablate.py`. Historical JSON was left in place.
 - Gold, holdout, and sealed-reveal commits recorded inside those artifacts
   are absent from this clone. The values stay file-backed. The sealed
   ciphertext was not opened. Gemma freeze F1 stays UNVERIFIED: the 2026-11-01

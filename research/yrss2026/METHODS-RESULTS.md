@@ -64,12 +64,30 @@ earlier 2026-11-01 write-up (`docs/benchmark/blind-v2-results.md`), under
 local Ollama, at cost 0. This session does not call a hosted model.
 `ollama` is not installed here, so gemma was not re-run.
 
-The same commands were run again on 2026-11-05 against current detectors
-(git `54cd65b6dab117ca8255755d49eeb2c6e478289d`, Python 3.12.3). Self-checks
-matched the lock hashes. Hard-test full micro matched the table above.
-The labeled-freeze full micro and the `fp`-removed ablations did not. The
-compare file is `docs/benchmark/runs/repro-2026-11-05.json`. Those re-run
-figures are not a new held-out result.
+The same commands were run again on 2026-11-05 (Python 3.12.3). Self-checks
+matched the lock hashes. Hard-test and hard-dev full micro matched the table
+above. Two rows did not. The compare file is
+`docs/benchmark/runs/repro-2026-11-05.json`. The historical JSON is unchanged.
+
+The run files do not store a git SHA. That field is absent. The blobs were
+added in `bd18441ca3ed742382b393acc42cc8896ae81c3f`, whose detector tree
+matches parent `38b235ffb5cede349e51362049a03666b8637dc6`. Re-scoring that
+parent reproduces the stored counts. The only later detector commit on
+`main` is `52bd94a7b7dfac5bde8fe8a1cf5c2532051baec7`.
+
+Current freeze full micro, and the number to cite for this tree, is fp 22,
+F1 0.9481481481481483, F2 0.9653092006033182. The stored F2
+0.9638554216867468 is the `38b235f` / `bd18441` measurement. The move is
+`_spaceless_run_is_not_a_name` in `pii_redactor/detectors/tb_detector.py`:
+space-free runs longer than 25 characters are dropped. It removes NAME 0:27
+on `b2r-0000` and NAME 0:42 on `b2r-0078`. Recall is unchanged.
+
+Current hard-test `fp`-removed micro, and the number to cite for this tree,
+is F2 0.570539419087137 (tp 55, fp 11, fn 49). The stored F2
+0.5147058823529411 is historical. `benchmark/blind_v2/ablate.py` still calls
+`recover_structured` when the format detector is removed, so zero-width and
+Thai-digit forms are found anyway. The new matches are exact gold spans that
+were false negatives. Neither re-run figure is a held-out result.
 
 Layer ablations turn off one assembly step at a time. `fp` removes the format
 and checksum detector. `tb` removes the text detector, including its title and
@@ -130,7 +148,9 @@ same JSON. A negative delta means the removed layer had been helping.
 | tb | 1.0 | 0.6346153846153846 | 0.7764705882352941 | 0.6846473029045642 | -0.326923076923077 | -0.280603662346401 |
 | address_merge | 0.7575757575757576 | 0.9615384615384616 | 0.8474576271186441 | 0.9124087591240876 | 0.0 | -0.05284220612687762 |
 
-`fn`, `record_names`, `facility_filter`, and `student_relabel` have delta 0
+That `fp` row is the historical `bd18441` JSON. On the current tree the same
+removal scores F2 0.570539419087137 because recovery stays on. `fn`,
+`record_names`, `facility_filter`, and `student_relabel` have delta 0
 on this split in that JSON. On the labeled freeze in `freeze.json`, removing
 `fp` moves micro F2 by -0.41413836428981876 and removing `tb` moves it by
 -0.19338993212013356. Removing `address_merge` moves freeze micro F2 by

@@ -115,17 +115,71 @@ Hard-test and hard-dev AI Guard full micro, and every baseline micro on all
 three splits, matched the `bd18441` JSON. Hard-test full micro is still
 F1 0.970873786407767 and F2 0.9652509652509652.
 
-The labeled freeze AI Guard full micro did not match. Historical fp 24,
-F1 0.9446494464944649, F2 0.9638554216867468. This run: fp 22,
-F1 0.9481481481481483, F2 0.9653092006033182, recall unchanged at
-0.9770992366412213. NAME false positives 8 to 6. ADDRESS false positives 4 to
-0. `other_false_positives` 12 to 16. Negative documents 7/12 clean to 8/12.
-Do not replace the stored 0.964 headline with this re-run. Python `.3f` of the re-run freeze F2 is also 0.965, the same three-decimal text as hard-test F2 0.9652509652509652. The floats differ.
+Two AI Guard rows moved. The historical JSON stays the `bd18441` measurement.
+The current numbers below are the 2026-11-05 re-run on commit
+`52bd94a7b7dfac5bde8fe8a1cf5c2532051baec7` and are stored in
+`docs/benchmark/runs/repro-2026-11-05.json`. Python `.3f` of the current
+freeze F2 is 0.965, the same three-decimal text as hard-test F2
+0.9652509652509652. The floats differ.
 
-The `fp`-removed ablation also moved. Hard-test F2 0.5147058823529411 to
-0.570539419087137. Current `benchmark/blind_v2/ablate.py` still runs source
-recovery when `fp` is removed. That function was not in the `bd18441` parent.
-The `tb`-removed freeze micro F2 stayed 0.7704654895666132.
+| Row | Historical, keep for the 2026-11-03 table | Current, `52bd94a` and later |
+|---|---|---|
+| Freeze full micro | fp 24, F1 0.9446494464944649, F2 0.9638554216867468 | fp 22, F1 0.9481481481481483, F2 0.9653092006033182, recall still 0.9770992366412213 |
+| Hard-test `fp` removed | F2 0.5147058823529411, recall 0.47115384615384615, tp 49, fn 55 | F2 0.570539419087137, recall 0.5288461538461539, tp 55, fn 49, micro fp still 11 |
+
+The run JSON and `environment.json` do not record a git SHA. That metadata
+field is absent. The blobs were added in
+`bd18441ca3ed742382b393acc42cc8896ae81c3f`. That commit does not change
+`pii_redactor/` or `benchmark/blind_v2/ablate.py`; both match its parent
+`38b235ffb5cede349e51362049a03666b8637dc6`. Re-scoring that parent reproduces
+fp 24 and the historical `fp`-removed counts. `main` has one commit between
+that parent and the current detector tree:
+`52bd94a7b7dfac5bde8fe8a1cf5c2532051baec7`. Later commits on this branch do
+not change those files. `benchmark/blind_v2/score.py` matches `bd18441`.
+
+Freeze full micro moved because
+`pii_redactor/detectors/tb_detector.py` gained
+`_spaceless_run_is_not_a_name`. A space-free Thai run longer than
+`_GLUED_NAME_MAX_CHARS` (25) is no longer a NAME. Putting only that new
+`tb_detector.py` on the `38b235f` tree moves freeze full fp from 24 to 22.
+Disabling only that predicate on the current tree moves it back to 24.
+The two dropped false positives, offsets only:
+
+| doc_id | style | historical FP | current |
+|---|---|---|---|
+| b2r-0000 | gov_form | NAME 0:27 | absent |
+| b2r-0078 | negative | NAME 0:42 | absent |
+
+No false-negative set changed on the full freeze. ADDRESS false positives
+4 to 0, with `other_false_positives` 12 to 16, is a separate relabel in
+`_relabel_numberless_addresses`: the same spans become LOCATION and stay
+inside the micro false-positive total. It does not explain fp 24 to 22.
+Negative clean documents 7/12 to 8/12 is `b2r-0078` losing its only false
+positive.
+
+The `fp`-removed ablation moved because `benchmark/blind_v2/ablate.py` calls
+`recover_structured` and `admit_recovery` after the layer switch, including
+when `fp` is the disabled layer. Those functions were added in the same
+commit (`pii_redactor/detectors/structured_views.py`, with
+`scan_views.original_guard_entities`). New detectors with the old `ablate.py`
+keep the historical ablation counts. Current `ablate.py` with recovery and
+without the address relabel reproduces the new counts. Each gained true
+positive is an exact gold span that had been a false negative. Hard-test:
+
+| doc_id | style | span now matched |
+|---|---|---|
+| hard-test-0008 | prose-zwsp | PHONE 74:97 |
+| hard-test-0011 | prose-zwsp | THAI_ID 18:43 |
+| hard-test-0013 | prose-zwsp | BANK_ACCOUNT 40:53 and CREDIT_CARD 16:35 |
+| hard-test-0015 | prose-zwsp | VEHICLE_PLATE 12:19 |
+| hard-test-0024 | prose-thai_digits | PHONE 63:75 |
+
+The same pattern on hard-dev is PHONE 68:91, PHONE 128:151, THAI_ID 38:63,
+BANK_ACCOUNT 55:68, CREDIT_CARD 26:45, VEHICLE_PLATE 21:28, PHONE 58:70,
+PHONE 133:145. On the freeze it is THAI_ID 85:110, THAI_ID 83:108, PHONE
+81:93, PHONE 85:97. Typed false-positive sets did not change. `recover_structured`
+rebuilds a view with format controls and Thai digits removed, then maps
+checksum spans back onto the original offsets.
 
 The same JSON's original freeze (`blind-v2-repro`, seed `20261101`, plaintext `ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624`) scores AI Guard micro P 0.9142857142857143, R 0.9770992366412213, F1 0.9446494464944649, F2 0.9638554216867468. That is the labeled synthetic freeze, not the sealed protocol corpus. Hard-dev (seed `20261102`, plaintext `b169fcb72add15dc46cdd62fcb3dac179a4d0b9aa467ad0fb29a40514c76273b`) was the split read during the fix: micro P 0.95, R 0.9827586206896551, F1 0.9661016949152542, F2 0.9760273972602741. Do not cite hard-dev as the test result.
 
