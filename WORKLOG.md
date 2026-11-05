@@ -70,9 +70,73 @@ from this clone when the plan was written. The claim map must say so.
 Absence of the commit object does not delete a number that is present in a
 file this clone does contain.
 
+## What this session ran
+
+On 2026-11-05, Python 3.12.3, from the repository root, with
+`PYTHONUTF8=1`, telemetry disabled, and no API keys:
+
+```bash
+.venv/bin/python -m benchmark.blind_v2 --self-check
+.venv/bin/python -m benchmark.blind_v2 --self-check --split hard-dev
+.venv/bin/python -m benchmark.blind_v2 --self-check --split hard-test
+SYS=aiguard,regex,presidio,pythainlp-ner,wangchanberta-ner
+.venv/bin/python -m benchmark.blind_v2 --systems "$SYS" --no-utility --json /tmp/yrss-repro/freeze.json
+.venv/bin/python -m benchmark.blind_v2 --split hard-dev --systems "$SYS" --no-utility --json /tmp/yrss-repro/hard-dev.json
+.venv/bin/python -m benchmark.blind_v2 --split hard-test --systems "$SYS" --no-utility --json /tmp/yrss-repro/hard-test.json
+.venv/bin/python -m pytest -q --tb=line
+```
+
+Self-checks printed the lock plaintext hashes. The score compare is
+`docs/benchmark/runs/repro-2026-11-05.json`. JSON was written under `/tmp`
+so the `bd18441` files were not overwritten.
+
+Full pytest: 3467 passed, 318 skipped, 0 failed, 97.13s.
+`tests/test_human_agreement.py` and `tests/test_yrss_claim_map.py` were
+18 passed, 0 skipped, in a focused run before the full suite.
+`tests/test_blind_v2_harness.py` was included in a later 24-passed run with
+the claim-map tests. `ruff check` and `ruff format --check` passed on the
+touched Python files. Repo-wide `ruff check .` still reports pre-existing
+`RUF036` in `pii_redactor/detectors/finetuned_engine.py` and `UP042` in
+`scripts/office_v2_composition.py`. Repo-wide `ruff format --check .` still
+wants edits in `pii_redactor/governance/operations.py` and
+`tests/test_desktop_native_package.py`. Those four files are not in this
+diff. `git diff --check` was clean.
+
+`sentencepiece` in this environment is 0.2.3. The recovered
+`environment.json` records 0.2.2. WangchanBERTa micro scores still matched.
+
+## Reproduction diffs
+
+Hard-test and hard-dev AI Guard full micro matched `bd18441`, including
+hard-test F1 0.970873786407767 and F2 0.9652509652509652. Every regex,
+Presidio, PyThaiNLP, and WangchanBERTa micro row matched on all three splits.
+Section 26 recall matched (hard-test and hard-dev 0.0 on n=8; freeze 1.0 on
+n=11).
+
+Labeled-freeze AI Guard full micro did not match: fp 24 to 22, F1
+0.9446494464944649 to 0.9481481481481483, F2 0.9638554216867468 to
+0.9653092006033182, recall unchanged. NAME fp 8 to 6, ADDRESS fp 4 to 0,
+`other_false_positives` 12 to 16, negative clean documents 7/12 to 8/12.
+The `.3f` text of that re-run F2 is 0.965, the same three decimals as the
+hard-test F2, and a different float. The stored freeze headline stays 0.964.
+
+The `fp`-removed ablation moved on every split. Hard-test F2
+0.5147058823529411 to 0.570539419087137. Current `ablate.py` still runs
+source recovery when `fp` is removed. The `tb`-removed freeze micro F2 stayed
+0.7704654895666132.
+
 ## Self-review
 
-Filled after the runs. See the bottom of this file once the branch is ready.
+- The hard-test headline reproduced. The labeled-freeze full score and the
+  `fp`-removed ablations did not. Historical JSON was left in place, and the
+  three-decimal collision is written down.
+- Gold, holdout, and sealed-reveal commits recorded inside those artifacts
+  are absent from this clone. The values stay file-backed. The sealed
+  ciphertext was not opened. Gemma freeze F1 stays UNVERIFIED: the 2026-11-01
+  table has no tp/fp/fn, and Ollama is not installed.
+- `d93d10b` is still absent. `test_frozen_paper_gold_can_be_loaded_from_git`
+  passed because the loader now uses `61cde3ba`, which this clone has. The
+  2026-11-03 failure count is not this session's count.
 
 ## Recovered worklog from PR #15
 

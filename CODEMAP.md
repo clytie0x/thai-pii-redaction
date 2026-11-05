@@ -610,6 +610,8 @@ Top-level `research/` holds frozen paper evidence: `research/stt52/` pins the
 STT52 study at gold-v3 and a fixed system commit so the paper's numbers stay
 reproducible while the detector moves on. Its prediction files carry offsets
 and types only — never document text or entity values (see its README).
+`research/yrss2026/CLAIM-MAP.md` is the citation map for the later gold-v4,
+sealed blind-v2, holdout, and synthetic hard-test figures.
 
 ## Performance baseline (`perf/`)
 

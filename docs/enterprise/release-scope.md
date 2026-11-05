@@ -43,7 +43,7 @@ requires review and CI; whole M3 and production/host/human gates remain open.
 | Desktop/Extension | Source 0.1.0, broker boundary | Exact `40cf18e` Extension package and Windows/macOS packaged CI pass. Earlier 3.0.0 evidence stays historical; no Store publication or new release is claimed |
 | Office | Existing task pane and fixed-port contract 2 | Exact `40cf18e` manifest/type/unit/build CI passes; real-host gates remain open and release manifest stays Word-only |
 | Release platforms | Current release workflow matrix | Windows/macOS only; retained Linux helpers need fresh qualification if re-enabled |
-| YRSS | `research/yrss2026/RESULTS.md`, separate `ai-guard-docs/stt52-2026` | Synthetic research and prepared presentation evidence; owner prints/presents/submits |
+| YRSS | `research/yrss2026/RESULTS.md`, `research/yrss2026/CLAIM-MAP.md`, `research/yrss2026/METHODS-RESULTS.md`, separate `ai-guard-docs/stt52-2026` | Synthetic research. Cite scores only under the claim map. Owner prints/presents/submits |
 
 These are not interchangeable acceptance levels. Main's newer reproducible
 benchmark and the frozen YRSS experiment are separate studies and must retain

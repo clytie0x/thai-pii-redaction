@@ -1,0 +1,144 @@
+# YRSS 2026 claim map
+
+Citation rules for the headline detection numbers. Thai glosses are in
+parentheses. This page does not add a measurement. A rounded headline is the
+Python format `.3f` of the stored float, and the stored float is the value
+that may be checked.
+
+Matching for gold-v4 and yrss-holdout-v1 is the scorer behind
+`research/yrss2026/heldout-paired.json` and `baseline.json`. Matching for the
+synthetic locks is type-aware overlap in `benchmark/blind_v2/score.py`.
+Those two matchers are not the same experiment.
+
+Measurement commits recorded inside the gold, holdout, and sealed-reveal
+artifacts are **absent** from this clone (`git cat-file` does not resolve
+them). The numbers below are still in files this clone contains. Absence of
+the old commit is not a license to recompute the number on current `main`.
+
+`gemma3:1b` F1 on the original synthetic freeze is **UNVERIFIED**. The
+2026-11-01 table prints precision, recall, and F2 only. It does not store
+tp, fp, and fn, and this session had no local Ollama model.
+
+## Summary
+
+| Claim | P | R | F1 | F2 | Dataset / split | Held-out? |
+|---|---:|---:|---:|---:|---|---|
+| gold-v4 full, dev only | 0.8674033149171271 | 0.9691358024691358 | 0.9154518950437317 | 0.9469240048250904 | gold-v4, 252 documents, 648 entities | No. Development set (ชุดพัฒนา) |
+| sealed blind-v2 reveal 1 | 0.5775962660443408 | 0.8839285714285714 | 0.6986591390261117 | 0.7991604778818212 | blind-v2, 185 documents, CRF, reveal 1 | Yes. True held-out, old freeze (ชุดปิด) |
+| yrss-holdout-v1 baseline | 0.78748370273794 | 0.84593837535014 | 0.8156650911546253 | 0.8335633452939553 | yrss-holdout-v1, 185 documents, 714 entities | Yes. One paired disclosure, now closed |
+| yrss-holdout-v1 candidate | 0.7989949748743719 | 0.8907563025210085 | 0.8423841059602649 | 0.8707557502738226 | same split, candidate arm | Yes. Same closed disclosure |
+| synthetic hard-test | 0.9803921568627451 | 0.9615384615384616 | 0.970873786407767 | 0.9652509652509652 | hard-test-v1, seed 20261103, 60 documents | No. Not a held-out substitute |
+
+Rounded with `.3f`: gold F2 0.947; sealed F2 0.799; holdout F2 0.834 to 0.871;
+hard-test F1 0.971 and F2 0.965.
+
+## gold-v4 F2 0.947, dev only
+
+| Field | Record |
+|---|---|
+| Value | F2 0.9469240048250904; F1 0.9154518950437317; P 0.8674033149171271; R 0.9691358024691358; tp 628; fp 96; fn 20 |
+| Metric | Unrestricted entity precision, recall, F1, and F2 |
+| Dataset / split | `gold-v4`. 252 documents, 648 gold entities. Arm `full` |
+| Held-out? | No. Dev only. The detector was tuned against this set |
+| Source file | `research/yrss2026/baseline.json` `arms.full.metrics.overall`. Same F2 in `research/yrss2026/RESULTS.md` and `research/yrss2026/candidate-development.json` arm `full` |
+| Commit SHA | File last changed in `52bd94a7b7dfac5bde8fe8a1cf5c2532051baec7`. Manifest `git.head` is `19fe9f0c209c587c7662ee5302edc752f0fd32c8` with `git.dirty` true. That object is absent from this clone |
+| Lock hash | No gold lock file in this repo. Manifest `requirements_sha256` is `283cb10a3838b72cab3dbc3b10e54c6de437f211e2ddbbc73dd789a337911d1c`. Model `thainer-1.4` is `8c4f5b73434843d683442b42ddfaf2999a51d7c37579b27bac82c816c8a11e38` |
+| Plaintext hash | Manifest `corpus_sha256` `01f86b012c438c074b86942e21021cf39b6df54e2bf950cb2301688b1c1b935b` |
+| Reproducing command | Recorded in `research/yrss2026/README.md`: `python -m benchmark.campaign --out <new-dir> --ablations` after `scripts/prewarm_ner.py`, Python 3.13.12. Not re-run this session |
+| MAY | Cite as a development-set result, with P, R, F1, and F2 together, and with the dirty-tree note |
+| MAY NOT | Cite as held-out, as real-document accuracy, or as the score of current `main`. The shared-11 negative slice in the same arm has 0 false positives on 45 documents; the unrestricted negative slice has 15 false positives and 31/45 clean documents. Do not drop the view name |
+
+Document-bootstrap 95% CI for that F2, stored in the same object: 0.9282772820864789 to 0.9639889196675901 (1,000 resamples, seed 0).
+
+## sealed blind-v2 F2 0.799, true held-out, old freeze
+
+| Field | Record |
+|---|---|
+| Value | F2 0.7991604778818212; F1 0.6986591390261117; P 0.5775962660443408; R 0.8839285714285714; tp 495; fp 362; fn 65 |
+| Metric | Unrestricted entity precision, recall, F1, and F2. Primary pre-registered metric is F2 |
+| Dataset / split | `blind-v2`, reveal index 1, engine `crf`, 2026-10-19T13:01:16+00:00. Not the later synthetic `blind-v2-repro` freeze |
+| Held-out? | Yes. True held-out, old freeze. `over_budget` is false. Budget is 2; this entry spends reveal 1 |
+| Source file | `benchmark/data/blind-scores.jsonl` line whose `version` is `blind-v2`. `entry_sha256` `84b7212555c8b623281cc00370c92c3284ea4921ef5a56cfb0dc901f34ecce5f` |
+| Commit SHA | The jsonl file was last changed in `856db15bbd1451630b22b505be090468002536ff`. The entry's own `git.head` is `4cc5eb17aa16f2df7d5e65576cd5ba61f0737540`. That object is absent from this clone. The protocol names detector freeze `cb43304d`; that object is also absent |
+| Lock hash | `benchmark/data/blind-v2.lock.json` ciphertext `d6fdd3713d7d72e456f19903f11533d3728c79b382048e693d357ab79aa529fe` (matches the reveal). Lock file sha256 `b152949920fb8c998fa20e6bdca9674c1abd7c48f6884f0e363201989c669eb5` |
+| Plaintext hash | `a4503b4e3596dd56af19aef137ec25d2429ee8c09a9e4c94eb43d411ec6e56a5` in both the lock and the reveal |
+| Reproducing command | Protocol command `python -m benchmark --source blind --blind-version blind-v2`. Not run this session. The ciphertext was not opened |
+| MAY | Cite as the sealed blind-v2 CRF reveal at that freeze, with the CI below, and as a true held-out result for that old tree |
+| MAY NOT | Cite as the score after the November 2026 detector fixes. The sealed corpus was not reopened. Do not cite the synthetic hard-test or `blind-v2-repro` number in its place |
+
+Stored 95% document-bootstrap CI: 0.7671418873048201 to 0.8285105086810843. Negative slice in the same entry: 9/52 clean, 112 false positives.
+
+## yrss-holdout-v1 0.834 to 0.871
+
+| Field | Record |
+|---|---|
+| Value | Baseline F2 0.8335633452939553, F1 0.8156650911546253, P 0.78748370273794, R 0.84593837535014 (tp 604, fp 163, fn 110). Candidate F2 0.8707557502738226, F1 0.8423841059602649, P 0.7989949748743719, R 0.8907563025210085 (tp 636, fp 160, fn 78) |
+| Metric | Unrestricted entity precision, recall, F1, and F2. Pre-registered primary endpoint is the paired F2 difference |
+| Dataset / split | `yrss-holdout-v1`. 185 documents, 714 entities. Two scored arms |
+| Held-out? | Yes for this pair. Closed after the one disclosure. Not a new blind set for later commits |
+| Source file | `research/yrss2026/heldout-paired.json` `baseline.metrics.overall` and `candidate.metrics.overall`. Rounded story also in `research/yrss2026/RESULTS.md` |
+| Commit SHA | File last changed in `52bd94a7b7dfac5bde8fe8a1cf5c2532051baec7`. Recorded `baseline_commit` `19fe9f0c209c587c7662ee5302edc752f0fd32c8` and `candidate_commit` `ed01027f2e782b6f83d88520c7fe9d2547a84ba1` are absent from this clone. Candidate `candidate_git_dirty` is false |
+| Lock hash | Ciphertext `1e5456db9d4df092fa3cbd0b29b599a3a0953441e07c148db50d9fcb23344cae`. Lock file sha256 `db9e0ba05fb220df5af760517464600f9449caceb669883a03b2b3f92bebeb2b`. Driver sha256 stored on the result: `b9e9a780d834ac2f286eeeb2ae0cc47f6e76c7465a60af246a7ebc0a67c787db` |
+| Plaintext hash | `eab1d171c0960f1ad75deb33345b6d307bb97f2126c1ec20c9acd2675db9f299` |
+| Reproducing command | `python scripts/yrss_paired_eval.py` with `--baseline`, `--candidate`, `--data-dir`, `--key-file`, and `--out`. The exact argv of the stored run is not in the JSON. Not run this session. Plaintext and key stay outside the repo |
+| MAY | Cite the paired move 0.834 to 0.871 as three-decimal rounding of the two stored F2 values, with both F1 values, on this closed synthetic set |
+| MAY NOT | Cite as a fresh held-out win for any commit after `ed01027`, or as real-document accuracy. Negative controls are unchanged and are not a precision win: 23/52 clean and 36 false positives in both arms; shared-11 view 42/52 clean and 10 false positives in both arms |
+
+Paired F2 difference stored in `paired_f2`: +0.03719240497986731, 95% CI 0.026076086386718322 to 0.04825962883307955, 1,000 shared resamples, seed 0.
+
+## synthetic hard-test F1 0.971 / F2 0.965
+
+| Field | Record |
+|---|---|
+| Value | AI Guard micro F1 0.970873786407767; F2 0.9652509652509652; P 0.9803921568627451; R 0.9615384615384616; tp 100; fp 2; fn 4 |
+| Metric | Micro precision, recall, F1, and F2 over the twelve redaction types. Predictions outside that list count as false positives |
+| Dataset / split | `hard-test-v1`, seed `20261103`, 60 documents, `official` true. Comparative synthetic prose (ชุดสังเคราะห์เปรียบเทียบ) |
+| Held-out? | No. Not a held-out substitute. The dev half of the same generator was readable while detectors changed. This split is not `blind-v2.enc` |
+| Source file | `docs/benchmark/runs/hard-test.json` system `aiguard` `micro`. Rendered with `.3f` in `docs/benchmark/per-entity-results.md`. File sha256 `2f03e327ae97493f5d4d7fb06e7acfbb415d0e8e8601c582ee9159ed4c8f8127` |
+| Commit SHA | Measured in `bd18441ca3ed742382b393acc42cc8896ae81c3f`. That blob is on this branch via the cherry-pick. A later re-run on current detectors is a different tree; see WORKLOG |
+| Lock hash | `benchmark/data/hard-test.lock.json` sha256 `21eda81a3b19e19531775a20b312a5b94405ccba5dbbe27f603f8c55bd5b36cd`, also stored in `docs/benchmark/runs/environment.json` |
+| Plaintext hash | `90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11` |
+| Reproducing command | `python -m benchmark.blind_v2 --split hard-test --systems aiguard,regex,presidio,pythainlp-ner,wangchanberta-ner --no-utility --json <path>`, from `docs/benchmark/per-entity-results.md`. Re-run 2026-11-05; see below. The sealed corpus is not an input |
+| MAY | Cite as a comparative score against regex, Presidio, PyThaiNLP NER, and WangchanBERTa NER on this locked synthetic split, with the layer ablation from the `bd18441` JSON |
+| MAY NOT | Cite as held-out, as a replacement for sealed blind-v2 0.799, or as real-document accuracy |
+
+## Reproduction on 2026-11-05
+
+Command log: self-check hashes matched the three lock plaintext hashes above.
+Python 3.12.3. Packages matched the recovered environment except
+`sentencepiece` 0.2.3 here versus 0.2.2 recorded in
+`docs/benchmark/runs/environment.json`. No API key was set. `gemma` was not
+run (`ollama` is not installed). Field compare is
+`docs/benchmark/runs/repro-2026-11-05.json`.
+
+Hard-test and hard-dev AI Guard full micro, and every baseline micro on all
+three splits, matched the `bd18441` JSON. Hard-test full micro is still
+F1 0.970873786407767 and F2 0.9652509652509652.
+
+The labeled freeze AI Guard full micro did not match. Historical fp 24,
+F1 0.9446494464944649, F2 0.9638554216867468. This run: fp 22,
+F1 0.9481481481481483, F2 0.9653092006033182, recall unchanged at
+0.9770992366412213. NAME false positives 8 to 6. ADDRESS false positives 4 to
+0. `other_false_positives` 12 to 16. Negative documents 7/12 clean to 8/12.
+Do not replace the stored 0.964 headline with this re-run. Python `.3f` of the re-run freeze F2 is also 0.965, the same three-decimal text as hard-test F2 0.9652509652509652. The floats differ.
+
+The `fp`-removed ablation also moved. Hard-test F2 0.5147058823529411 to
+0.570539419087137. Current `benchmark/blind_v2/ablate.py` still runs source
+recovery when `fp` is removed. That function was not in the `bd18441` parent.
+The `tb`-removed freeze micro F2 stayed 0.7704654895666132.
+
+The same JSON's original freeze (`blind-v2-repro`, seed `20261101`, plaintext `ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624`) scores AI Guard micro P 0.9142857142857143, R 0.9770992366412213, F1 0.9446494464944649, F2 0.9638554216867468. That is the labeled synthetic freeze, not the sealed protocol corpus. Hard-dev (seed `20261102`, plaintext `b169fcb72add15dc46cdd62fcb3dac179a4d0b9aa467ad0fb29a40514c76273b`) was the split read during the fix: micro P 0.95, R 0.9827586206896551, F1 0.9661016949152542, F2 0.9760273972602741. Do not cite hard-dev as the test result.
+
+## What is not a headline
+
+| Item | Status |
+|---|---|
+| `gemma3:1b` on the 2026-11-01 synthetic freeze | Printed P 0.400, R 0.008, F2 0.009 in `docs/benchmark/blind-v2-results.md`. Exact F1 is UNVERIFIED |
+| `gemma3:1b` on hard-test in that same markdown | Printed P 0.000, R 0.000, F2 0.000. Exact counts are not in the recovered 2026-11-03 JSON, which did not score an LLM |
+| Section 26 paraphrase recall | Stored `section26.micro_recall` 0.0 on n=8 in `hard-test.json`. Warn/report, not a redaction F1 |
+| Historical paper commit `d93d10b` | Absent from this clone. See METHODS. Not an accuracy figure |
+| `research/stt52/` gold-v3 F2 0.801 | A different study. Do not cite it as sealed blind-v2 0.799 |
+
+## Outside this repository
+
+`docs/enterprise/release-scope.md` names a separate tree, `ai-guard-docs/stt52-2026`. That tree is not in this workspace and was not edited. If its poster, slides, or abstract still lead with only gold-v4 F2 0.947 and sealed blind-v2 F2 0.799, point them here and show P, R, F1, and F2. Keep 0.947 on the development set, keep 0.799 on the old sealed freeze, add the closed holdout pair 0.834 to 0.871, and keep hard-test F1 0.971 / F2 0.965 comparative only.
