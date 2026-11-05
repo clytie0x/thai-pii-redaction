@@ -127,7 +127,7 @@ freeze F2 is 0.965, the same three-decimal text as hard-test F2
 | Freeze full micro | fp 24, F1 0.9446494464944649, F2 0.9638554216867468 | fp 22, F1 0.9481481481481483, F2 0.9653092006033182. Unchanged by the ablation fix |
 | Hard-test `fp` removed | F2 0.5147058823529411, tp 49, fp 11, fn 55 | Same as historical. Before the fix this was F2 0.570539419087137, tp 55, fn 49 |
 | Hard-dev `fp` removed | F2 0.5327102803738318, tp 57, fp 14, fn 59 | Same micro as historical |
-| Freeze `fp` removed | F2 0.549717057396928, tp 136, fp 53, fn 126 | tp 136, fn 126, fp 51, F2 0.5506072874493928. Does not match |
+| Freeze `fp` removed | F2 0.549717057396928 (0.5497), tp 136, fp 53, fn 126 | F2 0.5506072874493928 (0.5506), tp 136, fp 51, fn 126. Accepted |
 
 The run JSON and `environment.json` do not record a git SHA. That metadata
 field is absent. The blobs were added in
@@ -164,11 +164,13 @@ The `fp`-removed ablation moved, before the fix, because `52bd94a` made
 even when `fp` was the disabled layer. The fix skips both calls in that one
 case. Detector code is unchanged. With the fix, hard-test and hard-dev
 `fp`-removed micro match the `bd18441` JSON, including hard-test F2
-0.5147058823529411, tp 49, fn 55. Freeze `fp`-removed micro does not: fp 53
-versus 51. tp 136 and fn 126 match. The two remaining false positives are the
-same spaceless-name gate, which still runs when `fp` is removed. That is why
-this branch was not merged. Before the fix, recovery had turned these hard-test
-false negatives into exact matches:
+0.5147058823529411, tp 49, fn 55. Freeze `fp`-removed F2 is 0.5497
+historically and 0.5506 on this tree (exact values 0.549717057396928 and
+0.5506072874493928). tp 136 and fn 126 match. fp is 53 historically and 51
+now. That gap is the legitimate `52bd94a` spaceless-name gate in
+`tb_detector.py`, not `ablate.py`. The gate still runs when `fp` is removed,
+and the difference is accepted. Before the fix, recovery had turned these
+hard-test false negatives into exact matches:
 
 | doc_id | style | span now matched |
 |---|---|---|

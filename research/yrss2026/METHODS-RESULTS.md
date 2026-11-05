@@ -91,11 +91,12 @@ both, so `predict_ablated(text, None)` still matches `detect_all`.
 After that fix, cite the historical ablation numbers again for hard-test and
 hard-dev. Hard-test `fp`-removed micro is F2 0.5147058823529411, tp 49, fp
 11, fn 55. Hard-dev is F2 0.5327102803738318, tp 57, fp 14, fn 59. Freeze
-`fp`-removed micro is not back to the historical JSON: tp 136 and fn 126
-match, fp is 51 rather than 53, and F2 is 0.5506072874493928 rather than
-0.549717057396928. Those two false positives are the name-length gate above.
-The pre-fix bug score, F2 0.570539419087137 with tp 55 and fn 49, is not the
-number to cite.
+`fp`-removed F2 is 0.5497 in the historical JSON and 0.5506 on the current
+tree: exact F2 0.549717057396928 versus 0.5506072874493928, with tp 136 and
+fn 126 unchanged and fp 53 versus 51. Those two false positives are the
+legitimate `52bd94a` spaceless-name gate, not a leftover `ablate.py` bug.
+The difference is accepted. The pre-fix bug score, F2 0.570539419087137 with
+tp 55 and fn 49, is not the number to cite.
 
 Layer ablations turn off one assembly step at a time. `fp` removes the format
 and checksum detector. `tb` removes the text detector, including its title and
