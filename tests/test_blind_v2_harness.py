@@ -351,6 +351,41 @@ def test_full_ablation_matches_detect_all():
         assert predict_ablated(text, None) == expected
 
 
+def test_fp_off_does_not_recover_structured_spans(monkeypatch):
+    """The fp ablation removes format detection and its recovery substitute."""
+    from pii_redactor.models import Entity
+
+    probe = Entity(
+        entity_id="recovery-probe",
+        redact_type="FP",
+        data_type="PHONE",
+        span=(2, 6),
+        score=1.0,
+        original_text="abcd",
+    )
+    calls: list[str] = []
+
+    def fake_recover(text: str) -> list[Entity]:
+        calls.append("recover")
+        return [probe]
+
+    import pii_redactor.detectors.aggregate as aggregate
+    import pii_redactor.detectors.structured_views as structured_views
+
+    monkeypatch.setattr(structured_views, "recover_structured", fake_recover)
+    # detect_all keeps the name it imported. Patch that binding too so a
+    # later test does not observe this probe after the module is loaded.
+    monkeypatch.setattr(aggregate, "recover_structured", fake_recover)
+    text = "abcdefghij"
+    without_fp = predict_ablated(text, "fp")
+    assert calls == []
+    assert (2, 6, "PHONE") not in without_fp
+
+    with_fp = predict_ablated(text, None)
+    assert calls == ["recover"]
+    assert (2, 6, "PHONE") in with_fp
+
+
 def _unit_report(scored, misses):
     def system(name):
         return {

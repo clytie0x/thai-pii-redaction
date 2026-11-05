@@ -82,12 +82,20 @@ F1 0.9481481481481483, F2 0.9653092006033182. The stored F2
 space-free runs longer than 25 characters are dropped. It removes NAME 0:27
 on `b2r-0000` and NAME 0:42 on `b2r-0078`. Recall is unchanged.
 
-Current hard-test `fp`-removed micro, and the number to cite for this tree,
-is F2 0.570539419087137 (tp 55, fp 11, fn 49). The stored F2
-0.5147058823529411 is historical. `benchmark/blind_v2/ablate.py` still calls
-`recover_structured` when the format detector is removed, so zero-width and
-Thai-digit forms are found anyway. The new matches are exact gold spans that
-were false negatives. Neither re-run figure is a held-out result.
+`52bd94a` left `recover_structured` running inside the `fp` ablation. That
+was a harness bug, not a detector change. The fix is in
+`benchmark/blind_v2/ablate.py`: when `fp` is the disabled layer, neither
+`recover_structured` nor `admit_recovery` runs. The full path still calls
+both, so `predict_ablated(text, None)` still matches `detect_all`.
+
+After that fix, cite the historical ablation numbers again for hard-test and
+hard-dev. Hard-test `fp`-removed micro is F2 0.5147058823529411, tp 49, fp
+11, fn 55. Hard-dev is F2 0.5327102803738318, tp 57, fp 14, fn 59. Freeze
+`fp`-removed micro is not back to the historical JSON: tp 136 and fn 126
+match, fp is 51 rather than 53, and F2 is 0.5506072874493928 rather than
+0.549717057396928. Those two false positives are the name-length gate above.
+The pre-fix bug score, F2 0.570539419087137 with tp 55 and fn 49, is not the
+number to cite.
 
 Layer ablations turn off one assembly step at a time. `fp` removes the format
 and checksum detector. `tb` removes the text detector, including its title and
@@ -148,8 +156,8 @@ same JSON. A negative delta means the removed layer had been helping.
 | tb | 1.0 | 0.6346153846153846 | 0.7764705882352941 | 0.6846473029045642 | -0.326923076923077 | -0.280603662346401 |
 | address_merge | 0.7575757575757576 | 0.9615384615384616 | 0.8474576271186441 | 0.9124087591240876 | 0.0 | -0.05284220612687762 |
 
-That `fp` row is the historical `bd18441` JSON. On the current tree the same
-removal scores F2 0.570539419087137 because recovery stays on. `fn`,
+That `fp` row is the historical `bd18441` JSON, and the ablation fix makes
+the current hard-test micro match it again. `fn`,
 `record_names`, `facility_filter`, and `student_relabel` have delta 0
 on this split in that JSON. On the labeled freeze in `freeze.json`, removing
 `fp` moves micro F2 by -0.41413836428981876 and removing `tb` moves it by

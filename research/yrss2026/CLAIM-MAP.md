@@ -122,10 +122,12 @@ The current numbers below are the 2026-11-05 re-run on commit
 freeze F2 is 0.965, the same three-decimal text as hard-test F2
 0.9652509652509652. The floats differ.
 
-| Row | Historical, keep for the 2026-11-03 table | Current, `52bd94a` and later |
+| Row | Historical `bd18441` JSON | After the `fp` ablation fix |
 |---|---|---|
-| Freeze full micro | fp 24, F1 0.9446494464944649, F2 0.9638554216867468 | fp 22, F1 0.9481481481481483, F2 0.9653092006033182, recall still 0.9770992366412213 |
-| Hard-test `fp` removed | F2 0.5147058823529411, recall 0.47115384615384615, tp 49, fn 55 | F2 0.570539419087137, recall 0.5288461538461539, tp 55, fn 49, micro fp still 11 |
+| Freeze full micro | fp 24, F1 0.9446494464944649, F2 0.9638554216867468 | fp 22, F1 0.9481481481481483, F2 0.9653092006033182. Unchanged by the ablation fix |
+| Hard-test `fp` removed | F2 0.5147058823529411, tp 49, fp 11, fn 55 | Same as historical. Before the fix this was F2 0.570539419087137, tp 55, fn 49 |
+| Hard-dev `fp` removed | F2 0.5327102803738318, tp 57, fp 14, fn 59 | Same micro as historical |
+| Freeze `fp` removed | F2 0.549717057396928, tp 136, fp 53, fn 126 | tp 136, fn 126, fp 51, F2 0.5506072874493928. Does not match |
 
 The run JSON and `environment.json` do not record a git SHA. That metadata
 field is absent. The blobs were added in
@@ -157,14 +159,16 @@ inside the micro false-positive total. It does not explain fp 24 to 22.
 Negative clean documents 7/12 to 8/12 is `b2r-0078` losing its only false
 positive.
 
-The `fp`-removed ablation moved because `benchmark/blind_v2/ablate.py` calls
-`recover_structured` and `admit_recovery` after the layer switch, including
-when `fp` is the disabled layer. Those functions were added in the same
-commit (`pii_redactor/detectors/structured_views.py`, with
-`scan_views.original_guard_entities`). New detectors with the old `ablate.py`
-keep the historical ablation counts. Current `ablate.py` with recovery and
-without the address relabel reproduces the new counts. Each gained true
-positive is an exact gold span that had been a false negative. Hard-test:
+The `fp`-removed ablation moved, before the fix, because `52bd94a` made
+`benchmark/blind_v2/ablate.py` call `recover_structured` and `admit_recovery`
+even when `fp` was the disabled layer. The fix skips both calls in that one
+case. Detector code is unchanged. With the fix, hard-test and hard-dev
+`fp`-removed micro match the `bd18441` JSON, including hard-test F2
+0.5147058823529411, tp 49, fn 55. Freeze `fp`-removed micro does not: fp 53
+versus 51. tp 136 and fn 126 match. The two remaining false positives are the
+same spaceless-name gate, which still runs when `fp` is removed. That is why
+this branch was not merged. Before the fix, recovery had turned these hard-test
+false negatives into exact matches:
 
 | doc_id | style | span now matched |
 |---|---|---|

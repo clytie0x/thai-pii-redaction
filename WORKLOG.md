@@ -156,6 +156,28 @@ LOCATION and does not change the micro false-positive total.
 After this write-up, `PYTHONUTF8=1 .venv/bin/python -m pytest -q --tb=line`
 printed `3467 passed, 318 skipped` in 94.31s. Exit code 0. No failures.
 
+## Ablation fix, not merged
+
+`benchmark/blind_v2/ablate.py` now skips `recover_structured` and
+`admit_recovery` when the disabled layer is `fp`. A unit test patches
+`recover_structured` and requires that call, and its probe span, to be absent
+when `fp` is off and present on the full path. Detector code was not changed.
+
+Re-score command, AI Guard only, `--no-utility --no-section26`, compared with
+`docs/benchmark/runs/{freeze,hard-dev,hard-test}.json` layer `disabled=fp`:
+
+| Split | Historical micro | After the fix |
+|---|---|---|
+| hard-test | tp 49, fp 11, fn 55, F2 0.5147058823529411 | match |
+| hard-dev | tp 57, fp 14, fn 59, F2 0.5327102803738318 | micro match |
+| freeze | tp 136, fp 53, fn 126, F2 0.549717057396928 | tp 136, fp 51, fn 126, F2 0.5506072874493928 |
+
+Freeze does not match. The two false positives are the `52bd94a` name-length
+gate, which still runs in the `fp` ablation. Hard-test ADDRESS by-type fp is
+2 in the historical JSON and 0 after the fix because numberless addresses are
+relabeled LOCATION. Micro counts for that split still match. The branch was
+not squash-merged.
+
 ## Self-review
 
 - The hard-test headline reproduced. Freeze full fp 24 to 22 is the new
