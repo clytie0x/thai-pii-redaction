@@ -178,6 +178,8 @@ gate, which still runs in the `fp` ablation. Hard-test ADDRESS by-type fp is
 relabeled LOCATION. Micro counts for that split still match. The branch was
 not squash-merged.
 
+Full suite after the fix: `3468 passed, 318 skipped` in 88.02s. Exit code 0.
+
 ## Self-review
 
 - The hard-test headline reproduced. Freeze full fp 24 to 22 is the new
