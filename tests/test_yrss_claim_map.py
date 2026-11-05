@@ -6,6 +6,7 @@ and it does not open a sealed blob.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -19,6 +20,7 @@ SCORES = ROOT / "benchmark" / "data" / "blind-scores.jsonl"
 BLIND_LOCK = ROOT / "benchmark" / "data" / "blind-v2.lock.json"
 HOLDOUT_LOCK = ROOT / "benchmark" / "data" / "yrss-holdout-v1.lock.json"
 HARD_LOCK = ROOT / "benchmark" / "data" / "hard-test.lock.json"
+GEMMA = ROOT / "docs" / "benchmark" / "runs" / "gemma-freeze.json"
 
 
 def _load(path: Path) -> dict:
@@ -108,6 +110,54 @@ def test_sealed_blind_v2_reveal_matches_its_lock() -> None:
     assert reveal["reveal_index"] == 1
     assert reveal["over_budget"] is False
     assert lock["version"] == "blind-v2"
+
+
+def test_gemma_freeze_claim_quotes_the_llm_run() -> None:
+    report = _load(GEMMA)
+    micro = next(row for row in report["systems"] if row["name"] == "llm")["micro"]
+    assert report["dataset"]["seed"] == 20261101
+    assert report["dataset"]["documents"] == 82
+    assert report["dataset"]["official"] is True
+    assert report["dataset"]["version"] == "blind-v2-repro"
+    assert (
+        report["dataset"]["plaintext_sha256"]
+        == "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624"
+    )
+    assert micro == {
+        "f1": 0.0,
+        "fn": 262,
+        "f2": 0.0,
+        "fp": 5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0,
+    }
+    assert report["systems"][0]["status"] == "ok"
+    assert report["systems"][0]["cost_usd"] == 0.0
+    assert report["ablations"] == {"status": "error", "reason": "TimeoutError"}
+    file_sha = hashlib.sha256(GEMMA.read_bytes()).hexdigest()
+    phrases = [
+        "tp 0, fp 5, fn 262",
+        "F1 0.0",
+        "F2 0.0",
+        "P 0.400",
+        "R 0.008",
+        "F2 0.009",
+        "does not reproduce",
+        "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+        "0.40.14",
+        "temperature 1",
+        "no seed",
+        "76c14975818cec1a7efeacd7d61481cb793bfc5f",
+        "python -m benchmark.blind_v2 --systems llm --no-utility --json docs/benchmark/runs/gemma-freeze.json",
+        "152 seconds",
+        "3.13.18",
+        file_sha,
+        "TimeoutError",
+        "All 5 false positives are THAI_ID",
+    ]
+    _must_contain(CLAIM, phrases)
+    _must_contain(METHODS, phrases)
 
 
 def test_methods_report_f1_beside_f2_and_the_limits() -> None:

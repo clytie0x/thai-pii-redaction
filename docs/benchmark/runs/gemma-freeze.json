@@ -1,0 +1,231 @@
+{
+  "ablations": {
+    "status": "error",
+    "reason": "TimeoutError"
+  },
+  "dataset": {
+    "documents": 82,
+    "limited": false,
+    "official": true,
+    "plaintext_sha256": "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624",
+    "seed": 20261101,
+    "version": "blind-v2-repro"
+  },
+  "section26": {
+    "by_category": {
+      "HEALTH": {
+        "flagged": 4,
+        "n": 4,
+        "recall": 1.0
+      },
+      "RELIGION": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "RACE_ETHNICITY": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "POLITICAL_OPINION": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "SEXUAL_BEHAVIOR": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "CRIMINAL_RECORD": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "DISABILITY": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      },
+      "LABOR_UNION": {
+        "flagged": 1,
+        "n": 1,
+        "recall": 1.0
+      }
+    },
+    "micro_recall": 1.0,
+    "n": 11,
+    "status": "ok"
+  },
+  "systems": [
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 0.0,
+          "fn": 35,
+          "f2": 0.0,
+          "fp": 5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 0.0,
+          "fn": 44,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 0.0,
+          "fn": 28,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 0.0,
+          "fn": 22,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.0,
+          "fn": 70,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 0.0,
+          "fn": 15,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 1596.8512820000456,
+        "p95": 2497.6129249999985
+      },
+      "macro": {
+        "f1": 0.0,
+        "f2": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.0,
+        "fn": 262,
+        "f2": 0.0,
+        "fp": 5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "name": "llm",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 50,
+        "false_negatives_without_prefix_cue": 20,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 12,
+        "clean_doc_rate": 1.0,
+        "documents": 12,
+        "false_positives": 0
+      },
+      "other_false_positives": 0,
+      "peak_memory_bytes": {
+        "p50": 281061.0,
+        "p95": 471435.0
+      },
+      "reason": "",
+      "status": "ok"
+    }
+  ],
+  "utility": {
+    "status": "skipped",
+    "reason": "disabled"
+  }
+}

@@ -15,9 +15,10 @@ artifacts are **absent** from this clone (`git cat-file` does not resolve
 them). The numbers below are still in files this clone contains. Absence of
 the old commit is not a license to recompute the number on current `main`.
 
-`gemma3:1b` F1 on the original synthetic freeze is **UNVERIFIED**. The
-2026-11-01 table prints precision, recall, and F2 only. It does not store
-tp, fp, and fn, and this session had no local Ollama model.
+`gemma3:1b` on the original synthetic freeze is **VERIFIED** as one local
+sample. Exact counts are in `docs/benchmark/runs/gemma-freeze.json`. The
+2026-11-01 table prints P 0.400, R 0.008, and F2 0.009 only. This sample
+does not reproduce that printed row. Sampling details are below.
 
 ## Summary
 
@@ -107,8 +108,9 @@ Paired F2 difference stored in `paired_f2`: +0.03719240497986731, 95% CI 0.02607
 Command log: self-check hashes matched the three lock plaintext hashes above.
 Python 3.12.3. Packages matched the recovered environment except
 `sentencepiece` 0.2.3 here versus 0.2.2 recorded in
-`docs/benchmark/runs/environment.json`. No API key was set. `gemma` was not
-run (`ollama` is not installed). Field compare is
+`docs/benchmark/runs/environment.json`. No API key was set. Those commands
+did not score `gemma` (`ollama` was not installed for them). A separate
+`llm` run on the same freeze is in the gemma section. Field compare is
 `docs/benchmark/runs/repro-2026-11-05.json`.
 
 Hard-test and hard-dev AI Guard full micro, and every baseline micro on all
@@ -189,12 +191,31 @@ checksum spans back onto the original offsets.
 
 The same JSON's original freeze (`blind-v2-repro`, seed `20261101`, plaintext `ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624`) scores AI Guard micro P 0.9142857142857143, R 0.9770992366412213, F1 0.9446494464944649, F2 0.9638554216867468. That is the labeled synthetic freeze, not the sealed protocol corpus. Hard-dev (seed `20261102`, plaintext `b169fcb72add15dc46cdd62fcb3dac179a4d0b9aa467ad0fb29a40514c76273b`) was the split read during the fix: micro P 0.95, R 0.9827586206896551, F1 0.9661016949152542, F2 0.9760273972602741. Do not cite hard-dev as the test result.
 
+## gemma3:1b on the original freeze
+
+| Field | Record |
+|---|---|
+| Value | This sample: tp 0, fp 5, fn 262; P 0.0; R 0.0; F1 0.0; F2 0.0. Python `.3f` is P 0.000, R 0.000, F1 0.000, F2 0.000. All 5 false positives are THAI_ID. The 2026-11-01 table prints P 0.400, R 0.008, F2 0.009 and stores no tp, fp, or fn. This sample does not reproduce that printed row |
+| Metric | Micro precision, recall, F1, and F2 over the twelve redaction types. The harness system name is `llm` |
+| Dataset / split | Original synthetic freeze, `blind-v2-repro`, seed `20261101`, 82 documents, `official` true. Not the sealed protocol corpus |
+| Held-out? | No. Comparative synthetic freeze. Not a held-out substitute |
+| Source file | `docs/benchmark/runs/gemma-freeze.json` system `llm` `micro`. File sha256 `171f36a6be36a38f52aa30d1dd30c3c6df5993650c0d3c148212e7b26f4378e8` |
+| Commit SHA | Scored with the harness and detectors at `76c14975818cec1a7efeacd7d61481cb793bfc5f`. This change does not edit `pii_redactor/` or `benchmark/blind_v2/` |
+| Model | Ollama 0.40.14. `gemma3:1b` digest `97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c`, Q4_K_M, 806067407 bytes. The 2026-11-01 write-up recorded Ollama 0.40.13 |
+| Sampling | The harness POST body is `model`, `prompt`, and `stream` false. It sets no temperature and no seed. The loaded model parameters are temperature 1, top_k 64, top_p 0.95. Sampling is nondeterministic. This file is one sample. The server loaded context length 4096; the harness did not set it |
+| Wall time | 152 seconds for the command below. llm latency p50 1596.8512820000456 ms, p95 2497.6129249999985 ms. Cost 0 |
+| Interpreter | Python 3.13.18 |
+| Reproducing command | `python -m benchmark.blind_v2 --systems llm --no-utility --json docs/benchmark/runs/gemma-freeze.json`. Default `--split` is `freeze`. No prompt was edited |
+| Ablations | The same process ran ablations after the llm row. They returned TimeoutError, and the process printed a thainer-1.4 download line before the score table. That error is in the JSON. It is not an llm score |
+| MAY | Cite this sample's exact zeros beside the unreproduced printed row, as one local draw at temperature 1 and cost 0 |
+| MAY NOT | Cite P 0.400, R 0.008, F2 0.009 as the exact F1 of this tree, or cite this sample as a stable score. It is not a product headline, not held-out, and not real-document accuracy |
+
 ## What is not a headline
 
 | Item | Status |
 |---|---|
-| `gemma3:1b` on the 2026-11-01 synthetic freeze | Printed P 0.400, R 0.008, F2 0.009 in `docs/benchmark/blind-v2-results.md`. Exact F1 is UNVERIFIED |
-| `gemma3:1b` on hard-test in that same markdown | Printed P 0.000, R 0.000, F2 0.000. Exact counts are not in the recovered 2026-11-03 JSON, which did not score an LLM |
+| `gemma3:1b` on the original synthetic freeze | VERIFIED sample, not a headline. tp 0, fp 5, fn 262; P 0.0; R 0.0; F1 0.0; F2 0.0. The printed 2026-11-01 row P 0.400, R 0.008, F2 0.009 was not reproduced |
+| `gemma3:1b` on hard-test in that same markdown | Printed P 0.000, R 0.000, F2 0.000. Exact counts are not in the recovered 2026-11-03 JSON, which did not score an LLM. Hard-test gemma stays UNVERIFIED |
 | Section 26 paraphrase recall | Stored `section26.micro_recall` 0.0 on n=8 in `hard-test.json`. Warn/report, not a redaction F1 |
 | Historical paper commit `d93d10b` | Absent from this clone. See METHODS. Not an accuracy figure |
 | `research/stt52/` gold-v3 F2 0.801 | A different study. Do not cite it as sealed blind-v2 0.799 |

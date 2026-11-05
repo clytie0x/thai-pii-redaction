@@ -59,10 +59,10 @@ python -m benchmark.blind_v2 --split hard-test --systems aiguard,regex,presidio,
 
 Systems on that run: AI Guard (`predict_ablated` with no layer removed; default
 thainer CRF), a cue-and-pattern regex baseline, Presidio analyzer 2.2.360,
-PyThaiNLP NER 5.4.0, and WangchanBERTa NER. `gemma3:1b` was scored only in the
-earlier 2026-11-01 write-up (`docs/benchmark/blind-v2-results.md`), under
-local Ollama, at cost 0. This session does not call a hosted model.
-`ollama` is not installed here, so gemma was not re-run.
+PyThaiNLP NER 5.4.0, and WangchanBERTa NER. `gemma3:1b` was scored in the
+2026-11-01 write-up (`docs/benchmark/blind-v2-results.md`) and again on
+2026-11-05 as harness system `llm`. The later sample does not reproduce
+the printed 2026-11-01 row. No hosted model was called.
 
 The same commands were run again on 2026-11-05 (Python 3.12.3). Self-checks
 matched the lock hashes. Hard-test and hard-dev full micro matched the table
@@ -171,8 +171,20 @@ n=11, where the phrases contain the keywords. Those labels are warn/report.
 They are not redaction true positives.
 
 The 2026-11-01 local `gemma3:1b` row on the labeled freeze prints P 0.400,
-R 0.008, F2 0.009. Exact F1 is UNVERIFIED. On the hard-test table in that
-same file the printed LLM P, R, and F2 are 0.000. No API key was used.
+R 0.008, F2 0.009. That table stores no tp, fp, or fn. The 2026-11-05
+re-score on the same lock is tp 0, fp 5, fn 262; P 0.0; R 0.0; F1 0.0;
+F2 0.0. All 5 false positives are THAI_ID. This sample does not reproduce
+that printed row. Command:
+`python -m benchmark.blind_v2 --systems llm --no-utility --json docs/benchmark/runs/gemma-freeze.json`.
+Harness SHA `76c14975818cec1a7efeacd7d61481cb793bfc5f`. Python 3.13.18.
+Ollama 0.40.14. Model digest
+`97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c`.
+The harness sets no temperature and no seed. The model parameter is
+temperature 1. Wall time was 152 seconds. JSON sha256
+`171f36a6be36a38f52aa30d1dd30c3c6df5993650c0d3c148212e7b26f4378e8`.
+Ablations in that process returned TimeoutError and are not an llm score.
+On the hard-test table in the 2026-11-01 file the printed LLM P, R, and F2
+are 0.000. Hard-test gemma stays unverified. No API key was used.
 
 ## Limitations
 
@@ -185,9 +197,10 @@ PDPA Section 26 paraphrase detection on the hard-test keyword scan is 0
 (n=8). The semantic model was not installed for that run. The product treats
 Section 26 as warn/report, not as an automatic redaction block.
 
-The LLM baseline is weak on the committed 2026-11-01 table, and it is absent
-from the recovered 2026-11-03 JSON. This session does not invent a gemma
-score. A larger local model was not loaded.
+The LLM baseline on the committed 2026-11-01 table is a printed rounding.
+The 2026-11-05 sample is exact and is F1 0.0. It is one nondeterministic
+draw at temperature 1, and it is absent from the recovered 2026-11-03 JSON.
+A larger local model was not loaded.
 
 The sealed blind-v2 plaintext was not decrypted. Later synthetic locks are a
 different artifact (`benchmark/data/blind-v2-repro.lock.json` records
