@@ -32,11 +32,17 @@ def default_system_names() -> tuple[str, ...]:
     return tuple(_SYSTEMS)
 
 
-def build_systems(names: list[str]):
+def build_systems(names: list[str], *, llm_seed: int | None = None):
     unknown = [name for name in names if name not in _SYSTEMS]
     if unknown:
         raise ValueError("unknown system")
-    return [_SYSTEMS[name]() for name in names]
+    systems = []
+    for name in names:
+        if name == "llm":
+            systems.append(LLMRedactor(seed=llm_seed))
+        else:
+            systems.append(_SYSTEMS[name]())
+    return systems
 
 
 def run_benchmark(
@@ -228,6 +234,9 @@ def _evaluate(system, documents):
         "reason": "",
         "status": "ok",
     }
+    sampling_seed = getattr(system, "sampling_seed", None)
+    if sampling_seed is not None:
+        row["sampling_seed"] = sampling_seed
     return row, predictions
 
 

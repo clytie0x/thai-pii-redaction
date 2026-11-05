@@ -59,10 +59,10 @@ python -m benchmark.blind_v2 --split hard-test --systems aiguard,regex,presidio,
 
 Systems on that run: AI Guard (`predict_ablated` with no layer removed; default
 thainer CRF), a cue-and-pattern regex baseline, Presidio analyzer 2.2.360,
-PyThaiNLP NER 5.4.0, and WangchanBERTa NER. `gemma3:1b` was scored in the
-2026-11-01 write-up (`docs/benchmark/blind-v2-results.md`) and again on
-2026-11-05 as harness system `llm`. The later sample does not reproduce
-the printed 2026-11-01 row. No hosted model was called.
+PyThaiNLP NER 5.4.0, and WangchanBERTa NER. `gemma3:1b` was printed in the
+2026-11-01 write-up (`docs/benchmark/blind-v2-results.md`). F2 0.009 is an
+unreproduced historical print. The verified figure is the seeded mean below.
+No hosted model was called.
 
 The same commands were run again on 2026-11-05 (Python 3.12.3). Self-checks
 matched the lock hashes. Hard-test and hard-dev full micro matched the table
@@ -171,20 +171,23 @@ n=11, where the phrases contain the keywords. Those labels are warn/report.
 They are not redaction true positives.
 
 The 2026-11-01 local `gemma3:1b` row on the labeled freeze prints P 0.400,
-R 0.008, F2 0.009. That table stores no tp, fp, or fn. The 2026-11-05
-re-score on the same lock is tp 0, fp 5, fn 262; P 0.0; R 0.0; F1 0.0;
-F2 0.0. All 5 false positives are THAI_ID. This sample does not reproduce
-that printed row. Command:
-`python -m benchmark.blind_v2 --systems llm --no-utility --json docs/benchmark/runs/gemma-freeze.json`.
-Harness SHA `76c14975818cec1a7efeacd7d61481cb793bfc5f`. Python 3.13.18.
-Ollama 0.40.14. Model digest
+R 0.008, F2 0.009. F2 0.009 is an unreproduced historical print. The
+verified figure is five Ollama seeds on harness system `llm`. Each request
+sends `options.seed` and leaves temperature unset. The model parameter is
+temperature 1. Python 3.13.18. Ollama 0.40.14. Model digest
 `97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c`.
-The harness sets no temperature and no seed. The model parameter is
-temperature 1. Wall time was 152 seconds. JSON sha256
-`171f36a6be36a38f52aa30d1dd30c3c6df5993650c0d3c148212e7b26f4378e8`.
-Ablations in that process returned TimeoutError and are not an llm score.
-On the hard-test table in the 2026-11-01 file the printed LLM P, R, and F2
-are 0.000. Hard-test gemma stays unverified. No API key was used.
+Detectors and the prompt match
+`30b97690883f81897cb7c6bac7fa6c2b85c04c57`.
+
+`python -m benchmark.blind_v2 --split freeze --systems llm --no-ablate --no-utility --no-section26 --llm-seed 1 --json docs/benchmark/runs/gemma-freeze-seed-1.json`
+
+`python -m benchmark.blind_v2 --split hard-test --systems llm --no-ablate --no-utility --no-section26 --llm-seed 1 --json docs/benchmark/runs/gemma-hard-test-seed-1.json`
+
+Freeze mean±range: tp 1.6 (min 1, max 2); fp 3.0 (min 1, max 5); fn 260.4 (min 260, max 261); P 0.3738095238095238 (min 0.25, max 0.5); R 0.0061068702290076335 (min 0.003816793893129771, max 0.007633587786259542); F1 0.011985482032673193 (min 0.007518796992481203, max 0.015037593984962405); F2 0.007597359782984441 (min 0.004752851711026617, max 0.009505703422053233).
+
+Hard-test mean±range: tp 0.0 (min 0, max 0); fp 0.2 (min 0, max 1); fn 104.0 (min 104, max 104); P 0.0 (min 0.0, max 0.0); R 0.0 (min 0.0, max 0.0); F1 0.0 (min 0.0, max 0.0); F2 0.0 (min 0.0, max 0.0).
+
+The five hard-test seeds took 443 seconds. Seed 1 on that split has fp 1. The printed hard-test P 0.000, R 0.000, F2 0.000 matches `.3f` of the scores and is not a stored zero-count. No API key was used.
 
 ## Limitations
 
@@ -198,8 +201,8 @@ PDPA Section 26 paraphrase detection on the hard-test keyword scan is 0
 Section 26 as warn/report, not as an automatic redaction block.
 
 The LLM baseline on the committed 2026-11-01 table is a printed rounding.
-The 2026-11-05 sample is exact and is F1 0.0. It is one nondeterministic
-draw at temperature 1, and it is absent from the recovered 2026-11-03 JSON.
+F2 0.009 is an unreproduced historical print. The seeded mean above is the
+verified local sample, and it is absent from the recovered 2026-11-03 JSON.
 A larger local model was not loaded.
 
 The sealed blind-v2 plaintext was not decrypted. Later synthetic locks are a

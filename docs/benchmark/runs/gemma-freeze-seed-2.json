@@ -1,0 +1,188 @@
+{
+  "ablations": {
+    "status": "skipped",
+    "reason": "disabled"
+  },
+  "dataset": {
+    "documents": 82,
+    "limited": false,
+    "official": true,
+    "plaintext_sha256": "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624",
+    "seed": 20261101,
+    "version": "blind-v2-repro"
+  },
+  "section26": {
+    "status": "skipped"
+  },
+  "systems": [
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 35,
+          "f1": 0.049999999999999996,
+          "fn": 34,
+          "f2": 0.034482758620689655,
+          "fp": 4,
+          "precision": 0.2,
+          "recall": 0.02857142857142857,
+          "tp": 1
+        },
+        "PHONE": {
+          "n": 44,
+          "f1": 0.0,
+          "fn": 44,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "EMAIL": {
+          "n": 28,
+          "f1": 0.0,
+          "fn": 28,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "BANK_ACCOUNT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "CREDIT_CARD": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PASSPORT": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "VEHICLE_PLATE": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "STUDENT_ID": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DATE_OF_BIRTH": {
+          "n": 22,
+          "f1": 0.0,
+          "fn": 22,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "NAME": {
+          "n": 70,
+          "f1": 0.028169014084507043,
+          "fn": 69,
+          "f2": 0.01779359430604982,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 0.014285714285714285,
+          "tp": 1
+        },
+        "ADDRESS": {
+          "n": 15,
+          "f1": 0.0,
+          "fn": 15,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "IBAN": {
+          "n": 8,
+          "f1": 0.0,
+          "fn": 8,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 1330.3269319999345,
+        "p95": 2294.5932970001195
+      },
+      "macro": {
+        "f1": 0.006514084507042253,
+        "f2": 0.004356362743894956,
+        "precision": 0.09999999999999999,
+        "recall": 0.0035714285714285713,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.014869888475836429,
+        "fn": 260,
+        "f2": 0.009478672985781991,
+        "fp": 5,
+        "precision": 0.2857142857142857,
+        "recall": 0.007633587786259542,
+        "tp": 2
+      },
+      "name": "llm",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 49,
+        "false_negatives_without_prefix_cue": 20,
+        "gold": 70
+      },
+      "negative": {
+        "clean_docs": 12,
+        "clean_doc_rate": 1.0,
+        "documents": 12,
+        "false_positives": 0
+      },
+      "other_false_positives": 0,
+      "peak_memory_bytes": {
+        "p50": 282544.0,
+        "p95": 472381.0
+      },
+      "reason": "",
+      "status": "ok",
+      "sampling_seed": 2
+    }
+  ],
+  "utility": {
+    "status": "skipped",
+    "reason": "disabled"
+  }
+}

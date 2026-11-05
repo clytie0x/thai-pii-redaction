@@ -15,10 +15,10 @@ artifacts are **absent** from this clone (`git cat-file` does not resolve
 them). The numbers below are still in files this clone contains. Absence of
 the old commit is not a license to recompute the number on current `main`.
 
-`gemma3:1b` on the original synthetic freeze is **VERIFIED** as one local
-sample. Exact counts are in `docs/benchmark/runs/gemma-freeze.json`. The
-2026-11-01 table prints P 0.400, R 0.008, and F2 0.009 only. This sample
-does not reproduce that printed row. Sampling details are below.
+`gemma3:1b` on the original synthetic freeze is **VERIFIED** as the mean
+of five seeded local samples. Counts are in
+`docs/benchmark/runs/gemma-freeze-seeds.json`. F2 0.009 is an unreproduced
+historical print. Sampling details are below.
 
 ## Summary
 
@@ -191,31 +191,64 @@ checksum spans back onto the original offsets.
 
 The same JSON's original freeze (`blind-v2-repro`, seed `20261101`, plaintext `ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624`) scores AI Guard micro P 0.9142857142857143, R 0.9770992366412213, F1 0.9446494464944649, F2 0.9638554216867468. That is the labeled synthetic freeze, not the sealed protocol corpus. Hard-dev (seed `20261102`, plaintext `b169fcb72add15dc46cdd62fcb3dac179a4d0b9aa467ad0fb29a40514c76273b`) was the split read during the fix: micro P 0.95, R 0.9827586206896551, F1 0.9661016949152542, F2 0.9760273972602741. Do not cite hard-dev as the test result.
 
-## gemma3:1b on the original freeze
+## gemma3:1b seeded samples
+
+Five Ollama seeds, 1 through 5, on harness system `llm`. Each request sends `options.seed` and leaves temperature unset, so the model parameter temperature 1 applies. The prompt was not edited. Ablations were skipped. Python 3.13.18. Ollama 0.40.14. `gemma3:1b` digest `97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c`. Detectors and the prompt match `30b97690883f81897cb7c6bac7fa6c2b85c04c57`. Each mean is the arithmetic mean of the five stored values. The range is the min and max of that same value. Cost 0. No API key was used.
+
+Freeze command, seed 1. Seeds 2, 3, 4, and 5 change only `--llm-seed` and the JSON name:
+
+`python -m benchmark.blind_v2 --split freeze --systems llm --no-ablate --no-utility --no-section26 --llm-seed 1 --json docs/benchmark/runs/gemma-freeze-seed-1.json`
+
+Hard-test command, seed 1:
+
+`python -m benchmark.blind_v2 --split hard-test --systems llm --no-ablate --no-utility --no-section26 --llm-seed 1 --json docs/benchmark/runs/gemma-hard-test-seed-1.json`
+
+Freeze wall seconds 141, 118, 115, 115, 116. Hard-test wall seconds 84, 95, 86, 92, 86. The five hard-test seeds took 443 seconds, so that split is scored here.
+
+Freeze, seed `20261101`, 82 documents, plaintext `ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624`:
+
+seed 1 tp 1 fp 3 fn 261 P 0.25 R 0.003816793893129771 F1 0.007518796992481203 F2 0.004752851711026617
+
+seed 2 tp 2 fp 5 fn 260 P 0.2857142857142857 R 0.007633587786259542 F1 0.014869888475836429 F2 0.009478672985781991
+
+seed 3 tp 2 fp 2 fn 260 P 0.5 R 0.007633587786259542 F1 0.015037593984962405 F2 0.009505703422053233
+
+seed 4 tp 2 fp 4 fn 260 P 0.3333333333333333 R 0.007633587786259542 F1 0.014925373134328356 F2 0.009487666034155599
+
+seed 5 tp 1 fp 1 fn 261 P 0.5 R 0.003816793893129771 F1 0.007575757575757576 F2 0.0047619047619047615
+
+Freeze mean±range: tp 1.6 (min 1, max 2); fp 3.0 (min 1, max 5); fn 260.4 (min 260, max 261); P 0.3738095238095238 (min 0.25, max 0.5); R 0.0061068702290076335 (min 0.003816793893129771, max 0.007633587786259542); F1 0.011985482032673193 (min 0.007518796992481203, max 0.015037593984962405); F2 0.007597359782984441 (min 0.004752851711026617, max 0.009505703422053233).
+
+Python `.3f` of that freeze mean is P 0.374, R 0.006, F1 0.012, F2 0.008. F2 0.009 is an unreproduced historical print. The same 2026-11-01 table prints P 0.400 and R 0.008. Those three numbers are not this seeded mean. An earlier request with no seed remains in `docs/benchmark/runs/gemma-freeze.json` (tp 0, fp 5, fn 262). It is not the seeded mean.
+
+Hard-test, seed `20261103`, 60 documents, plaintext `90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11`:
+
+seed 1 tp 0 fp 1 fn 104 P 0.0 R 0.0 F1 0.0 F2 0.0
+
+seed 2 tp 0 fp 0 fn 104 P 0.0 R 0.0 F1 0.0 F2 0.0
+
+seed 3 tp 0 fp 0 fn 104 P 0.0 R 0.0 F1 0.0 F2 0.0
+
+seed 4 tp 0 fp 0 fn 104 P 0.0 R 0.0 F1 0.0 F2 0.0
+
+seed 5 tp 0 fp 0 fn 104 P 0.0 R 0.0 F1 0.0 F2 0.0
+
+Hard-test mean±range: tp 0.0 (min 0, max 0); fp 0.2 (min 0, max 1); fn 104.0 (min 104, max 104); P 0.0 (min 0.0, max 0.0); R 0.0 (min 0.0, max 0.0); F1 0.0 (min 0.0, max 0.0); F2 0.0 (min 0.0, max 0.0).
+
+The 2026-11-01 hard-test print is P 0.000, R 0.000, F2 0.000. `.3f` of every seeded hard-test score is 0.000. Exact counts are the seeded rows. Seed 1 has fp 1.
 
 | Field | Record |
 |---|---|
-| Value | This sample: tp 0, fp 5, fn 262; P 0.0; R 0.0; F1 0.0; F2 0.0. Python `.3f` is P 0.000, R 0.000, F1 0.000, F2 0.000. All 5 false positives are THAI_ID. The 2026-11-01 table prints P 0.400, R 0.008, F2 0.009 and stores no tp, fp, or fn. This sample does not reproduce that printed row |
-| Metric | Micro precision, recall, F1, and F2 over the twelve redaction types. The harness system name is `llm` |
-| Dataset / split | Original synthetic freeze, `blind-v2-repro`, seed `20261101`, 82 documents, `official` true. Not the sealed protocol corpus |
-| Held-out? | No. Comparative synthetic freeze. Not a held-out substitute |
-| Source file | `docs/benchmark/runs/gemma-freeze.json` system `llm` `micro`. File sha256 `171f36a6be36a38f52aa30d1dd30c3c6df5993650c0d3c148212e7b26f4378e8` |
-| Commit SHA | Scored with the harness and detectors at `76c14975818cec1a7efeacd7d61481cb793bfc5f`. This change does not edit `pii_redactor/` or `benchmark/blind_v2/` |
-| Model | Ollama 0.40.14. `gemma3:1b` digest `97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c`, Q4_K_M, 806067407 bytes. The 2026-11-01 write-up recorded Ollama 0.40.13 |
-| Sampling | The harness POST body is `model`, `prompt`, and `stream` false. It sets no temperature and no seed. The loaded model parameters are temperature 1, top_k 64, top_p 0.95. Sampling is nondeterministic. This file is one sample. The server loaded context length 4096; the harness did not set it |
-| Wall time | 152 seconds for the command below. llm latency p50 1596.8512820000456 ms, p95 2497.6129249999985 ms. Cost 0 |
-| Interpreter | Python 3.13.18 |
-| Reproducing command | `python -m benchmark.blind_v2 --systems llm --no-utility --json docs/benchmark/runs/gemma-freeze.json`. Default `--split` is `freeze`. No prompt was edited |
-| Ablations | The same process ran ablations after the llm row. They returned TimeoutError, and the process printed a thainer-1.4 download line before the score table. That error is in the JSON. It is not an llm score |
-| MAY | Cite this sample's exact zeros beside the unreproduced printed row, as one local draw at temperature 1 and cost 0 |
-| MAY NOT | Cite P 0.400, R 0.008, F2 0.009 as the exact F1 of this tree, or cite this sample as a stable score. It is not a product headline, not held-out, and not real-document accuracy |
+| Held-out? | No. Both splits are synthetic comparison locks. Not the sealed protocol corpus |
+| MAY | Cite the seeded mean and the min-max range, with the five rows, as local `gemma3:1b` samples at temperature 1 and cost 0 |
+| MAY NOT | Cite F2 0.009 as a verified score. It is an unreproduced historical print. Do not cite either mean as a product headline, as held-out, or as real-document accuracy |
 
 ## What is not a headline
 
 | Item | Status |
 |---|---|
-| `gemma3:1b` on the original synthetic freeze | VERIFIED sample, not a headline. tp 0, fp 5, fn 262; P 0.0; R 0.0; F1 0.0; F2 0.0. The printed 2026-11-01 row P 0.400, R 0.008, F2 0.009 was not reproduced |
-| `gemma3:1b` on hard-test in that same markdown | Printed P 0.000, R 0.000, F2 0.000. Exact counts are not in the recovered 2026-11-03 JSON, which did not score an LLM. Hard-test gemma stays UNVERIFIED |
+| `gemma3:1b` on the original synthetic freeze | VERIFIED seeded mean, not a headline. Freeze mean±range: tp 1.6 (min 1, max 2); fp 3.0 (min 1, max 5); fn 260.4 (min 260, max 261); P 0.3738095238095238 (min 0.25, max 0.5); R 0.0061068702290076335 (min 0.003816793893129771, max 0.007633587786259542); F1 0.011985482032673193 (min 0.007518796992481203, max 0.015037593984962405); F2 0.007597359782984441 (min 0.004752851711026617, max 0.009505703422053233). F2 0.009 is an unreproduced historical print |
+| `gemma3:1b` on hard-test | VERIFIED seeded mean, not a headline. Hard-test mean±range: tp 0.0 (min 0, max 0); fp 0.2 (min 0, max 1); fn 104.0 (min 104, max 104); P 0.0 (min 0.0, max 0.0); R 0.0 (min 0.0, max 0.0); F1 0.0 (min 0.0, max 0.0); F2 0.0 (min 0.0, max 0.0). The printed P 0.000, R 0.000, F2 0.000 matches `.3f` only |
 | Section 26 paraphrase recall | Stored `section26.micro_recall` 0.0 on n=8 in `hard-test.json`. Warn/report, not a redaction F1 |
 | Historical paper commit `d93d10b` | Absent from this clone. See METHODS. Not an accuracy figure |
 | `research/stt52/` gold-v3 F2 0.801 | A different study. Do not cite it as sealed blind-v2 0.799 |

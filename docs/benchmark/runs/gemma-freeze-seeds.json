@@ -1,0 +1,112 @@
+{
+  "model": "gemma3:1b",
+  "digest": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+  "ollama": "0.40.14",
+  "temperature": "unset in the request; model parameter is 1",
+  "request_options": [
+    "seed"
+  ],
+  "split": "freeze",
+  "plaintext_sha256": "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "runs": [
+    {
+      "seed": 1,
+      "wall_seconds": 141,
+      "source": "docs/benchmark/runs/gemma-freeze-seed-1.json",
+      "sha256": "fe84b829e80e960a1b1bf020d714463b0458eedbd19988543a7cec9f41ec4940",
+      "tp": 1,
+      "fp": 3,
+      "fn": 261,
+      "precision": 0.25,
+      "recall": 0.003816793893129771,
+      "f1": 0.007518796992481203,
+      "f2": 0.004752851711026617
+    },
+    {
+      "seed": 2,
+      "wall_seconds": 118,
+      "source": "docs/benchmark/runs/gemma-freeze-seed-2.json",
+      "sha256": "c07a5a920f0d3a6129c34b676c3ee80e5cc4618d336ef66d992a6fa60492ac19",
+      "tp": 2,
+      "fp": 5,
+      "fn": 260,
+      "precision": 0.2857142857142857,
+      "recall": 0.007633587786259542,
+      "f1": 0.014869888475836429,
+      "f2": 0.009478672985781991
+    },
+    {
+      "seed": 3,
+      "wall_seconds": 115,
+      "source": "docs/benchmark/runs/gemma-freeze-seed-3.json",
+      "sha256": "98f1d4e3654b4ee8a07f68dffc65f34af51a99a57001ca0d95b34dc78bad668e",
+      "tp": 2,
+      "fp": 2,
+      "fn": 260,
+      "precision": 0.5,
+      "recall": 0.007633587786259542,
+      "f1": 0.015037593984962405,
+      "f2": 0.009505703422053233
+    },
+    {
+      "seed": 4,
+      "wall_seconds": 115,
+      "source": "docs/benchmark/runs/gemma-freeze-seed-4.json",
+      "sha256": "099182faaeb29f922cd0d3993d545a795e4f4ba6dfddce2bf51e11311af29baf",
+      "tp": 2,
+      "fp": 4,
+      "fn": 260,
+      "precision": 0.3333333333333333,
+      "recall": 0.007633587786259542,
+      "f1": 0.014925373134328356,
+      "f2": 0.009487666034155599
+    },
+    {
+      "seed": 5,
+      "wall_seconds": 116,
+      "source": "docs/benchmark/runs/gemma-freeze-seed-5.json",
+      "sha256": "0c39e4f713a355d5c8f2f924264637f8f31c83f0bb7ef07076c34350375fc435",
+      "tp": 1,
+      "fp": 1,
+      "fn": 261,
+      "precision": 0.5,
+      "recall": 0.003816793893129771,
+      "f1": 0.007575757575757576,
+      "f2": 0.0047619047619047615
+    }
+  ],
+  "mean": {
+    "tp": 1.6,
+    "fp": 3.0,
+    "fn": 260.4,
+    "precision": 0.3738095238095238,
+    "recall": 0.0061068702290076335,
+    "f1": 0.011985482032673193,
+    "f2": 0.007597359782984441
+  },
+  "min": {
+    "tp": 1,
+    "fp": 1,
+    "fn": 260,
+    "precision": 0.25,
+    "recall": 0.003816793893129771,
+    "f1": 0.007518796992481203,
+    "f2": 0.004752851711026617
+  },
+  "max": {
+    "tp": 2,
+    "fp": 5,
+    "fn": 261,
+    "precision": 0.5,
+    "recall": 0.007633587786259542,
+    "f1": 0.015037593984962405,
+    "f2": 0.009505703422053233
+  }
+}

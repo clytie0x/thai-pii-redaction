@@ -64,12 +64,24 @@ def probe_llm() -> LLMProbe:
     )
 
 
-def complete(prompt: str, probe: LLMProbe | None = None) -> str:
+def ollama_generate_body(model: str, prompt: str, seed: int | None = None) -> dict:
+    """Ollama generate body. A seed is recorded; temperature stays unset."""
+    body = {"model": model, "prompt": prompt, "stream": False}
+    if seed is not None:
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise LLMUnavailable("ollama seed must be an integer")
+        body["options"] = {"seed": seed}
+    return body
+
+
+def complete(prompt: str, probe: LLMProbe | None = None, seed: int | None = None) -> str:
     selected = probe or probe_llm()
     if not selected.available:
         raise LLMUnavailable(selected.reason)
     if selected.kind == "ollama":
-        return _ollama_complete(selected.model, prompt)
+        return _ollama_complete(selected.model, prompt, seed=seed)
+    if seed is not None:
+        raise LLMUnavailable("seed is only sent to Ollama")
     if selected.kind == "llama_cpp":
         return _llama_complete(prompt)
     if selected.kind == "openrouter":
@@ -116,8 +128,9 @@ class LLMRedactor:
     name = "llm"
     cost_usd = 0.0
 
-    def __init__(self) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         self._probe = LLMProbe(False, "not prepared")
+        self.sampling_seed = seed
 
     def prepare(self) -> str | None:
         self._probe = probe_llm()
@@ -127,7 +140,7 @@ class LLMRedactor:
         return None
 
     def predict(self, text: str) -> list[tuple[int, int, str]]:
-        response = complete(redact_prompt(text), self._probe)
+        response = complete(redact_prompt(text), self._probe, seed=self.sampling_seed)
         return parse_redaction(text, response)
 
 
@@ -162,12 +175,12 @@ def _ollama_models() -> list[str]:
     return names
 
 
-def _ollama_complete(model: str, prompt: str) -> str:
+def _ollama_complete(model: str, prompt: str, seed: int | None = None) -> str:
     import httpx
 
     response = httpx.post(
         "http://127.0.0.1:11434/api/generate",
-        json={"model": model, "prompt": prompt, "stream": False},
+        json=ollama_generate_body(model, prompt, seed),
         timeout=180,
     )
     if response.status_code != 200:

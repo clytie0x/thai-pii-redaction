@@ -20,7 +20,11 @@ SCORES = ROOT / "benchmark" / "data" / "blind-scores.jsonl"
 BLIND_LOCK = ROOT / "benchmark" / "data" / "blind-v2.lock.json"
 HOLDOUT_LOCK = ROOT / "benchmark" / "data" / "yrss-holdout-v1.lock.json"
 HARD_LOCK = ROOT / "benchmark" / "data" / "hard-test.lock.json"
-GEMMA = ROOT / "docs" / "benchmark" / "runs" / "gemma-freeze.json"
+GEMMA_RUNS = ROOT / "docs" / "benchmark" / "runs"
+_METRIC_KEYS = ("tp", "fp", "fn", "precision", "recall", "f1", "f2")
+_METRIC_LABELS = ("tp", "fp", "fn", "P", "R", "F1", "F2")
+_FREEZE_SHA = "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624"
+_HARD_SHA = "90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11"
 
 
 def _load(path: Path) -> dict:
@@ -112,52 +116,97 @@ def test_sealed_blind_v2_reveal_matches_its_lock() -> None:
     assert lock["version"] == "blind-v2"
 
 
-def test_gemma_freeze_claim_quotes_the_llm_run() -> None:
-    report = _load(GEMMA)
-    micro = next(row for row in report["systems"] if row["name"] == "llm")["micro"]
-    assert report["dataset"]["seed"] == 20261101
-    assert report["dataset"]["documents"] == 82
+def _metric_line(prefix: str, micro: dict) -> str:
+    parts = [prefix]
+    for label, key in zip(_METRIC_LABELS, _METRIC_KEYS):
+        parts.append(f"{label} {micro[key]}")
+    return " ".join(parts)
+
+
+def _mean_row(rows: list[dict]) -> dict:
+    return {key: sum(row[key] for row in rows) / len(rows) for key in _METRIC_KEYS}
+
+
+def _extreme_row(rows: list[dict], choose) -> dict:
+    return {key: choose(row[key] for row in rows) for key in _METRIC_KEYS}
+
+
+def _range_sentence(rows: list[dict]) -> str:
+    mean = _mean_row(rows)
+    low = _extreme_row(rows, min)
+    high = _extreme_row(rows, max)
+    bits = [
+        f"{label} {mean[key]} (min {low[key]}, max {high[key]})"
+        for label, key in zip(_METRIC_LABELS, _METRIC_KEYS)
+    ]
+    return "; ".join(bits)
+
+
+def _llm_micro(path: Path, seed: int, documents: int, plaintext: str) -> dict:
+    report = _load(path)
+    system = report["systems"][0]
+    assert system["name"] == "llm"
+    assert system["status"] == "ok"
+    assert system["sampling_seed"] == seed
+    assert system["cost_usd"] == 0.0
     assert report["dataset"]["official"] is True
-    assert report["dataset"]["version"] == "blind-v2-repro"
-    assert (
-        report["dataset"]["plaintext_sha256"]
-        == "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624"
-    )
-    assert micro == {
-        "f1": 0.0,
-        "fn": 262,
-        "f2": 0.0,
-        "fp": 5,
-        "precision": 0.0,
-        "recall": 0.0,
-        "tp": 0,
-    }
-    assert report["systems"][0]["status"] == "ok"
-    assert report["systems"][0]["cost_usd"] == 0.0
-    assert report["ablations"] == {"status": "error", "reason": "TimeoutError"}
-    file_sha = hashlib.sha256(GEMMA.read_bytes()).hexdigest()
-    phrases = [
-        "tp 0, fp 5, fn 262",
-        "F1 0.0",
-        "F2 0.0",
-        "P 0.400",
-        "R 0.008",
-        "F2 0.009",
-        "does not reproduce",
+    assert report["dataset"]["documents"] == documents
+    assert report["dataset"]["plaintext_sha256"] == plaintext
+    assert report["ablations"] == {"status": "skipped", "reason": "disabled"}
+    assert report["utility"]["status"] == "skipped"
+    assert report["section26"]["status"] == "skipped"
+    return system["micro"]
+
+
+def test_gemma_seeded_claim_quotes_the_run_files() -> None:
+    freeze = [
+        _llm_micro(GEMMA_RUNS / f"gemma-freeze-seed-{seed}.json", seed, 82, _FREEZE_SHA)
+        for seed in range(1, 6)
+    ]
+    hard = [
+        _llm_micro(GEMMA_RUNS / f"gemma-hard-test-seed-{seed}.json", seed, 60, _HARD_SHA)
+        for seed in range(1, 6)
+    ]
+    freeze_summary = _load(GEMMA_RUNS / "gemma-freeze-seeds.json")
+    hard_summary = _load(GEMMA_RUNS / "gemma-hard-test-seeds.json")
+    assert freeze_summary["mean"] == _mean_row(freeze)
+    assert freeze_summary["min"] == _extreme_row(freeze, min)
+    assert freeze_summary["max"] == _extreme_row(freeze, max)
+    assert hard_summary["mean"] == _mean_row(hard)
+    assert hard_summary["min"] == _extreme_row(hard, min)
+    assert hard_summary["max"] == _extreme_row(hard, max)
+    assert [row["seed"] for row in freeze_summary["runs"]] == [1, 2, 3, 4, 5]
+    for row, micro in zip(freeze_summary["runs"], freeze):
+        assert (
+            row["sha256"]
+            == hashlib.sha256(
+                (GEMMA_RUNS / f"gemma-freeze-seed-{row['seed']}.json").read_bytes()
+            ).hexdigest()
+        )
+        for key in _METRIC_KEYS:
+            assert row[key] == micro[key]
+
+    freeze_range = "Freeze mean±range: " + _range_sentence(freeze)
+    hard_range = "Hard-test mean±range: " + _range_sentence(hard)
+    shared = [
+        freeze_range,
+        hard_range,
+        "F2 0.009 is an unreproduced historical print",
         "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
         "0.40.14",
         "temperature 1",
-        "no seed",
-        "76c14975818cec1a7efeacd7d61481cb793bfc5f",
-        "python -m benchmark.blind_v2 --systems llm --no-utility --json docs/benchmark/runs/gemma-freeze.json",
-        "152 seconds",
-        "3.13.18",
-        file_sha,
-        "TimeoutError",
-        "All 5 false positives are THAI_ID",
+        "30b97690883f81897cb7c6bac7fa6c2b85c04c57",
+        "python -m benchmark.blind_v2 --split freeze --systems llm --no-ablate --no-utility --no-section26 --llm-seed 1 --json docs/benchmark/runs/gemma-freeze-seed-1.json",
+        "python -m benchmark.blind_v2 --split hard-test --systems llm --no-ablate --no-utility --no-section26 --llm-seed 1 --json docs/benchmark/runs/gemma-hard-test-seed-1.json",
+        "443 seconds",
     ]
-    _must_contain(CLAIM, phrases)
-    _must_contain(METHODS, phrases)
+    _must_contain(CLAIM, shared)
+    _must_contain(METHODS, shared)
+    _must_contain(
+        CLAIM,
+        [_metric_line(f"seed {seed}", micro) for seed, micro in enumerate(freeze, start=1)]
+        + [_metric_line(f"seed {seed}", micro) for seed, micro in enumerate(hard, start=1)],
+    )
 
 
 def test_methods_report_f1_beside_f2_and_the_limits() -> None:

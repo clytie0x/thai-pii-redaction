@@ -1,0 +1,112 @@
+{
+  "model": "gemma3:1b",
+  "digest": "97558784bdc9175075a72655bf360b15da17df6b3b9e5182af9f8c0c8e58ba7c",
+  "ollama": "0.40.14",
+  "temperature": "unset in the request; model parameter is 1",
+  "request_options": [
+    "seed"
+  ],
+  "split": "hard-test",
+  "plaintext_sha256": "90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "runs": [
+    {
+      "seed": 1,
+      "wall_seconds": 84,
+      "source": "docs/benchmark/runs/gemma-hard-test-seed-1.json",
+      "sha256": "b5b0088f7b4880d068bf29a3db1a9a9978b2dac7ec131a38162e4cf81bb21be5",
+      "tp": 0,
+      "fp": 1,
+      "fn": 104,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f2": 0.0
+    },
+    {
+      "seed": 2,
+      "wall_seconds": 95,
+      "source": "docs/benchmark/runs/gemma-hard-test-seed-2.json",
+      "sha256": "749f20b0b795375ffbf735991251f3a90378220c7d5853199bdaa20c845e4bfb",
+      "tp": 0,
+      "fp": 0,
+      "fn": 104,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f2": 0.0
+    },
+    {
+      "seed": 3,
+      "wall_seconds": 86,
+      "source": "docs/benchmark/runs/gemma-hard-test-seed-3.json",
+      "sha256": "90d9cb9950a058537e1fbe0fb9382b064bb9e43272cb34c845a7b996e8b71cea",
+      "tp": 0,
+      "fp": 0,
+      "fn": 104,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f2": 0.0
+    },
+    {
+      "seed": 4,
+      "wall_seconds": 92,
+      "source": "docs/benchmark/runs/gemma-hard-test-seed-4.json",
+      "sha256": "3b6ede6e67504b2cf48ff6b025535062c0a1dbe041bc0d76f96fd6eed0b2353d",
+      "tp": 0,
+      "fp": 0,
+      "fn": 104,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f2": 0.0
+    },
+    {
+      "seed": 5,
+      "wall_seconds": 86,
+      "source": "docs/benchmark/runs/gemma-hard-test-seed-5.json",
+      "sha256": "091e707dbf0c0319fc531391011a2d3c45b8dad608ca78dd226cf67eeaec5b1f",
+      "tp": 0,
+      "fp": 0,
+      "fn": 104,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f2": 0.0
+    }
+  ],
+  "mean": {
+    "tp": 0.0,
+    "fp": 0.2,
+    "fn": 104.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "f2": 0.0
+  },
+  "min": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 104,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "f2": 0.0
+  },
+  "max": {
+    "tp": 0,
+    "fp": 1,
+    "fn": 104,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "f2": 0.0
+  }
+}

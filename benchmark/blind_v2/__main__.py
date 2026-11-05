@@ -80,6 +80,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-utility", action="store_true")
     parser.add_argument("--no-section26", action="store_true")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--llm-seed", type=int, default=None)
     parser.add_argument("--json", default=None)
     args = parser.parse_args(argv)
 
@@ -97,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
 
     names = [name.strip() for name in args.systems.split(",") if name.strip()]
     try:
-        systems = build_systems(names)
+        systems = build_systems(names, llm_seed=args.llm_seed)
     except ValueError:
         print("blind-v2-repro: unknown system", file=sys.stderr)
         return 2

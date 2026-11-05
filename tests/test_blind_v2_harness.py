@@ -11,7 +11,7 @@ from benchmark.blind_v2.baselines import align_ner_tags, regex_predict
 from benchmark.blind_v2.corpus import _thai_id, generate_corpus
 from benchmark.blind_v2.hard_set import public_lock
 from benchmark.blind_v2.harness import build_systems, layer_delta, render_report, run_benchmark
-from benchmark.blind_v2.llm import parse_redaction, probe_llm
+from benchmark.blind_v2.llm import ollama_generate_body, parse_redaction, probe_llm
 from benchmark.blind_v2.present import contrast_lines, render_split_markdown
 from benchmark.blind_v2.score import name_miss_census, percentile, prf, score_predictions
 from benchmark.blind_v2.types import REDACTION_TYPES
@@ -304,6 +304,88 @@ def test_utility_fake_answerer_drops_pii_questions_after_redaction():
     assert row["pii_redacted_accuracy"] == 0
     assert row["safe_raw_accuracy"] == 1
     assert row["safe_redacted_accuracy"] == 1
+
+
+def test_ollama_request_records_seed_and_leaves_temperature_unset():
+    seeded = ollama_generate_body("gemma3:1b", "prompt", seed=3)
+    assert seeded["model"] == "gemma3:1b"
+    assert seeded["prompt"] == "prompt"
+    assert seeded["stream"] is False
+    assert seeded["options"] == {"seed": 3}
+    assert "temperature" not in seeded
+    assert "temperature" not in seeded["options"]
+    unset = ollama_generate_body("gemma3:1b", "prompt", seed=None)
+    assert "options" not in unset
+    assert "temperature" not in unset
+
+
+def test_ollama_complete_posts_the_seed(monkeypatch):
+    posted = {}
+
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"response": "[]"}
+
+    def post(url, json, timeout):
+        posted["url"] = url
+        posted["json"] = json
+        posted["timeout"] = timeout
+        return _Response()
+
+    monkeypatch.setattr("httpx.post", post)
+    from benchmark.blind_v2.llm import _ollama_complete
+
+    assert _ollama_complete("gemma3:1b", "prompt", seed=2) == "[]"
+    assert posted["url"] == "http://127.0.0.1:11434/api/generate"
+    assert posted["json"]["options"] == {"seed": 2}
+    assert "temperature" not in posted["json"]
+    assert "temperature" not in posted["json"]["options"]
+
+
+def test_cli_forwards_llm_seed(monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_build(names, llm_seed=None):
+        seen["names"] = names
+        seen["llm_seed"] = llm_seed
+        return [_Fake([(0, 1, "NAME")])]
+
+    monkeypatch.setattr("benchmark.blind_v2.__main__.build_systems", fake_build)
+    destination = tmp_path / "seeded.json"
+    code = main(
+        [
+            "--systems",
+            "llm",
+            "--llm-seed",
+            "3",
+            "--no-ablate",
+            "--no-utility",
+            "--no-section26",
+            "--limit",
+            "1",
+            "--json",
+            str(destination),
+        ]
+    )
+    assert code == 0
+    assert seen == {"names": ["llm"], "llm_seed": 3}
+
+
+def test_report_records_sampling_seed():
+    system = _Fake([(0, 1, "NAME")])
+    system.sampling_seed = 4
+    report = run_benchmark(
+        generate_corpus(),
+        systems=[system],
+        ablate=False,
+        utility=False,
+        section26=False,
+        limit=1,
+    )
+    assert report["systems"][0]["sampling_seed"] == 4
+    assert report["ablations"]["status"] == "skipped"
 
 
 def test_llm_parser_and_platform_refusal(monkeypatch):

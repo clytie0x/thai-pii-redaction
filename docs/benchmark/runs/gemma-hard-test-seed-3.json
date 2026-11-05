@@ -1,0 +1,188 @@
+{
+  "ablations": {
+    "status": "skipped",
+    "reason": "disabled"
+  },
+  "dataset": {
+    "documents": 60,
+    "limited": false,
+    "official": true,
+    "plaintext_sha256": "90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11",
+    "seed": 20261103,
+    "version": "hard-test-v1"
+  },
+  "section26": {
+    "status": "skipped"
+  },
+  "systems": [
+    {
+      "by_type": {
+        "THAI_ID": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PHONE": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "EMAIL": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "BANK_ACCOUNT": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "CREDIT_CARD": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "PASSPORT": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "VEHICLE_PLATE": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "STUDENT_ID": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "DATE_OF_BIRTH": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "NAME": {
+          "n": 38,
+          "f1": 0.0,
+          "fn": 38,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "ADDRESS": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        },
+        "IBAN": {
+          "n": 6,
+          "f1": 0.0,
+          "fn": 6,
+          "f2": 0.0,
+          "fp": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "tp": 0
+        }
+      },
+      "cost_usd": 0.0,
+      "latency_ms": {
+        "p50": 1433.595557999979,
+        "p95": 2067.2237470002983
+      },
+      "macro": {
+        "f1": 0.0,
+        "f2": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "types": 12
+      },
+      "micro": {
+        "f1": 0.0,
+        "fn": 104,
+        "f2": 0.0,
+        "fp": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "tp": 0
+      },
+      "name": "llm",
+      "name_misses": {
+        "false_negatives_with_prefix_cue": 0,
+        "false_negatives_without_prefix_cue": 38,
+        "gold": 38
+      },
+      "negative": {
+        "clean_docs": 4,
+        "clean_doc_rate": 1.0,
+        "documents": 4,
+        "false_positives": 0
+      },
+      "other_false_positives": 0,
+      "peak_memory_bytes": {
+        "p50": 233538.0,
+        "p95": 422016.0
+      },
+      "reason": "",
+      "status": "ok",
+      "sampling_seed": 3
+    }
+  ],
+  "utility": {
+    "status": "skipped",
+    "reason": "disabled"
+  }
+}
