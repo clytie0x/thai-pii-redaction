@@ -8,7 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
+
+from benchmark.types import SHARED_ENTITY_TYPES
 
 ROOT = Path(__file__).resolve().parents[1]
 CLAIM = ROOT / "research" / "yrss2026" / "CLAIM-MAP.md"
@@ -25,6 +29,29 @@ _METRIC_KEYS = ("tp", "fp", "fn", "precision", "recall", "f1", "f2")
 _METRIC_LABELS = ("tp", "fp", "fn", "P", "R", "F1", "F2")
 _FREEZE_SHA = "ce0b88a3dd2281133f85ddbcdc38a5498f83865754e5bb77510bd12553ce8624"
 _HARD_SHA = "90749a8891d42b924bbfbbb690f9637ab599867013f27c4a3ed459e8f3aaca11"
+_HOLDOUT_TYPES = ("CREDIT_CARD", "PHONE", "STUDENT_ID")
+_SEALED_COMMAND = (
+    "import json, pathlib; "
+    "row=json.loads(pathlib.Path('benchmark/data/blind-scores.jsonl').read_text(encoding='utf-8').splitlines()[6]); "
+    "types=('THAI_ID','PHONE','EMAIL','BANK_ACCOUNT','CREDIT_CARD','PASSPORT','VEHICLE_PLATE','STUDENT_ID','DATE_OF_BIRTH','NAME','ADDRESS'); "
+    "by=row['metrics']['by_type']; "
+    "print('\\n'.join(t+' '+str(by[t]['tp'])+'/'+str(by[t]['n']) for t in types)); "
+    "print(str(by['OUT_OF_SCHEME']['fp'])+' of '+str(row['metrics']['overall']['fp'])); "
+    "print(str(row['metrics']['shared_11']['excluded_predictions'])); "
+    "neg=row['metrics']['negative']; "
+    "print(str(neg['clean_docs'])+'/'+str(neg['documents']))"
+)
+_HOLDOUT_COMMAND = (
+    "import json, pathlib; "
+    "d=json.loads(pathlib.Path('research/yrss2026/heldout-paired.json').read_text(encoding='utf-8')); "
+    "types=('CREDIT_CARD','PHONE','STUDENT_ID'); "
+    "b=d['baseline']['metrics']; "
+    "c=d['candidate']['metrics']; "
+    "print('\\n'.join(t+' '+str(b['by_type'][t]['tp'])+'/'+str(b['corpus']['by_type'][t])+' to '+str(c['by_type'][t]['tp'])+'/'+str(c['corpus']['by_type'][t]) for t in types)); "
+    "n=b['by_slice']['negative']; "
+    "m=c['by_slice']['negative']; "
+    "print(str(n['clean_docs'])+'/'+str(n['documents'])+' and '+str(m['clean_docs'])+'/'+str(m['documents']))"
+)
 
 
 def _load(path: Path) -> dict:
@@ -114,6 +141,116 @@ def test_sealed_blind_v2_reveal_matches_its_lock() -> None:
     assert reveal["reveal_index"] == 1
     assert reveal["over_budget"] is False
     assert lock["version"] == "blind-v2"
+
+
+def _run_claim_command(code: str) -> str:
+    completed = subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+    assert completed.stderr == ""
+    return completed.stdout
+
+
+def test_claim_map_quotes_stored_type_counts() -> None:
+    """Per-type recall rows must match line 7 and the closed holdout file."""
+    lines = SCORES.read_text(encoding="utf-8").splitlines()
+    reveal = json.loads(lines[6])
+    assert reveal == _blind_reveal()
+    assert reveal["version"] == "blind-v2"
+    assert reveal["reveal_index"] == 1
+    by_type = reveal["metrics"]["by_type"]
+    assert len(SHARED_ENTITY_TYPES) == 11
+    assert "(" + ",".join(repr(name) for name in SHARED_ENTITY_TYPES) + ")" in _SEALED_COMMAND
+    type_lines = []
+    for entity_type in SHARED_ENTITY_TYPES:
+        row = by_type[entity_type]
+        assert row["tp"] + row["fn"] == row["n"]
+        type_lines.append(f"{entity_type} {row['tp']}/{row['n']}")
+    outside = by_type["OUT_OF_SCHEME"]["fp"]
+    total_fp = reveal["metrics"]["overall"]["fp"]
+    inside = sum(by_type[entity_type]["fp"] for entity_type in SHARED_ENTITY_TYPES)
+    assert inside + outside == total_fp
+    assert reveal["metrics"]["shared_11"]["excluded_predictions"] == outside
+    negative = reveal["metrics"]["negative"]
+    sealed_negative = f"{negative['clean_docs']}/{negative['documents']}"
+
+    heldout = _load(HELDOUT)
+    moves = []
+    for entity_type in _HOLDOUT_TYPES:
+        before = heldout["baseline"]["metrics"]
+        after = heldout["candidate"]["metrics"]
+        before_count = before["by_type"][entity_type]
+        after_count = after["by_type"][entity_type]
+        before_n = before["corpus"]["by_type"][entity_type]
+        after_n = after["corpus"]["by_type"][entity_type]
+        assert before_count["tp"] + before_count["fn"] == before_n
+        assert after_count["tp"] + after_count["fn"] == after_n
+        moves.append(
+            f"{entity_type} {before_count['tp']}/{before_n} to {after_count['tp']}/{after_n}"
+        )
+    base_neg = heldout["baseline"]["metrics"]["by_slice"]["negative"]
+    cand_neg = heldout["candidate"]["metrics"]["by_slice"]["negative"]
+    assert (base_neg["clean_docs"], base_neg["documents"]) == (
+        cand_neg["clean_docs"],
+        cand_neg["documents"],
+    )
+    holdout_negative = (
+        f"{base_neg['clean_docs']}/{base_neg['documents']} and "
+        f"{cand_neg['clean_docs']}/{cand_neg['documents']}"
+    )
+
+    assert _run_claim_command(_SEALED_COMMAND).splitlines() == [
+        *type_lines,
+        f"{outside} of {total_fp}",
+        str(outside),
+        sealed_negative,
+    ]
+    assert _run_claim_command(_HOLDOUT_COMMAND).splitlines() == [*moves, holdout_negative]
+    _must_contain(
+        CLAIM,
+        [
+            *type_lines,
+            f"{outside} of {total_fp}",
+            f"{inside} false positives are inside the 11 types",
+            sealed_negative,
+            "9/52, untouched stored negative slice",
+            *moves,
+            "23/35 to 23/35 in both arms",
+            holdout_negative,
+            "benchmark/data/blind-scores.jsonl",
+            "line 7",
+            "splitlines()[6]",
+            "metrics.by_type.OUT_OF_SCHEME.fp",
+            "metrics.overall.fp",
+            "metrics.shared_11.excluded_predictions",
+            "metrics.negative.clean_docs",
+            "metrics.negative.documents",
+            "research/yrss2026/heldout-paired.json",
+            "baseline.metrics.by_type.CREDIT_CARD.tp",
+            "baseline.metrics.corpus.by_type.CREDIT_CARD",
+            "candidate.metrics.by_type.CREDIT_CARD.tp",
+            "candidate.metrics.corpus.by_type.CREDIT_CARD",
+            "baseline.metrics.by_type.PHONE.tp",
+            "baseline.metrics.corpus.by_type.PHONE",
+            "candidate.metrics.by_type.PHONE.tp",
+            "candidate.metrics.corpus.by_type.PHONE",
+            "baseline.metrics.by_type.STUDENT_ID.tp",
+            "baseline.metrics.corpus.by_type.STUDENT_ID",
+            "candidate.metrics.by_type.STUDENT_ID.tp",
+            "candidate.metrics.corpus.by_type.STUDENT_ID",
+            "baseline.metrics.by_slice.negative.clean_docs",
+            "baseline.metrics.by_slice.negative.documents",
+            "candidate.metrics.by_slice.negative.clean_docs",
+            "candidate.metrics.by_slice.negative.documents",
+            "payment card",
+            f'python -c "{_SEALED_COMMAND}"',
+            f'python -c "{_HOLDOUT_COMMAND}"',
+        ],
+    )
 
 
 def _metric_line(prefix: str, micro: dict) -> str:

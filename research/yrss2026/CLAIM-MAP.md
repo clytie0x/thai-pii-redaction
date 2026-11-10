@@ -69,6 +69,40 @@ Document-bootstrap 95% CI for that F2, stored in the same object: 0.928277282086
 
 Stored 95% document-bootstrap CI: 0.7671418873048201 to 0.8285105086810843. Negative slice in the same entry: 9/52 clean, 112 false positives.
 
+## Sealed per-type recall, same reveal
+
+Counts are true positives over gold `n` (`tp`/`n`) for the 11 types in
+`benchmark.types.SHARED_ENTITY_TYPES`. In this entry `tp + fn` equals `n` on
+every one of those types. Payment card is `CREDIT_CARD`. This is the stored
+line, not a rescore, and the ciphertext stays closed. Citation limits are the
+same as the sealed F2 section above.
+
+Source file for every row in this section: `benchmark/data/blind-scores.jsonl`
+line 7 (`splitlines()[6]`), `version` `blind-v2`, same `entry_sha256` as the
+F2 section.
+
+Recomputing command, from the repo root. It prints the eleven `tp`/`n` rows,
+then `242 of 362`, then `metrics.shared_11.excluded_predictions`, then the
+negative count. It reads the stored line and does not score a corpus:
+
+`python -c "import json, pathlib; row=json.loads(pathlib.Path('benchmark/data/blind-scores.jsonl').read_text(encoding='utf-8').splitlines()[6]); types=('THAI_ID','PHONE','EMAIL','BANK_ACCOUNT','CREDIT_CARD','PASSPORT','VEHICLE_PLATE','STUDENT_ID','DATE_OF_BIRTH','NAME','ADDRESS'); by=row['metrics']['by_type']; print('\n'.join(t+' '+str(by[t]['tp'])+'/'+str(by[t]['n']) for t in types)); print(str(by['OUT_OF_SCHEME']['fp'])+' of '+str(row['metrics']['overall']['fp'])); print(str(row['metrics']['shared_11']['excluded_predictions'])); neg=row['metrics']['negative']; print(str(neg['clean_docs'])+'/'+str(neg['documents']))"`
+
+| Stored count | JSON path |
+|---|---|
+| THAI_ID 39/39 | `metrics.by_type.THAI_ID.tp` / `metrics.by_type.THAI_ID.n` |
+| PHONE 43/62 | `metrics.by_type.PHONE.tp` / `metrics.by_type.PHONE.n` |
+| EMAIL 51/51 | `metrics.by_type.EMAIL.tp` / `metrics.by_type.EMAIL.n` |
+| BANK_ACCOUNT 34/39 | `metrics.by_type.BANK_ACCOUNT.tp` / `metrics.by_type.BANK_ACCOUNT.n` |
+| CREDIT_CARD 17/26 | `metrics.by_type.CREDIT_CARD.tp` / `metrics.by_type.CREDIT_CARD.n` |
+| PASSPORT 26/27 | `metrics.by_type.PASSPORT.tp` / `metrics.by_type.PASSPORT.n` |
+| VEHICLE_PLATE 27/27 | `metrics.by_type.VEHICLE_PLATE.tp` / `metrics.by_type.VEHICLE_PLATE.n` |
+| STUDENT_ID 10/28 | `metrics.by_type.STUDENT_ID.tp` / `metrics.by_type.STUDENT_ID.n` |
+| DATE_OF_BIRTH 33/38 | `metrics.by_type.DATE_OF_BIRTH.tp` / `metrics.by_type.DATE_OF_BIRTH.n` |
+| NAME 151/158 | `metrics.by_type.NAME.tp` / `metrics.by_type.NAME.n` |
+| ADDRESS 64/65 | `metrics.by_type.ADDRESS.tp` / `metrics.by_type.ADDRESS.n` |
+| 242 of 362 | `metrics.by_type.OUT_OF_SCHEME.fp` of `metrics.overall.fp`. `metrics.shared_11.excluded_predictions` is the same outside-label count. The other 120 false positives are inside the 11 types |
+| 9/52, untouched stored negative slice | `metrics.negative.clean_docs` / `metrics.negative.documents`. The sealed corpus was not reopened |
+
 ## yrss-holdout-v1 0.834 to 0.871
 
 | Field | Record |
@@ -86,6 +120,28 @@ Stored 95% document-bootstrap CI: 0.7671418873048201 to 0.8285105086810843. Nega
 | MAY NOT | Cite as a fresh held-out win for any commit after `ed01027`, or as real-document accuracy. Negative controls are unchanged and are not a precision win: 23/52 clean and 36 false positives in both arms; shared-11 view 42/52 clean and 10 false positives in both arms |
 
 Paired F2 difference stored in `paired_f2`: +0.03719240497986731, 95% CI 0.026076086386718322 to 0.04825962883307955, 1,000 shared resamples, seed 0.
+
+## yrss-holdout-v1 per-type counts, same closed pair
+
+Counts are `tp` over `corpus.by_type`. In both arms `tp + fn` equals that gold
+count for payment card (`CREDIT_CARD`), `PHONE`, and `STUDENT_ID`. This is the
+stored pair, not a new measurement. Citation limits are the same as the
+holdout F2 section above.
+
+Source file for every row in this section: `research/yrss2026/heldout-paired.json`.
+
+Recomputing command, from the repo root. It prints the three before/after
+counts, then the negative clean-document counts for the baseline arm and the
+candidate arm. It reads the stored JSON and does not score a corpus:
+
+`python -c "import json, pathlib; d=json.loads(pathlib.Path('research/yrss2026/heldout-paired.json').read_text(encoding='utf-8')); types=('CREDIT_CARD','PHONE','STUDENT_ID'); b=d['baseline']['metrics']; c=d['candidate']['metrics']; print('\n'.join(t+' '+str(b['by_type'][t]['tp'])+'/'+str(b['corpus']['by_type'][t])+' to '+str(c['by_type'][t]['tp'])+'/'+str(c['corpus']['by_type'][t]) for t in types)); n=b['by_slice']['negative']; m=c['by_slice']['negative']; print(str(n['clean_docs'])+'/'+str(n['documents'])+' and '+str(m['clean_docs'])+'/'+str(m['documents']))"`
+
+| Stored count | JSON path |
+|---|---|
+| CREDIT_CARD 6/27 to 27/27 | `baseline.metrics.by_type.CREDIT_CARD.tp` / `baseline.metrics.corpus.by_type.CREDIT_CARD` to `candidate.metrics.by_type.CREDIT_CARD.tp` / `candidate.metrics.corpus.by_type.CREDIT_CARD` |
+| PHONE 72/95 to 83/95 | `baseline.metrics.by_type.PHONE.tp` / `baseline.metrics.corpus.by_type.PHONE` to `candidate.metrics.by_type.PHONE.tp` / `candidate.metrics.corpus.by_type.PHONE` |
+| STUDENT_ID 23/35 to 23/35 in both arms | `baseline.metrics.by_type.STUDENT_ID.tp` / `baseline.metrics.corpus.by_type.STUDENT_ID` to `candidate.metrics.by_type.STUDENT_ID.tp` / `candidate.metrics.corpus.by_type.STUDENT_ID` |
+| 23/52 and 23/52 | `baseline.metrics.by_slice.negative.clean_docs` / `baseline.metrics.by_slice.negative.documents` and `candidate.metrics.by_slice.negative.clean_docs` / `candidate.metrics.by_slice.negative.documents` |
 
 ## synthetic hard-test F1 0.971 / F2 0.965
 
