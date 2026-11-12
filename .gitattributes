@@ -27,5 +27,10 @@ docs/acceptance/enterprise/M02-receipt-installed-pdf*.json -text whitespace=blan
 docs/acceptance/enterprise/M03-controlled-performance.json text eol=lf
 docs/implementation/2026-11-03-branch-preservation.json text eol=lf
 
+# Gemma seed JSON is hashed by exact bytes in tests/test_yrss_claim_map.py.
+# A Windows checkout with core.autocrlf=true rewrites LF to CRLF and the
+# recorded digest no longer matches. Keep these evidence files LF.
+docs/benchmark/runs/*.json text eol=lf
+
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary

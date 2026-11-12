@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 CLAIM = ROOT / "research" / "yrss2026" / "CLAIM-MAP.md"
@@ -156,6 +159,21 @@ def _llm_micro(path: Path, seed: int, documents: int, plaintext: str) -> dict:
     assert report["utility"]["status"] == "skipped"
     assert report["section26"]["status"] == "skipped"
     return system["micro"]
+
+
+@pytest.mark.skipif(not (ROOT / ".git").exists(), reason="needs a git checkout")
+def test_gemma_run_json_stays_lf_on_checkout() -> None:
+    """The seed digest is of the git blob. CRLF checkout would fail it only on Windows."""
+    sample = GEMMA_RUNS / "gemma-freeze-seed-1.json"
+    proc = subprocess.run(
+        ["git", "check-attr", "eol", "--", str(sample.relative_to(ROOT))],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert proc.stdout.strip().endswith("eol: lf"), proc.stdout
+    assert b"\r\n" not in sample.read_bytes()
 
 
 def test_gemma_seeded_claim_quotes_the_run_files() -> None:
