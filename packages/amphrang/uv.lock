@@ -2517,11 +2517,15 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'web'", specifier = ">=0.111.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "joserfc", marker = "extra == 'enterprise'", specifier = "==1.7.7" },
+    { name = "numpy", marker = "extra == 'ocr-openthai'", specifier = ">=1.26" },
+    { name = "onnxruntime", marker = "extra == 'ocr-openthai'", specifier = ">=1.20" },
+    { name = "opencv-python-headless", marker = "extra == 'ocr-openthai'", specifier = ">=4.9" },
     { name = "paddleocr", marker = "extra == 'ocr'", specifier = ">=3.0.0" },
     { name = "paddlepaddle", marker = "extra == 'ocr'", specifier = ">=2.6.0,<3.3.0" },
     { name = "pdfplumber", specifier = ">=0.11.0" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'enterprise'", specifier = "==3.3.6" },
+    { name = "pyclipper", marker = "extra == 'ocr-openthai'", specifier = ">=1.3" },
     { name = "pypdfium2", specifier = ">=4.30.0" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pythainlp", specifier = ">=5.0.0" },
@@ -2538,7 +2542,7 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'enterprise'", specifier = ">=0.30.0" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'web'", specifier = ">=0.30.0" },
 ]
-provides-extras = ["web", "ml", "ocr", "enterprise"]
+provides-extras = ["web", "ml", "ocr", "ocr-openthai", "enterprise"]
 
 [[package]]
 name = "threadpoolctl"

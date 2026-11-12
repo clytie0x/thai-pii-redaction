@@ -11,6 +11,7 @@ by when the decision was made rather than continuously maintained.
 
 | Document | What it decides |
 |---|---|
+| [2026-11-12 OpenThai OCR engine](2026-11-12-openthai-ocr-engine.md) | **Accepted; owner selected Option A.** OpenThai2.0-OCR-Text is an explicit local OCR engine beside default PaddleOCR. No bundled weights, no silent fallback, no runtime download. |
 | [2026-11-03 machine-context restoration](2026-11-03-machine-context-restoration.md) | Owner-approved stricter bulk/streaming restoration and occurrence-specific source proof; local/artifact and exact `40cf18e` CI evidence pass. Controlled main-relative performance condition is satisfied; integration and production acceptance remain separate. |
 | [2026-11-02 shared-core compatibility](2026-11-02-shared-core-compatibility.md) | **Accepted for local implementation; owner selected B/B and `thai-pii-redaction-core`.** SDK migrates to warn/report, consumes the renamed first-party root distribution with its broader namespaces/dependencies, and uses fixed proxy errors with safe rollback. Clean-install/migration qualification and publication remain gated; no release/deploy approval. |
 | [SDK 2026-08-27 Section 26 masking](../../packages/amphrang/docs/decisions/2026-08-27-section26-span-masking.md) | **Superseded for the new M1 migration candidate** by the owner-approved root warn/report policy. The historical record and old artifact behavior remain unchanged. |

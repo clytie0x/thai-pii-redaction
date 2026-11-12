@@ -199,6 +199,35 @@ The same extra enables the opt-in WangchanBERTa and `union` NER engines
 [docs/decisions/2026-07-15-ner-engine-strategy-decision.md](decisions/2026-07-15-ner-engine-strategy-decision.md)
 for why the CRF engine is the default.
 
+## Optional: scanned-PDF OCR
+
+PaddleOCR is the default and is not installed with the core:
+
+```bash
+pip install -r requirements-ocr.txt
+```
+
+OpenThai2.0-OCR-Text is a separate engine. Do not install it in the same
+environment as PaddleOCR: the two extras depend on different OpenCV wheels
+that both provide `cv2`. Weights are not in the repository. Download them
+only by running the script, then select the engine:
+
+```bash
+pip install -r requirements-ocr-openthai.txt
+python scripts/download_openthai_ocr.py --dest /path/outside/the/repo
+```
+
+```bash
+export AIGUARD_OCR_ENGINE=openthai
+export AIGUARD_OCR_OPENTHAI_DIR=/path/outside/the/repo
+```
+
+Leave `AIGUARD_OCR_ENGINE` unset to keep PaddleOCR, including the existing
+text-layer fallback when that extra is not installed. After it is set to
+`openthai`, a missing directory, package, or model fails the scanned page.
+PaddleOCR is not used instead. Text-layer PDFs do not use either engine. See
+[the decision record](decisions/2026-11-12-openthai-ocr-engine.md).
+
 ## Tests
 
 ```bash
