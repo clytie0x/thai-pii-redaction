@@ -12,3 +12,5 @@ paddleocr>=3.0.0
 # both distributions own the same `cv2` package and the last wheel installed
 # silently wins. The full acceptance environment verifies the PaddleX-provided
 # cv2 runtime instead.
+# requirements-ocr-openthai.txt installs the headless OpenCV wheel. Do not
+# install that extra in this environment.

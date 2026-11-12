@@ -669,7 +669,9 @@ reviewed, independently revertible integration units in this order:
    Thai combining-character, normalization, missing-provenance, negative-pixel,
    flattening, and fixed-error regressions are automated. Optional live OCR,
    physical scans, handwriting, hosted PDF resources/timeouts, and real-host
-   acceptance remain open.
+   acceptance remain open. PaddleOCR remains the default scanned-page engine.
+   `AIGUARD_OCR_ENGINE=openthai` is an explicit local alternative
+   (OpenThai2.0-OCR-Text); its real-model acceptance is not closed.
 
 The outbound-policy, HTTP-v2 client, and token-identity source changes plus the
 current Desktop broker-backed lifecycle/disposal, future Extension lifecycle,
@@ -999,6 +1001,7 @@ privacy behavior, and no artifact that carries a personal-data value.
   apps.
 - A default heavyweight NER engine without resource and accuracy evidence.
 - Broad OCR expansion beyond the existing optional scanned-PDF path.
+  A second explicit engine on that path is not this item.
 - Public benchmark leadership claims.
 - Credential-requiring providers or remote TNER in installed Desktop. A future
   owner-approved ADR must define credential ownership, provisioning,

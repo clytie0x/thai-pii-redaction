@@ -270,3 +270,90 @@ session writes with `--json`. Lock hashes are checked before scoring.
   parentheses change in `tests/test_desktop_native_package.py`. Neither file
   is part of this change. The files touched here pass `ruff check` and
   `ruff format --check`.
+
+# WORKLOG — optional OpenThai2.0-OCR-Text engine
+
+Written before the code, on 12 Nov 2026. This section is the plan for that
+change. The sections above are an older audit and stay as they were.
+
+## Requirements
+
+Owner decision (Teerapat, 12 Nov 2026): Option A. Add
+[iApp OpenThai2.0-OCR-Text](https://huggingface.co/iapp/OpenThai2.0-OCR-Text)
+as an optional OCR engine for scanned or raster pages (`pdf_hybrid`), beside
+PaddleOCR. The model card (revision `39fa41bdd49f067ba41b1d9de79c06ab506d67d4`,
+Apache-2.0, v1.0.0) says:
+
+- CPU ONNX, about 4 MB (`det.onnx` 1.8 MB, `rec.onnx` 2.4 MB), line boxes.
+- Public call: `LineOCR(model_dir, threads=1).read(image)` returns
+  `lines[]` with `text`, `confidence`, and `box`.
+- Boxes are in the caller's image coordinates. The runtime deskews when the
+  page leans more than 2.5 degrees, then maps boxes back.
+- Dependencies named on the card: OpenVINO or ONNX Runtime,
+  `opencv-python-headless`, `pyclipper`, numpy. An ndarray is BGR.
+
+Repo rules this has to keep:
+
+- `AGENTS.md`: preserve PDF bbox coordinates. Do not deskew unless the
+  coordinates are transformed with it. Optional engines stay optional and
+  fail clearly. No raw PII in logs, errors, or fixtures.
+- `docs/architecture.md`: optional OCR is never silently installed or
+  selected. OCR fragments get source spans. The coordinate system stays
+  top-origin 72-pt points.
+- `pii_redactor/ingest/ocr_processor.py`: PaddleOCR `lang="th"` is the
+  current engine. Its own preprocess does not deskew (DET-3). Line boxes
+  are scaled by `72 / dpi`.
+- `requirements-ocr.txt`: PaddleOCR brings `opencv-contrib-python`. A second
+  OpenCV wheel must not be installed beside it. There is no OCR engine
+  selector in `CoreConfig` today, so Paddle stays the default.
+
+Out of scope: OCR-Markdown, replacing pdfplumber/pdfium, any iApp API, bundling
+weights, detector changes, and weakening PII detection.
+
+## Acceptance
+
+1. A faked OpenThai result whose quad is already in caller-image pixels
+   (the card's post-deskew contract), including a skewed quad, converts to
+   a top-origin 72-pt box on that region of the page. The adapter does not
+   deskew again.
+2. Each OCR fragment's `source_span` slices the extracted text to the box text.
+3. `AIGUARD_OCR_ENGINE=openthai` is explicit. A missing package or model
+   raises `ExplicitOCRUnavailableError` and does not call Paddle or fall
+   back to the text layer. Unset still means Paddle, including today's
+   text-layer fallback when Paddle is not installed. Text-layer `pdf_text`
+   never calls OCR.
+4. OpenThai has its own extra, `requirements-ocr-openthai.txt`, and the
+   OpenCV clash is written next to both requirement files.
+5. Default CI uses the fake engine. A real-model test skips when
+   `AIGUARD_OCR_OPENTHAI_DIR` is unset. The download script is the only
+   network path, and it checks pinned SHA-256 hashes.
+
+## How done is measured
+
+- `tests/test_ocr_openthai.py` and the existing OCR/ingest tests pass.
+- `ruff check` and `ruff format --check` pass on the touched Python files.
+- `git diff --check` is clean.
+- `scripts/measure_perf.py` runs because `pii_redactor/` changes. The sample
+  PDF is text-layer, so the gate does not time OCR. The commit records the
+  numbers.
+- An ADR records the owner decision. An independent review runs before the
+  squash onto `main`.
+- Docs that describe the OCR path (`architecture.md`, `ROADMAP.md`,
+  install docs, `CODEMAP.md`, `NOTICE`) match the code. Live-model
+  acceptance stays open.
+
+## Self-review
+
+- Unset `AIGUARD_OCR_ENGINE` still means Paddle, including the text-layer
+  fallback. `openthai` and an explicit `paddle` that cannot run raise
+  `ExplicitOCRUnavailableError` and do not call the other engine.
+- `words_from_lines` only scales the caller-image quad into top-origin
+  72-pt points. The upstream runtime deskews and maps boxes back before
+  that. This code does not deskew again.
+- `scripts/measure_perf.py` on this machine, with the OCR change:
+  detect 7.11 ms, sanitize 17.42 ms, restore 0.47 ms, pdf_redact 114.77 ms.
+  The same script without the change: detect 7.60 ms, sanitize 19.66 ms,
+  restore 0.56 ms, pdf_redact 120.31 ms. Both miss `perf/baseline.json`
+  by more than 20%. The sample PDF is text-layer, psutil is not installed,
+  and the control is slower, so the baseline was not moved. Real OpenThai
+  inference was not run.

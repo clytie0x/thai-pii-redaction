@@ -1665,8 +1665,8 @@ def redact_pdf(pdf_file: Annotated[UploadFile, Depends(_strict_pdf_upload)]):
     boxes. The digit substitution is 1:1 in character count, so it's safe here
     — without it a Thai-numeral phone number (e.g. ๐๘๑-๒๓๔-๕๖๗๘) is never
     detected and never blacked out. Scanned/image PDFs are routed through
-    OCR (pii_redactor.ingest.ocr_processor) page by page; if the OCR
-    dependencies (requirements-ocr.txt) aren't installed, this returns 503.
+    OCR (pii_redactor.ingest.ocr_processor) page by page; if the selected OCR
+    engine is not available, this returns 503.
     """
     start = time.time()
     if not pdf_file.filename or not pdf_file.filename.lower().endswith(".pdf"):

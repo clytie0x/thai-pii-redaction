@@ -740,6 +740,13 @@ incomplete provenance raises one fixed value-free error before any output is
 written. There is no document-, page-, normalized-, or fuzzy-value search
 fallback. Flatten-to-image output, opaque padding, lossless palette output,
 the existing coordinate system, and the no-deskew rule remain deliberate.
+PaddleOCR is still the default and still does not deskew. An explicit
+`AIGUARD_OCR_ENGINE=openthai` selection can use OpenThai2.0-OCR-Text, whose
+runtime deskews a page tilted more than 2.5 degrees and returns line boxes in
+the caller's image coordinates. Those pixels are scaled into the same
+top-origin 72-pt space. A missing package or model raises an error and does
+not fall back to Paddle. Weights are not bundled. Text-layer pages still use
+pdfplumber and pdfium.
 Fallback/retry paths and the public provenance boundary clear caught exception
 graphs before fixed translation. This is current-source automated evidence;
 optional live OCR, physical scans, handwriting, hosted resource behavior, and
@@ -840,6 +847,8 @@ is deferred unless a concrete dependency or ownership problem appears.
 - `AIFORTHAI_API_KEY` is a provider credential for Pathumma/TNER, not the AI
   Guard caller credential.
 - Optional ML/OCR dependencies are not silently installed or silently selected.
+  `AIGUARD_OCR_ENGINE` defaults to Paddle. `openthai` runs only when set, and
+  only from a local directory named by `AIGUARD_OCR_OPENTHAI_DIR`.
 
 Platform-specific HTTP paths, reverse-proxy assumptions, hostnames,
 authentication, deployment configuration, and credentials belong in an

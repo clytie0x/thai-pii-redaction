@@ -29,6 +29,7 @@ Dependencies are split by layer — install only what you need:
 .\.venv\Scripts\python.exe -m pip install -r requirements-web.txt      # FastAPI/uvicorn (app/server.py)
 .\.venv\Scripts\python.exe -m pip install -r requirements-ml.txt       # MiniLM semantic detector + WangchanBERTa/union NER
 .\.venv\Scripts\python.exe -m pip install -r requirements-ocr.txt      # PaddleOCR for scanned PDFs
+.\.venv\Scripts\python.exe -m pip install -r requirements-ocr-openthai.txt  # optional OpenThai OCR; not beside the Paddle extra
 ```
 
 **Windows only:** the console defaults to cp1252, which breaks on Thai/UTF-8
