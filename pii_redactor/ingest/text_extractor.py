@@ -170,11 +170,19 @@ def extract(path: str | Path, source_type: str) -> tuple[str, list[WordBbox], di
         return text, word_bboxes, {}
 
     if source_type == "pdf_hybrid":
-        from pii_redactor.ingest.ocr_processor import OCRUnavailableError
+        from pii_redactor.ingest.ocr_processor import (
+            ExplicitOCRUnavailableError,
+            OCRUnavailableError,
+        )
 
         failure_kind: str | None = None
+        explicit_code: str | None = None
         try:
             hybrid_result = _extract_pdf_hybrid(path)
+        except ExplicitOCRUnavailableError as error:
+            explicit_code = error.code
+            discard_exception_graph(error)
+            failure_kind = "explicit"
         except OCRUnavailableError as error:
             discard_exception_graph(error)
             failure_kind = "ocr"
@@ -183,6 +191,8 @@ def extract(path: str | Path, source_type: str) -> tuple[str, list[WordBbox], di
             failure_kind = "provenance"
         if failure_kind:
             del path
+            if failure_kind == "explicit":
+                raise ExplicitOCRUnavailableError(explicit_code or "rejected") from None
             if failure_kind == "ocr":
                 raise OCRUnavailableError(_OCR_UNAVAILABLE_ERROR) from None
             raise _PdfSourceProvenanceError(_PDF_PROVENANCE_ERROR) from None
@@ -399,7 +409,11 @@ def _extract_pdf_hybrid(path: Path) -> tuple[str, list[WordBbox], dict]:
     # text layer really cannot be read, while one that has a text layer falls
     # back to it, loudly (warning + human_review), because whatever the image
     # holds stays unread.
+    # An explicit engine that cannot run must not fall back to Paddle or to
+    # the text layer. The unset default still uses the packaged-exe fallback.
     ocr_available = ocr_processor.is_available()
+    if ocr_processor.selection_is_explicit() and not ocr_available:
+        raise ocr_processor.ExplicitOCRUnavailableError(ocr_processor.engine_name())
 
     import pypdfium2 as pdfium
 

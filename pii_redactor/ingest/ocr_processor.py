@@ -6,10 +6,14 @@ module load time -- only inside functions -- so importing this module is
 always safe even when the OCR stack isn't installed. Callers must check
 is_available() (or catch
 OCRUnavailableError) before relying on OCR extraction.
+
+PaddleOCR is the default. AIGUARD_OCR_ENGINE=openthai selects
+OpenThai2.0-OCR-Text (requirements-ocr-openthai.txt) and never falls back.
 """
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 from pii_redactor.detectors.fn_scanner import scan_fn
@@ -30,6 +34,44 @@ class OCRUnavailableError(RuntimeError):
     """pdf_hybrid extraction was requested but the OCR stack isn't installed."""
 
 
+_EXPLICIT_OCR_ERRORS = {
+    "paddle": (
+        "The paddle OCR engine was selected but is not installed. "
+        "Run: pip install -r requirements-ocr.txt"
+    ),
+    "openthai": (
+        "The openthai OCR engine was selected but its package or model is missing. "
+        "Install requirements-ocr-openthai.txt, run scripts/download_openthai_ocr.py, "
+        "and set AIGUARD_OCR_OPENTHAI_DIR. PaddleOCR is not used as a fallback."
+    ),
+    "rejected": ("AIGUARD_OCR_ENGINE is not a supported OCR engine. Use paddle or openthai."),
+}
+
+
+class ExplicitOCRUnavailableError(OCRUnavailableError):
+    """The named engine was selected and cannot run. Do not substitute another."""
+
+    def __init__(self, code: str):
+        self.code = code
+        super().__init__(_EXPLICIT_OCR_ERRORS[code])
+
+
+def engine_name() -> str:
+    """paddle unless AIGUARD_OCR_ENGINE names paddle or openthai."""
+    raw = os.environ.get("AIGUARD_OCR_ENGINE")
+    if raw is None or not raw.strip():
+        return "paddle"
+    name = raw.strip().lower()
+    if name not in _EXPLICIT_OCR_ERRORS or name == "rejected":
+        raise ExplicitOCRUnavailableError("rejected")
+    return name
+
+
+def selection_is_explicit() -> bool:
+    raw = os.environ.get("AIGUARD_OCR_ENGINE")
+    return bool(raw and raw.strip())
+
+
 def _prime_torch_if_present() -> None:
     """Windows DLL-load-order workaround.
 
@@ -47,8 +89,8 @@ def _prime_torch_if_present() -> None:
         discard_exception_graph(exc)
 
 
-def is_available() -> bool:
-    """Whether the optional OCR dependencies (requirements-ocr.txt) are importable."""
+def _paddle_importable() -> bool:
+    """Whether requirements-ocr.txt is importable. Does not import OpenThai."""
     _prime_torch_if_present()
     try:
         import cv2  # noqa: F401
@@ -57,6 +99,15 @@ def is_available() -> bool:
         discard_exception_graph(exc)
         return False
     return True
+
+
+def is_available() -> bool:
+    """Whether the selected OCR engine can run. The default engine is Paddle."""
+    if engine_name() == "openthai":
+        from pii_redactor.ingest.ocr_openthai import is_ready
+
+        return is_ready()
+    return _paddle_importable()
 
 
 _engine = None
@@ -143,10 +194,25 @@ def preprocess_image(image, *, level: int = 0):
     return image
 
 
-def _run_ocr_once(image, page_num: int, dpi: int) -> tuple[list[WordBbox], float]:
-    """Run PaddleOCR on a preprocessed page image.
+def _image_for_engine(image, level: int, engine: str):
+    """Paddle uses denoise/sharpen. OpenThai sees the rendered page.
 
-    Rescales detected boxes from pixel space (at the given DPI) back to PDF
+    OpenThai deskews internally and returns boxes in caller-image pixels.
+    Preprocess here would not move those boxes, but it is Paddle-specific,
+    so the OpenThai path does not apply it.
+    """
+    if engine == "openthai":
+        return image
+    return preprocess_image(image, level=level)
+
+
+def _run_ocr_once(image, page_num: int, dpi: int) -> tuple[list[WordBbox], float]:
+    """Run the selected engine on one rendered page. PaddleOCR is the default.
+
+    OpenThai runs only when AIGUARD_OCR_ENGINE=openthai. Its boxes are already
+    in caller-image pixels, so this function does not deskew them.
+
+    Paddle boxes are rescaled here from pixel space (at the given DPI) back to PDF
     point space (72 DPI) so they line up with fitz's page coordinate system --
     the same contract redactor.py already relies on for text-layer bboxes.
 
@@ -155,9 +221,13 @@ def _run_ocr_once(image, page_num: int, dpi: int) -> tuple[list[WordBbox], float
     is an (N, 4) array of axis-aligned [x0, y0, x1, y1] pixel-space boxes, one
     per recognized line.
     """
-    engine = _get_engine()
+    if engine_name() == "openthai":
+        from pii_redactor.ingest.ocr_openthai import read_words
+
+        return read_words(image, page_num, dpi)
+    paddle = _get_engine()
     scale = 72.0 / dpi
-    result = engine.predict(image)
+    result = paddle.predict(image)
     words: list[WordBbox] = []
     confs: list[float] = []
     if result:
@@ -267,6 +337,9 @@ def ocr_page(
     page, page_num: int, *, dpi: int = 300, max_retries: int = MAX_OCR_RETRIES
 ) -> OCRPageResult:
     """OCR a page, then join useful text from its retries."""
+    engine = engine_name()
+    if selection_is_explicit() and not is_available():
+        raise ExplicitOCRUnavailableError(engine)
     cur_dpi = dpi
     best_conf = -1.0
     attempt_results: list[tuple[list[WordBbox], float]] = []
@@ -275,7 +348,7 @@ def ocr_page(
     for attempt in range(1, max_retries + 1):
         attempts = attempt
         arr = _render_page_to_array(page, cur_dpi)
-        arr = preprocess_image(arr, level=attempt - 1)
+        arr = _image_for_engine(arr, attempt - 1, engine)
         try:
             words, conf = _run_ocr_once(arr, page_num, cur_dpi)
         except RuntimeError as exc:

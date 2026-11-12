@@ -39,6 +39,7 @@ dependencies = { file = "requirements.txt" }
 optional-dependencies.web = { file = "requirements-web.txt" }
 optional-dependencies.ml = { file = "requirements-ml.txt" }
 optional-dependencies.ocr = { file = "requirements-ocr.txt" }
+optional-dependencies.ocr-openthai = { file = "requirements-ocr-openthai.txt" }
 optional-dependencies.enterprise = { file = ["requirements-web.txt", "requirements-enterprise.txt"] }
 
 [tool.setuptools]
