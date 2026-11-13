@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 
 import pytest
@@ -9,7 +10,13 @@ import pytest
 from benchmark.yrss_v2 import values
 from benchmark.yrss_v2.corpus import (
     Template,
+    build_corpus,
+    load_templates,
+    lock_path,
+    public_lock,
     render,
+    templates_path,
+    validate_corpus,
     validate_templates,
 )
 from benchmark.yrss_v2.types import CONTEXTUAL_TYPES, SCHEME_TYPES, STRUCTURED_TYPES
@@ -80,3 +87,24 @@ def test_template_validation_reports_kinds_without_text():
     assert "positive-without-labeled-placeholder" in errors
     assert "duplicate-family" in errors
     assert all("0812345678" not in error for error in errors)
+
+
+def test_dev_split_matches_its_lock():
+    templates = load_templates("dev")
+    assert validate_templates(templates) == []
+    corpus = build_corpus("dev")
+    assert validate_corpus(corpus) == []
+    lock = json.loads(lock_path("dev").read_text(encoding="utf-8"))
+    assert public_lock(corpus) == lock
+    assert lock["documents"] == 300
+    assert lock["negative_documents"] / lock["documents"] == pytest.approx(0.2)
+    assert set(lock["type_counts"]) == set(SCHEME_TYPES)
+    assert templates_path("dev").name == "dev-templates.jsonl"
+
+
+def test_dev_lock_carries_no_document_text_or_values():
+    corpus = build_corpus("dev")
+    blob = lock_path("dev").read_text(encoding="utf-8")
+    for doc in corpus.documents[:40]:
+        for span in doc.spans:
+            assert doc.text[span.start : span.end] not in blob
