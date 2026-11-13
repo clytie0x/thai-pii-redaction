@@ -32,5 +32,9 @@ docs/implementation/2026-11-03-branch-preservation.json text eol=lf
 # recorded digest no longer matches. Keep these evidence files LF.
 docs/benchmark/runs/*.json text eol=lf
 
+# The v2 template files are hashed by exact bytes in their lock files.
+# Keep them LF so a Windows checkout does not change the digest.
+benchmark/data/yrss-v2/*.jsonl text eol=lf
+
 # Official form probes are byte-exact PDF artifacts.
 benchmark/data/probe/gov_forms/sanitized/*.pdf binary

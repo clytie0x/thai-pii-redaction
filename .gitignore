@@ -57,6 +57,8 @@ step1-7_*.pdf
 # Hand-authored or privacy-reviewed JSONL evidence remains committed.
 !benchmark/data/gold.jsonl
 !benchmark/data/blind-scores.jsonl
+# Dev templates hold placeholders, never values. Test templates stay out.
+!benchmark/data/yrss-v2/dev-templates.jsonl
 !research/stt52/evidence/*.jsonl
 
 # Model and tool caches

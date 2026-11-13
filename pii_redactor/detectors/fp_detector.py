@@ -169,9 +169,9 @@ def _disambiguate_bank_phone(text: str, candidates: list[Entity]) -> list[Entity
 def _bank_separators_nonstandard(raw: str) -> bool:
     """True when the separator layout matches no Thai bank-account format.
 
-    Accepted layouts: bare digits, the fully separated xxx-x-xxxxx-x, and the
-    xxxxxxx-xxx shape. Anything else ("2569-004512") is a formatted document
-    number wearing ten digits.
+    Accepted layouts: bare digits, the fully separated xxx-x-xxxxx-x, the
+    xxx-xxxxxx-x shape some banks print, and the xxxxxxx-xxx shape. Anything
+    else ("2569-004512") is a formatted document number wearing ten digits.
     """
     positions: list[int] = []
     digits = 0
@@ -180,7 +180,7 @@ def _bank_separators_nonstandard(raw: str) -> bool:
             digits += 1
         else:
             positions.append(digits)
-    return bool(positions) and positions != [3, 4, 9] and positions != [7]
+    return bool(positions) and positions not in ([3, 4, 9], [3, 9], [7])
 
 
 def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Entity]:
@@ -398,8 +398,35 @@ _THAI_MONTHS = (
     "มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม"
 )
 _RE_DATE_THAI_MONTH = re.compile(
-    rf"(?<!\d)(\d{{1,2}} (?:{_THAI_MONTHS}) (?:พ\.?ศ\.? ?)?\d{{4}})(?!\d)"
+    rf"(?<!\d)(\d{{1,2}} (?:{_THAI_MONTHS}) (?:[พค]\.?ศ\.? ?)?\d{{4}})(?!\d)"
 )
+# Short Thai months ("12 ส.ค. 2533"). The CRF finds most of them, but not
+# when a form label is glued to the day. A two-digit year is too loose to
+# mask on its own ("3 พ.ค. 15.00 น."), so step 7c takes it only after a
+# birth cue.
+_THAI_MONTH_ABBRS = (
+    r"ม\.?ค\.?|ก\.?พ\.?|มี\.?ค\.?|เม\.?ย\.?|พ\.?ค\.?|มิ\.?ย\.?"
+    r"|ก\.?ค\.?|ส\.?ค\.?|ก\.?ย\.?|ต\.?ค\.?|พ\.?ย\.?|ธ\.?ค\.?"
+)
+_RE_DATE_THAI_ABBR = re.compile(
+    rf"(?<!\d)(\d{{1,2}} ?(?:{_THAI_MONTH_ABBRS}) ?(?:[พค]\.?ศ\.? ?)?(?:\d{{4}}|\d{{2}}))(?!\d)"
+)
+# English month names are normal on Thai passport, visa and bank paperwork
+# ("13 August 2006", "Aug 13, 2006"). No letter guard before the day: a
+# label glued to it ("Date of birth22 June 1993") must still match. The
+# first-letter lookahead only makes the month-first branch fail fast.
+_EN_MONTHS = (
+    r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
+    r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
+)
+_RE_DATE_EN_MONTH = re.compile(
+    rf"(?<!\d)(\d{{1,2}}(?:st|nd|rd|th)? ?(?:{_EN_MONTHS})\.?,? ?\d{{4}}"
+    rf"|(?<![A-Za-z])(?=[JFMASONDjfmasond])(?:{_EN_MONTHS})\.? \d{{1,2}}(?:st|nd|rd|th)?,? \d{{4}})"
+    r"(?!\d)",
+    re.IGNORECASE,
+)
+_DATE_DAY_RE = re.compile(r"\d{1,2}(?=\D)")
+_DATE_YEAR_RE = re.compile(r"\d+\Z")
 # The trailing (?!\d) is load-bearing (DET-2): without it, this pattern bit the
 # first 1-4 digits of a LONGER number after a Thai-consonant abbreviation
 # (e.g. "ปชช 1101...", "กทม 0812..."), and _deduplicate's earlier-start-wins
@@ -410,7 +437,10 @@ _RE_DATE_THAI_MONTH = re.compile(
 # (see step 8) — putting a digit-led alternative in the pattern itself loses
 # to an earlier overlapping bogus match that eats the digit ("ทะเบียน 2กท":
 # the rejected "น 2" consumes the 2 before the real plate can start on it).
-_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}\s*\d{1,4})(?!\d)")
+# People also write the plate with a hyphen ("1กข-2345"). Step 8 is stricter
+# with that form when no plate cue is near, because a hyphen also joins
+# letters and digits in room, form and product codes.
+_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}(?:\s*|-)\d{1,4})(?!\d)")
 # Passport is alphanumeric, so it needs the same Thai-adjacency handling as the
 # numeric PII above: \b does NOT fire between a Thai letter and "A" (both are
 # word characters in Unicode regex), so a passport glued to Thai text (e.g.
@@ -609,7 +639,23 @@ _JURISTIC_CUE_RE = re.compile(
     re.IGNORECASE,
 )
 _DRIVER_CUE_RE = re.compile(
-    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er'?s?|ing)\s*licen[cs]e", re.IGNORECASE
+    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er['’]?s?|ing)\s*licen[cs]e",
+    re.IGNORECASE,
+)
+# A bare "licence no." counts only with a driving word in the same window:
+# liquor, building and fishing licences carry 8-digit numbers too.
+_BARE_LICENCE_CUE_RE = re.compile(r"\blicen[cs]e\s*(?:no\b|number|#)", re.IGNORECASE)
+_DRIVING_WORD_RE = re.compile(r"driver|driving|ขับขี่|ขับรถ", re.IGNORECASE)
+# The cue can sit a clause before the number: a long licence class name
+# ("ใบอนุญาตขับรถยนต์ส่วนบุคคล ฉบับที่ ...") or a chat sentence. Past the
+# normal window the gap must hold no digit, no line break and no word that
+# introduces another kind of number.
+_DRIVER_FAR_WINDOW = 60
+_DRIVER_GAP_BLOCK_RE = re.compile(
+    r"[\d\n]|ใบเสร็จ|ใบแจ้งหนี้|ใบกำกับ|ใบสั่ง|สั่งซื้อ|ออเดอร์|อ้างอิง|รหัส|บัญชี|โทร|เบอร์"
+    r"|พัสดุ|สัญญา|กรมธรรม์|invoice|order|ref"
+    r"|เลขรับ|แจ้ง|จำนวน|ยอด|บาท|ค่า",
+    re.IGNORECASE,
 )
 _HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
 _IP_CUE_RE = re.compile(
@@ -629,7 +675,8 @@ _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 # both the mobile PHONE and the BANK_ACCOUNT patterns, so the surrounding text
 # is the only signal. `บัญชี` already covers เลขบัญชี / เลขที่บัญชี as a
 # substring, so the alternation stays minimal.
-_BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
+# "บช." is the short form of บัญชี. "บช.น." is a police bureau, not a bank.
+_BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร|บช\.(?![ก-ฮ]\.)")
 _PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|มือถือ|ติดต่อ")
 _CARD_CUE_RE = re.compile(r"บัตรเครดิต|บัตรเดบิต|credit\s*card|debit\s*card", re.IGNORECASE)
 _PERSON_ID_CUE_RE = re.compile(r"บัตรประชาชน|เลขประจำตัวประชาชน|เลขผู้เสียภาษี")
@@ -642,7 +689,14 @@ _PERSON_ID_CUE_RE = re.compile(r"บัตรประชาชน|เลขป�
 # register on Thai visa/passport paperwork. Student/passport cues gate the
 # wide catch-alls so a business PO/invoice number stops masquerading as a
 # passport or student id -- it is still masked, as the generic ID_NUMBER.
-_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
+# เกิดขึ้น means "happened", so it is not a birth cue either. The เกด forms
+# are วันเกิด / เกิดวันที่ / เกิดเมื่อ after OCR dropped the marks above the
+# line; they need the neighbour word because เกด alone is also a word.
+_BIRTH_CUE_RE = re.compile(
+    r"(?<!เหตุ)เกิด(?!เหตุ|ขึ้น)|(?:วั?น|ปี?)เกด|เกด(?:วั?นท|เม)"
+    r"|date of birth|birth\s?da(?:te|y)|\bborn\b|\bd\.?o\.?b\b",
+    re.IGNORECASE,
+)
 # Address cue for the postal code. The window is wider than _CUE_WINDOW because
 # a postal code sits at the END of the address line, so the nearest cue is a
 # whole district/province name away ("แขวงวังทองหลาง กรุงเทพมหานคร 10310").
@@ -739,6 +793,34 @@ def _cue_before(cue_re: re.Pattern, text: str, start: int) -> bool:
     return bool(cue_re.search(text[max(0, start - _CUE_WINDOW) : start]))
 
 
+def _driver_cue_before(text: str, start: int) -> bool:
+    """A licence cue in the normal window, or further back across a clean gap."""
+    if _cue_before(_DRIVER_CUE_RE, text, start):
+        return True
+    if _cue_before(_BARE_LICENCE_CUE_RE, text, start) and _cue_before(
+        _DRIVING_WORD_RE, text, start
+    ):
+        return True
+    ctx = text[max(0, start - _DRIVER_FAR_WINDOW) : start]
+    cue = _rightmost_cue(_DRIVER_CUE_RE, ctx)
+    return cue >= 0 and not _DRIVER_GAP_BLOCK_RE.search(ctx[cue:])
+
+
+def _skip_glued_phone(text: str, start: int) -> int:
+    """Return where the e-mail really starts when a phone is glued in front.
+
+    Text taken from a PDF can lose the gap between two fields
+    ("0812345678somchai@x.com"). The e-mail pattern then takes the phone as
+    part of the address and the phone loses its own span. Only a full phone
+    followed by a letter is split off; "0812345678@x.com" stays one address.
+    """
+    for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE):
+        phone = pattern.match(text, start)
+        if phone and text[phone.end(1) : phone.end(1) + 1].isalpha():
+            return phone.end(1)
+    return start
+
+
 # A vehicle plate glued to Thai text (e.g. "ทะเบียนรถขก 4471") is normally
 # suppressed by the mid-word guard below, which rejects any plate preceded by a
 # Thai char. A plate cue in the ~15 chars before the match marks a real plate
@@ -764,6 +846,28 @@ _PLATE_UNCUED_LEAD_STOPWORDS = frozenset({"ยอด", "ออก", "รวม"}
 # trailing digit it just claimed — see step 8.
 _PLATE_SCORE = 0.9
 _PLATE_REATTACHED_SCORE = 0.91
+# An uncued hyphen form must look like a car plate: two letters, then three
+# or four digits or a leading series digit. A code label in front, or a
+# month or era abbreviation as the letters ("ตค-2568"), means it is not one.
+_PLATE_CODE_LABEL_RE = re.compile(
+    r"(?:รหัส[ก-๛]{0,12}|สินค้า|รุ่น|แบบ|ห้อง|ข้อ|มาตรา|เลขที่|ฉบับที่|งวด"
+    r"|วิชา|ทางหลวง|ล็อต|หมวด|แปลง|คดี[ก-๛]{0,6}|เครื่อง)[ \t:：]*\Z"
+)
+_PLATE_HYPHEN_NON_SERIES = frozenset(
+    {"มค", "กพ", "พค", "กค", "สค", "กย", "ตค", "พย", "ธค", "พศ", "คศ"}
+)
+
+
+def _uncued_hyphen_plate(text: str, start: int, raw: str, lead: re.Match | None) -> bool:
+    if lead is None or len(lead.group()) != 2 or lead.group() in _PLATE_HYPHEN_NON_SERIES:
+        return False
+    series_digit = (
+        start > 0 and text[start - 1].isdigit() and (start < 2 or not text[start - 2].isdigit())
+    )
+    if not series_digit and len(raw) - raw.index("-") - 1 < 3:
+        return False
+    label_end = start - 1 if series_digit else start
+    return not _PLATE_CODE_LABEL_RE.search(text[max(0, label_end - 24) : label_end])
 
 
 def _plate_cue_before(text: str, start: int) -> bool:
@@ -891,7 +995,8 @@ def detect_fp(text: str) -> list[Entity]:
 
     # 4. EMAIL
     for m in _RE_EMAIL.finditer(text):
-        candidates.append(_make_entity("EMAIL", m, text, score=1.0))
+        start, end = m.span(1)
+        candidates.append(_entity_at("EMAIL", text, _skip_glued_phone(text, start), end))
 
     # 5. PHONE (mobile, landline, international)
     for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE, _RE_PHONE_INTL):
@@ -960,6 +1065,24 @@ def detect_fp(text: str) -> list[Entity]:
         dtype = "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
         candidates.append(_make_entity(dtype, m, text, score=1.0))
 
+    # 7c. Short Thai months and English month names, same cue routing. The
+    # year must look like a year in either era, so "12 March 5000 units" and
+    # similar counts stay out.
+    for pattern in (_RE_DATE_THAI_ABBR, _RE_DATE_EN_MONTH):
+        for m in pattern.finditer(text):
+            raw = m.group(1)
+            day = _DATE_DAY_RE.search(raw)
+            year = _DATE_YEAR_RE.search(raw).group()
+            if day is None or not 1 <= int(day.group()) <= 31:
+                continue
+            born = _cue_before(_BIRTH_CUE_RE, text, m.start(1))
+            if len(year) == 2:
+                if not born:
+                    continue
+            elif not 1900 <= int(year) <= 2600:
+                continue
+            candidates.append(_make_entity("DATE_OF_BIRTH" if born else "DATE", m, text))
+
     # 8. VEHICLE_PLATE
     # Reject matches where the Thai consonants are mid-word (preceded by a Thai
     # char) -- unless a plate cue (ทะเบียน..., civil-registration compounds
@@ -980,6 +1103,12 @@ def detect_fp(text: str) -> list[Entity]:
             continue
         plate_cued = _plate_cue_before(text, start) or _plate_sign_cue(text, start)
         if start > 0 and _THAI_CHAR_RE.match(text[start - 1]) and not plate_cued:
+            continue
+        if (
+            not plate_cued
+            and "-" in m.group(1)
+            and not _uncued_hyphen_plate(text, start, m.group(1), lead)
+        ):
             continue
         if not plate_cued:
             before = text[:start].rstrip()
@@ -1207,7 +1336,7 @@ def detect_fp(text: str) -> list[Entity]:
     # Juristic IDs share the Thai-ID checksum and span, so only their cue differs.
     candidates = _disambiguate_thai_juristic(text, candidates)
     for match in _RE_DRIVER_LICENSE.finditer(text):
-        if _cue_before(_DRIVER_CUE_RE, text, match.start(1)):
+        if _driver_cue_before(text, match.start(1)):
             candidates.append(_make_entity("DRIVER_LICENSE", match, text, score=0.9))
     for match in _RE_LINE_ID.finditer(text):
         candidates.append(_make_entity("LINE_ID", match, text, score=0.9))

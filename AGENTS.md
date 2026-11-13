@@ -22,12 +22,12 @@ This repository does not use pull requests for its own work. Work happens on a
 short-lived branch, CI runs on every branch push, and a green run is squashed
 into `main` as a single commit. Never commit directly to `main`.
 
-Run the loop end to end without stopping to ask between steps:
+The owner delegated the whole project to the agent on 2026-11-13: plan the work, choose the order, and run this loop end to end without asking between steps:
 
 1. branch from `main`;
 2. implement, writing tests first for new behavior;
 3. push, and wait for every CI job to pass — not most of them;
-4. squash into `main`;
+4. squash into `main` (a cloud session limited to one branch opens a draft pull request instead and leaves the merge to the owner);
 5. report in three lines: what changed, why, and what the evidence was.
 
 Stop and ask the owner in exactly four cases: a fork in the road that changes
