@@ -36,6 +36,19 @@ action such as deploying, submitting to a store, creating a public repository,
 or sending anything to a third party; or a measured regression you cannot
 explain.
 
+### Owner delegation (2026-11-13)
+
+The owner has authorized the agent to manage this project end to end: plan the
+work, choose the order, and carry out research campaigns, code, tests, and
+documents without asking between steps. Report what was done and what the
+evidence was. The four stop cases above still apply, and so does the last
+bullet of "Change and review rules".
+
+A cloud session may be limited to one session branch. In that case push the
+branch, open a draft pull request against `main`, and leave the merge to the
+owner. This replaces steps 4 and "never use pull requests" for that session
+only.
+
 A change that meets the ADR bar also gets an independent review from a subagent
 running in a separate context before it lands. Verify every claim that review
 makes against the code before acting on it; reviewers have been confidently
