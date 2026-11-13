@@ -179,6 +179,50 @@ def brief(slots: list[Slot], guide_text: str) -> str:
     )
 
 
+_REVIEW_RULES = """\
+## กติกาการตรวจ (แก้ได้เท่านั้น ห้ามเขียนใหม่)
+
+แก้ได้เฉพาะเรื่องเหล่านี้
+1. ค่าส่วนบุคคลที่พิมพ์เองนอก placeholder (ชื่อคน ชื่อเล่นของคน เบอร์ อีเมล เลข ที่อยู่ วันเกิด)
+   ใน template ที่ negative เป็น false ให้แทนด้วย placeholder ชนิดที่ถูก
+   ใน template ที่ negative เป็น true ให้เปลี่ยนเป็นคำทั่วไปหรือ placeholder หลอก
+2. {{dob}} ที่ประโยคไม่ได้บอกว่าเป็นวันเกิด เปลี่ยนเป็น {{date}} และกลับกัน
+3. คำนำหน้าชื่อที่อยู่ในความหมายของ placeholder ให้อยู่นอก placeholder
+4. placeholder ที่ชนิดไม่ตรงกับประโยค เช่น {{phone}} ในที่ที่ประโยคบอกว่าเป็นเลขบัญชี
+5. template ที่ negative เป็น true ต้องไม่มี placeholder ที่มี label
+
+ห้ามทำเรื่องเหล่านี้
+- ห้ามเปลี่ยนสำนวน ห้ามแก้คำพิมพ์ผิดหรือการเว้นวรรคที่ตั้งใจให้สมจริง
+- ห้ามลบ placeholder ที่ถูกต้องอยู่แล้ว ห้ามเปลี่ยน family genre negative
+"""
+
+
+def review_brief(templates: list[corpus.Template], guide_text: str) -> str:
+    guide = "\n".join(line for line in guide_text.splitlines() if not line.startswith("Protocol:"))
+    return (
+        "คุณคือผู้ตรวจ template เอกสารภาษาไทยสำหรับชุดทดสอบระบบตรวจจับข้อมูลส่วนบุคคล\n"
+        "อย่าใช้เครื่องมือใดๆ อย่าอ่านไฟล์อื่น อย่าค้นเว็บ\n\n"
+        f"----- GUIDE START -----\n{guide}\n----- GUIDE END -----\n\n"
+        f"{_REVIEW_RULES}\n"
+        f"## template ที่ต้องตรวจ ({len(templates)} บรรทัด)\n\n"
+        + dumps(templates)
+        + "\n## รูปแบบคำตอบ\n\n"
+        f"ตอบ JSON {len(templates)} บรรทัดตามลำดับเดิม ทุก template ต้องอยู่ แม้ไม่ได้แก้\n"
+        "จากนั้นทุกจุดที่แก้ ให้เขียนหนึ่งบรรทัดว่า CHANGE <family> <ข้อที่ 1 ถึง 5>\n"
+        "ห้ามมี markdown ห้ามมีคำอธิบายอื่น\n"
+    )
+
+
+def change_lines(raw: str) -> list[str]:
+    """The reviewer's change log, as ``family:rule`` pairs."""
+    out = []
+    for line in raw.splitlines():
+        parts = line.strip().split()
+        if len(parts) == 3 and parts[0] == "CHANGE":
+            out.append(f"{parts[1]}:{parts[2]}")
+    return out
+
+
 def parse_output(raw: str) -> list[corpus.Template]:
     """Keep the JSON object lines of a model answer; ignore anything else."""
     rows = []
@@ -287,6 +331,11 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--batch", type=int, required=True)
         if name == "check":
             p.add_argument("--input", required=True, help="a model answer file")
+    p = sub.add_parser("review-brief", help="print a review brief for an answer file")
+    p.add_argument("--input", required=True)
+    p = sub.add_parser("changes", help="compare an answer file with its review")
+    p.add_argument("--before", required=True)
+    p.add_argument("--after", required=True)
     p = sub.add_parser("assemble", help="print the draft built from answer files")
     p.add_argument("inputs", nargs="+")
     p = sub.add_parser("check-draft")
@@ -314,6 +363,24 @@ def main(argv: list[str] | None = None) -> int:
         errors = check_batch(batch_slots(args.author, args.batch), parse_output(raw))
         print(json.dumps(errors))
         return 1 if errors else 0
+    if args.command == "review-brief":
+        templates = parse_output(Path(args.input).read_text(encoding="utf-8"))
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.write(review_brief(templates, GUIDE.read_text("utf-8")))
+        return 0
+    if args.command == "changes":
+        before = {t.family: t for t in parse_output(Path(args.before).read_text("utf-8"))}
+        raw_after = Path(args.after).read_text("utf-8")
+        after = {t.family: t for t in parse_output(raw_after)}
+        summary = {
+            "families_before": len(before),
+            "families_after": len(after),
+            "changed": sorted(f for f in before if f in after and before[f] != after[f]),
+            "dropped": sorted(set(before) - set(after)),
+            "logged": change_lines(raw_after),
+        }
+        print(json.dumps(summary))
+        return 0
     if args.command == "assemble":
         templates = []
         for path in args.inputs:

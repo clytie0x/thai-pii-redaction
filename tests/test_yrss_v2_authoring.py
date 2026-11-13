@@ -96,3 +96,18 @@ def test_assemble_gives_opaque_unique_ids_and_keeps_every_text():
     assert sorted(t.text for t in out) == sorted(t.text for t in rows)
     parsed = corpus._parse(authoring.dumps(out).encode("utf-8"))
     assert [t.family for t in parsed] == [t.family for t in out]
+
+
+def test_review_brief_carries_every_template_and_the_fix_only_rules():
+    slots = authoring.batch_slots("claude", 1)
+    rows = [_answer(s) for s in slots]
+    text = authoring.review_brief(rows, authoring.GUIDE.read_text("utf-8"))
+    assert "ห้ามเปลี่ยนสำนวน" in text
+    families = [t.family for t in authoring.parse_output(text)]
+    # The guide's own format example is a JSON line too.
+    assert [f for f in families if f != "dev-p-001"] == [s.slot for s in slots]
+
+
+def test_change_lines_reads_only_the_log():
+    raw = '{"family": "c0000"}\nCHANGE c0003 1\nCHANGE c0007 2\nCHANGE too many words here\n'
+    assert authoring.change_lines(raw) == ["c0003:1", "c0007:2"]
