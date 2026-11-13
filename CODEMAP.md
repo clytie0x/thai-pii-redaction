@@ -324,7 +324,7 @@ Two parallel detection passes on the Normalized Document Model:
 
 Post-detection:
 - Span boundary adjustment + deduplication (map repeated entities to original). `detectors/aggregate.py detect_all` is the single entry point every caller uses — the web API, `pipeline.py`, `report.py` (so `/api/analyze`, the PDF report and the worker), and `ai_guard.py report`. It resolves FP/TB span overlaps through `dedupe_spans` (FP wins — checksum-backed) and coalesces address fragments before any replacement; unresolved overlaps would corrupt the text during the anonymizer's tail-first splice. Counting the raw `detect_fp` + `detect_tb` lists instead double-counts a value both detectors matched, which is why the entity totals in a report come from the deduped list.
-- False negative scan: lightweight second pass (13-digit, `@`, date patterns)
+- False negative scan: lightweight second pass (13-digit, `@`, date patterns). A 13-digit run that fails the check digit is `THAI_ID` by default and the generic `ID_NUMBER` when an order, payment or request-number word introduces it; it is masked either way
 - **Entity Registry**: `entity_id`, `redact_type` (FP/TB), `data_type`, `span`, `score`
 - Output: Detection Report → Step 3
 
