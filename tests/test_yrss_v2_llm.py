@@ -78,6 +78,7 @@ def test_request_body_and_bearer_header(monkeypatch):
     assert body["model"] == "test-model"
     assert body["seed"] == 20261113
     assert body["temperature"] == 0
+    assert body["stream"] is False
     assert body["response_format"] == {"type": "json_object"}
     assert [message["role"] for message in body["messages"]] == ["system", "user"]
     assert body["messages"][0]["content"] == llm_openai.SYSTEM_PROMPT

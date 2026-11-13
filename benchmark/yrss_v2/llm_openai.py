@@ -167,6 +167,8 @@ class OpenAIPredictor:
             ],
             "temperature": 0,
             "seed": self._seed,
+            # Some gateways stream by default. Ask for one JSON body.
+            "stream": False,
         }
         if json_mode:
             body["response_format"] = {"type": "json_object"}
