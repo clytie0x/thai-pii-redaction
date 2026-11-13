@@ -52,9 +52,9 @@ models of known size run locally through Ollama.
    size, quantization, memory and latency for each.
 2. Decide the LLM comparator(s) and add a pre-registration addendum naming
    model, digest and seeds before any test scoring.
-3. Freeze the detector commit and record it in an addendum. No detector
+3. DONE 2026-11-14 (see the ADR addenda). Freeze the detector commit and record it in an addendum. No detector
    change after this, or the test split is spent.
-4. Author the test split: 200 new families, 4 variants each. Authors read
+4. DONE 2026-11-14, sealed. Author the test split: 200 new families, 4 variants each. Authors read
    only the annotation guide. Use at least two model families. Add rules so
    the text reads like people wrote it: chat particles, uneven spacing,
    typos, unfinished sentences. Avoid the unrealistic forms found on dev
