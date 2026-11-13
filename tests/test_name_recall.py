@@ -269,3 +269,56 @@ def test_overlapping_recall_candidates_are_dropped_at_the_call_site() -> None:
     apart = _make_name(text, 20, 26, 0.84)
     assert _without_overlap([earlier, apart], existing) == [apart]
     assert _without_overlap([earlier], []) == [earlier]
+
+
+# ── Latin-name cues: organisations and things stay unflagged ───────────────
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Driver: Siam Express Logistics",
+        "Contact: Somchai Jaidee",
+        "Owner: Blue Harbour Holdings",
+        "Sender: Green Valley Supplies",
+        "Recipient: Lotus Garden Hotel",
+        "Payee: Orchid Trading House",
+        "Tenant: Sunrise Cafe Company",
+        "Seller: Maple Leaf Imports",
+        "Buyer: Silver Sands Resort",
+        "Attention: Accounts Payable",
+        "Attn: Procurement Department",
+        "ชื่อเพลง Moon River Song",
+        "ชื่อหนังสือ Little Prince Story",
+        "ชื่อภาษาอังกฤษ Anan Wongsa",
+        "ตั้งชื่อว่า Kamonwan Rattanakul",
+        "Font name: Helvetica Neue",
+        "Name: Siam Express",
+        "Name: Pacific Resources",
+        "Name: Accounts Payable",
+        "Name: Front Desk",
+        "Name: Central Retail",
+        "Name: Paragon Mall",
+        "Name: Bangkok Air",
+        "Name: Siam Automobile",
+        "Dr. Martens Jadon boots ลดราคา",
+        "ซื้อ Dr. Martens Jadon Boots มา",
+    ],
+)
+def test_latin_org_and_thing_cues_stay_unflagged(text: str) -> None:
+    assert recall_names(text) == set()
+
+
+@pytest.mark.parametrize(
+    ("text", "name"),
+    [
+        ("Guest: Somchai Jaidee", "Somchai Jaidee"),
+        ("Applicant: Malee Srisuk", "Malee Srisuk"),
+        ("Name (EN): Anan Wongsa", "Anan Wongsa"),
+        ("ผู้โดยสาร 1: Kanya Thongdee", "Kanya Thongdee"),
+        ("ชื่อบนหนังสือเดินทาง: Somchai Jaidee", "Somchai Jaidee"),
+        ("Dr. Wanchai Thongdee ประจำวันพุธ", "Wanchai Thongdee"),
+    ],
+)
+def test_latin_person_cues_still_find_names(text: str, name: str) -> None:
+    assert name in recall_names(text)

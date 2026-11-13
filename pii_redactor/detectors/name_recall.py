@@ -54,9 +54,9 @@ _LINE_START = r"(?m:^)[ \t]*(?:[-*•>][ \t]*)?"
 _EN_ROLES = (
     r"guest|applicant|co-applicant|insured|passenger|traveller|traveler"
     r"|card[ \t]?holder|policy[ \t]?holder|account[ \t]+holder|customer|client|patient"
-    r"|employee|tenant|landlord|owner|buyer|seller|borrower|lender|guarantor"
-    r"|beneficiary|recipient|sender|payer|payee|attendee|participant|visitor|driver"
-    r"|signatory|contact|attn\.?|attention|dear"
+    r"|employee|landlord|borrower|lender|guarantor"
+    r"|beneficiary|payer|attendee|participant|visitor"
+    r"|signatory|dear"
     r"|(?:prepared|approved|signed|requested|reported|booked)[ \t]+by"
 )
 
@@ -65,7 +65,7 @@ _NON_PERSON_NAME_QUALIFIERS = frozenset(
     "company hotel bank product file project brand domain business school shop store branch "
     "team device host server user login item event course plan package model organization "
     "organisation agency department building street village place trade group file folder "
-    "merchant vendor supplier program programme app system network wifi campaign".split()
+    "merchant vendor supplier program programme app system network wifi campaign font".split()
 )
 
 # Thai words after ชื่อ that make the label name a thing, not a person.
@@ -74,8 +74,10 @@ _TH_NON_PERSON_NAME_RE = re.compile(
     r"บริษัท|ร้าน|สินค้า|โครงการ|ไฟล์|ผู้ใช้|เรื่อง|ทีม|แบรนด์|ธนาคาร|สาขา|โรงแรม|รุ่น|วิชา"
     r"|หลักสูตร|เสียง|ดัง|กลุ่ม|ระบบ|เว็บ|โดเมน|หน่วยงาน|องค์กร|โรงเรียน|มหาวิทยาลัย|สถานที่"
     r"|อาคาร|หมู่บ้าน|ถนน|ซอย|แอป|โปรแกรม|อุปกรณ์|กิจการ|ห้าง|นิติบุคคล|ยี่ห้อ"
-    r"|ผลิตภัณฑ์|เข้าใช้|ตำแหน่ง|แผนก|ฝ่าย|ห้อง|เมือง|จังหวัด|ประเทศ"
+    r"|ผลิตภัณฑ์|เข้าใช้|ตำแหน่ง|แผนก|ฝ่าย|ห้อง|เมือง|จังหวัด|ประเทศ|เพลง|หนังสือ(?!เดินทาง)"
 )
+# "ชื่อภาษาอังกฤษ" straight after ชื่อ is a bare field label, not a person cue.
+_TH_NON_PERSON_GAP_START_RE = re.compile(r"[ \t]*ภาษาอังกฤษ")
 # ผู้-roles that are usually a company.
 _TH_ORG_ROLES = r"ผลิต|ให้บริการ|จัดจำหน่าย|นำเข้า|ส่งออก|พัฒนา|สนับสนุน|ใช้|จัดงาน|รับเหมา"
 
@@ -100,7 +102,7 @@ _LATIN_CUE_PATTERNS: tuple[re.Pattern[str], ...] = (
     # With no colon the label must open the line and be explicit: a
     # salutation, or a role followed by "person" ("Insured person ...").
     re.compile(
-        rf"{_LINE_START}(?i:dear|attn\.?|attention|(?:{_EN_ROLES})[ \t]+person)[ \t]+{_LATIN_NAME}"
+        rf"{_LINE_START}(?i:dear|(?:{_EN_ROLES})[ \t]+person)[ \t]+{_LATIN_NAME}"
     ),
     # A Thai role label with a colon: "ผู้โดยสาร ๑: ...". ผู้ makes a person
     # noun from a verb, so the label is a person unless it is a company role.
@@ -121,7 +123,7 @@ _LATIN_CUE_PATTERNS: tuple[re.Pattern[str], ...] = (
 # ชื่อ ("name") earlier on the same line, with only Thai words between it and
 # the Latin name: "ชื่อผู้ถือบัตร (ตามหน้าบัตร): ...", "สะกดชื่อเป็นอังกฤษว่า ...".
 _TH_NAME_LABEL_RE = re.compile(
-    rf"(?P<lead>[ก-๛]{{0,3}})ชื่อ(?P<gap>[ก-๛ \t()/–-]{{0,40}}?){_SEP}{_LATIN_NAME}"
+    rf"(?P<lead>[ก-๛]{{0,4}})ชื่อ(?P<gap>[ก-๛ \t()/–-]{{0,40}}?){_SEP}{_LATIN_NAME}"
 )
 _TH_NAME_LABEL_LEAD_STOP = ("ราย", "ตั้ง")
 
@@ -136,7 +138,13 @@ _LATIN_WORD_STOP = _LATIN_ORG_STOP | frozenset(
     "terminal standard premium gold silver platinum plus pro cloud pay app web online system "
     "project international thailand thai bangkok house trading corp inc solutions tech "
     "information details list notes meeting charge us today name names surname given "
-    "first last full middle family english".split()
+    "first last full middle family english express resources payable desk retail mall air "
+    "automobile boots shoes sandals sneakers loafers".split()
+)
+# A product noun right after the pair ("Dr. Martens Jadon boots") means the
+# pair is a brand or model, not a person.
+_PRODUCT_NOUN_AFTER_RE = re.compile(
+    r"[ \t]+(?i:boots?|shoes?|sandals?|sneakers?|loafers?|jackets?|bags?|watch(?:es)?)(?![A-Za-z])"
 )
 
 
@@ -152,12 +160,15 @@ def _latin_label_names(text: str) -> list[Entity]:
             qualifier = match.groupdict().get("qualifier")
             if qualifier and qualifier.lower() in _NON_PERSON_NAME_QUALIFIERS:
                 continue
+            if _PRODUCT_NOUN_AFTER_RE.match(text, match.end("name")):
+                continue
             if _latin_name_ok(match.group("name")):
                 spans.add(match.span("name"))
     for match in _TH_NAME_LABEL_RE.finditer(text):
         if match.group("lead").endswith(_TH_NAME_LABEL_LEAD_STOP):
             continue
-        if _TH_NON_PERSON_NAME_RE.search(match.group("gap")):
+        gap = match.group("gap")
+        if _TH_NON_PERSON_NAME_RE.search(gap) or _TH_NON_PERSON_GAP_START_RE.match(gap):
             continue
         if _latin_name_ok(match.group("name")):
             spans.add(match.span("name"))
