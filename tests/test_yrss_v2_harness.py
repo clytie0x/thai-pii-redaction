@@ -502,6 +502,8 @@ def test_cli_writes_the_report(monkeypatch, tmp_path, capsys):
             "LOCAL_KEY",
             "--llm-seed",
             "4",
+            "--llm-timeout",
+            "600",
         ]
     )
     assert code == 0
@@ -512,6 +514,7 @@ def test_cli_writes_the_report(monkeypatch, tmp_path, capsys):
         "model": "m",
         "api_key_env": "LOCAL_KEY",
         "seed": 4,
+        "timeout": 600.0,
     }
     assert json.loads(out.read_text(encoding="utf-8"))["split"] == "unit"
     assert "aiguard" in capsys.readouterr().out

@@ -26,6 +26,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--llm-model", default=None)
     parser.add_argument("--llm-key-env", default=None, help="name of the variable, not the key")
     parser.add_argument("--llm-seed", type=int, default=None)
+    # A big model on CPU needs more than the 120s default.
+    parser.add_argument("--llm-timeout", type=float, default=None, help="seconds per request")
     parser.add_argument(
         harness.TEST_FLAG,
         dest="allow_test",
@@ -43,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
             "api_key_env": args.llm_key_env,
             "seed": args.llm_seed,
         }
+        if args.llm_timeout is not None:
+            llm_options["timeout"] = args.llm_timeout
     try:
         report = harness.run(args.split, names, llm_options=llm_options, allow_test=args.allow_test)
     except harness.TestSplitRefused:
