@@ -71,3 +71,73 @@ def test_plate_like_code_is_not_a_plate(text):
 
 def test_spaced_plate_is_unchanged():
     assert _of("รถทะเบียน 2ฒษ 7140 สีขาว", "VEHICLE_PLATE") == {"2ฒษ 7140"}
+
+
+# ── DATE_OF_BIRTH: date forms ──────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("text", "date"),
+    [
+        ("Date of birth: 4 February 1988", "4 February 1988"),
+        ("DOB 14 Sep 1992", "14 Sep 1992"),
+        ("Born on July 9, 1979 in Lampang", "July 9, 1979"),
+        ("เกิดเมื่อ ๗ May ๑๙๘๕ ที่ลำปาง", "๗ May ๑๙๘๕"),
+        ("ว/ด/ป เกิด 5 มิ.ย. 2540", "5 มิ.ย. 2540"),
+        ("วันเกิด 9 ต.ค. 38 ค่ะ", "9 ต.ค. 38"),
+        ("อายุ 41 ปี เกิด 21 กันยายน ค.ศ. 1984", "21 กันยายน ค.ศ. 1984"),
+        ("Date of birth18 ก.พ. 2529Sex F", "18 ก.พ. 2529"),
+        ("Date of birth30 November 1990Sex M", "30 November 1990"),
+        ("เกิดวันที่ 3 สิงหาคม พ.ศ. 2511", "3 สิงหาคม พ.ศ. 2511"),
+    ],
+)
+def test_birth_date_forms_are_found(text, date):
+    assert _of(text, "DATE_OF_BIRTH") == {date}
+
+
+# ── DATE_OF_BIRTH: cue wording ─────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("text", "date"),
+    [
+        ("Somying — born 03/11/2531", "03/11/2531"),
+        ("birth date 1994-06-27", "1994-06-27"),
+        ("Birthday: 12/12/2540", "12/12/2540"),
+        ("วนเกด 02/08/2541", "02/08/2541"),
+        ("เกดวนท 30 เมษายน 2519", "30 เมษายน 2519"),
+        ("วันเดือนปีเกิด 08-10-1996", "08-10-1996"),
+    ],
+)
+def test_birth_cue_wording_gives_birth_label(text, date):
+    assert _type_at(text, date) == {"DATE_OF_BIRTH"}
+
+
+@pytest.mark.parametrize(
+    ("text", "date"),
+    [
+        ("นัดประชุมวันที่ 12 March 2026", "12 March 2026"),
+        ("ส่งของวันที่ 3 พ.ค. 2569", "3 พ.ค. 2569"),
+        ("วันครบกำหนดชำระ 15/01/2569", "15/01/2569"),
+        ("เกิดเหตุเมื่อ 4 June 2024", "4 June 2024"),
+        ("ไฟดับเกิดขึ้นเมื่อ 14/02/2569", "14/02/2569"),
+        ("ลูกเกด 2 ถุง สั่งวันที่ 01/02/2569", "01/02/2569"),
+        ("a stubborn fault since 5 May 2025", "5 May 2025"),
+    ],
+)
+def test_other_dates_keep_the_generic_label(text, date):
+    assert _type_at(text, date) == {"DATE"}
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "เริ่มงานวันที่ 3 พ.ค. 15.00 น.",
+        "ส่งรายงาน 7 ก.ย. 68 ครั้ง",
+        "you may 2024 times retry",
+        "ขนาด 12 March 99999 units",
+    ],
+)
+def test_non_date_shapes_are_not_dates(text):
+    found = {e.data_type for e in detect_fp(text)}
+    assert not found & {"DATE", "DATE_OF_BIRTH"}

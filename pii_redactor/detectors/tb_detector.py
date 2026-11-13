@@ -83,7 +83,11 @@ _ADDR_CUE_RE = re.compile(
 # Same cue as fp_detector._BIRTH_CUE_RE (copies by design): เกิดเหตุ/เหตุเกิด
 # are incident phrasings that never introduce a birth date, and the English
 # labels are a real register on Thai visa/passport paperwork.
-_TB_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
+_TB_BIRTH_CUE_RE = re.compile(
+    r"(?<!เหตุ)เกิด(?!เหตุ|ขึ้น)|(?:วั?น|ปี?)เกด|เกด(?:วั?นท|เม)"
+    r"|date of birth|birth\s?da(?:te|y)|\bborn\b|\bd\.?o\.?b\b",
+    re.IGNORECASE,
+)
 _TB_CUE_WINDOW = 30
 
 # thainer CRF has no reliable signal on out-of-distribution (non-Thai) input --

@@ -398,8 +398,35 @@ _THAI_MONTHS = (
     "มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม"
 )
 _RE_DATE_THAI_MONTH = re.compile(
-    rf"(?<!\d)(\d{{1,2}} (?:{_THAI_MONTHS}) (?:พ\.?ศ\.? ?)?\d{{4}})(?!\d)"
+    rf"(?<!\d)(\d{{1,2}} (?:{_THAI_MONTHS}) (?:[พค]\.?ศ\.? ?)?\d{{4}})(?!\d)"
 )
+# Short Thai months ("12 ส.ค. 2533"). The CRF finds most of them, but not
+# when a form label is glued to the day. A two-digit year is too loose to
+# mask on its own ("3 พ.ค. 15.00 น."), so step 7c takes it only after a
+# birth cue.
+_THAI_MONTH_ABBRS = (
+    r"ม\.?ค\.?|ก\.?พ\.?|มี\.?ค\.?|เม\.?ย\.?|พ\.?ค\.?|มิ\.?ย\.?"
+    r"|ก\.?ค\.?|ส\.?ค\.?|ก\.?ย\.?|ต\.?ค\.?|พ\.?ย\.?|ธ\.?ค\.?"
+)
+_RE_DATE_THAI_ABBR = re.compile(
+    rf"(?<!\d)(\d{{1,2}} ?(?:{_THAI_MONTH_ABBRS}) ?(?:[พค]\.?ศ\.? ?)?(?:\d{{4}}|\d{{2}}))(?!\d)"
+)
+# English month names are normal on Thai passport, visa and bank paperwork
+# ("13 August 2006", "Aug 13, 2006"). No letter guard before the day: a
+# label glued to it ("Date of birth22 June 1993") must still match. The
+# first-letter lookahead only makes the month-first branch fail fast.
+_EN_MONTHS = (
+    r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
+    r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
+)
+_RE_DATE_EN_MONTH = re.compile(
+    rf"(?<!\d)(\d{{1,2}}(?:st|nd|rd|th)? ?(?:{_EN_MONTHS})\.?,? ?\d{{4}}"
+    rf"|(?<![A-Za-z])(?=[JFMASONDjfmasond])(?:{_EN_MONTHS})\.? \d{{1,2}}(?:st|nd|rd|th)?,? \d{{4}})"
+    r"(?!\d)",
+    re.IGNORECASE,
+)
+_DATE_DAY_RE = re.compile(r"\d{1,2}(?=\D)")
+_DATE_YEAR_RE = re.compile(r"\d+\Z")
 # The trailing (?!\d) is load-bearing (DET-2): without it, this pattern bit the
 # first 1-4 digits of a LONGER number after a Thai-consonant abbreviation
 # (e.g. "ปชช 1101...", "กทม 0812..."), and _deduplicate's earlier-start-wins
@@ -645,7 +672,14 @@ _PERSON_ID_CUE_RE = re.compile(r"บัตรประชาชน|เลขป�
 # register on Thai visa/passport paperwork. Student/passport cues gate the
 # wide catch-alls so a business PO/invoice number stops masquerading as a
 # passport or student id -- it is still masked, as the generic ID_NUMBER.
-_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
+# เกิดขึ้น means "happened", so it is not a birth cue either. The เกด forms
+# are วันเกิด / เกิดวันที่ / เกิดเมื่อ after OCR dropped the marks above the
+# line; they need the neighbour word because เกด alone is also a word.
+_BIRTH_CUE_RE = re.compile(
+    r"(?<!เหตุ)เกิด(?!เหตุ|ขึ้น)|(?:วั?น|ปี?)เกด|เกด(?:วั?นท|เม)"
+    r"|date of birth|birth\s?da(?:te|y)|\bborn\b|\bd\.?o\.?b\b",
+    re.IGNORECASE,
+)
 # Address cue for the postal code. The window is wider than _CUE_WINDOW because
 # a postal code sits at the END of the address line, so the nearest cue is a
 # whole district/province name away ("แขวงวังทองหลาง กรุงเทพมหานคร 10310").
@@ -983,6 +1017,24 @@ def detect_fp(text: str) -> list[Entity]:
             continue
         dtype = "DATE_OF_BIRTH" if _cue_before(_BIRTH_CUE_RE, text, m.start(1)) else "DATE"
         candidates.append(_make_entity(dtype, m, text, score=1.0))
+
+    # 7c. Short Thai months and English month names, same cue routing. The
+    # year must look like a year in either era, so "12 March 5000 units" and
+    # similar counts stay out.
+    for pattern in (_RE_DATE_THAI_ABBR, _RE_DATE_EN_MONTH):
+        for m in pattern.finditer(text):
+            raw = m.group(1)
+            day = _DATE_DAY_RE.search(raw)
+            year = _DATE_YEAR_RE.search(raw).group()
+            if day is None or not 1 <= int(day.group()) <= 31:
+                continue
+            born = _cue_before(_BIRTH_CUE_RE, text, m.start(1))
+            if len(year) == 2:
+                if not born:
+                    continue
+            elif not 1900 <= int(year) <= 2600:
+                continue
+            candidates.append(_make_entity("DATE_OF_BIRTH" if born else "DATE", m, text))
 
     # 8. VEHICLE_PLATE
     # Reject matches where the Thai consonants are mid-word (preceded by a Thai
