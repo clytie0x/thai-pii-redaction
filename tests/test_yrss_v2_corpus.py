@@ -11,12 +11,14 @@ from benchmark.yrss_v2 import values
 from benchmark.yrss_v2.corpus import (
     Template,
     build_corpus,
+    check_targets,
     load_templates,
     lock_path,
     public_lock,
     render,
     templates_path,
     validate_corpus,
+    validate_realism,
     validate_templates,
 )
 from benchmark.yrss_v2.types import CONTEXTUAL_TYPES, SCHEME_TYPES, STRUCTURED_TYPES
@@ -108,3 +110,134 @@ def test_dev_lock_carries_no_document_text_or_values():
     for doc in corpus.documents[:40]:
         for span in doc.spans:
             assert doc.text[span.start : span.end] not in blob
+
+
+def _mixed(text: str) -> bool:
+    return any("๐" <= c <= "๙" for c in text) and any(c.isascii() and c.isalpha() for c in text)
+
+
+def test_dev_corpus_still_matches_its_lock():
+    assert public_lock(build_corpus("dev")) == json.loads(
+        lock_path("dev").read_text(encoding="utf-8")
+    )
+
+
+def test_strict_never_mixes_thai_digits_with_latin_letters():
+    template = _template("เกิด {{dob}}")
+    loose, strict = [], []
+    for variant in range(400):
+        loose.append(render(template, variant, seed=5).text)
+        strict.append(render(template, variant, seed=5, strict=True).text)
+    assert any(_mixed(text) for text in loose)  # the bug is real without strict
+    assert not any(_mixed(text) for text in strict)
+
+
+def _lock(**over) -> dict:
+    lock = {
+        "documents": 800,
+        "families": 200,
+        "variants_per_family": 4,
+        "negative_documents": 160,
+        "type_counts": dict.fromkeys(SCHEME_TYPES, 150),
+    }
+    lock.update(over)
+    return lock
+
+
+def test_check_targets_accepts_the_registered_size():
+    assert check_targets(_lock()) == []
+
+
+@pytest.mark.parametrize(
+    ("over", "kind"),
+    [
+        ({"documents": 799}, "documents-not-800"),
+        ({"families": 199}, "families-not-200"),
+        ({"variants_per_family": 3}, "variants-not-4"),
+        ({"negative_documents": 159}, "negative-documents-not-160"),
+        (
+            {"type_counts": {**dict.fromkeys(SCHEME_TYPES, 150), "PASSPORT": 149}},
+            "type-below-150:PASSPORT",
+        ),
+    ],
+)
+def test_check_targets_flags_each_shortfall(over, kind):
+    assert check_targets(_lock(**over)) == [kind]
+
+
+_THAI = "สวัสดีครับท่านผู้อ่านทุกท่านวันนี้อากาศดีมากเลยนะครับ"  # 5 marks, 30+ consonants
+_FAM = "0123456789ab"
+
+
+def _rt(text, family=_FAM, genre="memo") -> Template:
+    return Template(family=family, genre=genre, negative=False, text=text)
+
+
+def _realism(templates, dev=()):
+    return validate_realism(list(templates), dev_templates=list(dev))
+
+
+def _kinds(errors):
+    return {e.split(":")[0] for e in errors}
+
+
+def test_realism_marks_stripped():
+    stripped = "สวสดครบทานผอานทกทานวนนอากาศดมากเลยนะครบ" * 2  # marks removed, >= 40 consonants
+    assert "marks-stripped" not in _kinds(_realism([_rt(_THAI * 3 + " {{phone}}")]))
+    assert "marks-stripped" in _kinds(_realism([_rt(stripped + " {{phone}}")]))
+
+
+def test_realism_fields_glued():
+    spaced = "เบอร์ {{phone}} อีเมล {{email}} ชื่อ {{name}} ครับ"
+    glued = "เบอร์{{phone}}อีเมล{{email}}ชื่อ{{name}}ครับ"
+    titled = "ติดต่อ นายสมชาย {{phone}}, ตอบ {{email}} นาย{{name}}"
+    assert "fields-glued" not in _kinds(_realism([_rt(spaced)]))
+    assert "fields-glued" in _kinds(_realism([_rt(glued)]))
+    assert "fields-glued" not in _kinds(_realism([_rt("นาย{{name}}นาย{{name}}นาย{{name}} ")]))
+    assert "fields-glued" not in _kinds(_realism([_rt(titled)]))
+
+
+def test_realism_near_duplicate_against_test_and_dev():
+    base = "รายงานผลการตรวจสอบประจำเดือนของหน่วยงานโดยละเอียด {{phone}}"
+    other = _rt(base.replace("เดือน", "ปี"), family="ba9876543210")
+    far = _rt("ข้อความที่แตกต่างกันโดยสิ้นเชิงไม่เกี่ยวข้องกันเลย {{phone}}", family="ba9876543210")
+    assert "near-duplicate-family" in _kinds(_realism([_rt(base), other]))
+    assert "near-duplicate-family" in _kinds(_realism([_rt(base)], dev=[other]))
+    assert "near-duplicate-family" not in _kinds(_realism([_rt(base), far]))
+
+
+def _family_set(genres, lines, long_count):
+    out = []
+    for i in range(20):
+        body = "\n".join(f"{_THAI} {i} {k}" for k in range(lines[i]))
+        if i < long_count:
+            body += _THAI * 20
+        out.append(_rt(body + " {{phone}}", family=f"{i:012x}", genre=genres[i]))
+    return out
+
+
+_DIST = {"genre-over-15pct", "too-few-short-families", "too-few-long-families"}
+
+
+def test_realism_distribution():
+    even = [f"g{i % 10}" for i in range(20)]
+    lines = [1] * 4 + [5] * 16
+    assert not _kinds(_realism(_family_set(even, lines, 2))) & _DIST
+    skewed = ["g0"] * 4 + [f"g{i}" for i in range(1, 17)]
+    assert "genre-over-15pct" in _kinds(_realism(_family_set(skewed, lines, 2)))
+    assert "too-few-short-families" in _kinds(_realism(_family_set(even, [5] * 20, 2)))
+    assert "too-few-long-families" in _kinds(_realism(_family_set(even, lines, 0)))
+
+
+def test_realism_opaque_ids_and_genre():
+    assert not _kinds(_realism([_rt("{{phone}} x")])) & {
+        "family-id-not-opaque",
+        "genre-reveals-negative",
+    }
+    assert "family-id-not-opaque" in _kinds(_realism([_rt("{{phone}} x", family="t-p-001")]))
+    assert "genre-reveals-negative" in _kinds(_realism([_rt("{{phone}} x", genre="neg-memo")]))
+
+
+def test_realism_errors_carry_no_template_text():
+    errors = _realism([_rt("เบอร์{{phone}}อีเมล{{email}}ชื่อ{{name}}ครับ")])
+    assert errors and all("เบอร์" not in e for e in errors)

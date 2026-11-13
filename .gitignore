@@ -59,6 +59,7 @@ step1-7_*.pdf
 !benchmark/data/blind-scores.jsonl
 # Dev templates hold placeholders, never values. Test templates stay out.
 !benchmark/data/yrss-v2/dev-templates.jsonl
+benchmark/data/yrss-v2/test-templates.jsonl
 !research/stt52/evidence/*.jsonl
 
 # Model and tool caches

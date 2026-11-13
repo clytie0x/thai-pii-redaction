@@ -29,6 +29,30 @@ _LONG_DIGITS = re.compile(r"[0-9๐-๙]{5,}")
 # Share of generated values printed in Thai digits, for kinds where forms do that.
 _THAI_DIGIT_RATE = 0.08
 _THAI_DIGIT_KINDS = frozenset({"thai_id", "phone", "dob", "date"})
+_LATIN = re.compile(r"[A-Za-z]")
+
+# Test-split size targets from the pre-registration.
+TARGET_DOCUMENTS = 800
+TARGET_FAMILIES = 200
+TARGET_NEGATIVE_DOCUMENTS = 160
+TARGET_TYPE_COUNT = 150  # minimum entities of every scheme type
+
+# validate_realism thresholds.
+MIN_CONSONANTS = 40  # fewer Thai consonants than this is too short to judge marks
+MAX_MARK_RATIO = 0.05  # marks per consonant; real Thai text sits well above this
+GLUED_MIN_PLACEHOLDERS = 3  # fewer fields than this cannot look glued
+GLUED_SHARE = 0.75  # share of fields with no space on either side
+NEAR_DUPLICATE_JACCARD = 0.5  # character 5-gram overlap between two families
+NGRAM = 5
+MAX_GENRE_SHARE = 0.15  # one genre may not dominate the families
+MIN_SHORT_SHARE = 0.10  # families of at most SHORT_LINES lines
+SHORT_LINES = 2
+MIN_LONG_SHARE = 0.05  # families over LONG_CHARS of fixed text
+LONG_CHARS = 600
+_FAMILY_ID = re.compile(r"[0-9a-f]{12}")
+_TITLES = ("นางสาว", "นาง", "นาย", "น.ส.", "คุณ", "ดร.", "ด.ช.", "ด.ญ.")
+_MARKS = frozenset(chr(c) for c in (0x0E31, *range(0x0E34, 0x0E3B), *range(0x0E47, 0x0E4F)))
+_CONSONANTS = frozenset(chr(c) for c in range(0x0E01, 0x0E2F))
 
 
 @dataclass(frozen=True)
@@ -111,7 +135,7 @@ def validate_templates(templates: list[Template]) -> list[str]:
     return errors
 
 
-def _value(rng: random.Random, kind: str, used: set[str]) -> str:
+def _value(rng: random.Random, kind: str, used: set[str], strict: bool = False) -> str:
     for _ in range(100):
         if kind == "name":
             value = values.person(rng)[0]
@@ -120,14 +144,16 @@ def _value(rng: random.Random, kind: str, used: set[str]) -> str:
         else:
             value = values.FACTORIES[kind](rng)
             if kind in _THAI_DIGIT_KINDS and rng.random() < _THAI_DIGIT_RATE:
-                value = values.thai_digits(value)
+                # Strict (test) keeps Latin-month dates in Western digits.
+                if not (strict and _LATIN.search(value)):
+                    value = values.thai_digits(value)
         if value not in used:
             used.add(value)
             return value
     raise RuntimeError(f"exhausted-{kind}")
 
 
-def render(template: Template, variant: int, *, seed: int) -> Document:
+def render(template: Template, variant: int, *, seed: int, strict: bool = False) -> Document:
     """Fill one template. The seed mixes in the family, so order does not matter."""
     digest = hashlib.sha256(f"{seed}:{template.family}:{variant}".encode()).digest()
     rng = random.Random(int.from_bytes(digest[:8], "big"))
@@ -145,10 +171,10 @@ def render(template: Template, variant: int, *, seed: int) -> Document:
         parts.append(fixed)
         length += len(fixed)
         if key is None:
-            value = _value(rng, kind, used)
+            value = _value(rng, kind, used, strict)
         else:
             if (kind, key) not in keyed:
-                keyed[(kind, key)] = _value(rng, kind, used)
+                keyed[(kind, key)] = _value(rng, kind, used, strict)
             value = keyed[(kind, key)]
         if kind in LABELED_KINDS:
             spans.append(Span(length, length + len(value), LABELED_KINDS[kind]))
@@ -169,7 +195,7 @@ def build_corpus(split: str) -> Corpus:
     raw = templates_path(split).read_bytes()
     seed = SEEDS[split]
     documents = [
-        render(template, variant, seed=seed)
+        render(template, variant, seed=seed, strict=split == "test")
         for template in load_templates(split)
         for variant in range(VARIANTS[split])
     ]
@@ -249,6 +275,78 @@ def public_lock(corpus: Corpus) -> dict:
         "variants_per_family": VARIANTS[corpus.split],
         "version": corpus.version,
     }
+
+
+def check_targets(lock: dict) -> list[str]:
+    """Return error kinds for a test lock that misses the registered size."""
+    errors = []
+    if lock["documents"] != TARGET_DOCUMENTS:
+        errors.append("documents-not-800")
+    if lock["families"] != TARGET_FAMILIES:
+        errors.append("families-not-200")
+    if lock["variants_per_family"] != 4:
+        errors.append("variants-not-4")
+    if lock["negative_documents"] != TARGET_NEGATIVE_DOCUMENTS:
+        errors.append("negative-documents-not-160")
+    counts = lock["type_counts"]
+    errors += [f"type-below-150:{t}" for t in SCHEME_TYPES if counts.get(t, 0) < TARGET_TYPE_COUNT]
+    return errors
+
+
+def _fixed(template: Template) -> str:
+    return _PLACEHOLDER.sub("", template.text)
+
+
+def _ngrams(text: str) -> set[str]:
+    return {text[i : i + NGRAM] for i in range(len(text) - NGRAM + 1)}
+
+
+def _is_glued(text: str, match: re.Match) -> bool:
+    before, after = text[: match.start()], text[match.end() :]
+    if not before or before[-1].isspace() or not after or after[0].isspace():
+        return False
+    # A title right before a name reads as spaced.
+    return not (match.group(1) == "name" and before.endswith(_TITLES))
+
+
+def validate_realism(templates: list[Template], *, dev_templates: list[Template]) -> list[str]:
+    """Test-split realism checks. Returns ``kind:family`` strings, never template text."""
+    errors: list[str] = []
+    for t in templates:
+        fixed = _fixed(t)
+        consonants = sum(c in _CONSONANTS for c in fixed)
+        marks = sum(c in _MARKS for c in fixed)
+        if consonants >= MIN_CONSONANTS and marks / consonants < MAX_MARK_RATIO:
+            errors.append(f"marks-stripped:{t.family}")
+        found = list(_PLACEHOLDER.finditer(t.text))
+        if (
+            len(found) >= GLUED_MIN_PLACEHOLDERS
+            and sum(_is_glued(t.text, m) for m in found) / len(found) >= GLUED_SHARE
+        ):
+            errors.append(f"fields-glued:{t.family}")
+        if not _FAMILY_ID.fullmatch(t.family):
+            errors.append(f"family-id-not-opaque:{t.family}")
+        if "neg" in t.genre:
+            errors.append(f"genre-reveals-negative:{t.family}")
+    grams = [(t.family, _ngrams(_fixed(t))) for t in templates]
+    others = grams + [(d.family, _ngrams(_fixed(d))) for d in dev_templates]
+    for i, (family, a) in enumerate(grams):
+        for j, (other, b) in enumerate(others):
+            if i != j and a and b and len(a & b) / len(a | b) > NEAR_DUPLICATE_JACCARD:
+                errors.append(f"near-duplicate-family:{family}")
+                break
+    total = len(templates)
+    if total:
+        genres = Counter(t.genre for t in templates)
+        errors += [
+            f"genre-over-15pct:{g}" for g, n in genres.items() if n / total > MAX_GENRE_SHARE
+        ]
+        lines = [len([x for x in t.text.splitlines() if x.strip()]) for t in templates]
+        if sum(n <= SHORT_LINES for n in lines) / total < MIN_SHORT_SHARE:
+            errors.append("too-few-short-families")
+        if sum(len(_fixed(t)) > LONG_CHARS for t in templates) / total < MIN_LONG_SHARE:
+            errors.append("too-few-long-families")
+    return errors
 
 
 def main(argv: list[str] | None = None) -> int:
