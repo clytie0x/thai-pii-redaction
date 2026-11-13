@@ -10,11 +10,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import random
 import re
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
+
+from benchmark import blind
 
 from . import values
 from .types import DECOY_KINDS, LABELED_KINDS, SCHEME_TYPES
@@ -23,6 +26,8 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "yrss-v2"
 SEEDS = {"dev": 20261113, "test": 20261114}
 VARIANTS = {"dev": 3, "test": 4}
 VERSION = "yrss-eval-v2"
+KEY_ENV = "YRSS_V2_TEST_KEY_FILE"  # a path to the key file, never the key
+BLIND_VERSION = "yrss-v2-test"
 
 _PLACEHOLDER = re.compile(r"\{\{([a-z_0-9]+)(?::([a-z0-9_]+))?\}\}")
 _LONG_DIGITS = re.compile(r"[0-9๐-๙]{5,}")
@@ -96,9 +101,45 @@ def lock_path(split: str) -> Path:
     return DATA_DIR / f"{split}.lock.json"
 
 
+class CorpusSealError(RuntimeError):
+    """Sealing or opening the test templates failed. Messages carry no text or key."""
+
+
+def _enc_path(data_dir: Path) -> Path:
+    # Beside the data dir, so the `benchmark/data/*.enc -text` rule covers it.
+    return data_dir.parent / f"{BLIND_VERSION}.enc"
+
+
+def _template_bytes(split: str) -> bytes:
+    """Template file bytes. The test split is decrypted in memory, never written out."""
+    if split != "test":
+        return templates_path(split).read_bytes()
+    key_file = os.environ.get(KEY_ENV)
+    if not key_file:
+        raise CorpusSealError(f"set {KEY_ENV} to the path of the test key file")
+    try:
+        blob = _enc_path(DATA_DIR).read_bytes()
+        expected = json.loads(lock_path("test").read_text(encoding="utf-8"))["ciphertext_sha256"]
+    except (OSError, ValueError, KeyError):
+        raise CorpusSealError("the test ciphertext or its lock is missing or unreadable") from None
+    if hashlib.sha256(blob).hexdigest() != expected:
+        raise CorpusSealError("the test ciphertext hash does not match its lock")
+    try:
+        version, plaintext = blind.decrypt(blob, blind.load_master(key_file))
+    except blind.BlindError as exc:
+        raise CorpusSealError(str(exc)) from None
+    if version != BLIND_VERSION:
+        raise CorpusSealError("the test ciphertext has the wrong version")
+    return plaintext
+
+
 def load_templates(split: str) -> list[Template]:
+    return _parse(_template_bytes(split))
+
+
+def _parse(raw: bytes) -> list[Template]:
     rows = []
-    for line in templates_path(split).read_text(encoding="utf-8").splitlines():
+    for line in raw.decode("utf-8").splitlines():
         if line.strip():
             row = json.loads(line)
             rows.append(Template(row["family"], row["genre"], bool(row["negative"]), row["text"]))
@@ -191,12 +232,12 @@ def render(template: Template, variant: int, *, seed: int, strict: bool = False)
     )
 
 
-def build_corpus(split: str) -> Corpus:
-    raw = templates_path(split).read_bytes()
+def build_corpus(split: str, raw: bytes | None = None) -> Corpus:
+    raw = _template_bytes(split) if raw is None else raw
     seed = SEEDS[split]
     documents = [
         render(template, variant, seed=seed, strict=split == "test")
-        for template in load_templates(split)
+        for template in _parse(raw)
         for variant in range(VARIANTS[split])
     ]
     return Corpus(VERSION, split, seed, hashlib.sha256(raw).hexdigest(), tuple(documents))
@@ -349,11 +390,63 @@ def validate_realism(templates: list[Template], *, dev_templates: list[Template]
     return errors
 
 
+def seal(draft_path: str | Path, key_path: str | Path, *, data_dir: Path | None = None) -> dict:
+    """Validate a draft kept outside every work tree, then write the .enc and its lock.
+
+    There is no overwrite option: a sealed test split is replaced only by hand.
+    """
+    from . import agreement  # agreement imports this module
+
+    data_dir = DATA_DIR if data_dir is None else Path(data_dir)
+    draft_path = Path(draft_path)
+    enc, lock_file = _enc_path(data_dir), data_dir / "test.lock.json"
+    if agreement.inside_work_tree(draft_path):
+        raise CorpusSealError("the draft is inside a repository work tree")
+    if enc.exists() or lock_file.exists():
+        raise CorpusSealError("the test ciphertext or lock already exists")
+    raw = draft_path.read_bytes()
+    try:
+        templates = _parse(raw)
+        dev = _parse((data_dir / "dev-templates.jsonl").read_bytes())
+    except (OSError, ValueError, KeyError):
+        raise CorpusSealError("a template file is unreadable") from None
+    errors = validate_templates(templates)
+    errors += validate_realism(templates, dev_templates=dev)
+    master = blind.load_master(key_path)
+    built = build_corpus("test", raw)
+    errors += validate_corpus(built)
+    lock = public_lock(built)
+    errors += check_targets(lock)
+    if errors:
+        raise CorpusSealError("draft refused: " + ",".join(sorted(set(errors))))
+    blob = blind.encrypt(raw, master, BLIND_VERSION)
+    lock["ciphertext_sha256"] = hashlib.sha256(blob).hexdigest()
+    enc.write_bytes(blob)
+    lock_file.write_text(
+        json.dumps(lock, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return lock
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check or lock a YRSS evaluation v2 split.")
     parser.add_argument("--split", choices=sorted(SEEDS), default="dev")
     parser.add_argument("--write-lock", action="store_true")
+    parser.add_argument("command", nargs="?", choices=["seal"])
+    parser.add_argument("--draft")
     args = parser.parse_args(argv)
+    if args.command == "seal":
+        if not args.draft or not os.environ.get(KEY_ENV):
+            parser.error(f"seal needs --draft and {KEY_ENV}")
+        try:
+            lock = seal(args.draft, os.environ[KEY_ENV])
+        except (CorpusSealError, blind.BlindError) as exc:
+            print(f"seal-refused: {exc}")
+            return 1
+        print(json.dumps(lock, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if args.write_lock and args.split == "test":
+        parser.error("the test lock is written by seal only")
     errors = validate_templates(load_templates(args.split))
     corpus = build_corpus(args.split)
     errors += validate_corpus(corpus)

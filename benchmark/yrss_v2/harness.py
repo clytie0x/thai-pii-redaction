@@ -18,12 +18,14 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
+from benchmark import blind
 from benchmark.blind_v2.score import percentile, prf, score_predictions
 
 from . import stats, systems
 from .corpus import (
     SEEDS,
     Corpus,
+    CorpusSealError,
     build_corpus,
     canonical_bytes,
     load_templates,
@@ -42,6 +44,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 _HASHED_FILES = (
     "benchmark/blind_v2/score.py",
     "benchmark/blind_v2/ablate.py",
+    "benchmark/blind.py",
     "benchmark/blind_v2/baselines.py",
     "benchmark/yrss_v2/stats.py",
     "benchmark/yrss_v2/systems.py",
@@ -358,9 +361,12 @@ def _locked_corpus(split: str) -> Corpus:
         expected = _read_lock(split)
     except FileNotFoundError as exc:
         raise CorpusLockError(f"the {split} split has no templates or no lock file") from exc
+    except (CorpusSealError, blind.BlindError) as exc:
+        raise CorpusLockError(f"the {split} split cannot be opened: {exc}") from None
     errors += validate_corpus(corpus)
     if errors:
         raise CorpusLockError(f"the {split} split is invalid: {','.join(sorted(set(errors)))}")
+    expected.pop("ciphertext_sha256", None)  # binds the file, not the corpus
     if public_lock(corpus) != expected:
         raise CorpusLockError(f"the {split} split does not match its lock file")
     return corpus
