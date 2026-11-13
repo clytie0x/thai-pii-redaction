@@ -1306,7 +1306,7 @@ def _detect_tb_scanned(
 
     # A recall span that touches any span already found is dropped, so it can
     # never displace or shorten what the CRF and the cue passes produced.
-    candidates.extend(_without_overlap(detect_name_recall(text), candidates))
+    candidates.extend(_admit_name_recall(text, detect_name_recall(text), candidates))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
             text,
@@ -1321,15 +1321,26 @@ def _detect_tb_scanned(
     return _deduplicate(candidates)
 
 
-def _without_overlap(extra: list[Entity], existing: list[Entity]) -> list[Entity]:
-    """Keep only the spans in ``extra`` that overlap nothing in ``existing``."""
-    return [
-        item
-        for item in extra
-        if not any(
-            item.span[0] < other.span[1] and other.span[0] < item.span[1] for other in existing
-        )
-    ]
+def _admit_name_recall(text: str, extra: list[Entity], existing: list[Entity]) -> list[Entity]:
+    """Admit word-list name spans without losing any existing protection.
+
+    A span that touches a span of another type is dropped, so an honest label
+    such as LOCATION is never replaced. A span that touches only NAME spans is
+    widened to cover them, so a partial name from the model becomes the whole
+    name and no character that was masked before becomes unmasked.
+    """
+    admitted = []
+    for item in extra:
+        start, end = item.span
+        touching = [other for other in existing if start < other.span[1] and other.span[0] < end]
+        if any(other.data_type != "NAME" for other in touching):
+            continue
+        for other in touching:
+            start, end = min(start, other.span[0]), max(end, other.span[1])
+        if (start, end) != item.span:
+            item = replace(item, span=(start, end), original_text=text[start:end])
+        admitted.append(item)
+    return admitted
 
 
 @minimize_failure_frames

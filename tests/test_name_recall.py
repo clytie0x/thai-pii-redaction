@@ -259,20 +259,36 @@ def test_recall_span_never_displaces_or_shortens_an_existing_span() -> None:
     assert any(e.data_type == "LOCATION" and e.original_text == "ดวงจันทร์" for e in found)
 
 
-def test_overlapping_recall_candidates_are_dropped_at_the_call_site() -> None:
+def test_recall_span_widens_over_a_partial_name_and_yields_to_other_labels() -> None:
+    from dataclasses import replace
+
     from pii_redactor.detectors.name_context import _make_name
-    from pii_redactor.detectors.tb_detector import _without_overlap
+    from pii_redactor.detectors.tb_detector import _admit_name_recall
 
     text = "ผู้ขอ: สมชาย ใจดี โทรกลับ 0000"
     start = text.index("สมชาย")
     surname = text.index("ใจดี")
     end = surname + len("ใจดี")
-    older = _make_name(text, surname, end, 0.9)
     recall = _make_name(text, start, end, 0.84)
     apart = _make_name(text, end + 1, end + 6, 0.84)
-    # The older span is untouched and the overlapping recall span is dropped.
-    assert _without_overlap([recall, apart], [older]) == [apart]
-    assert _without_overlap([recall], []) == [recall]
+
+    # The model found only the surname: the recall span keeps the whole name.
+    partial = _make_name(text, surname, end, 0.9)
+    assert [e.span for e in _admit_name_recall(text, [recall, apart], [partial])] == [
+        (start, end),
+        apart.span,
+    ]
+
+    # The model's name runs past the recall span: nothing it covered is lost.
+    longer = _make_name(text, surname, end + 5, 0.9)
+    (widened,) = _admit_name_recall(text, [recall], [longer])
+    assert widened.span == (start, end + 5)
+    assert widened.original_text == text[start : end + 5]
+
+    # A span of another type keeps its label; the recall span gives way.
+    place = replace(partial, data_type="LOCATION")
+    assert _admit_name_recall(text, [recall, apart], [place]) == [apart]
+    assert _admit_name_recall(text, [recall], []) == [recall]
 
 
 def test_english_name_field_is_kept_when_a_sentence_sits_between() -> None:
