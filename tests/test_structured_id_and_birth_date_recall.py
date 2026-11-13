@@ -46,6 +46,9 @@ def _type_at(text: str, value: str) -> set[str]:
         ("คันของน้องคือ 7ธว-6602 ครับ", "7ธว-6602"),
         ("มีรถ ชฎ-3350 ขับตามมาตลอดทาง", "ชฎ-3350"),
         ("ทะเบียนรถผฆ-118", "ผฆ-118"),
+        ("ทะเบียน กข-1234", "กข-1234"),
+        ("รถป้าย 1กข-5678", "1กข-5678"),
+        ("ขับ 8มญ-4170 มารับ", "8มญ-4170"),
     ],
 )
 def test_hyphenated_plate_is_found(text, plate):
@@ -63,6 +66,14 @@ def test_hyphenated_plate_is_found(text, plate):
         "เอกสารเลขที่ นร-0507 ลงรับแล้ว",
         "คะแนนกลุ่ม ขค-12 สูงสุด",
         "งวด ตค-2568 จ่ายแล้ว",
+        "ทางหลวง ทล-304",
+        "ล็อต ผล-2345",
+        "หมวด นว-204",
+        "แปลง กท-1123",
+        "คดีแดง ผบ-4512",
+        "รายวิชา ศท-1012",
+        "วิชา ศท-1012 ภาคเรียนที่สอง",
+        "เครื่อง ซบ-350",
     ],
 )
 def test_plate_like_code_is_not_a_plate(text):
@@ -155,7 +166,10 @@ def test_non_date_shapes_are_not_dates(text):
         ("เลขที่ใบอนุญาตขับรถ 47730018", "47730018"),
         ("Driving licence no. 52219046", "52219046"),
         ("driver’s license # 61102457", "61102457"),
-        ("Licence No. 43318820", "43318820"),
+        ("Driver's licence no. 61234567", "61234567"),
+        ("Driver Somchai, licence no. 43318820", "43318820"),
+        ("ใบขับขี่เลขที่ 61234567", "61234567"),
+        ("ใบอนุญาตขับรถยนต์ส่วนบุคคล ฉบับที่ 61234567", "61234567"),
     ],
 )
 def test_cued_licence_number_is_found(text, number):
@@ -171,6 +185,17 @@ def test_cued_licence_number_is_found(text, number):
         ("ใบขับขี่ของลูกค้าอยู่ในแฟ้ม\nรายการที่ต้องตรวจมีดังนี้ 51200348", "51200348"),
         ("Software license no. 40021188", "40021188"),
         ("ใบอนุญาตประกอบกิจการโรงงานเลขที่ 51200349", "51200349"),
+        # A bare "licence no." with no driving word is some other licence.
+        ("Licence No. 43318820", "43318820"),
+        ("Liquor license number 44556677", "44556677"),
+        ("Building license no 20251234", "20251234"),
+        ("License No. 55667788 for the fishing vessel", "55667788"),
+        # A far cue is cut off by a word that starts another kind of number.
+        ("ใบขับขี่ของผมหาย แจ้งความไว้แล้ว เลขรับแจ้ง 66012345", "66012345"),
+        (
+            "ใบขับขี่ต้องพกติดตัวเสมอ ส่วนค่าปรับจ่ายได้ที่ตู้ จำนวน 20000000 ด่ง",
+            "20000000",
+        ),
     ],
 )
 def test_uncued_eight_digits_are_not_a_licence(text, number):

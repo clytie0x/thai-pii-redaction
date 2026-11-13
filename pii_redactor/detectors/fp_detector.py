@@ -638,14 +638,14 @@ _JURISTIC_CUE_RE = re.compile(
     r"นิติบุคคล|ทะเบียนบริษัท|ทะเบียนพาณิชย์|เลข(?:ประจำตัว)?ผู้เสียภาษี|tax\s*id|juristic",
     re.IGNORECASE,
 )
-# A bare "licence no." also counts, unless the words before it name another
-# kind of licence (software, business, ...).
 _DRIVER_CUE_RE = re.compile(
-    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er['’]?s?|ing)\s*licen[cs]e"
-    r"|(?<!software )(?<!business )(?<!trade )(?<!product )(?<!factory )(?<!medical )"
-    r"\blicen[cs]e\s*(?:no\b|number|#)",
+    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er['’]?s?|ing)\s*licen[cs]e",
     re.IGNORECASE,
 )
+# A bare "licence no." counts only with a driving word in the same window:
+# liquor, building and fishing licences carry 8-digit numbers too.
+_BARE_LICENCE_CUE_RE = re.compile(r"\blicen[cs]e\s*(?:no\b|number|#)", re.IGNORECASE)
+_DRIVING_WORD_RE = re.compile(r"driver|driving|ขับขี่|ขับรถ", re.IGNORECASE)
 # The cue can sit a clause before the number: a long licence class name
 # ("ใบอนุญาตขับรถยนต์ส่วนบุคคล ฉบับที่ ...") or a chat sentence. Past the
 # normal window the gap must hold no digit, no line break and no word that
@@ -653,7 +653,8 @@ _DRIVER_CUE_RE = re.compile(
 _DRIVER_FAR_WINDOW = 60
 _DRIVER_GAP_BLOCK_RE = re.compile(
     r"[\d\n]|ใบเสร็จ|ใบแจ้งหนี้|ใบกำกับ|ใบสั่ง|สั่งซื้อ|ออเดอร์|อ้างอิง|รหัส|บัญชี|โทร|เบอร์"
-    r"|พัสดุ|สัญญา|กรมธรรม์|invoice|order|ref",
+    r"|พัสดุ|สัญญา|กรมธรรม์|invoice|order|ref"
+    r"|เลขรับ|แจ้ง|จำนวน|ยอด|บาท|ค่า",
     re.IGNORECASE,
 )
 _HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
@@ -796,6 +797,10 @@ def _driver_cue_before(text: str, start: int) -> bool:
     """A licence cue in the normal window, or further back across a clean gap."""
     if _cue_before(_DRIVER_CUE_RE, text, start):
         return True
+    if _cue_before(_BARE_LICENCE_CUE_RE, text, start) and _cue_before(
+        _DRIVING_WORD_RE, text, start
+    ):
+        return True
     ctx = text[max(0, start - _DRIVER_FAR_WINDOW) : start]
     cue = _rightmost_cue(_DRIVER_CUE_RE, ctx)
     return cue >= 0 and not _DRIVER_GAP_BLOCK_RE.search(ctx[cue:])
@@ -845,7 +850,8 @@ _PLATE_REATTACHED_SCORE = 0.91
 # or four digits or a leading series digit. A code label in front, or a
 # month or era abbreviation as the letters ("ตค-2568"), means it is not one.
 _PLATE_CODE_LABEL_RE = re.compile(
-    r"(?:รหัส[ก-๛]{0,12}|สินค้า|รุ่น|แบบ|ห้อง|ข้อ|มาตรา|เลขที่|ฉบับที่|งวด)[ \t:：]*\Z"
+    r"(?:รหัส[ก-๛]{0,12}|สินค้า|รุ่น|แบบ|ห้อง|ข้อ|มาตรา|เลขที่|ฉบับที่|งวด"
+    r"|วิชา|ทางหลวง|ล็อต|หมวด|แปลง|คดี[ก-๛]{0,6}|เครื่อง)[ \t:：]*\Z"
 )
 _PLATE_HYPHEN_NON_SERIES = frozenset(
     {"มค", "กพ", "พค", "กค", "สค", "กย", "ตค", "พย", "ธค", "พศ", "คศ"}
