@@ -22,12 +22,12 @@ This repository does not use pull requests for its own work. Work happens on a
 short-lived branch, CI runs on every branch push, and a green run is squashed
 into `main` as a single commit. Never commit directly to `main`.
 
-Run the loop end to end without stopping to ask between steps:
+The owner delegated the whole project to the agent on 2026-11-13: plan the work, choose the order, and run this loop end to end without asking between steps:
 
 1. branch from `main`;
 2. implement, writing tests first for new behavior;
 3. push, and wait for every CI job to pass — not most of them;
-4. squash into `main`;
+4. squash into `main` (a cloud session limited to one branch opens a draft pull request instead and leaves the merge to the owner);
 5. report in three lines: what changed, why, and what the evidence was.
 
 Stop and ask the owner in exactly four cases: a fork in the road that changes
@@ -35,19 +35,6 @@ product direction; a decision that meets the ADR bar below; an outward-facing
 action such as deploying, submitting to a store, creating a public repository,
 or sending anything to a third party; or a measured regression you cannot
 explain.
-
-### Owner delegation (2026-11-13)
-
-The owner has authorized the agent to manage this project end to end: plan the
-work, choose the order, and carry out research campaigns, code, tests, and
-documents without asking between steps. Report what was done and what the
-evidence was. The four stop cases above still apply, and so does the last
-bullet of "Change and review rules".
-
-A cloud session may be limited to one session branch. In that case push the
-branch, open a draft pull request against `main`, and leave the merge to the
-owner. This replaces steps 4 and "never use pull requests" for that session
-only.
 
 A change that meets the ADR bar also gets an independent review from a subagent
 running in a separate context before it lands. Verify every claim that review
