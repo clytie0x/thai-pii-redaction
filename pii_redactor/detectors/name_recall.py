@@ -101,9 +101,7 @@ _LATIN_CUE_PATTERNS: tuple[re.Pattern[str], ...] = (
     ),
     # With no colon the label must open the line and be explicit: a
     # salutation, or a role followed by "person" ("Insured person ...").
-    re.compile(
-        rf"{_LINE_START}(?i:dear|(?:{_EN_ROLES})[ \t]+person)[ \t]+{_LATIN_NAME}"
-    ),
+    re.compile(rf"{_LINE_START}(?i:dear|(?:{_EN_ROLES})[ \t]+person)[ \t]+{_LATIN_NAME}"),
     # A Thai role label with a colon: "ผู้โดยสาร ๑: ...". ผู้ makes a person
     # noun from a verb, so the label is a person unless it is a company role.
     re.compile(
@@ -249,7 +247,9 @@ _NAME_EVIDENCE_BEFORE_RE = re.compile(
 )
 _NAME_EVIDENCE_WINDOW = 40
 # A national ID or an email on the same line makes it a person record.
-_RECORD_CONTEXT_RE = re.compile(r"[0-9]{1}-?[0-9]{4}-?[0-9]{5}-?[0-9]{2}-?[0-9]|[\w.+-]+@[\w-]+\.\w+")
+_RECORD_CONTEXT_RE = re.compile(
+    r"[0-9]{1}-?[0-9]{4}-?[0-9]{5}-?[0-9]{2}-?[0-9]|[\w.+-]+@[\w-]+\.\w+"
+)
 
 
 def _has_name_evidence(text: str, start: int, end: int) -> bool:
@@ -263,7 +263,9 @@ def _has_name_evidence(text: str, start: int, end: int) -> bool:
     return bool(_RECORD_CONTEXT_RE.search(line))
 
 
-def _looks_like_plain_words(first: str, last: str, everyday: frozenset[str], given: set[str]) -> bool:
+def _looks_like_plain_words(
+    first: str, last: str, everyday: frozenset[str], given: set[str]
+) -> bool:
     """An untitled pair that reads as two ordinary words, not a name."""
     if first in everyday:
         return True

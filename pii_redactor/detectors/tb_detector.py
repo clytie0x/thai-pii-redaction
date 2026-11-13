@@ -1326,7 +1326,9 @@ def _without_overlap(extra: list[Entity], existing: list[Entity]) -> list[Entity
     return [
         item
         for item in extra
-        if not any(item.span[0] < other.span[1] and other.span[0] < item.span[1] for other in existing)
+        if not any(
+            item.span[0] < other.span[1] and other.span[0] < item.span[1] for other in existing
+        )
     ]
 
 
