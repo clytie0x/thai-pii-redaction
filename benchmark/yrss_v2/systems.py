@@ -60,6 +60,9 @@ def _deduped(predict: Callable[[str], list]) -> Predictor:
         found = [(int(start), int(end), str(label)) for start, end, label in predict(text)]
         return dedupe_predictions(found)
 
+    # Keep a remote predictor's counters reachable through the wrapper.
+    if isinstance(getattr(predict, "stats", None), dict):
+        run.stats = predict.stats
     return run
 
 

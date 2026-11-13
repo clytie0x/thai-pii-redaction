@@ -539,3 +539,19 @@ def test_report_keeps_the_counters_of_a_remote_predictor():
     report = harness.evaluate(corpus, {"aiguard": lambda text: [], "llm": Remote()})
     assert report["systems"]["llm"]["predictor_stats"] == {"requests": 1, "http_errors": 1}
     assert "predictor_stats" not in report["systems"]["aiguard"]
+
+
+def test_dedupe_wrapper_keeps_a_remote_predictors_counters():
+    class Remote:
+        def __init__(self):
+            self.stats = {"requests": 0}
+
+        def __call__(self, text):
+            self.stats["requests"] += 1
+            return [(0, 2, "NAME"), (1, 3, "NAME")]
+
+    remote = Remote()
+    wrapped = systems._deduped(remote)
+    assert wrapped("abcd") == [(0, 2, "NAME")]
+    assert wrapped.stats is remote.stats
+    assert wrapped.stats["requests"] == 1
