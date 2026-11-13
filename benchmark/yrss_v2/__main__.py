@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 from . import harness
+from .llm_openai import LLMUnavailable
 from .systems import SystemUnavailable, system_names
 
 
@@ -28,6 +29,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--llm-seed", type=int, default=None)
     # A big model on CPU needs more than the 120s default.
     parser.add_argument("--llm-timeout", type=float, default=None, help="seconds per request")
+    parser.add_argument(
+        "--llm-max-failures",
+        type=int,
+        default=None,
+        help="stop after this many documents in a row fail (default 5)",
+    )
+    parser.add_argument(
+        "--llm-cache", default=None, help="JSON Lines file of finished documents, to resume a run"
+    )
     parser.add_argument(
         harness.TEST_FLAG,
         dest="allow_test",
@@ -47,11 +57,19 @@ def main(argv: list[str] | None = None) -> int:
         }
         if args.llm_timeout is not None:
             llm_options["timeout"] = args.llm_timeout
+        if args.llm_max_failures is not None:
+            llm_options["max_consecutive_failures"] = args.llm_max_failures
+        if args.llm_cache:
+            llm_options["cache"] = args.llm_cache
     try:
         report = harness.run(args.split, names, llm_options=llm_options, allow_test=args.allow_test)
     except harness.TestSplitRefused:
         print(f"yrss-eval-v2: refusing the test split without {harness.TEST_FLAG}", file=sys.stderr)
         return 2
+    except LLMUnavailable as exc:
+        # Nothing is written: a report with failed documents scored as empty is wrong.
+        print(f"yrss-eval-v2: llm unavailable, {exc}", file=sys.stderr)
+        return 3
     except (ValueError, SystemUnavailable, harness.CorpusLockError) as exc:
         print(f"yrss-eval-v2: {exc}", file=sys.stderr)
         return 2

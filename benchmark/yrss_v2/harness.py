@@ -99,7 +99,10 @@ def run(
     corpus = _locked_corpus(split)
     # Build every system before any scoring, so a missing package stops the run early.
     predictors = {name: systems.build(name, llm_options=options) for name in names}
-    report = evaluate(corpus, predictors)
+    cache = None
+    if "llm" in names and options and options.get("cache"):
+        cache = DocumentCache(options["cache"], _cache_header(options, corpus))
+    report = evaluate(corpus, predictors, caches={"llm": cache} if cache else None)
     if "llm" in names and options:
         report["llm"] = {
             "api_key_env": options.get("api_key_env"),
@@ -107,10 +110,106 @@ def run(
             "model": options.get("model"),
             "seed": options.get("seed"),
         }
+        if cache:
+            report["llm"]["cache"] = {
+                "path_name": cache.path.name,
+                "reused": cache.reused,
+                "fresh": cache.fresh,
+            }
     return report
 
 
-def evaluate(corpus: Corpus, predictors: Mapping[str, Callable[[str], list]]) -> dict:
+def _cache_header(options: Mapping, corpus: Corpus) -> dict:
+    from .llm_openai import PROMPT_VERSION, prompt_sha256
+
+    return {
+        "model": options.get("model"),
+        "seed": options.get("seed"),
+        "base_url": options.get("base_url"),
+        "prompt_sha256": prompt_sha256(),
+        "prompt_version": PROMPT_VERSION,
+        "split": corpus.split,
+        "corpus_sha256": hashlib.sha256(canonical_bytes(corpus)).hexdigest(),
+    }
+
+
+class DocumentCache:
+    """Finished documents of one remote-model run, as JSON Lines, so a crash can resume.
+
+    Line 1 is a header. Each other line is one document that got an answer:
+    ids, a text hash, spans, latency and counter increments. Never text, replies or keys.
+    Hooked into the harness loop (not the predictor) because only the loop knows doc ids.
+    """
+
+    def __init__(self, path, header: dict) -> None:
+        self.path = Path(path)
+        self.reused = self.fresh = 0
+        self._done: dict[str, dict] = {}
+        if self.path.is_file() and self.path.stat().st_size:
+            self._load(header)
+            return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._append(header)
+
+    def _load(self, header: dict) -> None:
+        rows = []
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                continue  # a torn last line from a crash
+        first = rows[0] if rows and isinstance(rows[0], dict) else {}
+        differs = [key for key in header if first.get(key) != header[key]]
+        if differs:
+            raise ValueError(
+                f"llm cache {self.path.name} is from another run, differs in: " + ", ".join(differs)
+            )
+        self._done = {
+            row["doc_id"]: row for row in rows[1:] if isinstance(row, dict) and "doc_id" in row
+        }
+
+    def get(self, document) -> dict | None:
+        row = self._done.get(document.doc_id)
+        if row and row.get("text_sha256") == _text_sha256(document.text):
+            return row
+        return None
+
+    def add(self, document, found, latency: float, delta: dict) -> None:
+        if delta.get("http_errors"):
+            return  # asked again on the next run
+        self._append(
+            {
+                "doc_id": document.doc_id,
+                "text_sha256": _text_sha256(document.text),
+                "spans": [list(span) for span in found],
+                "latency_seconds": latency,
+                "stats": delta,
+            }
+        )
+
+    def _append(self, row: dict) -> None:
+        line = json.dumps(row, ensure_ascii=False) + "\n"
+        # A torn last line (no newline) would swallow this row, so end it first.
+        if self.path.is_file() and self.path.stat().st_size:
+            with self.path.open("rb") as handle:
+                handle.seek(-1, 2)
+                if handle.read(1) != b"\n":
+                    line = "\n" + line
+        with self.path.open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(line)
+            handle.flush()
+
+
+def _text_sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def evaluate(
+    corpus: Corpus,
+    predictors: Mapping[str, Callable[[str], list]],
+    *,
+    caches: Mapping[str, DocumentCache] | None = None,
+) -> dict:
     """Score ready predictors on a built corpus. ``run`` is the guarded entry point."""
     # The NER chunk warning names a label and a length, and it floods the output.
     logging.getLogger("pii_redactor.detectors.tb_detector").setLevel(logging.ERROR)
@@ -120,7 +219,7 @@ def evaluate(corpus: Corpus, predictors: Mapping[str, Callable[[str], list]]) ->
     rows: dict[str, dict] = {}
     counts: dict[str, dict[str, list]] = {}
     for name, predict in predictors.items():
-        predictions, latencies = _predict_all(predict, documents)
+        predictions, latencies = _predict_all(predict, documents, (caches or {}).get(name))
         counts[name] = {
             view: stats.view_counts(documents, predictions, view) for view in stats.VIEWS
         }
@@ -267,14 +366,28 @@ def _locked_corpus(split: str) -> Corpus:
     return corpus
 
 
-def _predict_all(predict, documents) -> tuple[list[list], list[float]]:
+def _predict_all(predict, documents, cache=None) -> tuple[list[list], list[float]]:
     predict(_WARM_UP_TEXT)
     predictions = []
     latencies = []
     for document in documents:
-        started = time.perf_counter()
-        found = predict(document.text)
-        latencies.append(time.perf_counter() - started)
+        row = cache.get(document) if cache else None
+        if row:
+            # A reused document adds back what it cost, so counters match an uninterrupted run.
+            for key, count in row["stats"].items():
+                predict.stats[key] = predict.stats.get(key, 0) + count
+            found = row["spans"]
+            latencies.append(row["latency_seconds"])
+            cache.reused += 1
+        else:
+            before = dict(predict.stats) if cache else {}
+            started = time.perf_counter()
+            found = predict(document.text)
+            latencies.append(time.perf_counter() - started)
+            if cache:
+                delta = {key: value - before.get(key, 0) for key, value in predict.stats.items()}
+                cache.add(document, found, latencies[-1], delta)
+                cache.fresh += 1
         predictions.append([(int(start), int(end), str(label)) for start, end, label in found])
     return predictions, latencies
 

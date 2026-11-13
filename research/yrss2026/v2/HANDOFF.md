@@ -92,5 +92,12 @@ models of known size run locally through Ollama.
 - The dotBlue gateway (`https://ai.psu.blue/v1`) streams unless asked not to;
   the adapter now sends `stream: false`. Locally, put the key in an
   environment variable and pass its name with `--llm-key-env`.
+- The llm run goes over an SSH tunnel to a laptop that has crashed twice. A dead server used to
+  score every document as "found nothing". `--llm-max-failures N` (default 5) stops the run with
+  exit 3 and no report after N documents in a row end as http errors. `--llm-cache PATH` writes
+  each finished document to a JSON Lines file (spans, hashes, counters, no text) and a rerun with
+  the same path reuses them. It refuses a file from another model, seed, base URL, prompt, split
+  or corpus (exit 2). Documents that ended as http errors are asked again. `*.jsonl` is
+  git-ignored by the root `.gitignore`, so cache files stay out of git.
 - Never run `--split test` before step 5, and never open
   `benchmark/data/*.enc`.

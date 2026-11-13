@@ -8,7 +8,7 @@ import pytest
 
 from benchmark.blind_v2.score import score_predictions
 from benchmark.blind_v2.types import REDACTION_TYPES
-from benchmark.yrss_v2 import harness, stats, systems
+from benchmark.yrss_v2 import harness, llm_openai, stats, systems
 from benchmark.yrss_v2.__main__ import main
 from benchmark.yrss_v2.corpus import Corpus, Document, Span, Template, render
 from benchmark.yrss_v2.types import CONTEXTUAL_TYPES, SCHEME_TYPES, STRUCTURED_TYPES
@@ -558,3 +558,195 @@ def test_dedupe_wrapper_keeps_a_remote_predictors_counters():
     assert wrapped("abcd") == [(0, 2, "NAME")]
     assert wrapped.stats is remote.stats
     assert wrapped.stats["requests"] == 1
+
+
+# --- llm failure and resume ---------------------------------------------------
+
+
+class _Remote:
+    """Fake remote model. Answers with gold spans; can die or fail on chosen calls."""
+
+    def __init__(self, corpus, die_on=None, fail_on=()):
+        self.table = {document.text: _gold(document) for document in corpus.documents}
+        self.die_on, self.fail_on = die_on, set(fail_on)
+        self.stats = {"requests": 0, "http_errors": 0}
+        self.texts: list[str] = []
+
+    def __call__(self, text):
+        self.texts.append(text)
+        if self.die_on is not None and len(self.texts) == self.die_on:
+            raise llm_openai.LLMUnavailable("m: 5 documents in a row failed")
+        self.stats["requests"] += 1
+        if len(self.texts) in self.fail_on:
+            self.stats["http_errors"] += 1
+            return []
+        return list(self.table.get(text, []))
+
+
+def _header(**changes) -> dict:
+    header = {
+        "model": "m",
+        "seed": 3,
+        "base_url": "http://localhost:1/v1",
+        "prompt_sha256": "p" * 64,
+        "prompt_version": "v1",
+        "split": "unit",
+        "corpus_sha256": "c" * 64,
+    }
+    return {**header, **changes}
+
+
+def _cache_lines(path) -> list[dict]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def _evaluate_cached(corpus, remote, path):
+    cache = harness.DocumentCache(path, _header())
+    return harness.evaluate(corpus, {"llm": remote}, caches={"llm": cache}), cache
+
+
+def test_resumed_run_reports_the_same_as_an_uninterrupted_run(tmp_path):
+    corpus = _corpus()
+    plain = harness.evaluate(corpus, {"llm": _Remote(corpus)})
+
+    path = tmp_path / "run.jsonl"
+    # Call 1 is the warm-up, calls 2 to 4 finish three documents, call 5 dies.
+    with pytest.raises(llm_openai.LLMUnavailable):
+        _evaluate_cached(corpus, _Remote(corpus, die_on=5), path)
+    assert len(_cache_lines(path)) == 1 + 3
+
+    resumed = _Remote(corpus)
+    report, cache = _evaluate_cached(corpus, resumed, path)
+
+    assert len(resumed.texts) == 1 + len(corpus.documents) - 3
+    assert (cache.reused, cache.fresh) == (3, len(corpus.documents) - 3)
+    for key in ("by_type", "views", "negative", "predictor_stats"):
+        assert report["systems"]["llm"][key] == plain["systems"]["llm"][key]
+
+
+def test_http_error_documents_are_not_cached_and_are_asked_again(tmp_path):
+    corpus = _corpus()
+    path = tmp_path / "run.jsonl"
+    _evaluate_cached(corpus, _Remote(corpus, fail_on={3}), path)  # call 3 is document 2
+    done = [row["doc_id"] for row in _cache_lines(path)[1:]]
+    assert len(done) == len(corpus.documents) - 1
+    assert corpus.documents[1].doc_id not in done
+
+    again = _Remote(corpus)
+    _evaluate_cached(corpus, again, path)
+    assert again.texts[1:] == [corpus.documents[1].text]
+
+
+def test_cache_file_holds_no_text_and_one_row_per_document(tmp_path):
+    corpus = _corpus()
+    path = tmp_path / "run.jsonl"
+    _evaluate_cached(corpus, _Remote(corpus), path)
+    raw = path.read_text(encoding="utf-8")
+    assert all(document.text not in raw for document in corpus.documents)
+    first = _cache_lines(path)[1]
+    assert set(first) == {"doc_id", "text_sha256", "spans", "latency_seconds", "stats"}
+    assert all(isinstance(span, list) and len(span) == 3 for span in first["spans"])
+
+
+def test_cache_skips_a_changed_document_and_survives_a_torn_last_line(tmp_path):
+    corpus = _corpus()
+    path = tmp_path / "run.jsonl"
+    _evaluate_cached(corpus, _Remote(corpus), path)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    lines[1] = lines[1].replace('"text_sha256": "', '"text_sha256": "0')
+    path.write_text("\n".join(lines) + '\n{"doc_id": "torn", "text_sh', encoding="utf-8")
+
+    again = _Remote(corpus)
+    _evaluate_cached(corpus, again, path)
+    assert again.texts[1:] == [corpus.documents[0].text]
+    # The torn tail did not swallow the row appended after it.
+    assert _cache_lines_skipping_torn(path)[-1]["doc_id"] == corpus.documents[0].doc_id
+
+
+def _cache_lines_skipping_torn(path) -> list[dict]:
+    rows = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            rows.append(json.loads(line))
+        except ValueError:
+            continue
+    return rows
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["model", "seed", "base_url", "prompt_sha256", "prompt_version", "split", "corpus_sha256"],
+)
+def test_cache_header_mismatch_is_refused(tmp_path, field):
+    path = tmp_path / "run.jsonl"
+    harness.DocumentCache(path, _header())
+    other = _header(**{field: 99 if field == "seed" else "other"})
+    with pytest.raises(ValueError, match=field):
+        harness.DocumentCache(path, other)
+
+
+def test_run_reports_the_cache_only_when_one_was_used(monkeypatch, tmp_path):
+    corpus = _corpus(split="dev")
+    monkeypatch.setattr(harness, "build_corpus", lambda split: corpus)
+    monkeypatch.setattr(harness, "load_templates", lambda split: list(_TEMPLATES))
+    monkeypatch.setattr(harness, "_read_lock", lambda split: harness.public_lock(corpus))
+    monkeypatch.setattr(systems, "build", lambda name, llm_options=None: _Remote(corpus))
+    options = {"base_url": "http://localhost:1/v1", "model": "m", "seed": 3}
+
+    assert "cache" not in harness.run("dev", ["llm"], llm_options=options)["llm"]
+
+    path = tmp_path / "run.jsonl"
+    report = harness.run("dev", ["llm"], llm_options={**options, "cache": str(path)})
+    assert report["llm"]["cache"] == {
+        "path_name": "run.jsonl",
+        "reused": 0,
+        "fresh": len(corpus.documents),
+    }
+    header = _cache_lines(path)[0]
+    assert header["model"] == "m" and header["split"] == "dev"
+    assert header["corpus_sha256"] == harness.public_lock(corpus)["plaintext_sha256"]
+    assert header["prompt_sha256"] == llm_openai.prompt_sha256()
+    assert header["prompt_version"] == llm_openai.PROMPT_VERSION
+
+    again = harness.run("dev", ["llm"], llm_options={**options, "cache": str(path)})
+    assert again["llm"]["cache"]["reused"] == len(corpus.documents)
+
+
+def test_cli_passes_the_llm_cache_and_failure_limit(monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_run(split, names, *, llm_options=None, allow_test=False):
+        seen.update(llm_options=llm_options)
+        return _report()
+
+    monkeypatch.setattr(harness, "run", fake_run)
+    cache = str(tmp_path / "c.jsonl")
+    args = ["--llm-base-url", "u", "--llm-model", "m", "--llm-seed", "1"]
+    assert main([*args, "--llm-cache", cache, "--llm-max-failures", "7"]) == 0
+    assert seen["llm_options"]["cache"] == cache
+    assert seen["llm_options"]["max_consecutive_failures"] == 7
+    assert main(args) == 0
+    assert set(seen["llm_options"]) == {"base_url", "model", "api_key_env", "seed"}
+
+
+def test_cli_exits_3_without_a_report_when_the_llm_is_unavailable(monkeypatch, tmp_path, capsys):
+    def fake_run(split, names, *, llm_options=None, allow_test=False):
+        raise llm_openai.LLMUnavailable("m: 5 documents in a row failed")
+
+    monkeypatch.setattr(harness, "run", fake_run)
+    out = tmp_path / "out.json"
+    code = main(["--json", str(out), "--llm-base-url", "u", "--llm-model", "m", "--llm-seed", "1"])
+    assert code == 3
+    captured = capsys.readouterr()
+    assert "m: 5 documents in a row failed" in captured.err
+    assert not out.exists()
+    assert captured.out == ""
+
+
+def test_cli_exits_2_when_the_cache_belongs_to_another_run(monkeypatch, capsys):
+    def fake_run(split, names, *, llm_options=None, allow_test=False):
+        raise ValueError("llm cache run.jsonl does not match this run: model")
+
+    monkeypatch.setattr(harness, "run", fake_run)
+    assert main(["--llm-base-url", "u", "--llm-model", "m", "--llm-seed", "1"]) == 2
+    assert "model" in capsys.readouterr().err

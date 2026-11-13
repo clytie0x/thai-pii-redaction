@@ -127,6 +127,8 @@ def _llm(llm_options: dict | None) -> Predictor:
     from benchmark.yrss_v2.llm_openai import make_predictor
 
     extra = {"timeout": float(options["timeout"])} if options.get("timeout") else {}
+    if options.get("max_consecutive_failures"):
+        extra["max_consecutive_failures"] = int(options["max_consecutive_failures"])
     return _deduped(
         make_predictor(
             base_url=str(options["base_url"]),

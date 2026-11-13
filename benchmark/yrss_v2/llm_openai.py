@@ -74,6 +74,10 @@ class LLMConfigError(RuntimeError):
     """The predictor cannot be built from the given settings."""
 
 
+class LLMUnavailable(RuntimeError):
+    """Too many documents in a row got no answer. The run should stop."""
+
+
 def prompt_sha256() -> str:
     """Hash of the exact system prompt, for the run file."""
     return hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()
@@ -86,6 +90,7 @@ def make_predictor(
     api_key_env: str | None,
     seed: int,
     timeout: float = 120.0,
+    max_consecutive_failures: int = 5,
     _transport: httpx.BaseTransport | None = None,
     _sleep: Callable[[float], None] = time.sleep,
 ) -> Callable[[str], list[tuple[int, int, str]]]:
@@ -108,6 +113,7 @@ def make_predictor(
         model=model,
         seed=seed,
         sleep=_sleep,
+        max_consecutive_failures=max_consecutive_failures,
     )
 
 
@@ -122,12 +128,15 @@ class OpenAIPredictor:
         model: str,
         seed: int,
         sleep: Callable[[float], None],
+        max_consecutive_failures: int = 5,
     ) -> None:
         self._client = client
         self._url = url
         self._model = model
         self._seed = seed
         self._sleep = sleep
+        self._max_failures = max_consecutive_failures
+        self._streak = 0  # documents in a row that ended as http errors
         # Turned off for the rest of the run once the server refuses it.
         self._json_mode = True
         self.stats: dict[str, int] = {
@@ -148,7 +157,11 @@ class OpenAIPredictor:
         response = self._request(text)
         if response is None:
             self.stats["http_errors"] += 1
+            self._streak += 1
+            if self._streak >= self._max_failures:
+                raise LLMUnavailable(f"{self._model}: {self._streak} documents in a row failed")
             return []
+        self._streak = 0
         items = parse_items(_reply_text(response))
         if items is None:
             self.stats["parse_failures"] += 1

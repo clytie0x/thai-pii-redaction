@@ -346,3 +346,50 @@ def test_prompt_names_every_scheme_type_and_is_versioned():
     assert len(digest) == 64
     assert digest == llm_openai.prompt_sha256()
     assert int(digest, 16) >= 0
+
+
+def _failing_predictor(server, **kwargs):
+    return llm_openai.make_predictor(
+        base_url="https://llm.example/v1/",
+        model="test-model",
+        api_key_env=None,
+        seed=7,
+        _transport=httpx.MockTransport(server),
+        _sleep=lambda seconds: None,
+        **kwargs,
+    )
+
+
+def test_consecutive_failed_documents_raise_llm_unavailable():
+    server = _Server(httpx.Response(401, json={"error": "down"}))
+    predictor = _failing_predictor(server, max_consecutive_failures=3)
+
+    assert predictor("secret document one") == []
+    assert predictor("secret document two") == []
+    with pytest.raises(llm_openai.LLMUnavailable) as caught:
+        predictor("secret document three")
+
+    assert predictor.stats["http_errors"] == 3
+    message = str(caught.value)
+    assert "test-model" in message and "3" in message
+    assert "secret" not in message
+
+
+def test_a_good_document_resets_the_failure_streak():
+    down = httpx.Response(401, json={"error": "down"})
+    server = _Server(down, down, _reply(_items()), down, down, _reply(_items()))
+    predictor = _failing_predictor(server, max_consecutive_failures=3)
+
+    for _ in range(6):
+        assert predictor("text") == []
+    assert predictor.stats["http_errors"] == 4
+
+
+def test_failure_limit_defaults_to_five():
+    server = _Server(httpx.Response(401, json={"error": "down"}))
+    predictor = _failing_predictor(server)
+
+    for _ in range(4):
+        assert predictor("text") == []
+    with pytest.raises(llm_openai.LLMUnavailable):
+        predictor("text")
