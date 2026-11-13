@@ -410,7 +410,10 @@ _RE_DATE_THAI_MONTH = re.compile(
 # (see step 8) — putting a digit-led alternative in the pattern itself loses
 # to an earlier overlapping bogus match that eats the digit ("ทะเบียน 2กท":
 # the rejected "น 2" consumes the 2 before the real plate can start on it).
-_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}\s*\d{1,4})(?!\d)")
+# People also write the plate with a hyphen ("1กข-2345"). Step 8 is stricter
+# with that form when no plate cue is near, because a hyphen also joins
+# letters and digits in room, form and product codes.
+_RE_VEHICLE_PLATE = re.compile(r"([ก-ฮ]{1,3}(?:\s*|-)\d{1,4})(?!\d)")
 # Passport is alphanumeric, so it needs the same Thai-adjacency handling as the
 # numeric PII above: \b does NOT fire between a Thai letter and "A" (both are
 # word characters in Unicode regex), so a passport glued to Thai text (e.g.
@@ -764,6 +767,27 @@ _PLATE_UNCUED_LEAD_STOPWORDS = frozenset({"ยอด", "ออก", "รวม"}
 # trailing digit it just claimed — see step 8.
 _PLATE_SCORE = 0.9
 _PLATE_REATTACHED_SCORE = 0.91
+# An uncued hyphen form must look like a car plate: two letters, then three
+# or four digits or a leading series digit. A code label in front, or a
+# month or era abbreviation as the letters ("ตค-2568"), means it is not one.
+_PLATE_CODE_LABEL_RE = re.compile(
+    r"(?:รหัส[ก-๛]{0,12}|สินค้า|รุ่น|แบบ|ห้อง|ข้อ|มาตรา|เลขที่|ฉบับที่|งวด)[ \t:：]*\Z"
+)
+_PLATE_HYPHEN_NON_SERIES = frozenset(
+    {"มค", "กพ", "พค", "กค", "สค", "กย", "ตค", "พย", "ธค", "พศ", "คศ"}
+)
+
+
+def _uncued_hyphen_plate(text: str, start: int, raw: str, lead: re.Match | None) -> bool:
+    if lead is None or len(lead.group()) != 2 or lead.group() in _PLATE_HYPHEN_NON_SERIES:
+        return False
+    series_digit = (
+        start > 0 and text[start - 1].isdigit() and (start < 2 or not text[start - 2].isdigit())
+    )
+    if not series_digit and len(raw) - raw.index("-") - 1 < 3:
+        return False
+    label_end = start - 1 if series_digit else start
+    return not _PLATE_CODE_LABEL_RE.search(text[max(0, label_end - 24) : label_end])
 
 
 def _plate_cue_before(text: str, start: int) -> bool:
@@ -980,6 +1004,12 @@ def detect_fp(text: str) -> list[Entity]:
             continue
         plate_cued = _plate_cue_before(text, start) or _plate_sign_cue(text, start)
         if start > 0 and _THAI_CHAR_RE.match(text[start - 1]) and not plate_cued:
+            continue
+        if (
+            not plate_cued
+            and "-" in m.group(1)
+            and not _uncued_hyphen_plate(text, start, m.group(1), lead)
+        ):
             continue
         if not plate_cued:
             before = text[:start].rstrip()
