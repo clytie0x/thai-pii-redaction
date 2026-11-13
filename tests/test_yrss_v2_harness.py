@@ -523,3 +523,19 @@ def test_shared11_view_ignores_out_of_scheme_predictions():
     predictions = [[(name.start, name.end, "NAME"), (phone.start, phone.end, "ORGANIZATION")]]
     assert stats.total(stats.view_counts([doc], predictions, "all")) == (1, 1, 1)
     assert stats.total(stats.view_counts([doc], predictions, "shared11")) == (1, 0, 1)
+
+
+def test_report_keeps_the_counters_of_a_remote_predictor():
+    doc = render(Template("t-p-901", "test", False, "โทร {{phone}}"), 0, seed=2)
+    corpus = Corpus("yrss-eval-v2", "dev", 0, "0" * 64, (doc,))
+
+    class Remote:
+        def __init__(self):
+            self.stats = {"requests": 1, "http_errors": 1}
+
+        def __call__(self, text):
+            return []
+
+    report = harness.evaluate(corpus, {"aiguard": lambda text: [], "llm": Remote()})
+    assert report["systems"]["llm"]["predictor_stats"] == {"requests": 1, "http_errors": 1}
+    assert "predictor_stats" not in report["systems"]["aiguard"]

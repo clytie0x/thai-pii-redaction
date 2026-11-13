@@ -125,6 +125,10 @@ def evaluate(corpus: Corpus, predictors: Mapping[str, Callable[[str], list]]) ->
             view: stats.view_counts(documents, predictions, view) for view in stats.VIEWS
         }
         rows[name] = _system_row(documents, predictions, latencies, counts[name], resamples)
+        # A predictor that calls a remote model counts its own failures.
+        # Keep them: a failed request scores as "found nothing".
+        if isinstance(getattr(predict, "stats", None), dict):
+            rows[name]["predictor_stats"] = dict(predict.stats)
 
     return {
         "bootstrap": {
