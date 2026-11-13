@@ -141,3 +141,84 @@ def test_other_dates_keep_the_generic_label(text, date):
 def test_non_date_shapes_are_not_dates(text):
     found = {e.data_type for e in detect_fp(text)}
     assert not found & {"DATE", "DATE_OF_BIRTH"}
+
+
+# ── DRIVER_LICENSE: cue a clause away, wider wording ───────────────────────
+
+
+@pytest.mark.parametrize(
+    ("text", "number"),
+    [
+        ("ใบอนุญาตขับรถจักรยานยนต์ส่วนบุคคล ฉบับที่ 51482260", "51482260"),
+        ("ใบขับขี่ถ่ายมาเบลอมากเลย เห็นเลขน่าจะเป็น 46120937 นะ", "46120937"),
+        ("ใบขับขี่เลขที่ 60031875", "60031875"),
+        ("เลขที่ใบอนุญาตขับรถ 47730018", "47730018"),
+        ("Driving licence no. 52219046", "52219046"),
+        ("driver’s license # 61102457", "61102457"),
+        ("Licence No. 43318820", "43318820"),
+    ],
+)
+def test_cued_licence_number_is_found(text, number):
+    assert _of(text, "DRIVER_LICENSE") == {number}
+
+
+@pytest.mark.parametrize(
+    ("text", "number"),
+    [
+        ("หมายเลขคำสั่งซื้อ 58120034", "58120034"),
+        ("ใบขับขี่หมดอายุแล้วนะคะ ส่วนใบเสร็จรับเงินเลขที่ 58120035 แนบมาด้วย", "58120035"),
+        ("ใบขับขี่ออกให้เมื่อปี 2565 ที่สำนักงานขนส่งสาขา 3 รหัสอ้างอิง 51200347", "51200347"),
+        ("ใบขับขี่ของลูกค้าอยู่ในแฟ้ม\nรายการที่ต้องตรวจมีดังนี้ 51200348", "51200348"),
+        ("Software license no. 40021188", "40021188"),
+        ("ใบอนุญาตประกอบกิจการโรงงานเลขที่ 51200349", "51200349"),
+    ],
+)
+def test_uncued_eight_digits_are_not_a_licence(text, number):
+    assert "DRIVER_LICENSE" not in _type_at(text, number)
+    assert _type_at(text, number) == {"ID_NUMBER"}
+
+
+# ── BANK_ACCOUNT: 3-6-1 layout and the short cue ───────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("text", "account"),
+    [
+        ("ในระบบเงินเดือนเป็น 417-052936-8 ค่ะ", "417-052936-8"),
+        ("ช่างแอร์ บช.502-771340-6", "502-771340-6"),
+        ("โอนเข้า บช. 0891234567 ได้เลย", "0891234567"),
+    ],
+)
+def test_account_layouts_get_the_account_label(text, account):
+    assert _type_at(text, account) == {"BANK_ACCOUNT"}
+
+
+def test_document_number_layout_keeps_the_generic_label():
+    assert _type_at("ใบรับเลขที่ 2569-004512", "2569-004512") == {"ID_NUMBER"}
+
+
+def test_police_bureau_abbreviation_is_not_a_bank_cue():
+    assert _type_at("แจ้ง บช.น. 0891234567", "0891234567") == {"PHONE"}
+
+
+# ── PHONE glued in front of an e-mail address ──────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("text", "phone", "email"),
+    [
+        ("ผู้ติดต่อ0957713046wipada.s@example.org", "0957713046", "wipada.s@example.org"),
+        ("โทร 038-442917t.manee@example.com", "038-442917", "t.manee@example.com"),
+        ("fax 02-613-4480office@example.co.th", "02-613-4480", "office@example.co.th"),
+    ],
+)
+def test_phone_glued_to_email_is_split(text, phone, email):
+    assert _found(text) >= {("PHONE", phone), ("EMAIL", email)}
+
+
+@pytest.mark.parametrize(
+    "email",
+    ["0957713046@example.org", "user0957713046@example.org", "a0957713046b@example.org"],
+)
+def test_digits_inside_a_plain_address_stay_one_email(email):
+    assert _found(f"อีเมล {email}") == {("EMAIL", email)}

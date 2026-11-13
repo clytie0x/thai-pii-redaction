@@ -169,9 +169,9 @@ def _disambiguate_bank_phone(text: str, candidates: list[Entity]) -> list[Entity
 def _bank_separators_nonstandard(raw: str) -> bool:
     """True when the separator layout matches no Thai bank-account format.
 
-    Accepted layouts: bare digits, the fully separated xxx-x-xxxxx-x, and the
-    xxxxxxx-xxx shape. Anything else ("2569-004512") is a formatted document
-    number wearing ten digits.
+    Accepted layouts: bare digits, the fully separated xxx-x-xxxxx-x, the
+    xxx-xxxxxx-x shape some banks print, and the xxxxxxx-xxx shape. Anything
+    else ("2569-004512") is a formatted document number wearing ten digits.
     """
     positions: list[int] = []
     digits = 0
@@ -180,7 +180,7 @@ def _bank_separators_nonstandard(raw: str) -> bool:
             digits += 1
         else:
             positions.append(digits)
-    return bool(positions) and positions != [3, 4, 9] and positions != [7]
+    return bool(positions) and positions not in ([3, 4, 9], [3, 9], [7])
 
 
 def _disambiguate_bank_student(text: str, candidates: list[Entity]) -> list[Entity]:
@@ -638,8 +638,23 @@ _JURISTIC_CUE_RE = re.compile(
     r"นิติบุคคล|ทะเบียนบริษัท|ทะเบียนพาณิชย์|เลข(?:ประจำตัว)?ผู้เสียภาษี|tax\s*id|juristic",
     re.IGNORECASE,
 )
+# A bare "licence no." also counts, unless the words before it name another
+# kind of licence (software, business, ...).
 _DRIVER_CUE_RE = re.compile(
-    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er'?s?|ing)\s*licen[cs]e", re.IGNORECASE
+    r"ใบขับขี่|ใบอนุญาตขับขี่|ใบอนุญาตขับรถ|driv(?:er['’]?s?|ing)\s*licen[cs]e"
+    r"|(?<!software )(?<!business )(?<!trade )(?<!product )(?<!factory )(?<!medical )"
+    r"\blicen[cs]e\s*(?:no\b|number|#)",
+    re.IGNORECASE,
+)
+# The cue can sit a clause before the number: a long licence class name
+# ("ใบอนุญาตขับรถยนต์ส่วนบุคคล ฉบับที่ ...") or a chat sentence. Past the
+# normal window the gap must hold no digit, no line break and no word that
+# introduces another kind of number.
+_DRIVER_FAR_WINDOW = 60
+_DRIVER_GAP_BLOCK_RE = re.compile(
+    r"[\d\n]|ใบเสร็จ|ใบแจ้งหนี้|ใบกำกับ|ใบสั่ง|สั่งซื้อ|ออเดอร์|อ้างอิง|รหัส|บัญชี|โทร|เบอร์"
+    r"|พัสดุ|สัญญา|กรมธรรม์|invoice|order|ref",
+    re.IGNORECASE,
 )
 _HOUSE_REG_CUE_RE = re.compile(r"รหัสประจำบ้าน")
 _IP_CUE_RE = re.compile(
@@ -659,7 +674,8 @@ _THAI_CHAR_RE = re.compile(r"[฀-๿]")
 # both the mobile PHONE and the BANK_ACCOUNT patterns, so the surrounding text
 # is the only signal. `บัญชี` already covers เลขบัญชี / เลขที่บัญชี as a
 # substring, so the alternation stays minimal.
-_BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร")
+# "บช." is the short form of บัญชี. "บช.น." is a police bureau, not a bank.
+_BANK_CUE_RE = re.compile(r"บัญชี|ธนาคาร|บช\.(?![ก-ฮ]\.)")
 _PHONE_CUE_RE = re.compile(r"โทรศัพท์|โทร|เบอร์|มือถือ|ติดต่อ")
 _CARD_CUE_RE = re.compile(r"บัตรเครดิต|บัตรเดบิต|credit\s*card|debit\s*card", re.IGNORECASE)
 _PERSON_ID_CUE_RE = re.compile(r"บัตรประชาชน|เลขประจำตัวประชาชน|เลขผู้เสียภาษี")
@@ -774,6 +790,30 @@ def _org_number_cued(text: str, start: int) -> bool:
 
 def _cue_before(cue_re: re.Pattern, text: str, start: int) -> bool:
     return bool(cue_re.search(text[max(0, start - _CUE_WINDOW) : start]))
+
+
+def _driver_cue_before(text: str, start: int) -> bool:
+    """A licence cue in the normal window, or further back across a clean gap."""
+    if _cue_before(_DRIVER_CUE_RE, text, start):
+        return True
+    ctx = text[max(0, start - _DRIVER_FAR_WINDOW) : start]
+    cue = _rightmost_cue(_DRIVER_CUE_RE, ctx)
+    return cue >= 0 and not _DRIVER_GAP_BLOCK_RE.search(ctx[cue:])
+
+
+def _skip_glued_phone(text: str, start: int) -> int:
+    """Return where the e-mail really starts when a phone is glued in front.
+
+    Text taken from a PDF can lose the gap between two fields
+    ("0812345678somchai@x.com"). The e-mail pattern then takes the phone as
+    part of the address and the phone loses its own span. Only a full phone
+    followed by a letter is split off; "0812345678@x.com" stays one address.
+    """
+    for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE):
+        phone = pattern.match(text, start)
+        if phone and text[phone.end(1) : phone.end(1) + 1].isalpha():
+            return phone.end(1)
+    return start
 
 
 # A vehicle plate glued to Thai text (e.g. "ทะเบียนรถขก 4471") is normally
@@ -949,7 +989,8 @@ def detect_fp(text: str) -> list[Entity]:
 
     # 4. EMAIL
     for m in _RE_EMAIL.finditer(text):
-        candidates.append(_make_entity("EMAIL", m, text, score=1.0))
+        start, end = m.span(1)
+        candidates.append(_entity_at("EMAIL", text, _skip_glued_phone(text, start), end))
 
     # 5. PHONE (mobile, landline, international)
     for pattern in (_RE_PHONE_MOBILE, _RE_PHONE_LANDLINE, _RE_PHONE_INTL):
@@ -1289,7 +1330,7 @@ def detect_fp(text: str) -> list[Entity]:
     # Juristic IDs share the Thai-ID checksum and span, so only their cue differs.
     candidates = _disambiguate_thai_juristic(text, candidates)
     for match in _RE_DRIVER_LICENSE.finditer(text):
-        if _cue_before(_DRIVER_CUE_RE, text, match.start(1)):
+        if _driver_cue_before(text, match.start(1)):
             candidates.append(_make_entity("DRIVER_LICENSE", match, text, score=0.9))
     for match in _RE_LINE_ID.finditer(text):
         candidates.append(_make_entity("LINE_ID", match, text, score=0.9))
