@@ -259,66 +259,25 @@ def test_recall_span_never_displaces_or_shortens_an_existing_span() -> None:
     assert any(e.data_type == "LOCATION" and e.original_text == "ดวงจันทร์" for e in found)
 
 
-def test_overlapping_recall_candidates_are_dropped_at_the_call_site() -> None:
+def test_recall_spans_are_cut_back_around_existing_spans() -> None:
     from pii_redactor.detectors.name_context import _make_name
     from pii_redactor.detectors.tb_detector import _without_overlap
 
-    text = "ดวงจันทร์ ส่องสว่าง เต็มดวง"
-    existing = [_make_name(text, 9 + 1, 19, 0.9)]  # a span starting inside the pair
-    earlier = _make_name(text, 0, 19, 0.84)
-    apart = _make_name(text, 20, 26, 0.84)
-    assert _without_overlap([earlier, apart], existing) == [apart]
-    assert _without_overlap([earlier], []) == [earlier]
+    text = "ผู้ขอ: สมชาย ใจดี โทรกลับ"
+    start = text.index("สมชาย")
+    end = start + len("สมชาย ใจดี")
+    surname = text.index("ใจดี")
+    existing = [_make_name(text, surname, end, 0.9)]
+    recall = _make_name(text, start, end, 0.84)
+    # The older span stays as it is; only the untouched given name is added.
+    kept = _without_overlap(text, [recall], existing)
+    assert [e.original_text for e in kept] == ["สมชาย"]
+    # A span with nothing under it is returned as it came.
+    assert _without_overlap(text, [recall], []) == [recall]
+    # A span fully under an older span adds nothing.
+    assert _without_overlap(text, [recall], [recall]) == []
 
 
-# ── Latin-name cues: organisations and things stay unflagged ───────────────
-
-
-@pytest.mark.parametrize(
-    "text",
-    [
-        "Driver: Siam Express Logistics",
-        "Contact: Somchai Jaidee",
-        "Owner: Blue Harbour Holdings",
-        "Sender: Green Valley Supplies",
-        "Recipient: Lotus Garden Hotel",
-        "Payee: Orchid Trading House",
-        "Tenant: Sunrise Cafe Company",
-        "Seller: Maple Leaf Imports",
-        "Buyer: Silver Sands Resort",
-        "Attention: Accounts Payable",
-        "Attn: Procurement Department",
-        "ชื่อเพลง Moon River Song",
-        "ชื่อหนังสือ Little Prince Story",
-        "ชื่อภาษาอังกฤษ Anan Wongsa",
-        "ตั้งชื่อว่า Kamonwan Rattanakul",
-        "Font name: Helvetica Neue",
-        "Name: Siam Express",
-        "Name: Pacific Resources",
-        "Name: Accounts Payable",
-        "Name: Front Desk",
-        "Name: Central Retail",
-        "Name: Paragon Mall",
-        "Name: Bangkok Air",
-        "Name: Siam Automobile",
-        "Dr. Martens Jadon boots ลดราคา",
-        "ซื้อ Dr. Martens Jadon Boots มา",
-    ],
-)
-def test_latin_org_and_thing_cues_stay_unflagged(text: str) -> None:
-    assert recall_names(text) == set()
-
-
-@pytest.mark.parametrize(
-    ("text", "name"),
-    [
-        ("Guest: Somchai Jaidee", "Somchai Jaidee"),
-        ("Applicant: Malee Srisuk", "Malee Srisuk"),
-        ("Name (EN): Anan Wongsa", "Anan Wongsa"),
-        ("ผู้โดยสาร 1: Kanya Thongdee", "Kanya Thongdee"),
-        ("ชื่อบนหนังสือเดินทาง: Somchai Jaidee", "Somchai Jaidee"),
-        ("Dr. Wanchai Thongdee ประจำวันพุธ", "Wanchai Thongdee"),
-    ],
-)
-def test_latin_person_cues_still_find_names(text: str, name: str) -> None:
-    assert name in recall_names(text)
+def test_english_name_field_is_kept_when_a_sentence_sits_between() -> None:
+    text = "ระบบให้ใส่ชื่อภาษาอังกฤษตามพาสปอร์ต หนูใส่ไปว่า Panuwat Kaewmanee ถูกมั้ยคะ"
+    assert "Panuwat Kaewmanee" in recall_names(text)

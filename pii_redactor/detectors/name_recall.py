@@ -76,8 +76,8 @@ _TH_NON_PERSON_NAME_RE = re.compile(
     r"|อาคาร|หมู่บ้าน|ถนน|ซอย|แอป|โปรแกรม|อุปกรณ์|กิจการ|ห้าง|นิติบุคคล|ยี่ห้อ"
     r"|ผลิตภัณฑ์|เข้าใช้|ตำแหน่ง|แผนก|ฝ่าย|ห้อง|เมือง|จังหวัด|ประเทศ|เพลง|หนังสือ(?!เดินทาง)"
 )
-# "ชื่อภาษาอังกฤษ" straight after ชื่อ is a bare field label, not a person cue.
-_TH_NON_PERSON_GAP_START_RE = re.compile(r"[ \t]*ภาษาอังกฤษ")
+# "ชื่อภาษาอังกฤษ" alone after ชื่อ is a bare field label, not a person cue.
+_TH_NON_PERSON_GAP_START_RE = re.compile(r"[ \t]*ภาษาอังกฤษ[ \t]*")
 # ผู้-roles that are usually a company.
 _TH_ORG_ROLES = r"ผลิต|ให้บริการ|จัดจำหน่าย|นำเข้า|ส่งออก|พัฒนา|สนับสนุน|ใช้|จัดงาน|รับเหมา"
 
@@ -166,7 +166,7 @@ def _latin_label_names(text: str) -> list[Entity]:
         if match.group("lead").endswith(_TH_NAME_LABEL_LEAD_STOP):
             continue
         gap = match.group("gap")
-        if _TH_NON_PERSON_NAME_RE.search(gap) or _TH_NON_PERSON_GAP_START_RE.match(gap):
+        if _TH_NON_PERSON_NAME_RE.search(gap) or _TH_NON_PERSON_GAP_START_RE.fullmatch(gap):
             continue
         if _latin_name_ok(match.group("name")):
             spans.add(match.span("name"))

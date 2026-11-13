@@ -1304,9 +1304,9 @@ def _detect_tb_scanned(
     # Names the CRF does not tag: Latin script, and Thai names with no title.
     from pii_redactor.detectors.name_recall import detect_name_recall
 
-    # A recall span that touches any span already found is dropped, so it can
-    # never displace or shorten what the CRF and the cue passes produced.
-    candidates.extend(_without_overlap(detect_name_recall(text), candidates))
+    # Recall spans are cut back around spans already found, so they never
+    # displace or shorten what the CRF and the cue passes produced.
+    candidates.extend(_without_overlap(text, detect_name_recall(text), candidates))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
             text,
@@ -1321,15 +1321,38 @@ def _detect_tb_scanned(
     return _deduplicate(candidates)
 
 
-def _without_overlap(extra: list[Entity], existing: list[Entity]) -> list[Entity]:
-    """Keep only the spans in ``extra`` that overlap nothing in ``existing``."""
-    return [
-        item
-        for item in extra
-        if not any(
-            item.span[0] < other.span[1] and other.span[0] < item.span[1] for other in existing
-        )
-    ]
+def _without_overlap(text: str, extra: list[Entity], existing: list[Entity]) -> list[Entity]:
+    """Cut every span in ``extra`` back to the part no ``existing`` span touches.
+
+    A span another layer produced is never replaced or shortened. A name the
+    CRF tagged only in part ("พูลสวัสดิ์" of "พงศกร พูลสวัสดิ์") keeps its
+    span, and the untouched rest is added next to it so it is still masked.
+    """
+    from pii_redactor.detectors.name_context import _make_name
+
+    taken = sorted(other.span for other in existing)
+    kept: list[Entity] = []
+    for item in extra:
+        start, end = item.span
+        pieces = [(start, end)]
+        for lo, hi in taken:
+            cut: list[tuple[int, int]] = []
+            for a, b in pieces:
+                if hi <= a or b <= lo:
+                    cut.append((a, b))
+                    continue
+                if a < lo:
+                    cut.append((a, lo))
+                if hi < b:
+                    cut.append((hi, b))
+            pieces = cut
+        for a, b in pieces:
+            raw = text[a:b]
+            lead = len(raw) - len(raw.lstrip())
+            a, b = a + lead, b - (len(raw) - len(raw.rstrip()))
+            if b - a >= 2:
+                kept.append(item if (a, b) == (start, end) else _make_name(text, a, b, item.score))
+    return kept
 
 
 @minimize_failure_frames
