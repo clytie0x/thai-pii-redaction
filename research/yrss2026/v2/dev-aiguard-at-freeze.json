@@ -1,0 +1,243 @@
+{
+  "bootstrap": {
+    "interval": "95% percentile",
+    "resamples": 1000,
+    "seed": 0,
+    "unit": "family"
+  },
+  "corpus": {
+    "documents": 300,
+    "entities": 1188,
+    "families": 100,
+    "negative_documents": 60,
+    "plaintext_sha256": "790894f71d9543348c0adfcf2cf3efa182985b681e2c8975fab052d109505507",
+    "seed": 20261113,
+    "version": "yrss-eval-v2"
+  },
+  "environment": {
+    "file_sha256": {
+      "benchmark/blind_v2/score.py": "b944df91cbade7c20216afcee0133f500910f329b3a9aed9edc10868ca7cb752",
+      "benchmark/blind_v2/ablate.py": "b2a2fa7a713ee0ade21d64a3df499f4a200dfc562ac94d4e68cbe5bcd208a6e6",
+      "benchmark/blind.py": "09ebc39793a9c52eca59b4f2784eea4d78dfc8ea68a447860b0a8b7c9e8b1ad5",
+      "benchmark/blind_v2/baselines.py": "da39d257db07e38a562ea3d9f17ac14fac2d4aab89769324a81d38531845ad42",
+      "benchmark/yrss_v2/stats.py": "7a20d9214a35ed244ff62165714a063b137a37392ec434b3809bb8722c44dd83",
+      "benchmark/yrss_v2/systems.py": "2c0569ce35d4d8caaec4bfcf03e0cd2f6d6cda054f61788a5ef6d1640e43d276",
+      "benchmark/yrss_v2/harness.py": "78f9ebb883da474807f4629241d9b859de92ebc96b5e69a23117dfb1efc8f463",
+      "benchmark/yrss_v2/corpus.py": "dea91360150ede3e8615136436ac5e142cf4d7a68d1da53896c091d61266bed2",
+      "benchmark/yrss_v2/values.py": "05762b4d99af71d159410866012395420d7e930a0c01ae600f0733bab7b50210",
+      "benchmark/yrss_v2/llm_openai.py": "28674758973be656c302ecb00e71f95fdbc5d4ad40facdc1ee9d6b31267d3912"
+    },
+    "git_commit": "789cff82598960aa6a7b6478ceb7c67cdf711944",
+    "git_dirty": false,
+    "packages": {
+      "pythainlp": "5.3.4",
+      "python-crfsuite": "0.9.12"
+    },
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.12",
+    "scorer_sha256": "b944df91cbade7c20216afcee0133f500910f329b3a9aed9edc10868ca7cb752"
+  },
+  "paired": {
+    "comparisons": {},
+    "direction": "aiguard minus system",
+    "holm_alpha": 0.05,
+    "holm_family": [],
+    "holm_view": "all",
+    "reference": "aiguard"
+  },
+  "protocol": "docs/decisions/2026-11-13-yrss-eval-v2.md",
+  "scheme": [
+    "THAI_ID",
+    "PHONE",
+    "EMAIL",
+    "BANK_ACCOUNT",
+    "CREDIT_CARD",
+    "PASSPORT",
+    "VEHICLE_PLATE",
+    "DRIVER_LICENSE",
+    "NAME",
+    "ADDRESS",
+    "DATE_OF_BIRTH"
+  ],
+  "split": "dev",
+  "systems": {
+    "aiguard": {
+      "by_type": {
+        "THAI_ID": {
+          "n": 72,
+          "tp": 72,
+          "fp": 15,
+          "fn": 0,
+          "precision": 0.8275862068965517,
+          "recall": 1.0,
+          "f1": 0.9056603773584906,
+          "f2": 0.9600000000000002
+        },
+        "PHONE": {
+          "n": 129,
+          "tp": 129,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.9923076923076923,
+          "recall": 1.0,
+          "f1": 0.9961389961389961,
+          "f2": 0.9984520123839009
+        },
+        "EMAIL": {
+          "n": 87,
+          "tp": 87,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "BANK_ACCOUNT": {
+          "n": 75,
+          "tp": 75,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CREDIT_CARD": {
+          "n": 54,
+          "tp": 54,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "PASSPORT": {
+          "n": 54,
+          "tp": 54,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "VEHICLE_PLATE": {
+          "n": 72,
+          "tp": 71,
+          "fp": 2,
+          "fn": 1,
+          "precision": 0.9726027397260274,
+          "recall": 0.9861111111111112,
+          "f1": 0.9793103448275863,
+          "f2": 0.9833795013850417
+        },
+        "DRIVER_LICENSE": {
+          "n": 48,
+          "tp": 48,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "NAME": {
+          "n": 438,
+          "tp": 412,
+          "fp": 68,
+          "fn": 26,
+          "precision": 0.8583333333333333,
+          "recall": 0.9406392694063926,
+          "f1": 0.8976034858387799,
+          "f2": 0.9229390681003583
+        },
+        "ADDRESS": {
+          "n": 81,
+          "tp": 81,
+          "fp": 5,
+          "fn": 0,
+          "precision": 0.9418604651162791,
+          "recall": 1.0,
+          "f1": 0.970059880239521,
+          "f2": 0.9878048780487807
+        },
+        "DATE_OF_BIRTH": {
+          "n": 78,
+          "tp": 78,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        }
+      },
+      "latency_ms": {
+        "p50": 6.39940000110073,
+        "p95": 21.026999998866813
+      },
+      "negative": {
+        "documents": 60,
+        "clean_docs": 0,
+        "false_positives": 176
+      },
+      "out_of_scheme_false_positives": 411,
+      "views": {
+        "all": {
+          "tp": 1161,
+          "fp": 502,
+          "fn": 27,
+          "precision": 0.6981358989777511,
+          "recall": 0.9772727272727273,
+          "f1": 0.8144510698000701,
+          "f2": 0.9049103663289165,
+          "f2_ci": [
+            0.8843897017787564,
+            0.9229284409730006
+          ]
+        },
+        "shared11": {
+          "tp": 1161,
+          "fp": 91,
+          "fn": 27,
+          "precision": 0.9273162939297125,
+          "recall": 0.9772727272727273,
+          "f1": 0.951639344262295,
+          "f2": 0.9668554297135243,
+          "f2_ci": [
+            0.9539354952588965,
+            0.97868410523404
+          ]
+        },
+        "structured": {
+          "tp": 590,
+          "fp": 18,
+          "fn": 1,
+          "precision": 0.9703947368421053,
+          "recall": 0.9983079526226735,
+          "f1": 0.9841534612176815,
+          "f2": 0.9925975773889636,
+          "f2_ci": [
+            0.9865741630538737,
+            0.9973410821088903
+          ]
+        },
+        "contextual": {
+          "tp": 571,
+          "fp": 73,
+          "fn": 26,
+          "precision": 0.8866459627329193,
+          "recall": 0.9564489112227805,
+          "f1": 0.9202256244963739,
+          "f2": 0.9416226912928758,
+          "f2_ci": [
+            0.9163403033250316,
+            0.963915265832725
+          ]
+        }
+      }
+    }
+  }
+}
