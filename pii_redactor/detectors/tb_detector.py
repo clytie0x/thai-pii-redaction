@@ -1301,6 +1301,10 @@ def _detect_tb_scanned(
     # A conjunction right after an accepted NAME introduces the NEXT person
     # in the same list; the CRF stops at และ and that name shipped unmasked.
     candidates.extend(detect_conjunction_names(text, candidates))
+    # Names the CRF does not tag: Latin script, and Thai names with no title.
+    from pii_redactor.detectors.name_recall import detect_name_recall
+
+    candidates.extend(detect_name_recall(text))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
             text,
