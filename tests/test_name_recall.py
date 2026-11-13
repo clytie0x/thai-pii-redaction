@@ -259,23 +259,20 @@ def test_recall_span_never_displaces_or_shortens_an_existing_span() -> None:
     assert any(e.data_type == "LOCATION" and e.original_text == "ดวงจันทร์" for e in found)
 
 
-def test_recall_spans_are_cut_back_around_existing_spans() -> None:
+def test_overlapping_recall_candidates_are_dropped_at_the_call_site() -> None:
     from pii_redactor.detectors.name_context import _make_name
     from pii_redactor.detectors.tb_detector import _without_overlap
 
-    text = "ผู้ขอ: สมชาย ใจดี โทรกลับ"
+    text = "ผู้ขอ: สมชาย ใจดี โทรกลับ 0000"
     start = text.index("สมชาย")
-    end = start + len("สมชาย ใจดี")
     surname = text.index("ใจดี")
-    existing = [_make_name(text, surname, end, 0.9)]
+    end = surname + len("ใจดี")
+    older = _make_name(text, surname, end, 0.9)
     recall = _make_name(text, start, end, 0.84)
-    # The older span stays as it is; only the untouched given name is added.
-    kept = _without_overlap(text, [recall], existing)
-    assert [e.original_text for e in kept] == ["สมชาย"]
-    # A span with nothing under it is returned as it came.
-    assert _without_overlap(text, [recall], []) == [recall]
-    # A span fully under an older span adds nothing.
-    assert _without_overlap(text, [recall], [recall]) == []
+    apart = _make_name(text, end + 1, end + 6, 0.84)
+    # The older span is untouched and the overlapping recall span is dropped.
+    assert _without_overlap([recall, apart], [older]) == [apart]
+    assert _without_overlap([recall], []) == [recall]
 
 
 def test_english_name_field_is_kept_when_a_sentence_sits_between() -> None:
