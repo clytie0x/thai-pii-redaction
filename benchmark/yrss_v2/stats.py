@@ -14,7 +14,7 @@ from benchmark.blind_v2.score import score_predictions
 
 from .types import CONTEXTUAL_TYPES, SCHEME_TYPES, STRUCTURED_TYPES
 
-VIEWS = ("all", "structured", "contextual")
+VIEWS = ("all", "shared11", "structured", "contextual")
 N_RESAMPLES = 1000
 SEED = 0
 
@@ -24,6 +24,7 @@ Metric = Callable[[int, int, int], float]
 
 _VIEW_TYPES = {
     "all": SCHEME_TYPES,
+    "shared11": SCHEME_TYPES,
     "structured": STRUCTURED_TYPES,
     "contextual": CONTEXTUAL_TYPES,
 }
@@ -77,6 +78,10 @@ def view_counts(
 
     ``all``: the eleven scheme types. A prediction of any other type is a false
     positive (the unrestricted view of the protocol).
+
+    ``shared11``: the same eleven types, but a prediction of any other type is
+    ignored. This scores label-aligned output only, as the protocol asks beside
+    the unrestricted view.
 
     ``structured`` and ``contextual``: gold and predictions are both cut down to
     that group. A prediction of a type outside the group is ignored here, not

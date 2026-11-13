@@ -319,7 +319,7 @@ def test_report_scores_each_system_in_each_view():
     assert report["corpus"]["documents"] == 8
     assert report["corpus"]["families"] == 4
     full = report["systems"]["aiguard"]
-    assert set(full["views"]) == {"all", "structured", "contextual"}
+    assert set(full["views"]) == set(stats.VIEWS)
     for view in full["views"].values():
         assert view["f2"] == 1.0 and view["fp"] == 0 and view["fn"] == 0
         assert view["f2_ci"] == [1.0, 1.0]
@@ -369,7 +369,7 @@ def test_report_pairs_every_other_system_against_aiguard():
     assert paired["holm_view"] == "all"
     assert set(paired["comparisons"]) == {"regex", "crf-ner", "aiguard-no-tb"}
     regex = paired["comparisons"]["regex"]
-    assert set(regex) == {"all", "structured", "contextual"}
+    assert set(regex) == set(stats.VIEWS)
     assert regex["all"]["f2_difference"] > 0
     assert regex["all"]["f2_ci"][0] <= regex["all"]["f2_difference"] <= regex["all"]["f2_ci"][1]
     assert regex["structured"]["f2_difference"] == 0.0
@@ -515,3 +515,11 @@ def test_cli_writes_the_report(monkeypatch, tmp_path, capsys):
     }
     assert json.loads(out.read_text(encoding="utf-8"))["split"] == "unit"
     assert "aiguard" in capsys.readouterr().out
+
+
+def test_shared11_view_ignores_out_of_scheme_predictions():
+    doc = render(Template("t-p-900", "test", False, "ติดต่อ {{name}} โทร {{phone}}"), 0, seed=2)
+    name, phone = doc.spans
+    predictions = [[(name.start, name.end, "NAME"), (phone.start, phone.end, "ORGANIZATION")]]
+    assert stats.total(stats.view_counts([doc], predictions, "all")) == (1, 1, 1)
+    assert stats.total(stats.view_counts([doc], predictions, "shared11")) == (1, 0, 1)
