@@ -21,7 +21,7 @@ Poster day is 24 November 2026.
 ## Dev results so far (development set, not accuracy evidence)
 
 Files in this folder. `dev-baseline.json` is the detector before any change.
-`dev-after-fixes.json` is the detector at handoff. The two `dev-llm-*` files
+`dev-after-fixes.json` is the detector at handoff. The four `dev-llm-*` files
 were run one commit set earlier, so their `aiguard` row is slightly older
 than `dev-after-fixes.json`; their `llm` rows are valid.
 
@@ -36,9 +36,11 @@ than `dev-after-fixes.json`; their `llm` rows are valid.
 - AI Guard is about 100 to 400 times faster (about 11 ms against 1.2 to 4 s
   per document) and needs no GPU or network.
 - The size of `psu-gemma` and `psu-qwen` is unknown. Ask the dotBlue admins.
-- Two more dev runs (`qwen/qwen3.8-27b`, `PSU-LLM2/psu-qwen`) were still
-  running in the cloud session at handoff and are not saved here. Rerun them
-  if wanted.
+- `PSU-LLM2/psu-qwen` all-view F2 0.992, about 14 s per document.
+- `qwen/qwen3.8-27b` all-view F2 0.905, with p95 latency near 60 s. Treat
+  this row as unreliable: the four `dev-llm-*` files were written before the
+  harness recorded request failures, so a timed-out request cannot be told
+  apart from a real miss. Rerun it before citing it.
 
 So "the hybrid is more accurate than an LLM" is not supported and must not be
 written. The supported case for the hybrid is privacy (no data leaves the
