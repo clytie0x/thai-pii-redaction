@@ -22,7 +22,7 @@ import re
 from functools import lru_cache
 from importlib.resources import files
 
-from pythainlp.corpus import thai_family_names, thai_female_names, thai_male_names
+from pythainlp.corpus import thai_family_names, thai_female_names, thai_male_names, thai_words
 
 from pii_redactor.detectors.name_context import (
     _LATIN_ORG_STOP,
@@ -203,12 +203,13 @@ def _thai_lexicon_names(text: str) -> list[Entity]:
         return []
     # PyThaiNLP keeps these sets itself, so nothing is copied here.
     female, male, family = thai_female_names(), thai_male_names(), thai_family_names()
+    given = female | male
     found: list[Entity] = []
     for (start, mid), (mid2, end) in zip(runs, runs[1:], strict=False):
         if text[mid:mid2] not in (" ", "\t"):
             continue
         first, last = text[start:mid], text[mid2:end]
-        if not (first in female or first in male) or len(last) > _MAX_FAMILY_CHARS:
+        if first not in given or len(last) > _MAX_FAMILY_CHARS:
             continue
         if first in _TITLES or not (_is_name_token(first) and _is_name_token(last)):
             continue
@@ -216,12 +217,49 @@ def _thai_lexicon_names(text: str) -> list[Entity]:
         if last in family:
             if first in everyday and last in everyday:
                 continue
+            if not _has_name_evidence(text, start, end) and _looks_like_plain_words(
+                first, last, everyday, given
+            ):
+                continue
         elif first in everyday or not _after_name_word(text, start):
             continue
         if is_non_person_segment(text[start:end]):
             continue
         found.append(_make_name(text, start, end, _SCORE))
     return found
+
+
+# Words just before a pair that say a person follows: a title, ชื่อ, or a
+# person-role noun. Without one, an everyday pair is far more likely prose.
+_NAME_EVIDENCE_BEFORE_RE = re.compile(
+    r"(?:นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง|คุณ|ชื่อ|นามสกุล|ผู้[ก-๛]{2,10}"
+    r"|ลูกค้า|พยาน|เจ้าของ|พนักงาน|นักเรียน|นักศึกษา|อาจารย์|ครู|หมอ|นพ\.|พญ\.|ดร\.|จำเลย|โจทก์"
+    r"|สมาชิก|ผู้ป่วย|เจ้าหน้าที่)[ \t:：]*$"
+)
+_NAME_EVIDENCE_WINDOW = 40
+# A national ID or an email on the same line makes it a person record.
+_RECORD_CONTEXT_RE = re.compile(r"[0-9]{1}-?[0-9]{4}-?[0-9]{5}-?[0-9]{2}-?[0-9]|[\w.+-]+@[\w-]+\.\w+")
+
+
+def _has_name_evidence(text: str, start: int, end: int) -> bool:
+    before = text[max(0, start - _NAME_EVIDENCE_WINDOW) : start]
+    before = before.rsplit("\n", 1)[-1]
+    if _NAME_EVIDENCE_BEFORE_RE.search(before):
+        return True
+    line_start = text.rfind("\n", 0, start) + 1
+    line_end = text.find("\n", end)
+    line = text[line_start : len(text) if line_end < 0 else line_end]
+    return bool(_RECORD_CONTEXT_RE.search(line))
+
+
+def _looks_like_plain_words(first: str, last: str, everyday: frozenset[str], given: set[str]) -> bool:
+    """An untitled pair that reads as two ordinary words, not a name."""
+    if first in everyday:
+        return True
+    plain = thai_words()
+    # Two dictionary words where the second is also everyday or a given name
+    # ("อุทัย ธานี", "สมหวัง สมใจ") is a place or a wish, not a surname.
+    return first in plain and last in plain and (last in everyday or last in given)
 
 
 def _after_name_word(text: str, start: int) -> bool:

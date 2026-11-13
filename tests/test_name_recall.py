@@ -137,3 +137,135 @@ def test_new_spans_never_replace_an_older_span() -> None:
     found = [e for e in detect_all(text) if e.data_type == "NAME"]
     assert len(found) == 1
     assert "สุดารัตน์ ทองดี" in found[0].original_text
+
+
+# ── spaced ordinary Thai is not a name ─────────────────────────────────────
+
+_ORDINARY_SPACED_THAI = [
+    # Pairs where the first word is also an everyday word.
+    "ประเภท ออมทรัพย์",
+    "กำไร เพิ่มขึ้น 12% จากปีก่อน",
+    "ผล เพิ่มขึ้น ต่อเนื่อง",
+    "คะแนน ปานกลาง",
+    "คุณภาพ ปานกลาง",
+    "กุหลาบ สีแดง ช่อละ 350 บาท",
+    "ต้มยำ กุ้ง ปลาทอง ผัดไทย",
+    "ตะวัน ส่องแสง ยามเช้า",
+    "ดวงจันทร์ ส่องสว่าง",
+    # Place names and wishes written with a space.
+    "อุดร ธานี หนองคาย",
+    "อุทัย ธานี และ ชัยนาท",
+    "สาขา อุทัย ธานี โทร 02-000-0000",
+    "สาทร ธานี อาคาร 2",
+    "ขอให้ สมหวัง สมใจ",
+    "โชคดี มีชัย ตลอดปี",
+    # Menus, headers, headlines, product attributes, greetings.
+    "ข้าว ผัดกะเพรา ไข่ดาว",
+    "ส้มตำ ไทย ปูปลาร้า",
+    "กาแฟ เย็น หวานน้อย",
+    "ชา เขียว ไม่ใส่น้ำแข็ง",
+    "รายการ สินค้า คงเหลือ",
+    "ยอด ขาย รวม",
+    "ค่า ธรรมเนียม ธนาคาร",
+    "อัตรา ดอกเบี้ย สูงสุด",
+    "ข่าว ด่วน วันนี้",
+    "เศรษฐกิจ ไทย ฟื้นตัว",
+    "หุ้น ไทย ปิดบวก",
+    "ราคา ทอง ปรับขึ้น",
+    "น้ำมัน ดีเซล ลดราคา",
+    "สี ขาว ไซส์ L",
+    "วัสดุ ผ้า ฝ้าย",
+    "น้ำหนัก สุทธิ 500 กรัม",
+    "ขนาด ใหญ่ พิเศษ",
+    "รสชาติ เข้มข้น ถูกปาก",
+    "สวัสดี ปีใหม่ ครับ",
+    "ขอบคุณ ครับ ผม",
+    "ยินดี ต้อนรับ สู่เชียงใหม่",
+    "อวยพร ปีใหม่ สุขสันต์",
+    "เชียงราย เมือง งาม",
+    "นครปฐม เมือง เก่า",
+    "ประจวบ คีรีขันธ์ หัวหิน",
+    "สมุทร ปราการ บางพลี",
+    "สมุทร สาคร มหาชัย",
+    "พระ นคร ศรีอยุธยา",
+    "บาง กะปิ ห้วยขวาง",
+    "แสง จันทร์ ส่องฟ้า",
+    "เงิน เดือน ขึ้น ปีหน้า",
+    "สุขภาพ ดี ทุกวัน",
+    "บ้าน สวย ราคาถูก",
+    "ห้อง พัก รายวัน",
+    "เวลา ทำการ จันทร์ ถึง ศุกร์",
+    "กำหนด ส่ง งาน พรุ่งนี้",
+    "ประกาศ ผล สอบ",
+    "คะแนน เฉลี่ย สูงสุด",
+    "ผลงาน ดีเด่น ประจำปี",
+    "เทศกาล ลอยกระทง งาม",
+    "ดอกไม้ สด ช่อละ 200",
+]
+
+
+@pytest.mark.parametrize("text", _ORDINARY_SPACED_THAI)
+def test_ordinary_spaced_thai_is_not_a_name(text: str) -> None:
+    assert recall_names(text) == set()
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "คะแนน ปานกลาง",
+        "ดวงจันทร์ ส่องสว่าง เต็มดวง",
+        "อุทัย ธานี และ ชัยนาท",
+        "ขอให้ สมหวัง สมใจ",
+    ],
+)
+def test_ordinary_spaced_thai_is_not_a_name_in_the_product(text: str) -> None:
+    assert "NAME" not in {e.data_type for e in detect_all(text)}
+
+
+@pytest.mark.parametrize(
+    ("text", "name"),
+    [
+        ("ให้ สมชาย ใจดี มารับของที่เคาน์เตอร์", "สมชาย ใจดี"),
+        ("ส่งพัสดุถึง กาญจนา แก้วมณี ภายในวันศุกร์", "กาญจนา แก้วมณี"),
+        ("ผู้ขับขี่คือ ธนากร วงศ์สวัสดิ์ ตามที่แจ้งไว้", "ธนากร วงศ์สวัสดิ์"),
+        ("เอกสารฉบับนี้ของ ปิยะพงษ์ สุขสวัสดิ์ ครบแล้ว", "ปิยะพงษ์ สุขสวัสดิ์"),
+        ("ติดต่อ อรุณี จันทร์เพ็ญ ได้ทุกวัน", "อรุณี จันทร์เพ็ญ"),
+        ("แพทย์ผู้ตรวจคือ สุชาติ มั่นคง เมื่อเช้า", "สุชาติ มั่นคง"),
+        ("เจ้าของรถคือ ประยุทธ แสนสุข ตามเล่ม", "ประยุทธ แสนสุข"),
+        ("ผู้สมัครคือ อนุชา ทับทิม ครบถ้วน", "อนุชา ทับทิม"),
+        ("บัญชีนี้เปิดโดย รัตนา สิงห์ทอง เมื่อปีก่อน", "รัตนา สิงห์ทอง"),
+        ("ยืนยันตัวตน พิชิต ทองสุข แล้ว", "พิชิต ทองสุข"),
+        ("พนักงานขายชื่อ จิราพร วงศ์ใหญ่ ประจำสาขา", "จิราพร วงศ์ใหญ่"),
+        ("ขอสายตรงถึง พัชรี ดวงแก้ว หน่อย", "พัชรี ดวงแก้ว"),
+        ("ผู้ป่วยรายนี้ชื่อ ทิพวรรณ ศรีวงษ์ อายุ 45", "ทิพวรรณ ศรีวงษ์"),
+        ("พี่ชายของฉันคือ อดิศักดิ์ ทองคำ", "อดิศักดิ์ ทองคำ"),
+        # Name evidence in front keeps a pair whose words are everyday.
+        ("ลูกค้าชื่อ สมหวัง สมใจ มารับสินค้า", "สมหวัง สมใจ"),
+        ("คุณ ประเสริฐ ศรีสุข ได้รับอนุมัติแล้ว", "ประเสริฐ ศรีสุข"),
+    ],
+)
+def test_untitled_thai_names_survive_the_everyday_word_guard(text: str, name: str) -> None:
+    assert name in recall_names(text)
+
+
+# ── a recall span never displaces another layer's span ────────────────────
+
+
+def test_recall_span_never_displaces_or_shortens_an_existing_span() -> None:
+    text = "ดวงจันทร์ ส่องสว่าง เต็มดวง"
+    found = detect_all(text)
+    assert not any(e.data_type == "NAME" for e in found)
+    # The earlier span keeps its label and its full extent.
+    assert any(e.data_type == "LOCATION" and e.original_text == "ดวงจันทร์" for e in found)
+
+
+def test_overlapping_recall_candidates_are_dropped_at_the_call_site() -> None:
+    from pii_redactor.detectors.name_context import _make_name
+    from pii_redactor.detectors.tb_detector import _without_overlap
+
+    text = "ดวงจันทร์ ส่องสว่าง เต็มดวง"
+    existing = [_make_name(text, 9 + 1, 19, 0.9)]  # a span starting inside the pair
+    earlier = _make_name(text, 0, 19, 0.84)
+    apart = _make_name(text, 20, 26, 0.84)
+    assert _without_overlap([earlier, apart], existing) == [apart]
+    assert _without_overlap([earlier], []) == [earlier]

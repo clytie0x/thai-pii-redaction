@@ -1304,7 +1304,9 @@ def _detect_tb_scanned(
     # Names the CRF does not tag: Latin script, and Thai names with no title.
     from pii_redactor.detectors.name_recall import detect_name_recall
 
-    candidates.extend(detect_name_recall(text))
+    # A recall span that touches any span already found is dropped, so it can
+    # never displace or shorten what the CRF and the cue passes produced.
+    candidates.extend(_without_overlap(detect_name_recall(text), candidates))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
             text,
@@ -1317,6 +1319,15 @@ def _detect_tb_scanned(
 
     # Deduplication
     return _deduplicate(candidates)
+
+
+def _without_overlap(extra: list[Entity], existing: list[Entity]) -> list[Entity]:
+    """Keep only the spans in ``extra`` that overlap nothing in ``existing``."""
+    return [
+        item
+        for item in extra
+        if not any(item.span[0] < other.span[1] and other.span[0] < item.span[1] for other in existing)
+    ]
 
 
 @minimize_failure_frames
