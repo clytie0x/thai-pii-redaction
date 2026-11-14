@@ -1,0 +1,502 @@
+{
+  "bootstrap": {
+    "interval": "95% percentile",
+    "resamples": 1000,
+    "seed": 0,
+    "unit": "family"
+  },
+  "corpus": {
+    "documents": 800,
+    "entities": 2168,
+    "families": 200,
+    "negative_documents": 160,
+    "plaintext_sha256": "271c7f27aab3370121f4297a54227cd4c71efcaf1685eed1306c61ee3696dda2",
+    "seed": 20261114,
+    "version": "yrss-eval-v2"
+  },
+  "environment": {
+    "file_sha256": {
+      "benchmark/blind_v2/score.py": "b944df91cbade7c20216afcee0133f500910f329b3a9aed9edc10868ca7cb752",
+      "benchmark/blind_v2/ablate.py": "b2a2fa7a713ee0ade21d64a3df499f4a200dfc562ac94d4e68cbe5bcd208a6e6",
+      "benchmark/blind.py": "09ebc39793a9c52eca59b4f2784eea4d78dfc8ea68a447860b0a8b7c9e8b1ad5",
+      "benchmark/blind_v2/baselines.py": "a8f25437f865100916626ee394ad7c3511684cf171042aa84fa758d1d876c8c5",
+      "benchmark/yrss_v2/stats.py": "7a20d9214a35ed244ff62165714a063b137a37392ec434b3809bb8722c44dd83",
+      "benchmark/yrss_v2/systems.py": "2c0569ce35d4d8caaec4bfcf03e0cd2f6d6cda054f61788a5ef6d1640e43d276",
+      "benchmark/yrss_v2/harness.py": "78f9ebb883da474807f4629241d9b859de92ebc96b5e69a23117dfb1efc8f463",
+      "benchmark/yrss_v2/corpus.py": "dea91360150ede3e8615136436ac5e142cf4d7a68d1da53896c091d61266bed2",
+      "benchmark/yrss_v2/values.py": "05762b4d99af71d159410866012395420d7e930a0c01ae600f0733bab7b50210",
+      "benchmark/yrss_v2/llm_openai.py": "28674758973be656c302ecb00e71f95fdbc5d4ad40facdc1ee9d6b31267d3912"
+    },
+    "git_commit": "6068c836844c35a96e5aca17945aee0950fa0caa",
+    "git_dirty": false,
+    "packages": {
+      "pythainlp": "5.3.4",
+      "python-crfsuite": "0.9.12"
+    },
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.12",
+    "scorer_sha256": "b944df91cbade7c20216afcee0133f500910f329b3a9aed9edc10868ca7cb752"
+  },
+  "paired": {
+    "comparisons": {
+      "llm": {
+        "all": {
+          "f2_difference": 0.04149489383203919,
+          "f2_ci": [
+            0.022521353591891037,
+            0.06034656566386922
+          ],
+          "p_value": 0.000999000999000999,
+          "p_holm": 0.000999000999000999,
+          "recall_difference": 0.0797970479704797,
+          "recall_ci": [
+            0.05857964899340515,
+            0.10029247182387817
+          ]
+        },
+        "shared11": {
+          "f2_difference": 0.07713753539122947,
+          "f2_ci": [
+            0.057913898512449734,
+            0.09712528477943379
+          ],
+          "p_value": 0.000999000999000999,
+          "p_holm": null,
+          "recall_difference": 0.0797970479704797,
+          "recall_ci": [
+            0.05857964899340515,
+            0.10029247182387817
+          ]
+        },
+        "structured": {
+          "f2_difference": 0.11029344770300598,
+          "f2_ci": [
+            0.08457651166832239,
+            0.135190348988366
+          ],
+          "p_value": 0.000999000999000999,
+          "p_holm": null,
+          "recall_difference": 0.11351351351351346,
+          "recall_ci": [
+            0.08616797239279991,
+            0.13982218844984798
+          ]
+        },
+        "contextual": {
+          "f2_difference": 0.00978357073648739,
+          "f2_ci": [
+            -0.018169343158597914,
+            0.03584086753911213
+          ],
+          "p_value": 0.48,
+          "p_holm": null,
+          "recall_difference": 0.007267441860465018,
+          "recall_ci": [
+            -0.0161326111853407,
+            0.03142247114633655
+          ]
+        }
+      }
+    },
+    "direction": "aiguard minus system",
+    "holm_alpha": 0.05,
+    "holm_family": [
+      "llm"
+    ],
+    "holm_view": "all",
+    "reference": "aiguard"
+  },
+  "protocol": "docs/decisions/2026-11-13-yrss-eval-v2.md",
+  "scheme": [
+    "THAI_ID",
+    "PHONE",
+    "EMAIL",
+    "BANK_ACCOUNT",
+    "CREDIT_CARD",
+    "PASSPORT",
+    "VEHICLE_PLATE",
+    "DRIVER_LICENSE",
+    "NAME",
+    "ADDRESS",
+    "DATE_OF_BIRTH"
+  ],
+  "split": "test",
+  "systems": {
+    "aiguard": {
+      "by_type": {
+        "THAI_ID": {
+          "n": 184,
+          "tp": 184,
+          "fp": 48,
+          "fn": 0,
+          "precision": 0.7931034482758621,
+          "recall": 1.0,
+          "f1": 0.8846153846153846,
+          "f2": 0.9504132231404959
+        },
+        "PHONE": {
+          "n": 196,
+          "tp": 196,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.9949238578680203,
+          "recall": 1.0,
+          "f1": 0.9974554707379135,
+          "f2": 0.9989806320081551
+        },
+        "EMAIL": {
+          "n": 184,
+          "tp": 184,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "BANK_ACCOUNT": {
+          "n": 188,
+          "tp": 188,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "CREDIT_CARD": {
+          "n": 184,
+          "tp": 184,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "PASSPORT": {
+          "n": 180,
+          "tp": 180,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "VEHICLE_PLATE": {
+          "n": 184,
+          "tp": 183,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1.0,
+          "recall": 0.9945652173913043,
+          "f1": 0.9972752043596731,
+          "f2": 0.9956474428726876
+        },
+        "DRIVER_LICENSE": {
+          "n": 180,
+          "tp": 180,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "f2": 1.0
+        },
+        "NAME": {
+          "n": 316,
+          "tp": 300,
+          "fp": 230,
+          "fn": 16,
+          "precision": 0.5660377358490566,
+          "recall": 0.9493670886075949,
+          "f1": 0.7092198581560284,
+          "f2": 0.8361204013377924
+        },
+        "ADDRESS": {
+          "n": 188,
+          "tp": 188,
+          "fp": 12,
+          "fn": 0,
+          "precision": 0.94,
+          "recall": 1.0,
+          "f1": 0.9690721649484536,
+          "f2": 0.9873949579831932
+        },
+        "DATE_OF_BIRTH": {
+          "n": 184,
+          "tp": 180,
+          "fp": 0,
+          "fn": 4,
+          "precision": 1.0,
+          "recall": 0.9782608695652174,
+          "f1": 0.989010989010989,
+          "f2": 0.982532751091703
+        }
+      },
+      "latency_ms": {
+        "p50": 9.244899999430345,
+        "p95": 31.613199999810604
+      },
+      "negative": {
+        "documents": 160,
+        "clean_docs": 4,
+        "false_positives": 376
+      },
+      "out_of_scheme_false_positives": 615,
+      "views": {
+        "all": {
+          "tp": 2147,
+          "fp": 906,
+          "fn": 21,
+          "precision": 0.7032427120864724,
+          "recall": 0.9903136531365314,
+          "f1": 0.8224478069335376,
+          "f2": 0.9155650319829425,
+          "f2_ci": [
+            0.9013694697778208,
+            0.9294341804915337
+          ]
+        },
+        "shared11": {
+          "tp": 2147,
+          "fp": 291,
+          "fn": 21,
+          "precision": 0.8806398687448729,
+          "recall": 0.9903136531365314,
+          "f1": 0.9322622666087712,
+          "f2": 0.9662466246624664,
+          "f2_ci": [
+            0.9578084749491204,
+            0.9738112246666069
+          ]
+        },
+        "structured": {
+          "tp": 1479,
+          "fp": 49,
+          "fn": 1,
+          "precision": 0.9679319371727748,
+          "recall": 0.9993243243243243,
+          "f1": 0.9833776595744681,
+          "f2": 0.9928839957035445,
+          "f2_ci": [
+            0.9881639894513846,
+            0.9966532227586096
+          ]
+        },
+        "contextual": {
+          "tp": 668,
+          "fp": 242,
+          "fn": 20,
+          "precision": 0.734065934065934,
+          "recall": 0.9709302325581395,
+          "f1": 0.8360450563204004,
+          "f2": 0.9120699071545603,
+          "f2_ci": [
+            0.8891168956880378,
+            0.9323434519133654
+          ]
+        }
+      }
+    },
+    "llm": {
+      "by_type": {
+        "THAI_ID": {
+          "n": 184,
+          "tp": 157,
+          "fp": 61,
+          "fn": 27,
+          "precision": 0.7201834862385321,
+          "recall": 0.8532608695652174,
+          "f1": 0.7810945273631842,
+          "f2": 0.8228511530398323
+        },
+        "PHONE": {
+          "n": 196,
+          "tp": 190,
+          "fp": 20,
+          "fn": 6,
+          "precision": 0.9047619047619048,
+          "recall": 0.9693877551020408,
+          "f1": 0.9359605911330049,
+          "f2": 0.9557344064386316
+        },
+        "EMAIL": {
+          "n": 184,
+          "tp": 166,
+          "fp": 15,
+          "fn": 18,
+          "precision": 0.9171270718232044,
+          "recall": 0.9021739130434783,
+          "f1": 0.9095890410958904,
+          "f2": 0.905125408942203
+        },
+        "BANK_ACCOUNT": {
+          "n": 188,
+          "tp": 180,
+          "fp": 74,
+          "fn": 8,
+          "precision": 0.7086614173228346,
+          "recall": 0.9574468085106383,
+          "f1": 0.8144796380090497,
+          "f2": 0.8946322067594433
+        },
+        "CREDIT_CARD": {
+          "n": 184,
+          "tp": 133,
+          "fp": 3,
+          "fn": 51,
+          "precision": 0.9779411764705882,
+          "recall": 0.7228260869565217,
+          "f1": 0.83125,
+          "f2": 0.7626146788990825
+        },
+        "PASSPORT": {
+          "n": 180,
+          "tp": 161,
+          "fp": 17,
+          "fn": 19,
+          "precision": 0.9044943820224719,
+          "recall": 0.8944444444444445,
+          "f1": 0.8994413407821229,
+          "f2": 0.8964365256124721
+        },
+        "VEHICLE_PLATE": {
+          "n": 184,
+          "tp": 163,
+          "fp": 6,
+          "fn": 21,
+          "precision": 0.9644970414201184,
+          "recall": 0.8858695652173914,
+          "f1": 0.9235127478753541,
+          "f2": 0.9005524861878453
+        },
+        "DRIVER_LICENSE": {
+          "n": 180,
+          "tp": 161,
+          "fp": 0,
+          "fn": 19,
+          "precision": 1.0,
+          "recall": 0.8944444444444445,
+          "f1": 0.9442815249266863,
+          "f2": 0.9137343927355278
+        },
+        "NAME": {
+          "n": 316,
+          "tp": 298,
+          "fp": 129,
+          "fn": 18,
+          "precision": 0.6978922716627635,
+          "recall": 0.9430379746835443,
+          "f1": 0.8021534320323015,
+          "f2": 0.8811354228267297
+        },
+        "ADDRESS": {
+          "n": 188,
+          "tp": 182,
+          "fp": 31,
+          "fn": 6,
+          "precision": 0.8544600938967136,
+          "recall": 0.9680851063829787,
+          "f1": 0.9077306733167083,
+          "f2": 0.9430051813471503
+        },
+        "DATE_OF_BIRTH": {
+          "n": 184,
+          "tp": 183,
+          "fp": 99,
+          "fn": 1,
+          "precision": 0.648936170212766,
+          "recall": 0.9945652173913043,
+          "f1": 0.7854077253218884,
+          "f2": 0.8988212180746563
+        }
+      },
+      "latency_ms": {
+        "p50": 7157.95640899978,
+        "p95": 11601.601267999285
+      },
+      "negative": {
+        "documents": 160,
+        "clean_docs": 12,
+        "false_positives": 370
+      },
+      "out_of_scheme_false_positives": 191,
+      "views": {
+        "all": {
+          "tp": 1974,
+          "fp": 646,
+          "fn": 194,
+          "precision": 0.7534351145038168,
+          "recall": 0.9105166051660517,
+          "f1": 0.824561403508772,
+          "f2": 0.8740701381509033,
+          "f2_ci": [
+            0.852996146345954,
+            0.8939246479263894
+          ]
+        },
+        "shared11": {
+          "tp": 1974,
+          "fp": 455,
+          "fn": 194,
+          "precision": 0.8126801152737753,
+          "recall": 0.9105166051660517,
+          "f1": 0.8588209701979552,
+          "f2": 0.8891090892712368,
+          "f2_ci": [
+            0.8691213357152697,
+            0.907778548286363
+          ]
+        },
+        "structured": {
+          "tp": 1311,
+          "fp": 196,
+          "fn": 169,
+          "precision": 0.8699402786994028,
+          "recall": 0.8858108108108108,
+          "f1": 0.877803816538333,
+          "f2": 0.8825905480005386,
+          "f2_ci": [
+            0.8574499945943046,
+            0.9077660383319011
+          ]
+        },
+        "contextual": {
+          "tp": 663,
+          "fp": 259,
+          "fn": 25,
+          "precision": 0.7190889370932755,
+          "recall": 0.9636627906976745,
+          "f1": 0.8236024844720498,
+          "f2": 0.9022863364180731,
+          "f2_ci": [
+            0.8799830360509507,
+            0.922416466191859
+          ]
+        }
+      },
+      "predictor_stats": {
+        "requests": 802,
+        "http_errors": 0,
+        "parse_failures": 0,
+        "items_returned": 2775,
+        "items_not_found": 132,
+        "items_unknown_type": 191,
+        "items_malformed": 21
+      }
+    }
+  },
+  "llm": {
+    "api_key_env": null,
+    "base_url": "http://127.0.0.1:11434/v1",
+    "model": "scb10x/typhoon2.1-gemma3-4b",
+    "seed": 4,
+    "cache": {
+      "path_name": "llm-seed4.jsonl",
+      "reused": 800,
+      "fresh": 0
+    }
+  }
+}
