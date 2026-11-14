@@ -258,11 +258,11 @@ The 2026-11-01 hard-test print is P 0.000, R 0.000, F2 0.000. `.3f` of every see
 | Plaintext hash | `271c7f27aab3370121f4297a54227cd4c71efcaf1685eed1306c61ee3696dda2` |
 | Reproducing command | `python -m benchmark.yrss_v2 --split test --systems aiguard,regex,crf-ner,wangchanberta-ner,presidio,aiguard-no-fp,aiguard-no-tb,aiguard-no-address_merge --i-understand-this-spends-the-test-split` with the key in `YRSS_V2_TEST_KEY_FILE`. The split is spent; a rerun only confirms |
 | MAY | Cite as the held-out result of the frozen detector on constructed Thai documents, with P, R, F1 and F2 and the interval. Cite the shared-11 view by name |
-| MAY NOT | Cite as real-document accuracy, as a dev number, or without the precision. AI Guard masks generic dates, organisations, places and reference numbers on purpose, so only 4 of 160 negative documents are clean and unrestricted precision is 0.703. Do not claim superiority over LLMs: no LLM is scored on this split yet |
+| MAY NOT | Cite as real-document accuracy, as a dev number, or without the precision. AI Guard masks generic dates, organisations, places and reference numbers on purpose, so only 4 of 160 negative documents are clean and unrestricted precision is 0.703. Do not claim AI Guard beats LLMs in general: only one local 4B model was scored, and on contextual types its difference spans zero |
 
 Family-bootstrap 95% CI for that F2: 0.9013694697778208 to 0.9294341804915337 (1,000 resamples, seed 0). Shared-11 view: F2 0.9662466246624664, P 0.8806398687448729, R 0.9903136531365314.
 
-Paired F2 difference, AI Guard minus comparator, all view, family bootstrap. The registered Holm family has five comparisons; the LLM is still unscored, so the p values below are Holm over four. Every bootstrap p is the floor 1/1001, so five-way Holm stays below 0.05.
+Paired F2 difference, AI Guard minus comparator, all view, family bootstrap. The registered Holm family has five comparisons. Every bootstrap p is the floor 1/1001; five-way Holm with the LLM's largest p over its seeds gives 0.005 for all five.
 
 | Comparator | F2 | F2 difference | 95% CI |
 |---|---:|---:|---|
@@ -270,6 +270,13 @@ Paired F2 difference, AI Guard minus comparator, all view, family bootstrap. The
 | crf-ner | 0.1307315197539171 | 0.7848335122290253 | 0.7582519007899128 to 0.8124736066158569 |
 | wangchanberta-ner | 0.25666188570997206 | 0.6589031462729704 | 0.6293756892549812 to 0.6875883911339519 |
 | presidio | 0.4716240955452881 | 0.44394093643765437 | 0.40847211636357356 to 0.47682970721418977 |
+| Typhoon 2.1 4B seed 1 (`test-llm-typhoon4b-seed1.json`) | 0.8846768465909091 | 0.030888185392033418 | 0.013454220293287291 to 0.048595969265583 |
+| Typhoon 2.1 4B seed 2 (`test-llm-typhoon4b-seed2.json`) | 0.8796378483933961 | 0.035927183589546385 | 0.017136652587447235 to 0.054410376063947205 |
+| Typhoon 2.1 4B seed 3 (`test-llm-typhoon4b-seed3.json`) | 0.8829004520875808 | 0.032664579895361645 | 0.015471099107117298 to 0.050501845908643636 |
+| Typhoon 2.1 4B seed 4 (`test-llm-typhoon4b-seed4.json`) | 0.8740701381509033 | 0.04149489383203919 | 0.022521353591891037 to 0.06034656566386922 |
+| Typhoon 2.1 4B seed 5 (`test-llm-typhoon4b-seed5.json`) | 0.8821185014613409 | 0.033446530521601625 | 0.01518850417437172 to 0.05058624167672713 |
+
+The Typhoon rows are the registered local LLM comparator (digest `8cfab909...`), run on a Colab L4 into harness cache files and scored locally; see the ADR addenda. On the contextual view its paired difference spans zero in every seed, so no difference on names, addresses and birth dates may be claimed.
 
 ## What is not a headline
 

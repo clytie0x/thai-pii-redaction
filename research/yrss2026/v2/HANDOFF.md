@@ -62,7 +62,7 @@ models of known size run locally through Ollama.
    months). Give documents opaque ids so a family name cannot hint at a
    negative. Test templates are git-ignored on purpose: lock them by hash
    and encrypt them, do not commit them in plain text.
-5. Score the test split once, all systems and ablations, LLM with 5 seeds.
+5. DONE 2026-11-14, see RESULTS.md. Score the test split once, all systems and ablations, LLM with 5 seeds.
 6. Human check on a 10% sample if an annotator is available.
 7. Update CLAIM-MAP, then the poster and slides in `ai-guard-docs`.
 
