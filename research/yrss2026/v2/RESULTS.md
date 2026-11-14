@@ -87,6 +87,10 @@ CPU.
 | WangchanBERTa NER | 0.149 | 0.314 | 0.257 [0.231, 0.283] | 0.241 | 0.461 | 1 | 81.0 ms |
 | PyThaiNLP CRF NER | 0.157 | 0.125 | 0.131 [0.108, 0.152] | 0.008 | 0.412 | 56 | 2.6 ms |
 
+Typhoon 2.1 4B entity-level micro F1 is 0.832 (seed range 0.825 to 0.837).
+That figure is the arithmetic mean of the five per-seed F1 values in
+`systems.llm.views.all`, the same field as the AI Guard row.
+
 Paired F2 difference, AI Guard minus comparator (family bootstrap):
 
 | Comparator | All | Structured | Contextual |
