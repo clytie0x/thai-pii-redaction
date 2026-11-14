@@ -41,7 +41,8 @@ same resamples; Holm correction over the five registered comparisons.
 | Values | Generated; Thai ID and card numbers pass their checksums; decoys (bad-checksum 13-digit numbers, order codes, tracking codes) in negatives |
 
 **Is it enough?** For the headline it is: the all-view F2 interval is ±0.014,
-and every comparator gap is more than 30 times that. Per type, a recall of
+every non-LLM comparator gap is more than 30 times that, and the Typhoon gap
+(+0.031 to +0.041) is still clear of zero in every seed. Per type, a recall of
 1.000 on 180 entities has a 95% Wilson lower bound near 0.98, but variants of a
 family are not independent, so the real lower bound is lower; per-type rows
 are descriptive. The data are synthetic and AI-written, so they show how the
@@ -96,12 +97,14 @@ Paired F2 difference, AI Guard minus comparator (family bootstrap):
 | WangchanBERTa NER | +0.659 [0.629, 0.688] | +0.752 | +0.451 |
 | PyThaiNLP CRF NER | +0.785 [0.758, 0.812] | +0.985 | +0.500 |
 
-Every bootstrap p is at the floor (1/1001); five-way Holm (the LLM entered
-with its largest p over the five seeds) gives 0.005 for all five comparisons.
+Every bootstrap p is at the floor (1/1001). The run files store a four-way
+Holm (0.004) for the non-LLM runs and none that spans both runs; recomputed
+over the five registered comparisons (the LLM entered with its largest p over
+the five seeds), Holm gives 5 × 0.000999 = 0.005 for all five.
 
 Typhoon ran on a Colab L4 GPU with five seeds sharing it, so its time per
-document is not single-user latency (one stream on the laptop CPU took about
-18 s per dev document); either way it is seconds, against milliseconds for
+document is not single-user latency (one stream on the laptop CPU took a mean
+of 18.2 s per document in a six-document dev smoke run); either way it is seconds, against milliseconds for
 AI Guard on a laptop CPU. In seed 1 its weakest types were card
 numbers (recall 0.745) and Thai IDs (0.870); AI Guard found every one of both.
 
