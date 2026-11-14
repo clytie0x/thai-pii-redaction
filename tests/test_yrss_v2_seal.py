@@ -138,13 +138,22 @@ def test_seal_refuses_to_overwrite(sealed_env):
     _seal(sealed_env)
 
 
-def test_seal_refuses_a_draft_inside_a_work_tree(sealed_env, monkeypatch):
-    data_dir, key, draft = sealed_env
+def test_seal_refuses_a_draft_inside_a_work_tree(sealed_env, monkeypatch, tmp_path):
+    data_dir, key, _draft = sealed_env
     monkeypatch.undo()
     monkeypatch.setattr(corpus, "DATA_DIR", data_dir)
+    # pytest's temp dir is a work tree on some machines and not on CI.
+    # The draft has to sit in a tree this test creates, on every OS.
+    work = tmp_path / "draft-repo"
+    work.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=work, check=True, capture_output=True)
+    draft = work / "draft.jsonl"
+    draft.write_bytes(_DRAFT.encode("utf-8"))
+    assert agreement.inside_work_tree(draft)
     with pytest.raises(corpus.CorpusSealError, match="repository"):
         corpus.seal(draft, key, data_dir=data_dir)
     assert not (data_dir / "test.lock.json").exists()
+    assert not (data_dir.parent / "yrss-v2-test.enc").exists()
 
 
 def test_inside_work_tree_sees_this_repository():
