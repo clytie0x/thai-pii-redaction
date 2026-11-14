@@ -67,3 +67,5 @@ The kappa values, intervals, and span agreement are appended to the
 pre-registration as a dated addendum with the sample seed; the record itself
 is not edited. If this is not done before 24 November 2026, the poster says
 the corpus is single-annotated.
+
+Scored 2026-11-15. AI pre-annotation reviewed by the developer, not independent. Allowed wording: Human review of 80 test docs (10%): AI pre-annotation reviewed by the first author; agreement with gold κ = 1.00 (not an independent annotator). Independent inter-annotator agreement is not claimed. Report: `research/yrss2026/v2/results/human-check-report.json`.

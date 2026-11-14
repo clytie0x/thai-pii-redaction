@@ -148,7 +148,8 @@ numbers (recall 0.745) and Thai IDs (0.870); AI Guard found every one of both.
 ## 7. Limits and threats to validity
 
 - Synthetic, AI-written documents; not real-document accuracy.
-- No independent human label check yet (10% sample planned).
+- Human review of 80 test docs (10%): AI pre-annotation reviewed by the first author; agreement with gold κ = 1.00 (not an independent annotator). Source: `research/yrss2026/v2/results/human-check-report.json`.
+- independent inter-annotator agreement: NOT claimed.
 - The test authors are AI models; their style may differ from real users.
   Two families and a cross-review reduce, but do not remove, this risk.
 - The precision figure depends on the product's choice to mask generic

@@ -278,6 +278,10 @@ Paired F2 difference, AI Guard minus comparator, all view, family bootstrap. The
 
 The Typhoon rows are the registered local LLM comparator (digest `8cfab909...`), run on a Colab L4 into harness cache files and scored locally; see the ADR addenda. On the contextual view its paired difference spans zero in every seed, so no difference on names, addresses and birth dates may be claimed.
 
+ALLOWED: Human review of 80 test docs (10%): AI pre-annotation reviewed by the first author; agreement with gold κ = 1.00 (not an independent annotator). Source: `research/yrss2026/v2/results/human-check-report.json`.
+
+independent inter-annotator agreement: NOT claimed.
+
 ## What is not a headline
 
 | Item | Status |
@@ -287,6 +291,7 @@ The Typhoon rows are the registered local LLM comparator (digest `8cfab909...`),
 | Section 26 paraphrase recall | Stored `section26.micro_recall` 0.0 on n=8 in `hard-test.json`. Warn/report, not a redaction F1 |
 | Historical paper commit `d93d10b` | Absent from this clone. See METHODS. Not an accuracy figure |
 | `research/stt52/` gold-v3 F2 0.801 | A different study. Do not cite it as sealed blind-v2 0.799 |
+| independent inter-annotator agreement | NOT claimed. The allowed sentence is the human-review line in the yrss-eval-v2 section |
 
 ## Outside this repository
 
