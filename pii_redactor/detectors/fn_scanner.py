@@ -122,6 +122,51 @@ def _competing_amount_cue_wins(text: str, start: int, end: int) -> bool:
     return id_cue is None or amount < id_cue
 
 
+# ---------------------------------------------------------------------------
+# Honest label for a 13-digit run that fails the check digit.
+#
+# The fallback above keeps THAI_ID as its default: one OCR digit error on a
+# real card gives exactly this shape. An order, payment or request number has
+# the same shape too. When a document-number word introduces the run on its
+# line, and no personal-ID word sits nearer, the label is the generic
+# ID_NUMBER. The run is masked either way; only the label and the surrogate
+# change. A taxpayer number counts as a personal-ID word, because a person's
+# taxpayer number is the national ID.
+#
+# The broad nouns (reference, payment, request, parcel) need a number word
+# glued in front, so "ผู้ชำระเงิน" before a corrupted card number does not
+# count. The commerce nouns already stand alone in fp_detector's cue list.
+_REFERENCE_CUE_RE = re.compile(
+    r"(?:รหัส|หมายเลข|เลขที่|เลข)(?:การ)?(?:อ้างอิง|ชำระ|คำขอ|คำร้อง|พัสดุ|ติดตาม|ธุรกรรม|จอง)"
+    r"|คำสั่งซื้อ|สั่งซื้อ|ออเดอร์|ใบเสร็จ|ใบแจ้งหนี้|ใบกำกับ"
+    r"|\b(?:order|invoice|receipt|reference|ref|tracking|booking|transaction)\b"
+    r"(?:\s*(?:id|no\.?|number|code)\b)?",
+    re.IGNORECASE,
+)
+_PERSONAL_ID_CUE_RE = re.compile(
+    _CORRUPTED_ID_CUE_RE.pattern + r"|ผู้เสียภาษี|tax\s*id|ปชช|citizen",
+    re.IGNORECASE,
+)
+
+
+def _reference_cue_wins(text: str, start: int, end: int) -> bool:
+    """True when a document-number word introduces the run at ``start``."""
+    before = text[max(0, start - _CORRUPTED_ID_CUE_WINDOW) : start].rsplit("\n", 1)[-1]
+    references = list(_REFERENCE_CUE_RE.finditer(before))
+    if not references:
+        return False
+    reference = len(before) - references[-1].end()
+    # "รหัส" inside "รหัสชำระเงิน" is part of the reference word, not an ID cue.
+    blanked = _REFERENCE_CUE_RE.sub(lambda m: " " * len(m.group()), before)
+    after = text[end : end + _CORRUPTED_ID_CUE_WINDOW].split("\n", 1)[0]
+    personal = [len(blanked) - m.end() for m in _PERSONAL_ID_CUE_RE.finditer(blanked)]
+    first_after = _PERSONAL_ID_CUE_RE.search(after)
+    if first_after is not None:
+        personal.append(first_after.start())
+    # Tie goes to the personal-ID cue.
+    return not personal or reference < min(personal)
+
+
 def _is_corrupted_id_candidate(candidate: str) -> bool:
     if not (12 <= len(candidate) <= 15):
         return False
@@ -153,11 +198,14 @@ def scan_fn(text: str, existing_entities: list[Entity]) -> list[Entity]:
             # Skip if this span overlaps with any existing entity
             overlaps = any(not (end <= es[0] or start >= es[1]) for es in existing_spans)
             if not overlaps:
+                label = data_type
+                if label == "THAI_ID" and _reference_cue_wins(text, start, end):
+                    label = "ID_NUMBER"
                 new_entities.append(
                     Entity(
                         entity_id=str(uuid.uuid4()),
                         redact_type=redact_type,
-                        data_type=data_type,
+                        data_type=label,
                         span=(start, end),
                         score=score,
                         original_text=text[start:end],

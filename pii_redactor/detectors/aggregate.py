@@ -107,11 +107,25 @@ _STRICT_GAP_RE = re.compile(r"[ , ]{0,3}")
 # rule — glue word required, no digit run > 3, no newline, no
 # ownership/introducer veto — still stands, so the two-party split cases the
 # 18 was chosen against remain unmergeable (re-measured on gold + negative).
-_BRIDGE_CHARSET_RE = re.compile(r"[ .,ก-๎0-9]{1,25}")
+_BRIDGE_CHARSET_RE = re.compile(r"[ .,ก-๎0-9]{1,40}")
+# "ซ." and "ถ." are the short forms of ซอย and ถนน. Without them
+# "304 ซ.สาทร 5 ถ.สาทรใต้" stayed three spans. They must not follow a Thai
+# letter, so the last letter of a word before a full stop is not a label.
 _ADDRESS_GLUE_RE = re.compile(
     r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่ที่|หมู่|ซอย|ถนน|ต\.|อ\.|จ\.|ม\."
     r"|อาคาร|หมู่บ้าน|ตึก|ชั้น|ห้อง|คอนโด|ตรอก|แยก|นิคม"
+    r"|(?<![ก-๎])[ซถ]\."
 )
+# A housing-estate name right after the house number takes most of the gap by
+# itself ("218/34 หมู่บ้านสุขนิเวศน์ หมู่ 2"), so such a gap may be longer.
+# Every other gap rule still applies.
+_BRIDGE_MAX_CHARS = 25
+_ESTATE_BRIDGE_MAX_CHARS = 40
+_ESTATE_GAP_RE = re.compile(r" ?หมู่บ้าน")
+# The CRF tags an estate name as a person or as a bare location. One Thai word
+# that starts with หมู่บ้าน is a place, and inside an address chain it is part
+# of the address.
+_ESTATE_NAME_RE = re.compile(r"หมู่บ้าน[ก-๎]{2,30}")
 _BRIDGE_VETO_RE = re.compile(
     r"บ้านเลขที่|ที่อยู่|เลขที่|ผู้ซื้อ|ผู้ขาย|ผู้กู้|ผู้ค้ำ|ผู้เช่า|ผู้ให้เช่า|ส่งที่|ติดต่อ|นาย|นาง|นางสาว"
 )
@@ -134,6 +148,9 @@ def _gap_ok(gap: str, prev_type: str, next_type: str) -> bool:
         return False
     if not _BRIDGE_CHARSET_RE.fullmatch(gap):
         return False
+    limit = _ESTATE_BRIDGE_MAX_CHARS if _ESTATE_GAP_RE.match(gap) else _BRIDGE_MAX_CHARS
+    if len(gap) > limit:
+        return False
     if any(len(run) > 3 for run in re.findall(r"\d+", gap)):
         return False
     if _BRIDGE_VETO_RE.search(gap):
@@ -141,6 +158,19 @@ def _gap_ok(gap: str, prev_type: str, next_type: str) -> bool:
     if _ADDRESS_GLUE_RE.search(gap):
         return True
     return next_type == "POSTAL_CODE" and bool(_POSTAL_BACKSTEP_RE.fullmatch(gap))
+
+
+def _chain_type(entity: Entity) -> str | None:
+    """The type an entity has inside an address chain, or None if it cannot join."""
+    if entity.data_type in _MERGE_TYPES:
+        return entity.data_type
+    if (
+        entity.data_type in ("NAME", "LOCATION")
+        and entity.redact_type == "TB"
+        and _ESTATE_NAME_RE.fullmatch(entity.original_text)
+    ):
+        return "ADDRESS"
+    return None
 
 
 def merge_address_spans(text: str, entities: list[Entity]) -> list[Entity]:
@@ -155,15 +185,15 @@ def merge_address_spans(text: str, entities: list[Entity]) -> list[Entity]:
     i = 0
     while i < len(entities):
         e = entities[i]
-        if e.data_type not in _MERGE_TYPES:
+        if _chain_type(e) is None:
             out.append(e)
             i += 1
             continue
         chain = [e]
         j = i + 1
-        while j < len(entities) and entities[j].data_type in _MERGE_TYPES:
+        while j < len(entities) and _chain_type(entities[j]) is not None:
             gap = text[chain[-1].span[1] : entities[j].span[0]]
-            if not _gap_ok(gap, chain[-1].data_type, entities[j].data_type):
+            if not _gap_ok(gap, _chain_type(chain[-1]), _chain_type(entities[j])):
                 break
             chain.append(entities[j])
             j += 1
@@ -240,7 +270,9 @@ def _extend_address_chains(text: str, entities: list[Entity], tb: list[Entity]) 
 
 
 # Numberless places remain protected, but must not claim a numbered address.
-_ADMIN_AREA_RE = re.compile(r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่|ต\.|อ\.|จ\.|ม\.")
+# หมู่ is the village number label. Inside หมู่บ้าน it is only part of the
+# word for a housing estate, which is not an administrative area.
+_ADMIN_AREA_RE = re.compile(r"ตำบล|อำเภอ|จังหวัด|แขวง|เขต|หมู่(?!บ้าน)|ต\.|อ\.|จ\.|ม\.")
 
 
 def _relabel_numberless_addresses(entities: list[Entity]) -> list[Entity]:

@@ -198,13 +198,51 @@ class PyThaiNLPNER(_CachedNER):
         )
 
 
+def split_to_fit(text: str, fits) -> list[tuple[int, str]]:
+    """Cut ``text`` near the middle, at a line break or space, until every piece fits."""
+    if len(text) < 2 or fits(text):
+        return [(0, text)]
+    mid = len(text) // 2
+    cut = -1
+    for sep in ("\n", " "):
+        before, after = text.rfind(sep, 0, mid), text.find(sep, mid)
+        options = [i for i in (before, after) if i > 0]
+        if options:
+            cut = min(options, key=lambda i: abs(i - mid)) + 1
+            break
+    if cut <= 0 or cut >= len(text):
+        cut = mid
+    left, right = text[:cut], text[cut:]
+    return split_to_fit(left, fits) + [(cut + o, p) for o, p in split_to_fit(right, fits)]
+
+
 class WangchanBERTaNER(_CachedNER):
+    MAX_TOKENS = 510  # the model takes 512 positions, two go to the special tokens
+
     def __init__(self) -> None:
         super().__init__(
             "wangchanberta-ner",
             "thainer-v2",
             "transformers is not installed (requirements-ml.txt); WangchanBERTa NER was not run",
         )
+
+    def _fits(self, text: str) -> bool:
+        from pythainlp.tokenize import word_tokenize
+
+        engine = self._tagger.engine
+        words = word_tokenize(text.replace(" ", "<_>"))
+        ids = engine.tokenizer(words, is_split_into_words=True)["input_ids"]
+        return len(ids) <= self.MAX_TOKENS + 2
+
+    def predict(self, text: str) -> list[tuple[int, int, str]]:
+        # A long document crashes the model, so tag it in pieces. Short ones are unchanged.
+        if self._tagger is None:
+            raise RuntimeError("ner-not-prepared")
+        spans = []
+        for offset, piece in split_to_fit(text, self._fits):
+            for start, end, label in align_ner_tags(piece, list(self._tagger.tag(piece))):
+                spans.append((offset + start, offset + end, label))
+        return spans
 
 
 _PRESIDIO_MAP = {

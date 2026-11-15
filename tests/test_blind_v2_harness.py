@@ -564,3 +564,14 @@ def test_unknown_system_is_rejected():
     except ValueError:
         return
     raise AssertionError("unknown-system")
+
+
+def test_split_to_fit_keeps_offsets_and_cuts_at_breaks():
+    from benchmark.blind_v2.baselines import split_to_fit
+
+    text = "aaaa bbbb\ncccc dddd\neeee"
+    pieces = split_to_fit(text, lambda piece: len(piece) <= 10)
+    assert all(len(piece) <= 10 for _, piece in pieces)
+    assert "".join(piece for _, piece in pieces) == text
+    assert all(text[o : o + len(piece)] == piece for o, piece in pieces)
+    assert split_to_fit("short", lambda piece: True) == [(0, "short")]

@@ -83,7 +83,11 @@ _ADDR_CUE_RE = re.compile(
 # Same cue as fp_detector._BIRTH_CUE_RE (copies by design): เกิดเหตุ/เหตุเกิด
 # are incident phrasings that never introduce a birth date, and the English
 # labels are a real register on Thai visa/passport paperwork.
-_TB_BIRTH_CUE_RE = re.compile(r"(?<!เหตุ)เกิด(?!เหตุ)|date of birth|\bd\.?o\.?b\b", re.IGNORECASE)
+_TB_BIRTH_CUE_RE = re.compile(
+    r"(?<!เหตุ)เกิด(?!เหตุ|ขึ้น)|(?:วั?น|ปี?)เกด|เกด(?:วั?นท|เม)"
+    r"|date of birth|birth\s?da(?:te|y)|\bborn\b|\bd\.?o\.?b\b",
+    re.IGNORECASE,
+)
 _TB_CUE_WINDOW = 30
 
 # thainer CRF has no reliable signal on out-of-distribution (non-Thai) input --
@@ -1297,6 +1301,12 @@ def _detect_tb_scanned(
     # A conjunction right after an accepted NAME introduces the NEXT person
     # in the same list; the CRF stops at และ and that name shipped unmasked.
     candidates.extend(detect_conjunction_names(text, candidates))
+    # Names the CRF does not tag: Latin script, and Thai names with no title.
+    from pii_redactor.detectors.name_recall import detect_name_recall
+
+    # A recall span that touches any span already found is dropped, so it can
+    # never displace or shorten what the CRF and the cue passes produced.
+    candidates.extend(_admit_name_recall(text, detect_name_recall(text), candidates))
     if name == "thainer":
         isolated_names, superseded_ids = _isolated_line_name_candidates(
             text,
@@ -1309,6 +1319,28 @@ def _detect_tb_scanned(
 
     # Deduplication
     return _deduplicate(candidates)
+
+
+def _admit_name_recall(text: str, extra: list[Entity], existing: list[Entity]) -> list[Entity]:
+    """Admit word-list name spans without losing any existing protection.
+
+    A span that touches a span of another type is dropped, so an honest label
+    such as LOCATION is never replaced. A span that touches only NAME spans is
+    widened to cover them, so a partial name from the model becomes the whole
+    name and no character that was masked before becomes unmasked.
+    """
+    admitted = []
+    for item in extra:
+        start, end = item.span
+        touching = [other for other in existing if start < other.span[1] and other.span[0] < end]
+        if any(other.data_type != "NAME" for other in touching):
+            continue
+        for other in touching:
+            start, end = min(start, other.span[0]), max(end, other.span[1])
+        if (start, end) != item.span:
+            item = replace(item, span=(start, end), original_text=text[start:end])
+        admitted.append(item)
+    return admitted
 
 
 @minimize_failure_frames

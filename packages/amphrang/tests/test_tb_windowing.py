@@ -318,7 +318,18 @@ def test_isolated_line_fallback_rejects_non_name_line_shapes(monkeypatch):
     assert all(line not in ner.calls[1:] for line in rejected)
 
 
+def _without_name_recall(monkeypatch):
+    """Switch off the word-list name pass.
+
+    The tests below count NAME spans to prove the isolated-line fallback made
+    no extra NER call. The word-list pass finds "สมชาย ใจดี" with no NER call
+    at all, so it would hide what they measure.
+    """
+    monkeypatch.setattr("pii_redactor.detectors.name_recall.detect_name_recall", lambda text: [])
+
+
 def test_isolated_line_fallback_has_a_hard_call_cap(monkeypatch):
+    _without_name_recall(monkeypatch)
     ner = GreedyIsolatedNER()
     _with_engine(monkeypatch, ner)
     text = "\n".join(["สมชาย ใจดี"] * (tbd._ISOLATED_NAME_MAX_LINES + 5))
@@ -331,6 +342,7 @@ def test_isolated_line_fallback_has_a_hard_call_cap(monkeypatch):
 
 
 def test_partial_name_expansion_respects_the_hard_call_cap(monkeypatch):
+    _without_name_recall(monkeypatch)
     ner = PartialNameExpansionNER()
     _with_engine(monkeypatch, ner)
     line_count = tbd._ISOLATED_NAME_MAX_LINES + 5
@@ -345,6 +357,7 @@ def test_partial_name_expansion_respects_the_hard_call_cap(monkeypatch):
 
 @pytest.mark.parametrize("engine_name", ["wangchanberta"])
 def test_isolated_line_fallback_never_adds_calls_for_other_single_engines(monkeypatch, engine_name):
+    _without_name_recall(monkeypatch)
     ner = GreedyIsolatedNER()
     monkeypatch.setitem(tbd._ner_cache, engine_name, ner)
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", engine_name)
@@ -356,6 +369,7 @@ def test_isolated_line_fallback_never_adds_calls_for_other_single_engines(monkey
 
 
 def test_isolated_line_fallback_never_adds_calls_for_union(monkeypatch):
+    _without_name_recall(monkeypatch)
     thainer = GreedyIsolatedNER()
     wangchanberta = GreedyIsolatedNER()
     monkeypatch.setitem(tbd._ner_cache, "thainer", thainer)

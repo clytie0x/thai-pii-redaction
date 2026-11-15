@@ -132,29 +132,31 @@ def _overlap(left: tuple[int, int], right: tuple[int, int]) -> bool:
     return min(left[1], right[1]) - max(left[0], right[0]) > 0
 
 
-def score_predictions(documents, predictions) -> dict:
+def score_predictions(documents, predictions, *, types=None) -> dict:
+    """Score predictions. ``types`` swaps the scored scheme; the matching rule is the same."""
     if len(documents) != len(predictions):
         raise ValueError("documents and predictions must have the same length")
+    # None keeps the scheme the older splits were scored with.
+    scheme = REDACTION_TYPES if types is None else tuple(types)
+    scheme_set = REDACTION_TYPE_SET if types is None else frozenset(scheme)
 
-    counts = {entity_type: {"tp": 0, "fp": 0, "fn": 0, "n": 0} for entity_type in REDACTION_TYPES}
+    counts = {entity_type: {"tp": 0, "fp": 0, "fn": 0, "n": 0} for entity_type in scheme}
     other_fp = 0
     for document, predicted in zip(documents, predictions):
-        gold_by_type: dict[str, list[tuple[int, int]]] = {
-            entity_type: [] for entity_type in REDACTION_TYPES
-        }
+        gold_by_type: dict[str, list[tuple[int, int]]] = {entity_type: [] for entity_type in scheme}
         for span in document.spans:
             if span.entity_type in counts:
                 counts[span.entity_type]["n"] += 1
                 gold_by_type[span.entity_type].append((span.start, span.end))
         predicted_by_type: dict[str, list[tuple[int, int]]] = {
-            entity_type: [] for entity_type in REDACTION_TYPES
+            entity_type: [] for entity_type in scheme
         }
         for start, end, entity_type in predicted:
-            if entity_type in REDACTION_TYPE_SET:
+            if entity_type in scheme_set:
                 predicted_by_type[entity_type].append((start, end))
             else:
                 other_fp += 1
-        for entity_type in REDACTION_TYPES:
+        for entity_type in scheme:
             golds = gold_by_type[entity_type]
             choices = predicted_by_type[entity_type]
             used: set[int] = set()
@@ -174,7 +176,7 @@ def score_predictions(documents, predictions) -> dict:
             counts[entity_type]["fp"] += len(choices) - len(used)
 
     by_type = {}
-    for entity_type in REDACTION_TYPES:
+    for entity_type in scheme:
         row = counts[entity_type]
         by_type[entity_type] = {"n": row["n"], **prf(row["tp"], row["fp"], row["fn"])}
 
@@ -183,9 +185,7 @@ def score_predictions(documents, predictions) -> dict:
         sum(row["fp"] for row in counts.values()) + other_fp,
         sum(row["fn"] for row in counts.values()),
     )
-    scored_types = [
-        by_type[entity_type] for entity_type in REDACTION_TYPES if by_type[entity_type]["n"]
-    ]
+    scored_types = [by_type[entity_type] for entity_type in scheme if by_type[entity_type]["n"]]
     if scored_types:
         macro = {
             "f1": sum(row["f1"] for row in scored_types) / len(scored_types),

@@ -1,0 +1,100 @@
+{
+  "bootstrap": {
+    "resamples": 1000,
+    "seed": 0,
+    "unit": "document"
+  },
+  "complete": true,
+  "confusion": {
+    "ADDRESS": {
+      "ADDRESS": 20
+    },
+    "BANK_ACCOUNT": {
+      "BANK_ACCOUNT": 14
+    },
+    "CREDIT_CARD": {
+      "CREDIT_CARD": 18
+    },
+    "DATE_OF_BIRTH": {
+      "DATE_OF_BIRTH": 23
+    },
+    "DRIVER_LICENSE": {
+      "DRIVER_LICENSE": 17
+    },
+    "EMAIL": {
+      "EMAIL": 18
+    },
+    "NAME": {
+      "NAME": 30
+    },
+    "PASSPORT": {
+      "PASSPORT": 16
+    },
+    "PHONE": {
+      "PHONE": 20
+    },
+    "THAI_ID": {
+      "THAI_ID": 18
+    },
+    "VEHICLE_PLATE": {
+      "VEHICLE_PLATE": 18
+    }
+  },
+  "disagreements": [],
+  "documents": {
+    "negative_gold": 16,
+    "sampled": 80,
+    "unanswered": []
+  },
+  "kappa": {
+    "characters": {
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "n": 28620,
+      "value": 1.0
+    },
+    "non_whitespace_characters": {
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "n": 26882,
+      "value": 1.0
+    }
+  },
+  "labels": [
+    "THAI_ID",
+    "PHONE",
+    "EMAIL",
+    "BANK_ACCOUNT",
+    "CREDIT_CARD",
+    "PASSPORT",
+    "VEHICLE_PLATE",
+    "DRIVER_LICENSE",
+    "NAME",
+    "ADDRESS",
+    "DATE_OF_BIRTH",
+    "O"
+  ],
+  "plaintext_sha256": "271c7f27aab3370121f4297a54227cd4c71efcaf1685eed1306c61ee3696dda2",
+  "protocol": "docs/decisions/2026-11-13-yrss-eval-v2.md",
+  "rows": {
+    "issues": [],
+    "not_found": 0,
+    "total": 228
+  },
+  "sample_fraction": 0.1,
+  "sample_seed": 20261113,
+  "span_agreement": {
+    "annotator_exact": 1.0,
+    "annotator_overlap_same_type": 1.0,
+    "annotator_spans": 212,
+    "gold_exact": 1.0,
+    "gold_overlap_same_type": 1.0,
+    "gold_spans": 212
+  },
+  "split": "test",
+  "version": "yrss-eval-v2"
+}

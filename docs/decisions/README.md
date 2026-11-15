@@ -11,6 +11,7 @@ by when the decision was made rather than continuously maintained.
 
 | Document | What it decides |
 |---|---|
+| [2026-11-13 YRSS evaluation v2](2026-11-13-yrss-eval-v2.md) | **Pre-registration; owner approved the plan.** New synthetic dev/test corpus, DRIVER_LICENSE replaces STUDENT_ID in the scored scheme, paired comparison against rules, NER, an LLM and Presidio, test split scored once. No result yet. |
 | [2026-11-12 OpenThai OCR engine](2026-11-12-openthai-ocr-engine.md) | **Accepted; owner selected Option A.** OpenThai2.0-OCR-Text is an explicit local OCR engine beside default PaddleOCR. No bundled weights, no silent fallback, no runtime download. |
 | [2026-11-03 machine-context restoration](2026-11-03-machine-context-restoration.md) | Owner-approved stricter bulk/streaming restoration and occurrence-specific source proof; local/artifact and exact `40cf18e` CI evidence pass. Controlled main-relative performance condition is satisfied; integration and production acceptance remain separate. |
 | [2026-11-02 shared-core compatibility](2026-11-02-shared-core-compatibility.md) | **Accepted for local implementation; owner selected B/B and `thai-pii-redaction-core`.** SDK migrates to warn/report, consumes the renamed first-party root distribution with its broader namespaces/dependencies, and uses fixed proxy errors with safe rollback. Clean-install/migration qualification and publication remain gated; no release/deploy approval. |

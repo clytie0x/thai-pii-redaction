@@ -252,3 +252,35 @@ def test_methods_report_f1_beside_f2_and_the_limits() -> None:
             "address_merge",
         ],
     )
+
+
+def test_claim_map_quotes_the_v2_test_run() -> None:
+    run = _load(ROOT / "research" / "yrss2026" / "v2" / "test-nonllm.json")
+    lock = _load(ROOT / "benchmark" / "data" / "yrss-v2" / "test.lock.json")
+    assert run["environment"]["git_dirty"] is False
+    assert run["corpus"]["plaintext_sha256"] == lock["plaintext_sha256"]
+    full = run["systems"]["aiguard"]["views"]["all"]
+    assert f"{full['f2']:.3f}" == "0.916"
+    snippets = [str(full[key]) for key in ("f2", "f1", "precision", "recall")]
+    snippets += [str(value) for value in full["f2_ci"]]
+    for name in ("regex", "crf-ner", "wangchanberta-ner", "presidio"):
+        paired = run["paired"]["comparisons"][name]["all"]
+        snippets += [str(paired["f2_difference"]), str(run["systems"][name]["views"]["all"]["f2"])]
+    snippets += [lock["plaintext_sha256"], lock["ciphertext_sha256"]]
+    _must_contain(CLAIM, snippets)
+
+
+def test_claim_map_quotes_the_v2_llm_runs() -> None:
+    snippets = []
+    for seed in range(1, 6):
+        run = _load(ROOT / "research" / "yrss2026" / "v2" / f"test-llm-typhoon4b-seed{seed}.json")
+        assert run["environment"]["git_dirty"] is False
+        assert run["llm"]["cache"]["fresh"] == 0
+        paired = run["paired"]["comparisons"]["llm"]
+        assert paired["all"]["f2_ci"][0] > 0
+        assert paired["contextual"]["f2_ci"][0] < 0 < paired["contextual"]["f2_ci"][1]
+        snippets += [
+            str(run["systems"]["llm"]["views"]["all"]["f2"]),
+            str(paired["all"]["f2_difference"]),
+        ]
+    _must_contain(CLAIM, snippets)

@@ -29,6 +29,7 @@ historical print. Sampling details are below.
 | yrss-holdout-v1 baseline | 0.78748370273794 | 0.84593837535014 | 0.8156650911546253 | 0.8335633452939553 | yrss-holdout-v1, 185 documents, 714 entities | Yes. One paired disclosure, now closed |
 | yrss-holdout-v1 candidate | 0.7989949748743719 | 0.8907563025210085 | 0.8423841059602649 | 0.8707557502738226 | same split, candidate arm | Yes. Same closed disclosure |
 | synthetic hard-test | 0.9803921568627451 | 0.9615384615384616 | 0.970873786407767 | 0.9652509652509652 | hard-test-v1, seed 20261103, 60 documents | No. Not a held-out substitute |
+| yrss-eval-v2 test, AI Guard | 0.7032427120864724 | 0.9903136531365314 | 0.8224478069335376 | 0.9155650319829425 | yrss-eval-v2 test, 800 documents, 2168 entities | Yes. True held-out for the 2026-11-14 freeze, synthetic, scored once |
 
 Rounded with `.3f`: gold F2 0.947; sealed F2 0.799; holdout F2 0.834 to 0.871;
 hard-test F1 0.971 and F2 0.965.
@@ -243,6 +244,44 @@ The 2026-11-01 hard-test print is P 0.000, R 0.000, F2 0.000. `.3f` of every see
 | MAY | Cite the seeded mean and the min-max range, with the five rows, as local `gemma3:1b` samples at temperature 1 and cost 0 |
 | MAY NOT | Cite F2 0.009 as a verified score. It is an unreproduced historical print. Do not cite either mean as a product headline, as held-out, or as real-document accuracy |
 
+## yrss-eval-v2 test F2 0.916, sealed and scored once
+
+| Field | Record |
+|---|---|
+| Value | F2 0.9155650319829425; F1 0.8224478069335376; P 0.7032427120864724; R 0.9903136531365314; tp 2147; fp 906; fn 21 |
+| Metric | Unrestricted entity-level micro precision, recall, F1 and F2 over the eleven-type scheme, all view |
+| Dataset / split | `yrss-eval-v2` test. 800 documents, 200 families, 2168 gold entities, 160 negative documents. Authored by two model families (Claude Sonnet and DeepSeek V4 Pro) after the detector freeze |
+| Held-out? | Yes. True held-out for this freeze: written after the detector was frozen and scored once. Synthetic documents, not real-document accuracy |
+| Source file | `research/yrss2026/v2/test-nonllm.json` `systems.aiguard.views.all` |
+| Commit SHA | Run at `ddf9ad724fb8ff84dff214c75876170879f506d2`, `git_dirty` false. Frozen detector tree `2860184ce70311c10ffc7272a2fb6d6566aafd35` |
+| Lock hash | `benchmark/data/yrss-v2/test.lock.json`, templates `b3c0253225d2985e234ab19bae0976ab2827bf2d63a9342702effcc969eb2975`, ciphertext `0aac67d9d792ee2c3e34ce6324b4b53b58138d4b516bf46142dc6369d80bdc0c` |
+| Plaintext hash | `271c7f27aab3370121f4297a54227cd4c71efcaf1685eed1306c61ee3696dda2` |
+| Reproducing command | `python -m benchmark.yrss_v2 --split test --systems aiguard,regex,crf-ner,wangchanberta-ner,presidio,aiguard-no-fp,aiguard-no-tb,aiguard-no-address_merge --i-understand-this-spends-the-test-split` with the key in `YRSS_V2_TEST_KEY_FILE`. The split is spent; a rerun only confirms |
+| MAY | Cite as the held-out result of the frozen detector on constructed Thai documents, with P, R, F1 and F2 and the interval. Cite the shared-11 view by name |
+| MAY NOT | Cite as real-document accuracy, as a dev number, or without the precision. AI Guard masks generic dates, organisations, places and reference numbers on purpose, so only 4 of 160 negative documents are clean and unrestricted precision is 0.703. Do not claim AI Guard beats LLMs in general: only one local 4B model was scored, and on contextual types its difference spans zero |
+
+Family-bootstrap 95% CI for that F2: 0.9013694697778208 to 0.9294341804915337 (1,000 resamples, seed 0). Shared-11 view: F2 0.9662466246624664, P 0.8806398687448729, R 0.9903136531365314.
+
+Paired F2 difference, AI Guard minus comparator, all view, family bootstrap. The registered Holm family has five comparisons. Every bootstrap p is the floor 1/1001; five-way Holm with the LLM's largest p over its seeds gives 0.005 for all five.
+
+| Comparator | F2 | F2 difference | 95% CI |
+|---|---:|---:|---|
+| regex | 0.4423480083857443 | 0.47321702359719825 | 0.4327862324925599 to 0.510975863807771 |
+| crf-ner | 0.1307315197539171 | 0.7848335122290253 | 0.7582519007899128 to 0.8124736066158569 |
+| wangchanberta-ner | 0.25666188570997206 | 0.6589031462729704 | 0.6293756892549812 to 0.6875883911339519 |
+| presidio | 0.4716240955452881 | 0.44394093643765437 | 0.40847211636357356 to 0.47682970721418977 |
+| Typhoon 2.1 4B seed 1 (`test-llm-typhoon4b-seed1.json`) | 0.8846768465909091 | 0.030888185392033418 | 0.013454220293287291 to 0.048595969265583 |
+| Typhoon 2.1 4B seed 2 (`test-llm-typhoon4b-seed2.json`) | 0.8796378483933961 | 0.035927183589546385 | 0.017136652587447235 to 0.054410376063947205 |
+| Typhoon 2.1 4B seed 3 (`test-llm-typhoon4b-seed3.json`) | 0.8829004520875808 | 0.032664579895361645 | 0.015471099107117298 to 0.050501845908643636 |
+| Typhoon 2.1 4B seed 4 (`test-llm-typhoon4b-seed4.json`) | 0.8740701381509033 | 0.04149489383203919 | 0.022521353591891037 to 0.06034656566386922 |
+| Typhoon 2.1 4B seed 5 (`test-llm-typhoon4b-seed5.json`) | 0.8821185014613409 | 0.033446530521601625 | 0.01518850417437172 to 0.05058624167672713 |
+
+The Typhoon rows are the registered local LLM comparator (digest `8cfab909...`), run on a Colab L4 into harness cache files and scored locally; see the ADR addenda. On the contextual view its paired difference spans zero in every seed, so no difference on names, addresses and birth dates may be claimed.
+
+ALLOWED: Human review of 80 test docs (10%): AI pre-annotation reviewed by the first author; agreement with gold κ = 1.00 (not an independent annotator). Source: `research/yrss2026/v2/results/human-check-report.json`.
+
+independent inter-annotator agreement: NOT claimed.
+
 ## What is not a headline
 
 | Item | Status |
@@ -252,6 +291,7 @@ The 2026-11-01 hard-test print is P 0.000, R 0.000, F2 0.000. `.3f` of every see
 | Section 26 paraphrase recall | Stored `section26.micro_recall` 0.0 on n=8 in `hard-test.json`. Warn/report, not a redaction F1 |
 | Historical paper commit `d93d10b` | Absent from this clone. See METHODS. Not an accuracy figure |
 | `research/stt52/` gold-v3 F2 0.801 | A different study. Do not cite it as sealed blind-v2 0.799 |
+| independent inter-annotator agreement | NOT claimed. The allowed sentence is the human-review line in the yrss-eval-v2 section |
 
 ## Outside this repository
 
