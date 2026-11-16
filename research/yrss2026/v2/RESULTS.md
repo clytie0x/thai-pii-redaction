@@ -117,7 +117,7 @@ numbers (recall 0.745) and Thai IDs (0.870); AI Guard found every one of both.
 | Removed layer | F2 | ΔF2 [95% CI] | What changes |
 |---|---:|---:|---|
 | Format and checksum rules | 0.385 | −0.531 [−0.562, −0.500] | Structured F2 falls from 0.993 to 0.216 |
-| Thai context rules | 0.846 | −0.069 [−0.089, −0.050] | Contextual F2 falls from 0.912 to 0.589; precision rises to 0.825 |
+| Thai NER (thainer CRF plus cue upgrades) | 0.846 | −0.069 [−0.089, −0.050] | Contextual F2 falls from 0.912 to 0.589; precision rises to 0.825 |
 | Address merging | 0.835 | −0.081 [−0.098, −0.064] | Address fragments become extra false positives (906 → 1,990); precision falls to 0.518 |
 
 ## 6. Synthesis
