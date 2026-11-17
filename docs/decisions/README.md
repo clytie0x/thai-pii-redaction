@@ -11,6 +11,7 @@ by when the decision was made rather than continuously maintained.
 
 | Document | What it decides |
 |---|---|
+| [2026-11-17 YRSS evaluation v3](2026-11-17-yrss-eval-v3.md) | **Pre-registration; owner approved the JCSSE 2027 / course-manuscript study.** Family-disjoint synthetic train/dev/test, fine-tune and hybrid operating points, document-level quasi-identifier risk. Test-v3 is sealed by the key holder and scored once. v2 stays secondary. No result yet. |
 | [2026-11-13 YRSS evaluation v2](2026-11-13-yrss-eval-v2.md) | **Pre-registration; owner approved the plan.** New synthetic dev/test corpus, DRIVER_LICENSE replaces STUDENT_ID in the scored scheme, paired comparison against rules, NER, an LLM and Presidio, test split scored once. No result yet. |
 | [2026-11-12 OpenThai OCR engine](2026-11-12-openthai-ocr-engine.md) | **Accepted; owner selected Option A.** OpenThai2.0-OCR-Text is an explicit local OCR engine beside default PaddleOCR. No bundled weights, no silent fallback, no runtime download. |
 | [2026-11-03 machine-context restoration](2026-11-03-machine-context-restoration.md) | Owner-approved stricter bulk/streaming restoration and occurrence-specific source proof; local/artifact and exact `40cf18e` CI evidence pass. Controlled main-relative performance condition is satisfied; integration and production acceptance remain separate. |

@@ -1,0 +1,63 @@
+{
+  "documents": 18,
+  "entities": 56,
+  "families": 9,
+  "generator": "benchmark/yrss_v3/corpus.py",
+  "genre_counts": {
+    "chat": 4,
+    "clinical_note": 4,
+    "gov_form": 4,
+    "insurance": 4,
+    "notice": 2
+  },
+  "negative_documents": 2,
+  "plaintext_sha256": "39cba2458fdc731f9370dbe1a1c6218928f37cc23ab2e281baae70d8217b43c1",
+  "protocol": "docs/decisions/2026-11-17-yrss-eval-v3.md",
+  "qi_counts": {
+    "address_short": 4,
+    "age": 4,
+    "be_date": 4,
+    "nickname": 6,
+    "occupation": 6,
+    "s26_biometric": 2,
+    "s26_criminal": 2,
+    "s26_disability": 2,
+    "s26_genetic": 2,
+    "s26_health": 4,
+    "s26_politics": 2,
+    "s26_race": 2,
+    "s26_religion": 2,
+    "s26_sexual": 2,
+    "s26_union": 2
+  },
+  "section26_counts": {
+    "BIOMETRIC": 2,
+    "CRIMINAL_RECORD": 2,
+    "DISABILITY": 2,
+    "GENETIC": 2,
+    "HEALTH": 4,
+    "LABOR_UNION": 2,
+    "POLITICAL_OPINION": 2,
+    "RACE_ETHNICITY": 2,
+    "RELIGION": 2,
+    "SEXUAL_BEHAVIOR": 2
+  },
+  "seed": 20261118,
+  "split": "dev",
+  "templates_sha256": "1413ddce25fa2b962c71ee67d06df395d95516708e51f3309d7fac070224ac98",
+  "type_counts": {
+    "ADDRESS": 4,
+    "BANK_ACCOUNT": 4,
+    "CREDIT_CARD": 2,
+    "DATE_OF_BIRTH": 4,
+    "DRIVER_LICENSE": 2,
+    "EMAIL": 6,
+    "NAME": 18,
+    "PASSPORT": 2,
+    "PHONE": 6,
+    "THAI_ID": 6,
+    "VEHICLE_PLATE": 2
+  },
+  "variants_per_family": 2,
+  "version": "yrss-eval-v3"
+}
