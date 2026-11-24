@@ -30,6 +30,7 @@ from pii_redactor.anonymizer.token_generator import (
 )
 from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.fp_detector import detect_fp
+from pii_redactor.detectors.surface_norm import fold_separators
 from pii_redactor.leak_guard import (
     OutboundGuardContext,
     pseudonym_ranges,
@@ -65,15 +66,18 @@ def _get_context_with_blank(text: str, entity: Entity) -> str:
 
 def _generate_pseudonym(entity: Entity, text: str, salt: str, attempt: int = 0) -> str:
     """Generate appropriate pseudonym based on entity redact_type."""
+    # Seed and shape the replacement from the ASCII-separator form, so a value
+    # written with Unicode dashes or spaces gets the replacement its plain form gets.
+    original = fold_separators(entity.original_text)
     if entity.redact_type == "FP":
-        return generate_fp(entity.data_type, entity.original_text, salt=salt, attempt=attempt)
+        return generate_fp(entity.data_type, original, salt=salt, attempt=attempt)
     else:
-        context = _get_context_with_blank(text, entity)
+        context = fold_separators(_get_context_with_blank(text, entity))
         return generate_tb(
             entity.data_type,
             context,
             salt=salt,
-            original=entity.original_text,
+            original=original,
             attempt=attempt,
         )
 

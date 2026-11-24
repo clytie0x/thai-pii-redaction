@@ -13,12 +13,9 @@ from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.fn_scanner import scan_fn
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_parallel_record_names
-from pii_redactor.detectors.scan_views import (
-    fold_separators,
-    original_guard_entities,
-    with_source_text,
-)
+from pii_redactor.detectors.scan_views import original_guard_entities
 from pii_redactor.detectors.structured_views import admit_recovery, recover_structured
+from pii_redactor.detectors.surface_norm import fold_separators, with_source_text
 from pii_redactor.detectors.tb_detector import NERChunkDiagnostics, detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase

@@ -9,8 +9,69 @@ text, including the characters that were skipped.
 from __future__ import annotations
 
 import re
+import unicodedata
+from dataclasses import replace
+from functools import cache, wraps
+
+from pii_redactor.models import Entity
 
 _ZERO_WIDTH = frozenset("\u200b\u200c\ufeff\u2060")
+
+
+@cache
+def _separator_table() -> dict[int, str]:
+    table = {0x2212: "-"}  # minus sign; its category is Sm, not Pd
+    # Planes 0 and 1 hold every dash and space separator Unicode defines.
+    for code in range(0x80, 0x20000):
+        category = unicodedata.category(chr(code))
+        if category == "Pd":
+            table[code] = "-"
+        elif category == "Zs":
+            table[code] = " "
+    return table
+
+
+@cache
+def _separator_pattern() -> re.Pattern[str]:
+    return re.compile("[" + "".join(map(chr, _separator_table())) + "]")
+
+
+def fold_separators(text: str) -> str:
+    """Same-length scan text: Unicode dashes and spaces in their ASCII form.
+
+    The detectors only know the ASCII hyphen and space. One character maps to
+    one character, so spans found in the result are source spans. Returns the
+    same object when there is nothing to fold.
+    """
+    if text.isascii() or not _separator_pattern().search(text):
+        return text
+    return text.translate(_separator_table())
+
+
+def with_source_text(entities: list[Entity], source: str) -> list[Entity]:
+    """Entities found in folded text, carrying the caller's own characters."""
+    return [
+        replace(entity, original_text=source[entity.span[0] : entity.span[1]])
+        for entity in entities
+    ]
+
+
+def reads_ascii_separators(detector):
+    """Make a text detector see Unicode dashes and spaces as the ASCII ones.
+
+    Every caller gets the same answer for a text and its ASCII-separator form,
+    so no call site can forget the fold.
+    """
+
+    @wraps(detector)
+    def run(text: str, *args, **kwargs) -> list[Entity]:
+        folded = fold_separators(text)
+        entities = detector(folded, *args, **kwargs)
+        return entities if folded is text else with_source_text(entities, text)
+
+    return run
+
+
 _DIGIT_FOLD = {ord("๐") + offset: ord("0") + offset for offset in range(10)}
 _DIGIT_FOLD.update({0x0660 + offset: ord("0") + offset for offset in range(10)})
 _SURFACE_TRANSLATION = {**_DIGIT_FOLD, **{ord(char): None for char in _ZERO_WIDTH}}

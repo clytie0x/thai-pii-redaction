@@ -18,6 +18,7 @@ from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors import scan_views as _shared_views
 from pii_redactor.detectors.fp_detector import detect_fp
 from pii_redactor.detectors.name_context import detect_name_context
+from pii_redactor.detectors.surface_norm import fold_separators, with_source_text
 from pii_redactor.detectors.tb_detector import detect_tb
 from pii_redactor.models import Entity
 from pii_redactor.native_broker_context import native_broker_detector_phase
@@ -294,7 +295,7 @@ def scan_residual_signals(
         if any(cs <= start and end <= ce for cs, ce in ranges):
             continue  # part of a pseudonym we wrote
         signals.append(f"orphan_digits:{end - start}")
-    signals.extend(_obfuscated_structured_signals(_shared_views.fold_separators(text), ranges))
+    signals.extend(_obfuscated_structured_signals(fold_separators(text), ranges))
     return signals
 
 
@@ -331,10 +332,10 @@ def scan_outbound_leaks(
     trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
     real_leaks = []
     # Pseudonyms are matched in the caller's text; detection reads the folded one.
-    source, text = text, _shared_views.fold_separators(text)
+    source, text = text, fold_separators(text)
     found = detect_fp(text) + detect_tb(text, config=config)
     if text != source:
-        found = _shared_views.with_source_text(found, source)
+        found = with_source_text(found, source)
     for entity in found:
         if entity.original_text in trusted:
             continue
