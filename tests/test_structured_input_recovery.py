@@ -26,6 +26,73 @@ def test_recovery_maps_exact_original_occurrence(cue, value, label):
     )
 
 
+def _separator_cases():
+    import random
+    import re
+
+    from pii_redactor.anonymizer import fp_generator as fg
+
+    card = re.sub(r"\D", "", fg._gen_credit_card(random.Random(1)))
+    groups = [card[i : i + 4] for i in range(0, 16, 4)]
+    cases = []
+    # Hyphen, non-breaking hyphen, en dash, minus sign, small hyphen-minus.
+    for dash in "‐‑–−﹣":
+        cases.append(("บัตรเครดิต ", dash.join(groups), "CREDIT_CARD"))
+        cases.append(("โทร ", f"081{dash}234{dash}5678", "PHONE"))
+    # No-break, thin, narrow no-break and ideographic space.
+    for space in "   　":
+        cases.append(("โทร ", f"081{space}234{space}5678", "PHONE"))
+        cases.append(("โทร ", f"02{space}618{space}0337", "PHONE"))
+    return cases
+
+
+SEPARATOR_CASES = _separator_cases()
+
+
+@pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
+def test_unicode_separators_map_exact_original_occurrence(cue, value, label):
+    text = "🛡 " + cue + value + " จบ"
+    start = text.index(value)
+    assert any(
+        e.data_type == label and e.span == (start, start + len(value)) and e.original_text == value
+        for e in detect_all(text)
+    )
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+@pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
+def test_unicode_separator_inputs_are_masked_and_restore_exactly(mode, cue, value, label):
+    text = cue + value + " จบ"
+    result = sanitize_stateless(text, mode=mode, salt="synthetic-recovery")
+    assert value not in result.sanitized_text
+    # An earlier, wider span may own the value; recovery never narrows it.
+    assert any(value in original for original in result.mapping.values())
+    restored = restore_stateless(result.sanitized_text, mapping=result.mapping, mode=mode)
+    assert restored.restored_text == text
+
+
+@pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
+def test_unicode_separators_are_also_caught_by_independent_release_guard(cue, value, label):
+    from pii_redactor.leak_guard import OutboundGuardContext, scan_residual_signals
+
+    assert "obfuscated_structured:" + label in scan_residual_signals(value, OutboundGuardContext())
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "ปีงบประมาณ 2565–2566 หน้า 10–20",
+        "ช่วงราคา 1,000−2,500 บาท จำนวน 3 ชิ้น",
+        "รหัสสินค้า 1234–5678 สี 12–34",
+    ],
+)
+def test_unicode_separators_detect_exactly_what_their_ascii_forms_detect(text):
+    ascii_text = text.translate({0x2013: "-", 0x2212: "-", 0x00A0: " "})
+    assert [(e.data_type, e.span) for e in detect_all(text)] == [
+        (e.data_type, e.span) for e in detect_all(ascii_text)
+    ]
+
+
 @pytest.mark.parametrize("mode", ["token", "surrogate"])
 @pytest.mark.parametrize("cue,value,label", CASES)
 def test_recovered_inputs_are_usable_and_restore_exactly(mode, cue, value, label):

@@ -2,6 +2,7 @@
 
 import re
 import unicodedata
+from functools import cache
 
 from pii_redactor.detectors.fp_detector import _iban_check, detect_fp
 from pii_redactor.models import Entity
@@ -43,13 +44,26 @@ OBFUSCATED_STRUCTURED_TYPES = frozenset(
 )
 
 
+@cache
+def separator_fold(character: str) -> str | None:
+    """ASCII form of a Unicode dash or space; None for every other character."""
+    if character in " -":
+        return None
+    category = unicodedata.category(character)
+    if category == "Pd" or character == "−":  # U+2212 minus sign is category Sm
+        return "-"
+    if category == "Zs":
+        return " "
+    return None
+
+
 def canonical_character(character: str) -> str:
     code = ord(character)
     if 0xFF01 <= code <= 0xFF5E:
         return chr(code - 0xFEE0)
     if "๐" <= character <= "๙":
         return str(code - ord("๐"))
-    return character
+    return separator_fold(character) or character
 
 
 def _security_scan_view(text: str) -> tuple[str, list[int]]:

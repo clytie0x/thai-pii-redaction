@@ -196,7 +196,9 @@ _OBFUSCATED_SIGNAL_PREFIX = "obfuscated_structured:"
 
 def _has_security_view_trigger(text: str) -> bool:
     return _REPEATED_WHITESPACE_RE.search(text) is not None or any(
-        unicodedata.category(character) == "Cf" or 0xFF01 <= ord(character) <= 0xFF5E
+        unicodedata.category(character) == "Cf"
+        or 0xFF01 <= ord(character) <= 0xFF5E
+        or _shared_views.separator_fold(character)
         for character in text
     )
 
