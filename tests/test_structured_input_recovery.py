@@ -124,6 +124,8 @@ TWIN_TEXTS = [
     "โทร ０８１–２３４–５６７８ จบ",
     "เลขที่ 1234–5678–9012",
     "อีเมล frank.4789@mail.example.org—644",
+    # Only the guard's single-spaced IBAN view reads this one.
+    "IBAN DE31 6773 7319 7686 3353 86 จบ",
 ]
 
 
