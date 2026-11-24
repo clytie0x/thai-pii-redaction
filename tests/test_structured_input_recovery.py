@@ -72,25 +72,110 @@ def test_unicode_separator_inputs_are_masked_and_restore_exactly(mode, cue, valu
 
 
 @pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
-def test_unicode_separators_are_also_caught_by_independent_release_guard(cue, value, label):
-    from pii_redactor.leak_guard import OutboundGuardContext, scan_residual_signals
+def test_unicode_separators_are_also_caught_by_the_release_guard(cue, value, label):
+    from pii_redactor.leak_guard import OutboundGuardContext, scan_outbound_leaks
 
-    assert "obfuscated_structured:" + label in scan_residual_signals(value, OutboundGuardContext())
+    leaks = scan_outbound_leaks(cue + value + " จบ", OutboundGuardContext())
+    assert (label, (len(cue), len(cue) + len(value))) in _spans(leaks)
 
 
-@pytest.mark.parametrize(
-    "text",
-    [
-        "ปีงบประมาณ 2565–2566 หน้า 10–20",
-        "ช่วงราคา 1,000−2,500 บาท จำนวน 3 ชิ้น",
-        "รหัสสินค้า 1234–5678 สี 12–34",
-    ],
-)
-def test_unicode_separators_detect_exactly_what_their_ascii_forms_detect(text):
-    ascii_text = text.translate({0x2013: "-", 0x2212: "-", 0x00A0: " "})
-    assert [(e.data_type, e.span) for e in detect_all(text)] == [
-        (e.data_type, e.span) for e in detect_all(ascii_text)
-    ]
+def _separator_characters():
+    import sys
+    import unicodedata
+
+    dashes, spaces = ["−"], []
+    for code in range(0x80, sys.maxunicode + 1):
+        category = unicodedata.category(chr(code))
+        if category == "Pd":
+            dashes.append(chr(code))
+        elif category == "Zs":
+            spaces.append(chr(code))
+    return dashes, spaces
+
+
+DASHES, SPACES = _separator_characters()
+
+
+def _ascii_twin(text):
+    return text.translate({**{ord(c): "-" for c in DASHES}, **{ord(c): " " for c in SPACES}})
+
+
+def _spans(entities):
+    return [(e.data_type, e.span) for e in entities]
+
+
+# One line per behaviour a Unicode separator used to change: cue collisions,
+# types outside bounded recovery, signed coordinates, repeated gaps, plain ranges.
+TWIN_TEXTS = [
+    "เรื่องทั่วไป เลขทะเบียนนิติบุคคล 0–5425–98747–17–3 จบ",
+    "ข้อมูล ปชช 1–4505–28559–66–9 ครับ",
+    "เรื่องทั่วไป เลขบัตรประชาชน 1–4505–28559–66–9 จบ",
+    "ข้อมูล ทะเบียนบัตร 6209–6654–2870–7224 ครับ",
+    "ข้อมูล ลงทะเบียนโทร 089–710–2822 ครับ",
+    "โอนเงินเข้า 4292–47411–6 ภายในวันนี้",
+    "วันที่ 12–03–2567 ประชุม",
+    "เกิดวันที่ 12‑03‑2530",
+    "MAC address AA‐BB‐CC‐DD‐EE‐FF",
+    "พิกัด −13.7563, 100.5018",
+    "ยอด 544﹣000 บาท﹣LINE ID user256﹣ขอบคุณ",
+    "เรื่องทั่วไป เลขที่บัญชี 429  2  47411  6 จบ",
+    "ปีงบประมาณ 2565–2566 หน้า 10–20 ราคา 1,000−2,500 บาท 3 ชิ้น",
+]
+
+
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_unicode_separators_detect_what_the_ascii_form_detects_at_source_offsets(text):
+    found = detect_all(text)
+    assert _spans(found) == _spans(detect_all(_ascii_twin(text)))
+    assert all(e.original_text == text[e.span[0] : e.span[1]] for e in found)
+
+
+def _release(text):
+    from pii_redactor.stateless import StatelessLeakError
+
+    try:
+        result = sanitize_stateless(text, mode="token", salt="synthetic-recovery")
+    except StatelessLeakError:
+        return "blocked", None
+    return sorted((e["start"], e["end"]) for e in result.entities), result
+
+
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_unicode_separators_release_or_block_exactly_like_the_ascii_form(text):
+    outcome, result = _release(text)
+    assert outcome == _release(_ascii_twin(text))[0]
+    if result is not None:
+        restored = restore_stateless(result.sanitized_text, mapping=result.mapping, mode="token")
+        assert restored.restored_text == text
+
+
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_release_guard_sees_unicode_separators_like_the_ascii_form(text):
+    from pii_redactor.leak_guard import (
+        OutboundGuardContext,
+        scan_outbound_leaks,
+        scan_residual_signals,
+    )
+
+    twin = _ascii_twin(text)
+    context = OutboundGuardContext()
+    assert scan_residual_signals(text, context) == scan_residual_signals(twin, context)
+    assert _spans(scan_outbound_leaks(text, context)) == _spans(scan_outbound_leaks(twin, context))
+
+
+def test_every_unicode_dash_and_space_separator_is_covered():
+    card = SEPARATOR_CASES[0][1].replace("‐", "-")
+    phone = "081 234 5678"
+    expected_card = _spans(detect_all("บัตรเครดิต " + card + " จบ"))
+    expected_phone = _spans(detect_all("โทร " + phone + " จบ"))
+    assert "CREDIT_CARD" in [t for t, _ in expected_card]
+    assert "PHONE" in [t for t, _ in expected_phone]
+    for dash in DASHES:
+        text = "บัตรเครดิต " + card.replace("-", dash) + " จบ"
+        assert _spans(detect_all(text)) == expected_card, hex(ord(dash))
+    for space in SPACES:
+        text = "โทร " + phone.replace(" ", space) + " จบ"
+        assert _spans(detect_all(text)) == expected_phone, hex(ord(space))
 
 
 @pytest.mark.parametrize("mode", ["token", "surrogate"])

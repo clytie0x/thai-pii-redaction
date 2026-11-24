@@ -196,9 +196,7 @@ _OBFUSCATED_SIGNAL_PREFIX = "obfuscated_structured:"
 
 def _has_security_view_trigger(text: str) -> bool:
     return _REPEATED_WHITESPACE_RE.search(text) is not None or any(
-        unicodedata.category(character) == "Cf"
-        or 0xFF01 <= ord(character) <= 0xFF5E
-        or _shared_views.separator_fold(character)
+        unicodedata.category(character) == "Cf" or 0xFF01 <= ord(character) <= 0xFF5E
         for character in text
     )
 
@@ -296,7 +294,7 @@ def scan_residual_signals(
         if any(cs <= start and end <= ce for cs, ce in ranges):
             continue  # part of a pseudonym we wrote
         signals.append(f"orphan_digits:{end - start}")
-    signals.extend(_obfuscated_structured_signals(text, ranges))
+    signals.extend(_obfuscated_structured_signals(_shared_views.fold_separators(text), ranges))
     return signals
 
 
@@ -332,7 +330,12 @@ def scan_outbound_leaks(
     trusted = guard_context.trusted_pseudonyms()
     trusted_ranges = pseudonym_ranges(text, sorted(trusted, key=len, reverse=True))
     real_leaks = []
-    for entity in detect_fp(text) + detect_tb(text, config=config):
+    # Pseudonyms are matched in the caller's text; detection reads the folded one.
+    source, text = text, _shared_views.fold_separators(text)
+    found = detect_fp(text) + detect_tb(text, config=config)
+    if text != source:
+        found = _shared_views.with_source_text(found, source)
+    for entity in found:
         if entity.original_text in trusted:
             continue
         if entity.data_type == "NAME" and _is_field_label(entity.original_text):

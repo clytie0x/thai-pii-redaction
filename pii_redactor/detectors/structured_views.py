@@ -57,10 +57,7 @@ def source_view(text: str, *, compact: bool = False) -> tuple[str, list[int]]:
 def recover_structured(text: str) -> list[Entity]:
     repeated = _REPEATED_DIGIT_GAP.search(text) is not None
     changed = any(
-        unicodedata.category(c) == "Cf"
-        or 0xFF01 <= ord(c) <= 0xFF5E
-        or "๐" <= c <= "๙"
-        or scan_views.separator_fold(c)
+        unicodedata.category(c) == "Cf" or 0xFF01 <= ord(c) <= 0xFF5E or "๐" <= c <= "๙"
         for c in text
     )
     has_iban = scan_views._SPACED_IBAN_START_RE.search(text) is not None
