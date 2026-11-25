@@ -1344,8 +1344,9 @@ def _admit_name_recall(text: str, extra: list[Entity], existing: list[Entity]) -
     return admitted
 
 
-@reads_ascii_separators
+# Innermost on purpose: minimize_failure_frames must also strip this wrapper's frame.
 @minimize_failure_frames
+@reads_ascii_separators
 def detect_tb(
     text: str,
     *,
