@@ -26,6 +26,183 @@ def test_recovery_maps_exact_original_occurrence(cue, value, label):
     )
 
 
+def _separator_cases():
+    import random
+    import re
+
+    from pii_redactor.anonymizer import fp_generator as fg
+
+    card = re.sub(r"\D", "", fg._gen_credit_card(random.Random(1)))
+    groups = [card[i : i + 4] for i in range(0, 16, 4)]
+    cases = []
+    # Hyphen, non-breaking hyphen, en dash, minus sign, small hyphen-minus.
+    for dash in "‐‑–−﹣":
+        cases.append(("บัตรเครดิต ", dash.join(groups), "CREDIT_CARD"))
+        cases.append(("โทร ", f"081{dash}234{dash}5678", "PHONE"))
+    # No-break, thin, narrow no-break and ideographic space.
+    for space in "   　":
+        cases.append(("โทร ", f"081{space}234{space}5678", "PHONE"))
+        cases.append(("โทร ", f"02{space}618{space}0337", "PHONE"))
+    return cases
+
+
+SEPARATOR_CASES = _separator_cases()
+
+
+@pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
+def test_unicode_separators_map_exact_original_occurrence(cue, value, label):
+    text = "🛡 " + cue + value + " จบ"
+    start = text.index(value)
+    assert any(
+        e.data_type == label and e.span == (start, start + len(value)) and e.original_text == value
+        for e in detect_all(text)
+    )
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+@pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
+def test_unicode_separator_inputs_are_masked_and_restore_exactly(mode, cue, value, label):
+    text = cue + value + " จบ"
+    result = sanitize_stateless(text, mode=mode, salt="synthetic-recovery")
+    assert value not in result.sanitized_text
+    # An earlier, wider span may own the value; recovery never narrows it.
+    assert any(value in original for original in result.mapping.values())
+    restored = restore_stateless(result.sanitized_text, mapping=result.mapping, mode=mode)
+    assert restored.restored_text == text
+
+
+@pytest.mark.parametrize("cue,value,label", SEPARATOR_CASES)
+def test_unicode_separators_are_also_caught_by_the_release_guard(cue, value, label):
+    from pii_redactor.leak_guard import OutboundGuardContext, scan_outbound_leaks
+
+    leaks = scan_outbound_leaks(cue + value + " จบ", OutboundGuardContext())
+    assert (label, (len(cue), len(cue) + len(value))) in _spans(leaks)
+
+
+def _separator_characters():
+    import sys
+    import unicodedata
+
+    dashes, spaces = ["−"], []
+    for code in range(0x80, sys.maxunicode + 1):
+        category = unicodedata.category(chr(code))
+        if category == "Pd":
+            dashes.append(chr(code))
+        elif category == "Zs":
+            spaces.append(chr(code))
+    return dashes, spaces
+
+
+DASHES, SPACES = _separator_characters()
+
+
+def _ascii_twin(text):
+    return text.translate({**{ord(c): "-" for c in DASHES}, **{ord(c): " " for c in SPACES}})
+
+
+def _spans(entities):
+    return [(e.data_type, e.span) for e in entities]
+
+
+# One line per behaviour a Unicode separator used to change: cue collisions,
+# types outside bounded recovery, signed coordinates, repeated gaps, plain ranges.
+TWIN_TEXTS = [
+    "เรื่องทั่วไป เลขทะเบียนนิติบุคคล 0–5425–98747–17–3 จบ",
+    "ข้อมูล ปชช 1–4505–28559–66–9 ครับ",
+    "เรื่องทั่วไป เลขบัตรประชาชน 1–4505–28559–66–9 จบ",
+    "ข้อมูล ทะเบียนบัตร 6209–6654–2870–7224 ครับ",
+    "ข้อมูล ลงทะเบียนโทร 089–710–2822 ครับ",
+    "โอนเงินเข้า 4292–47411–6 ภายในวันนี้",
+    "วันที่ 12–03–2567 ประชุม",
+    "เกิดวันที่ 12‑03‑2530",
+    "MAC address AA‐BB‐CC‐DD‐EE‐FF",
+    "พิกัด −13.7563, 100.5018",
+    "ยอด 544﹣000 บาท﹣LINE ID user256﹣ขอบคุณ",
+    "เรื่องทั่วไป เลขที่บัญชี 429  2  47411  6 จบ",
+    "ปีงบประมาณ 2565–2566 หน้า 10–20 ราคา 1,000−2,500 บาท 3 ชิ้น",
+    "โทร 081​–234–5678 จบ",
+    "โทร ０８１–２３４–５６７８ จบ",
+    "เลขที่ 1234–5678–9012",
+    "อีเมล frank.4789@mail.example.org—644",
+    # Only the guard's single-spaced IBAN view reads this one.
+    "IBAN DE31 6773 7319 7686 3353 86 จบ",
+]
+
+
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_unicode_separators_detect_what_the_ascii_form_detects_at_source_offsets(text):
+    found = detect_all(text)
+    assert _spans(found) == _spans(detect_all(_ascii_twin(text)))
+    assert all(e.original_text == text[e.span[0] : e.span[1]] for e in found)
+
+
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_plain_detectors_read_unicode_separators_like_the_ascii_form(text):
+    from pii_redactor.detectors.fp_detector import detect_fp
+    from pii_redactor.detectors.tb_detector import detect_tb
+
+    twin = _ascii_twin(text)
+    for detector in (detect_fp, detect_tb):
+        found = detector(text)
+        assert _spans(found) == _spans(detector(twin))
+        assert all(e.original_text == text[e.span[0] : e.span[1]] for e in found)
+
+
+def _release(text, mode):
+    from pii_redactor.stateless import StatelessLeakError
+
+    try:
+        result = sanitize_stateless(text, mode=mode, salt="synthetic-recovery")
+    except StatelessLeakError:
+        return "blocked", None
+    return sorted((e["start"], e["end"]) for e in result.entities), result
+
+
+@pytest.mark.parametrize("mode", ["token", "surrogate"])
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_unicode_separators_release_or_block_exactly_like_the_ascii_form(mode, text):
+    outcome, result = _release(text, mode)
+    twin_outcome, twin_result = _release(_ascii_twin(text), mode)
+    assert outcome == twin_outcome
+    if result is not None:
+        if mode == "surrogate":  # same surrogates, so the same released text
+            assert _ascii_twin(result.sanitized_text) == twin_result.sanitized_text
+        restored = restore_stateless(result.sanitized_text, mapping=result.mapping, mode=mode)
+        assert restored.restored_text == text
+
+
+@pytest.mark.parametrize("text", TWIN_TEXTS)
+def test_release_guard_sees_unicode_separators_like_the_ascii_form(text):
+    from pii_redactor.leak_guard import (
+        OutboundGuardContext,
+        scan_outbound_leaks,
+        scan_residual_signals,
+    )
+
+    twin = _ascii_twin(text)
+    context = OutboundGuardContext()
+    assert scan_residual_signals(text, context) == scan_residual_signals(twin, context)
+    leaks = scan_outbound_leaks(text, context)
+    assert _spans(leaks) == _spans(scan_outbound_leaks(twin, context))
+    assert all(e.original_text == text[e.span[0] : e.span[1]] for e in leaks)
+
+
+def test_every_unicode_dash_and_space_separator_is_covered():
+    card = SEPARATOR_CASES[0][1].replace("‐", "-")
+    # Two spaces between digit groups: only the folded form reaches gap recovery.
+    account = "429  2  47411  6"
+    expected_card = _spans(detect_all("บัตรเครดิต " + card + " จบ"))
+    expected_account = _spans(detect_all("เลขที่บัญชี " + account + " จบ"))
+    assert "CREDIT_CARD" in [t for t, _ in expected_card]
+    assert "BANK_ACCOUNT" in [t for t, _ in expected_account]
+    for dash in DASHES:
+        text = "บัตรเครดิต " + card.replace("-", dash) + " จบ"
+        assert _spans(detect_all(text)) == expected_card, hex(ord(dash))
+    for space in SPACES:
+        text = "เลขที่บัญชี " + account.replace(" ", space) + " จบ"
+        assert _spans(detect_all(text)) == expected_account, hex(ord(space))
+
+
 @pytest.mark.parametrize("mode", ["token", "surrogate"])
 @pytest.mark.parametrize("cue,value,label", CASES)
 def test_recovered_inputs_are_usable_and_restore_exactly(mode, cue, value, label):

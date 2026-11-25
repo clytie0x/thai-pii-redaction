@@ -16,6 +16,7 @@ from pythainlp.tag import NER
 
 from pii_redactor.config import CoreConfig, resolve_config
 from pii_redactor.detectors.ner_failure import NERFailureError, ner_failure_metadata
+from pii_redactor.detectors.surface_norm import reads_ascii_separators
 from pii_redactor.models import Entity
 from pii_redactor.safe_errors import discard_exception_graph, minimize_failure_frames
 
@@ -1343,7 +1344,9 @@ def _admit_name_recall(text: str, extra: list[Entity], existing: list[Entity]) -
     return admitted
 
 
+# Innermost on purpose: minimize_failure_frames must also strip this wrapper's frame.
 @minimize_failure_frames
+@reads_ascii_separators
 def detect_tb(
     text: str,
     *,
