@@ -2,8 +2,10 @@
 
 Linux checks still run on every branch push. That is the day-to-day gate,
 because short-lived branches are squashed to `main` without a pull request.
-macOS and Windows jobs do not. The macOS smoke workflow does not start on
-other branch pushes. Those jobs run only when one of these is true:
+macOS and Windows jobs do not. The macOS smoke workflow still triggers on
+every branch push, and its policy job skips the runner unless the full lane
+applies, so those other pushes do not bill a macOS minute. Those jobs run
+only when one of these is true:
 
 - push to `main`
 - push of a `v*` tag

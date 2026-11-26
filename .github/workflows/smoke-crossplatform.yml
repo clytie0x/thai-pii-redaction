@@ -13,9 +13,11 @@ permissions:
   pull-requests: read
 
 on:
-  # macOS is the only job. Other branch pushes do not start this workflow.
+  # The contract test requires a push trigger on every branch. The policy job
+  # below skips the runner unless this is main, a v* tag, a manual run, or
+  # the full-ci label, so those other pushes do not bill a macOS minute.
   push:
-    branches: [main]
+    branches: ["**"]
     tags: ["v*"]
   pull_request:
     types: [opened, synchronize, reopened, labeled]
