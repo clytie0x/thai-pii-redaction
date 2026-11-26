@@ -580,7 +580,13 @@ mod tests {
     }
 
     fn temp_root(label: &str) -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!(
+        // macOS sun_path holds 104 bytes and TMPDIR is already long. The
+        // socket is "<root>/broker.sock", so the parent has to stay in /tmp.
+        #[cfg(unix)]
+        let base = std::path::PathBuf::from("/tmp");
+        #[cfg(windows)]
+        let base = std::env::temp_dir();
+        let path = base.join(format!(
             "aiguard-{label}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
