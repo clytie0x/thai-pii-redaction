@@ -481,10 +481,17 @@ class Collection:
                         row["content_type"],
                     ),
                 )
-                # The pre-restore effective controls reapply corrections and restrictions.
+                # Reapply the captured primary, including its revision. Another +1
+                # would no longer match the immutable execution outcome.
                 tx.execute(
-                    "UPDATE governance_managed_documents SET current_version=%s,state=%s,revision=revision+1 WHERE document_id=%s",
-                    (control["version"], control["state"], doc["document_id"]),
+                    "UPDATE governance_managed_documents SET current_version=%s,state=%s,revision=%s WHERE document_id=%s AND collection_id=%s",
+                    (
+                        control["version"],
+                        control["state"],
+                        control["revision"],
+                        doc["document_id"],
+                        snapshot["collection_id"],
+                    ),
                 )
             tx.execute(
                 "UPDATE governance_collections SET state='ready',revision=revision+1 WHERE collection_id=%s",
