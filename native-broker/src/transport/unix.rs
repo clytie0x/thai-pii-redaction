@@ -384,6 +384,13 @@ impl UnixNativeStream {
                 {
                     return Err(ProtocolError::new("operation_timeout", None));
                 }
+                // macOS reports shutdown(SHUT_RDWR) as ECONNRESET. That is the
+                // peer leaving before a frame, same as a zero-length read, not
+                // a malformed frame. Treating it as request_invalid made the
+                // fault fixture abort after the client had already succeeded.
+                Err(error) if frame_start_disconnect(&error, offset, clean_disconnect_allowed) => {
+                    return Ok(ReadOutcome::Disconnected);
+                }
                 Err(_) => return Err(ProtocolError::new("request_invalid", None)),
             }
         }
@@ -533,6 +540,21 @@ impl UnixNativeStream {
     ) -> Result<(OsPeerContext, PathBuf, UnixPeerGuard), ProtocolError> {
         inspect_peer(&self.stream)
     }
+}
+
+fn frame_start_disconnect(
+    error: &std::io::Error,
+    offset: usize,
+    clean_disconnect_allowed: bool,
+) -> bool {
+    clean_disconnect_allowed
+        && offset == 0
+        && matches!(
+            error.kind(),
+            std::io::ErrorKind::ConnectionReset
+                | std::io::ErrorKind::ConnectionAborted
+                | std::io::ErrorKind::BrokenPipe
+        )
 }
 
 fn connect_with_timeout(path: &Path, timeout: Duration) -> Result<UnixStream, ProtocolError> {
@@ -1243,6 +1265,20 @@ mod tests {
         .is_err());
         assert!(active_root.is_dir());
         std::fs::remove_dir_all(parent).unwrap();
+    }
+
+    #[test]
+    fn reset_at_the_start_of_a_frame_is_a_disconnect_and_a_partial_frame_is_not() {
+        let reset = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "reset");
+        let aborted = std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "aborted");
+        let broken = std::io::Error::new(std::io::ErrorKind::BrokenPipe, "broken");
+        for error in [&reset, &aborted, &broken] {
+            assert!(frame_start_disconnect(error, 0, true));
+            assert!(!frame_start_disconnect(error, 4, true));
+            assert!(!frame_start_disconnect(error, 0, false));
+        }
+        let invalid = std::io::Error::new(std::io::ErrorKind::InvalidData, "bad");
+        assert!(!frame_start_disconnect(&invalid, 0, true));
     }
 }
 

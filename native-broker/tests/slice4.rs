@@ -1343,9 +1343,14 @@ where
     let mut child = child.lock().unwrap().take().into_iter().collect::<Vec<_>>();
     reap_brokers(&mut child);
     remove_temp_tree(&endpoint_root);
-    assert!(child
+    let statuses: Vec<_> = child
         .iter_mut()
-        .all(|child| child.try_wait().unwrap().unwrap().success()));
+        .map(|child| child.try_wait().unwrap())
+        .collect();
+    assert!(
+        statuses.iter().all(|status| status.unwrap().success()),
+        "broker fixture did not exit cleanly: {statuses:?}"
+    );
     error
 }
 

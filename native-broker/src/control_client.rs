@@ -330,10 +330,19 @@ impl BrokerControlClient {
         let protocol_deadline = Instant::now()
             .checked_add(established_timeout)
             .ok_or_else(unavailable_error)?;
-        let deadline = protocol_deadline.min(overall_deadline);
+        let mut deadline = protocol_deadline.min(overall_deadline);
         if deadline.saturating_duration_since(Instant::now()).is_zero() {
-            return Err(ProtocolError::new("operation_timeout", None));
+            return buffered_admission_or_timeout(
+                &mut stream,
+                &prepared.role,
+                &prepared.product_version,
+                deadline,
+            );
         }
+        // Inspecting and hashing the broker is local work. It must not consume
+        // the hello budget, or a slow disk turns a buffered broker_busy into
+        // operation_timeout. Connect time still counts against the caller.
+        let local_started = Instant::now();
         let server = stream.inspect_server()?;
         let local = PlatformEndpoint::current_os_context()?;
         let peer = server.context();
@@ -350,6 +359,20 @@ impl BrokerControlClient {
             .manifest
             .verify_broker_executable(server.executable())?;
         server.ensure_stable()?;
+        deadline = frame_deadline_after_local_work(
+            overall_deadline,
+            established_timeout,
+            local_started,
+            Instant::now(),
+        );
+        if deadline.saturating_duration_since(Instant::now()).is_zero() {
+            return buffered_admission_or_timeout(
+                &mut stream,
+                &prepared.role,
+                &prepared.product_version,
+                deadline,
+            );
+        }
 
         let request_id = random_request_id("hello")?;
         let hello = serde_json::json!({
@@ -427,6 +450,35 @@ impl BrokerControlClient {
         }
         Ok(response)
     }
+}
+
+fn buffered_admission_or_timeout(
+    stream: &mut NativeStream,
+    role: &str,
+    product_version: &str,
+    deadline: Instant,
+) -> Result<BrokerControlClient, ProtocolError> {
+    if stream.has_pending_input()? {
+        let request_id = random_request_id("hello")?;
+        return read_pre_hello_response(stream, role, &request_id, product_version, deadline);
+    }
+    Err(ProtocolError::new("operation_timeout", None))
+}
+
+/// Give back time spent hashing the broker, without giving back connect time
+/// and without extending past one frame budget.
+fn frame_deadline_after_local_work(
+    overall_deadline: Instant,
+    established_timeout: Duration,
+    local_started: Instant,
+    now: Instant,
+) -> Instant {
+    let local_elapsed = now.saturating_duration_since(local_started);
+    let extended = overall_deadline
+        .checked_add(local_elapsed)
+        .unwrap_or(overall_deadline);
+    let frame_end = now.checked_add(established_timeout).unwrap_or(extended);
+    frame_end.min(extended)
 }
 
 fn read_pre_hello_response(
@@ -669,7 +721,10 @@ fn unavailable_error() -> ProtocolError {
 mod tests {
     use std::time::{Duration, Instant};
 
-    use super::{prepare_then_handshake_window, request_deadline, validate_hello_response};
+    use super::{
+        frame_deadline_after_local_work, prepare_then_handshake_window, request_deadline,
+        validate_hello_response,
+    };
     use crate::{canonical_json_bytes, error_message};
 
     #[test]
@@ -718,5 +773,29 @@ mod tests {
         assert_eq!(request, request_outer);
         let expired_request = request_deadline(requested, Some(Instant::now())).unwrap_err();
         assert_eq!(expired_request.code(), "operation_timeout");
+    }
+
+    #[test]
+    fn local_broker_hash_does_not_consume_the_hello_budget() {
+        let started = Instant::now();
+        let overall = started + Duration::from_secs(5);
+        let after_hash = started + Duration::from_secs(4);
+        let deadline =
+            frame_deadline_after_local_work(overall, Duration::from_secs(5), started, after_hash);
+        let remaining = deadline.saturating_duration_since(after_hash);
+        assert!(remaining >= Duration::from_millis(4900));
+        assert!(remaining <= Duration::from_secs(5));
+
+        let connect_done = started + Duration::from_secs(4);
+        let after_short_hash = connect_done + Duration::from_millis(500);
+        let partial = frame_deadline_after_local_work(
+            overall,
+            Duration::from_secs(5),
+            connect_done,
+            after_short_hash,
+        );
+        let partial_remaining = partial.saturating_duration_since(after_short_hash);
+        assert!(partial_remaining >= Duration::from_millis(900));
+        assert!(partial_remaining <= Duration::from_millis(1100));
     }
 }

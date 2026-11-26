@@ -220,6 +220,17 @@ impl NativeStream {
         if max_frame_bytes == 0 {
             return Err(ProtocolError::new("request_invalid", None));
         }
+        // A frame already sitting in the socket must not become
+        // operation_timeout just because local work used up the caller's
+        // clock. Waiting for bytes that are not here still honors the deadline.
+        let deadline = if deadline.saturating_duration_since(Instant::now()).is_zero() {
+            if !self.inner.has_pending_input()? {
+                return Err(ProtocolError::new("operation_timeout", None));
+            }
+            Instant::now() + Duration::from_millis(250)
+        } else {
+            deadline
+        };
         let mut header = [0_u8; 4];
         match self
             .inner
@@ -554,7 +565,8 @@ pub(crate) fn current_uid() -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::ConnectionLimiter;
+    use super::{ConnectionLimiter, NativeStream, PlatformEndpoint};
+    use std::time::{Duration, Instant};
 
     #[test]
     fn an_early_slot_release_happens_once() {
@@ -565,5 +577,106 @@ mod tests {
         permit.release();
         assert_eq!(limiter.active(), 0);
         assert!(limiter.try_acquire().is_ok());
+    }
+
+    fn temp_root(label: &str) -> std::path::PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "aiguard-{label}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&path).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        path
+    }
+
+    #[test]
+    fn buffered_frame_is_read_after_the_deadline_and_an_empty_socket_times_out() {
+        let root = temp_root("buffered-frame");
+        let mut endpoint = PlatformEndpoint::create_for_test(&root).unwrap();
+        let publication = endpoint.publication();
+        let connected = std::thread::spawn(move || {
+            NativeStream::connect(&publication, Duration::from_secs(5)).unwrap()
+        });
+        let mut accepted = None;
+        let accept_deadline = Instant::now() + Duration::from_secs(5);
+        while accepted.is_none() && Instant::now() < accept_deadline {
+            accepted = endpoint.accept(Duration::from_millis(200)).unwrap();
+        }
+        let mut accepted = accepted.expect("endpoint accepted the client");
+        let mut client = connected.join().unwrap();
+        accepted
+            .stream_mut()
+            .write_value(
+                &serde_json::json!({"status": "ok"}),
+                4_096,
+                Duration::from_secs(2),
+            )
+            .unwrap();
+        let expired = Instant::now()
+            .checked_sub(Duration::from_secs(1))
+            .unwrap_or_else(Instant::now);
+        let frame = client.read_frame_until(4_096, expired).unwrap();
+        assert!(frame.is_some());
+        let empty = client.read_frame_until(4_096, expired).unwrap_err();
+        assert_eq!(empty.code(), "operation_timeout");
+        drop(accepted);
+        drop(client);
+        drop(endpoint);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn peer_reset_before_a_frame_is_a_clean_disconnect() {
+        use std::os::unix::io::AsRawFd;
+        use std::os::unix::net::UnixStream;
+
+        let root = temp_root("reset-frame");
+        let mut endpoint = PlatformEndpoint::create_for_test(&root).unwrap();
+        let publication = endpoint.publication();
+        let (ready_tx, ready_rx) = std::sync::mpsc::channel();
+        let resetter = std::thread::spawn(move || {
+            let stream = UnixStream::connect(&publication).unwrap();
+            ready_rx.recv().unwrap();
+            let linger = libc::linger {
+                l_onoff: 1,
+                l_linger: 0,
+            };
+            let result = unsafe {
+                libc::setsockopt(
+                    stream.as_raw_fd(),
+                    libc::SOL_SOCKET,
+                    libc::SO_LINGER,
+                    (&linger as *const libc::linger).cast(),
+                    std::mem::size_of::<libc::linger>() as libc::socklen_t,
+                )
+            };
+            assert_eq!(result, 0);
+            drop(stream);
+        });
+        let mut accepted = None;
+        let accept_deadline = Instant::now() + Duration::from_secs(5);
+        while accepted.is_none() && Instant::now() < accept_deadline {
+            accepted = endpoint.accept(Duration::from_millis(200)).unwrap();
+        }
+        let mut accepted = accepted.expect("endpoint accepted the resetting client");
+        ready_tx.send(()).unwrap();
+        resetter.join().unwrap();
+        let frame = accepted
+            .stream_mut()
+            .read_frame(4_096, Duration::from_secs(2))
+            .unwrap();
+        assert!(frame.is_none());
+        drop(accepted);
+        drop(endpoint);
+        let _ = std::fs::remove_dir_all(root);
     }
 }
