@@ -1,0 +1,152 @@
+# Decides which lanes a caller workflow runs.
+#
+# Callers keep Linux on branch pushes. macOS and Windows run on a push to main,
+# a v* tag, workflow_dispatch, or a pull request labeled full-ci. A docs-only
+# diff skips heavy jobs. Same-repository pull requests do not repeat the Linux
+# lane, because the branch push already ran it. Forks have no push event, so
+# their Linux lane stays on pull_request.
+name: CI cost policy
+
+on:
+  workflow_call:
+    outputs:
+      heavy:
+        description: Run compile, test, package, and image jobs
+        value: ${{ jobs.decide.outputs.heavy }}
+      run_linux:
+        description: Run the Linux lane for this event
+        value: ${{ jobs.decide.outputs.run_linux }}
+      run_expensive:
+        description: Run macOS and Windows jobs
+        value: ${{ jobs.decide.outputs.run_expensive }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  decide:
+    name: classify cost lane
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    outputs:
+      heavy: ${{ steps.decide.outputs.heavy }}
+      run_linux: ${{ steps.decide.outputs.run_linux }}
+      run_expensive: ${{ steps.decide.outputs.run_expensive }}
+    steps:
+      - id: decide
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          HAS_FULL_CI: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          run_linux=true
+          run_expensive=false
+          force_heavy=false
+
+          case "$EVENT_NAME" in
+            workflow_dispatch)
+              run_expensive=true
+              force_heavy=true
+              ;;
+            push)
+              case "$REF" in
+                refs/heads/main|refs/tags/v*)
+                  run_expensive=true
+                  ;;
+              esac
+              case "$REF" in
+                refs/tags/v*)
+                  force_heavy=true
+                  ;;
+              esac
+              ;;
+            pull_request)
+              if [ "$HEAD_REPO" = "$REPO" ] || [ "$ACTION" = "labeled" ]; then
+                run_linux=false
+              fi
+              if [ "$HAS_FULL_CI" = "true" ] && { [ "$ACTION" != "labeled" ] || [ "$LABEL_NAME" = "full-ci" ]; }; then
+                run_expensive=true
+              fi
+              ;;
+            *)
+              run_linux=true
+              ;;
+          esac
+
+          is_doc_diff() {
+            local url="$1"
+            local payload
+            if ! payload=$(curl -fsSL --retry 2 --max-time 20 \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "$url"); then
+              echo heavy
+              return 0
+            fi
+            CLASSIFY_PAYLOAD="$payload" python3 - << 'PY'
+          import json, os
+          raw = os.environ.get("CLASSIFY_PAYLOAD", "")
+          try:
+              data = json.loads(raw)
+          except Exception:
+              print("heavy")
+              raise SystemExit
+          def doc(path):
+              return (
+                  path.startswith("docs/")
+                  or path.endswith(".md")
+                  or path.startswith("LICENSE")
+                  or path in {"COPYING", "NOTICE"}
+              )
+          if isinstance(data, dict):
+              files = data.get("files")
+              if not files or len(files) >= 300:
+                  print("heavy")
+                  raise SystemExit
+              names = [item.get("filename", "") for item in files]
+          elif isinstance(data, list):
+              if not data or len(data) >= 100:
+                  print("heavy")
+                  raise SystemExit
+              names = [item.get("filename", "") for item in data]
+          else:
+              print("heavy")
+              raise SystemExit
+          print("docs" if names and all(doc(name) for name in names) else "heavy")
+          PY
+          }
+
+          heavy=true
+          if [ "$force_heavy" != true ]; then
+            kind=heavy
+            if [ "$EVENT_NAME" = pull_request ]; then
+              if [[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ && "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+                kind=$(is_doc_diff "https://api.github.com/repos/${REPO}/pulls/${PR_NUMBER}/files?per_page=100")
+              fi
+            elif [[ "$BEFORE" =~ ^[0-9a-fA-F]{40}$ && "$HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ && "$BEFORE" != 0000000000000000000000000000000000000000 && "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+              kind=$(is_doc_diff "https://api.github.com/repos/${REPO}/compare/${BEFORE}..${HEAD_SHA}")
+            fi
+            if [ "$kind" = docs ]; then
+              heavy=false
+            fi
+          fi
+
+          {
+            echo "heavy=${heavy}"
+            echo "run_linux=${run_linux}"
+            echo "run_expensive=${run_expensive}"
+          } >> "$GITHUB_OUTPUT"
+          echo "lane heavy=${heavy} run_linux=${run_linux} run_expensive=${run_expensive}"
