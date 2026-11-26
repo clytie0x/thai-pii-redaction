@@ -367,9 +367,18 @@ impl UnixNativeStream {
             if remaining.is_zero() {
                 return Err(ProtocolError::new("operation_timeout", None));
             }
-            self.stream
-                .set_read_timeout(Some(remaining))
-                .map_err(|_| ProtocolError::new("broker_unavailable", None))?;
+            if self.stream.set_read_timeout(Some(remaining)).is_err() {
+                // macOS rejects SO_RCVTIMEO after the peer has already reset.
+                // The reset then never reaches read(). A peer that is already
+                // gone before the first byte is a disconnect, same as a
+                // zero-length read. A live socket whose timeout cannot be set
+                // is still a transport failure.
+                if offset == 0 && clean_disconnect_allowed && peer_left_before_frame(&self.stream)?
+                {
+                    return Ok(ReadOutcome::Disconnected);
+                }
+                return Err(ProtocolError::new("broker_unavailable", None));
+            }
             match self.stream.read(&mut target[offset..]) {
                 Ok(0) if offset == 0 && clean_disconnect_allowed => {
                     return Ok(ReadOutcome::Disconnected)
@@ -554,7 +563,40 @@ fn frame_start_disconnect(
             std::io::ErrorKind::ConnectionReset
                 | std::io::ErrorKind::ConnectionAborted
                 | std::io::ErrorKind::BrokenPipe
+                | std::io::ErrorKind::NotConnected
         )
+}
+
+fn peer_left_before_frame(stream: &UnixStream) -> Result<bool, ProtocolError> {
+    let mut byte = 0_u8;
+    loop {
+        // SAFETY: byte is a valid one-byte output and the stream remains live.
+        let received = unsafe {
+            libc::recv(
+                stream.as_raw_fd(),
+                (&mut byte as *mut u8).cast(),
+                1,
+                libc::MSG_PEEK | libc::MSG_DONTWAIT,
+            )
+        };
+        if received == 0 {
+            return Ok(true);
+        }
+        if received > 0 {
+            return Ok(false);
+        }
+        let error = std::io::Error::last_os_error();
+        if error.kind() == std::io::ErrorKind::Interrupted {
+            continue;
+        }
+        if error.kind() == std::io::ErrorKind::WouldBlock {
+            return Ok(false);
+        }
+        if frame_start_disconnect(&error, 0, true) {
+            return Ok(true);
+        }
+        return Err(ProtocolError::new("broker_unavailable", None));
+    }
 }
 
 fn connect_with_timeout(path: &Path, timeout: Duration) -> Result<UnixStream, ProtocolError> {
@@ -1272,7 +1314,8 @@ mod tests {
         let reset = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "reset");
         let aborted = std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "aborted");
         let broken = std::io::Error::new(std::io::ErrorKind::BrokenPipe, "broken");
-        for error in [&reset, &aborted, &broken] {
+        let closed = std::io::Error::new(std::io::ErrorKind::NotConnected, "closed");
+        for error in [&reset, &aborted, &broken, &closed] {
             assert!(frame_start_disconnect(error, 0, true));
             assert!(!frame_start_disconnect(error, 4, true));
             assert!(!frame_start_disconnect(error, 0, false));
