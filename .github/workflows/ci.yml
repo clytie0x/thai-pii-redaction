@@ -9,30 +9,42 @@
 # native package jobs build and exercise those layouts. The smoke runner now
 # checks exact executable paths through `/proc` or macOS `proc_pidpath`.
 #
-# Runs on every push to any branch, not just main and PRs. The maintainer works
-# through short-lived branches and squashes into main without opening a pull
-# request, so branch pushes are where the gate has to fire; a PR-only trigger
-# would mean opening a PR purely to get CI, which is the ceremony this setup
-# removes. `pull_request` stays for contributions from forks.
+# Linux still runs on every branch push. Short-lived branches are squashed into
+# main without a pull request, so that push is the day-to-day gate. macOS and
+# Windows wait for main, a v* tag, workflow_dispatch, or the full-ci label.
+# See .github/workflows/README.md.
 name: CI
 
 permissions:
   contents: read
+  pull-requests: read
 
 on:
   push:
     branches: ["**"]
+    tags: ["v*"]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ github.event.action == 'labeled' && 'label' || 'code' }}
   cancel-in-progress: true
 
 jobs:
+  policy:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      (contains(github.event.pull_request.labels.*.name, 'full-ci') &&
+        (github.event.action != 'labeled' || github.event.label.name == 'full-ci'))
+    uses: ./.github/workflows/ci-policy.yml
+
   lint:
     name: ruff (lint + format)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Pinned like every other build input (REL-12): the version here must match
@@ -48,7 +60,9 @@ jobs:
 
   extension-package:
     name: exact production Extension package
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python
@@ -80,11 +94,17 @@ jobs:
 
   pytest:
     name: pytest (${{ matrix.os }})
+    needs: policy
+    if: needs.policy.outputs.heavy == 'true' && (needs.policy.outputs.run_linux == 'true' || needs.policy.outputs.run_expensive == 'true')
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+        exclude:
+          # `keep` is not an OS, so that row drops out of the matrix.
+          - os: ${{ needs.policy.outputs.run_linux == 'true' && 'keep' || 'ubuntu-latest' }}
+          - os: ${{ needs.policy.outputs.run_expensive == 'true' && 'keep' || 'windows-latest' }}
+    runs-on: ${{ (matrix.os == 'ubuntu-latest' && vars.LINUX_RUNNER) || matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -100,17 +120,28 @@ jobs:
           python -m pip install pip==26.1.2
           python -m pip install --require-hashes -r requirements.lock
 
+      - name: Cache offline NER assets
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ github.workspace }}/.cache/pythainlp-data
+          key: pythainlp-thainer-${{ runner.os }}-${{ hashFiles('requirements.lock', 'requirements.txt') }}
+
       - name: Pre-download the offline NER model
+        env:
+          PYTHAINLP_DATA: ${{ github.workspace }}/.cache/pythainlp-data
         run: python scripts/prewarm_ner.py
 
       - name: Run tests
         env:
           PYTHONUTF8: "1"
+          PYTHAINLP_DATA: ${{ github.workspace }}/.cache/pythainlp-data
         run: python -m pytest -q
 
   enterprise-postgres:
     name: enterprise (mandatory PostgreSQL 18)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     services:
       postgres:
         image: postgres:18.6@sha256:3a4264520e121176619f54ff867d12774bc81e95e7b84db58d63bccdb6144b81
@@ -172,7 +203,9 @@ jobs:
     # numpy-at-module-top-level regressions; it keeps a core-only `pip install`
     # importable, matching how the packaged sidecar ships.
     name: pytest (core-only install)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -188,12 +221,21 @@ jobs:
         # to a lockfile (Horizon-2 #11 pins every other install).
         run: python -m pip install pip==26.1.2 -r requirements.txt
 
+      - name: Cache offline NER assets
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ github.workspace }}/.cache/pythainlp-data
+          key: pythainlp-thainer-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+
       - name: Pre-download the offline NER model
+        env:
+          PYTHAINLP_DATA: ${{ github.workspace }}/.cache/pythainlp-data
         run: python scripts/prewarm_ner.py
 
       - name: Run tests (optional-dep tests must skip, not error)
         env:
           PYTHONUTF8: "1"
+          PYTHAINLP_DATA: ${{ github.workspace }}/.cache/pythainlp-data
         run: python -m pytest -q
 
   check-version:
@@ -201,7 +243,9 @@ jobs:
     # drift the moment a release bumps one file (Cargo.toml, manifest.json,
     # ...) and forgets another.
     name: version drift check
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -217,7 +261,9 @@ jobs:
 
   rust:
     name: cargo test (broker protocol + desktop shell)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -276,15 +322,24 @@ jobs:
           cargo test --locked --manifest-path desktop/src-tauri/Cargo.toml --all-features
 
   native-broker-runtime:
-    # Security-critical transport and child ownership must execute on each OS;
-    # a generic compile-only adapter would not exercise ACLs, peer credentials,
-    # inherited listeners, parent-death behavior, or endpoint cleanup.
+    # Security-critical transport and child ownership still execute on each OS.
+    # macOS and Windows wait for main, a v* tag, a manual run, or full-ci.
+    # Linux runs on branch pushes. A compile-only adapter would not exercise
+    # ACLs, peer credentials, inherited listeners, parent-death behavior, or
+    # endpoint cleanup.
     name: native broker runtime (${{ matrix.os }})
+    needs: policy
+    if: needs.policy.outputs.heavy == 'true' && (needs.policy.outputs.run_linux == 'true' || needs.policy.outputs.run_expensive == 'true')
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+        exclude:
+          # `keep` is not an OS, so that row drops out of the matrix.
+          - os: ${{ needs.policy.outputs.run_linux == 'true' && 'keep' || 'ubuntu-latest' }}
+          - os: ${{ needs.policy.outputs.run_expensive == 'true' && 'keep' || 'windows-latest' }}
+          - os: ${{ needs.policy.outputs.run_expensive == 'true' && 'keep' || 'macos-latest' }}
+    runs-on: ${{ (matrix.os == 'ubuntu-latest' && vars.LINUX_RUNNER) || matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -355,7 +410,9 @@ jobs:
 
   js-syntax:
     name: js syntax (extension + desktop)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -373,7 +430,9 @@ jobs:
 
   js-tests:
     name: js tests (vitest)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -385,7 +444,9 @@ jobs:
 
   office-addin:
     name: Office Add-in (Node 22)
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: office-addin
@@ -416,7 +477,9 @@ jobs:
     # and drives a real masking round trip inside it, so a broken image fails
     # here instead of on someone else's infrastructure.
     name: docker image build + smoke
-    runs-on: ubuntu-latest
+    needs: policy
+    if: needs.policy.outputs.run_linux == 'true' && needs.policy.outputs.heavy == 'true'
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -544,6 +607,8 @@ jobs:
     # runner records the HTTPS proxy leg as pending without changing trust.
     # A machine with an already trusted certificate runs that leg too.
     name: packaged backend + installed Desktop smoke (windows)
+    needs: policy
+    if: needs.policy.outputs.run_expensive == 'true' && needs.policy.outputs.heavy == 'true'
     runs-on: windows-latest
     env:
       AIGUARD_EXTENSION_IDENTITY: ${{ github.workspace }}/config/chrome-extension-identity.json
@@ -571,7 +636,15 @@ jobs:
           python -m pip install pip==26.1.2
           python -m pip install --require-hashes -r requirements-build.lock
 
+      - name: Cache offline NER assets
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ github.workspace }}/.cache/pythainlp-data
+          key: pythainlp-thainer-${{ runner.os }}-${{ hashFiles('requirements-build.lock') }}
+
       - name: Pre-download the offline NER model
+        env:
+          PYTHAINLP_DATA: ${{ github.workspace }}/.cache/pythainlp-data
         run: python scripts/prewarm_ner.py
 
       - name: Set up Rust (build_sidecar reads the host triple from rustc)
@@ -586,6 +659,8 @@ jobs:
           npm run build
 
       - name: Build + stage the sidecar
+        env:
+          PYTHAINLP_DATA: ${{ github.workspace }}/.cache/pythainlp-data
         run: python scripts/build_sidecar.py
 
       - name: Build + stage the native broker
