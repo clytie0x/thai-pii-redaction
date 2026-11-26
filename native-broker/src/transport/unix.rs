@@ -367,9 +367,18 @@ impl UnixNativeStream {
             if remaining.is_zero() {
                 return Err(ProtocolError::new("operation_timeout", None));
             }
-            self.stream
-                .set_read_timeout(Some(remaining))
-                .map_err(|_| ProtocolError::new("broker_unavailable", None))?;
+            if self.stream.set_read_timeout(Some(remaining)).is_err() {
+                // macOS rejects SO_RCVTIMEO after the peer has already reset.
+                // The reset then never reaches read(). A peer that is already
+                // gone before the first byte is a disconnect, same as a
+                // zero-length read. A live socket whose timeout cannot be set
+                // is still a transport failure.
+                if offset == 0 && clean_disconnect_allowed && peer_left_before_frame(&self.stream)?
+                {
+                    return Ok(ReadOutcome::Disconnected);
+                }
+                return Err(ProtocolError::new("broker_unavailable", None));
+            }
             match self.stream.read(&mut target[offset..]) {
                 Ok(0) if offset == 0 && clean_disconnect_allowed => {
                     return Ok(ReadOutcome::Disconnected)
@@ -383,6 +392,13 @@ impl UnixNativeStream {
                     ) =>
                 {
                     return Err(ProtocolError::new("operation_timeout", None));
+                }
+                // macOS reports shutdown(SHUT_RDWR) as ECONNRESET. That is the
+                // peer leaving before a frame, same as a zero-length read, not
+                // a malformed frame. Treating it as request_invalid made the
+                // fault fixture abort after the client had already succeeded.
+                Err(error) if frame_start_disconnect(&error, offset, clean_disconnect_allowed) => {
+                    return Ok(ReadOutcome::Disconnected);
                 }
                 Err(_) => return Err(ProtocolError::new("request_invalid", None)),
             }
@@ -532,6 +548,54 @@ impl UnixNativeStream {
         &self,
     ) -> Result<(OsPeerContext, PathBuf, UnixPeerGuard), ProtocolError> {
         inspect_peer(&self.stream)
+    }
+}
+
+fn frame_start_disconnect(
+    error: &std::io::Error,
+    offset: usize,
+    clean_disconnect_allowed: bool,
+) -> bool {
+    clean_disconnect_allowed
+        && offset == 0
+        && matches!(
+            error.kind(),
+            std::io::ErrorKind::ConnectionReset
+                | std::io::ErrorKind::ConnectionAborted
+                | std::io::ErrorKind::BrokenPipe
+                | std::io::ErrorKind::NotConnected
+        )
+}
+
+fn peer_left_before_frame(stream: &UnixStream) -> Result<bool, ProtocolError> {
+    let mut byte = 0_u8;
+    loop {
+        // SAFETY: byte is a valid one-byte output and the stream remains live.
+        let received = unsafe {
+            libc::recv(
+                stream.as_raw_fd(),
+                (&mut byte as *mut u8).cast(),
+                1,
+                libc::MSG_PEEK | libc::MSG_DONTWAIT,
+            )
+        };
+        if received == 0 {
+            return Ok(true);
+        }
+        if received > 0 {
+            return Ok(false);
+        }
+        let error = std::io::Error::last_os_error();
+        if error.kind() == std::io::ErrorKind::Interrupted {
+            continue;
+        }
+        if error.kind() == std::io::ErrorKind::WouldBlock {
+            return Ok(false);
+        }
+        if frame_start_disconnect(&error, 0, true) {
+            return Ok(true);
+        }
+        return Err(ProtocolError::new("broker_unavailable", None));
     }
 }
 
@@ -1243,6 +1307,21 @@ mod tests {
         .is_err());
         assert!(active_root.is_dir());
         std::fs::remove_dir_all(parent).unwrap();
+    }
+
+    #[test]
+    fn reset_at_the_start_of_a_frame_is_a_disconnect_and_a_partial_frame_is_not() {
+        let reset = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "reset");
+        let aborted = std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "aborted");
+        let broken = std::io::Error::new(std::io::ErrorKind::BrokenPipe, "broken");
+        let closed = std::io::Error::new(std::io::ErrorKind::NotConnected, "closed");
+        for error in [&reset, &aborted, &broken, &closed] {
+            assert!(frame_start_disconnect(error, 0, true));
+            assert!(!frame_start_disconnect(error, 4, true));
+            assert!(!frame_start_disconnect(error, 0, false));
+        }
+        let invalid = std::io::Error::new(std::io::ErrorKind::InvalidData, "bad");
+        assert!(!frame_start_disconnect(&invalid, 0, true));
     }
 }
 
