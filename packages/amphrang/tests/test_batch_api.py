@@ -67,6 +67,22 @@ def test_anonymize_batch_fails_closed_and_names_the_item():
     assert excinfo.value.batch_index == 1
 
 
+def test_batch_rejects_a_bare_string_without_keeping_it():
+    """A str is one text. Iterating it would mask each character and return success."""
+    phone = "081-234-5678"
+    for fn in (amphrang.detect_batch, amphrang.anonymize_batch):
+        with pytest.raises(TypeError, match="^texts must be a list of strings$") as caught:
+            fn(phone)
+        assert phone not in str(caught.value)
+        frame = caught.value.__traceback__
+        while frame is not None:
+            if frame.tb_frame.f_code.co_filename == amphrang.__file__:
+                assert frame.tb_frame.f_locals == {}
+            frame = frame.tb_next
+    with pytest.raises(TypeError, match="^texts must be a list of strings$"):
+        amphrang.anonymize_batch(phone.encode())
+
+
 def test_single_anonymize_error_has_no_batch_index():
     with pytest.raises(amphrang.LeakBlockedError) as excinfo:
         amphrang.anonymize(LEAKY_TEXT, mode="token")

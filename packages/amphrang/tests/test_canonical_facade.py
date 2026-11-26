@@ -287,6 +287,20 @@ def test_sensitive_policy_warns_without_masking_and_protects_identifiers(
     assert "081-234-5678" not in repr(analysis)
 
 
+@pytest.mark.parametrize("mode", ["", "Token", "081-234-5678"])
+def test_session_rejects_unknown_mode_without_echoing_it(mode):
+    with pytest.raises(ValueError, match="^unknown stateless mode$") as caught:
+        amphrang.Session(mode=mode)
+    assert str(caught.value) == "unknown stateless mode"
+    assert caught.value.__cause__ is None
+    assert caught.value.__context__ is None
+    frame = caught.value.__traceback__
+    while frame is not None:
+        if frame.tb_frame.f_code.co_filename == amphrang.__file__:
+            assert frame.tb_frame.f_locals == {}
+        frame = frame.tb_next
+
+
 def test_session_expiry_uses_canonical_error(monkeypatch):
     monkeypatch.setenv("AMPHRANG_NER_ENGINE", "thainer")
     with amphrang.Session(ttl_s=10) as session:

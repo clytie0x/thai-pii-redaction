@@ -164,7 +164,10 @@ def _restore_completion(body: dict, mapping: dict[str, str], *, config: CoreConf
     _validate_completion(body, streaming=False)
     for choice in body["choices"]:
         message = choice["message"]
-        message["content"] = restore_text(message["content"], mapping, config=config)
+        content = message["content"]
+        # Stateless restore rejects a blank reply. There is no token in it.
+        if content.strip():
+            message["content"] = restore_text(content, mapping, config=config)
     return body
 
 
