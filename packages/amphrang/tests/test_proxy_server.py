@@ -92,6 +92,31 @@ def test_create_app_requires_nonempty_immutable_valid_model_allowlist(allowed_mo
         )
 
 
+@pytest.mark.parametrize("content", ["", "   ", "\n"])
+def test_blank_assistant_content_is_returned_not_failed(content):
+    upstream = FakeUpstream(
+        body={
+            "id": "chatcmpl-blank",
+            "object": "chat.completion",
+            "model": "gpt-test",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": content},
+                    "finish_reason": "stop",
+                }
+            ],
+        }
+    )
+    response = _client(upstream).post(
+        "/v1/chat/completions",
+        json=_chat([{"role": "user", "content": "หวัดดี"}]),
+    )
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == content
+    assert "081-234-5678" not in response.text
+
+
 def test_upstream_never_sees_raw_pii_and_client_gets_plaintext_back():
     upstream = FakeUpstream()
     response = _client(upstream).post(

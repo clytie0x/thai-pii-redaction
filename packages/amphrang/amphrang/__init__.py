@@ -274,13 +274,23 @@ def _run_in_pool(fn, jobs: list, workers: int) -> list:
 
 
 @minimize_failure_frames
+def _require_text_batch(texts) -> None:
+    """Reject one string so it is not processed one character at a time."""
+    if isinstance(texts, (str, bytes, bytearray)):
+        texts = None
+        raise TypeError("texts must be a list of strings")
+
+
+@minimize_failure_frames
 def detect_batch(texts: list[str], *, workers: int = 1) -> list[list[Entity]]:
     """``detect`` over many texts, one entity list per input, in order.
 
     ``workers > 1`` runs across a process pool; every worker pays the NER
     model load once, so it only pays off for large batches. Results are
-    identical to calling ``detect`` in a loop.
+    identical to calling ``detect`` in a loop. A bare string is rejected:
+    iterating it would scan each character and miss PII that spans them.
     """
+    _require_text_batch(texts)
     config = sdk_core_config()
     jobs = [(text, config) for text in texts]
     if workers > 1 and len(jobs) > 1:
@@ -312,8 +322,10 @@ def anonymize_batch(
     whole batch reproducible. Fails closed as a unit — the first item whose
     mask would still leak raises ``LeakBlockedError`` with the offending
     position in ``batch_index``, and no partial batch is returned.
-    ``workers`` behaves as in ``detect_batch``.
+    ``workers`` behaves as in ``detect_batch``. A bare string is rejected
+    rather than masked one character at a time and returned as success.
     """
+    _require_text_batch(texts)
     config = sdk_core_config()
     jobs = [(text, mode, salt, config) for text in texts]
     if workers > 1 and len(jobs) > 1:
@@ -357,9 +369,15 @@ class Session:
     is no background sweeper, so call ``close`` to drop the mapping promptly.
 
     A blocked mask raises ``LeakBlockedError``, same as ``anonymize``.
+    An unknown ``mode`` raises ``ValueError`` and does not create a session.
     """
 
+    @minimize_failure_frames
     def __init__(self, *, mode: str = "token", ttl_s: int = 1800):
+        if mode not in ("token", "surrogate"):
+            # Do not echo the rejected mode; a caller can pass a raw value by mistake.
+            mode = ""
+            raise ValueError("unknown stateless mode")
         self._service = _SessionService(cap=1, ttl_s=ttl_s, config=sdk_core_config())
         self._mode = mode
         self._session_id: str | None = None
