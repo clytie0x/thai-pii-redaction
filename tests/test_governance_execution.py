@@ -325,6 +325,21 @@ def test_database_correction_creates_protected_version_and_restore_reapplies_res
     assert reconciled["state"] == "reconciled"
     with pytest.raises(Exception, match="^record_restricted$"):
         collection.read_version(context.a, bucket["id"], document["id"], 2)
+    # The reapplied restriction is still the last instruction's primary proof.
+    from pii_redactor.governance.recovery_controls import _verify_primary
+
+    with context.store.transaction() as tx:
+        row = tx.execute(
+            """SELECT d.revision,d.current_version,d.state,o.result_revision,o.result_version,o.result_state
+            FROM governance_managed_documents d
+            JOIN governance_execution_outcomes o ON o.instruction_id=d.last_instruction_id
+            WHERE d.document_id=%s""",
+            (document["id"],),
+        ).fetchone()
+        assert row["revision"] == row["result_revision"]
+        assert row["current_version"] == row["result_version"]
+        assert row["state"] == row["result_state"]
+        _verify_primary(tx)
 
 
 @pytest.mark.parametrize("state", ["restricted", "suppressed"])
